@@ -7425,5 +7425,134 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: outbound data policy and minimization",
     "verification_requirements": "Verify via FLOW+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AGS-001",
+    "short_id": "AGS-001",
+    "rule_version": "1.0",
+    "category_number": 23,
+    "category": "2.23 Model, plugin and agent supply-chain integrity",
+    "description": "Model weights downloaded from unknown or mutable origin",
+    "cwe": null,
+    "detection_method": "SCA+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "SCA"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: model hash and trusted source",
+    "verification_requirements": "Verify via SCA+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AGS-002",
+    "short_id": "AGS-002",
+    "rule_version": "1.0",
+    "category_number": 23,
+    "category": "2.23 Model, plugin and agent supply-chain integrity",
+    "description": "Model format or loader can execute attacker-controlled code in trusted process",
+    "cwe": null,
+    "detection_method": "CONFIG+REVIEW",
+    "required_evidence": [
+      "CONFIG",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: safe format/isolated loader",
+    "verification_requirements": "Verify via CONFIG+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AGS-003",
+    "short_id": "AGS-003",
+    "rule_version": "1.0",
+    "category_number": 23,
+    "category": "2.23 Model, plugin and agent supply-chain integrity",
+    "description": "Prompt templates from package/registry allowed to include tool-use instruction without review",
+    "cwe": null,
+    "detection_method": "AGENT+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: provenance and policy separation",
+    "verification_requirements": "Verify via AGENT+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AGS-004",
+    "short_id": "AGS-004",
+    "rule_version": "1.0",
+    "category_number": 23,
+    "category": "2.23 Model, plugin and agent supply-chain integrity",
+    "description": "Skills/MCP tool descriptions embed instructions to overstep authority",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: lower-trust metadata cannot grant privileges",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AGS-005",
+    "short_id": "AGS-005",
+    "rule_version": "1.0",
+    "category_number": 23,
+    "category": "2.23 Model, plugin and agent supply-chain integrity",
+    "description": "Remote tool endpoints/transport not authenticated or pinned to expected trust domain",
+    "cwe": null,
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: identity and integrity verification",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
   }
 ]
