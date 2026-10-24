@@ -1506,5 +1506,136 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: public artifacts contain no protected data",
     "verification_requirements": "Verify via SECRET+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-007",
+    "short_id": "WEB-007",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "CSRF-sensitive mutations are exposed via unsafe GET routes",
+    "cwe": "CWE-352",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: state mutations require protected method + CSRF policy",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-008",
+    "short_id": "WEB-008",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "CSP absent/over-permissive on relevant HTML application contexts",
+    "cwe": "CWE-693",
+    "detection_method": "CONFIG+DAST",
+    "required_evidence": [
+      "AST",
+      "CONFIG",
+      "DAST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: policy covers target sinks; false positives context-aware",
+    "verification_requirements": "Verify via CONFIG+DAST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-009",
+    "short_id": "WEB-009",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "Third-party JS included without provenance, pinning or integrity review",
+    "cwe": "CWE-829",
+    "detection_method": "SCA+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "SCA"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: external scripts governed",
+    "verification_requirements": "Verify via SCA+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-010",
+    "short_id": "WEB-010",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "Unsafe iframe embedding/clickjacking protection omitted where relevant",
+    "cwe": "CWE-1021",
+    "detection_method": "CONFIG+DAST",
+    "required_evidence": [
+      "AST",
+      "CONFIG",
+      "DAST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: framing policy matches product embedding requirements",
+    "verification_requirements": "Verify via CONFIG+DAST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-011",
+    "short_id": "WEB-011",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "CORS reflects any origin while allowing credentials",
+    "cwe": "CWE-942",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: allowlist and credential semantics verified",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
   }
 ]
