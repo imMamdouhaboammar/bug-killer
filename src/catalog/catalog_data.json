@@ -2137,5 +2137,130 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: no traversal after link resolution",
     "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-FIL-003",
+    "short_id": "FIL-003",
+    "rule_version": "1.0",
+    "category_number": 7,
+    "category": "2.7 Filesystem, uploads, archives and path traversal",
+    "description": "Zip/Tar extraction writes outside destination (Zip Slip)",
+    "cwe": "CWE-22",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: archive members independently constrained",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-FIL-004",
+    "short_id": "FIL-004",
+    "rule_version": "1.0",
+    "category_number": 7,
+    "category": "2.7 Filesystem, uploads, archives and path traversal",
+    "description": "Unsafe archive decompression creates resource exhaustion (zip bomb)",
+    "cwe": "CWE-400",
+    "detection_method": "FUZZ+TEST",
+    "required_evidence": [
+      "TEST",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: decompressed size/item/time limits enforced",
+    "verification_requirements": "Verify via FUZZ+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-FIL-005",
+    "short_id": "FIL-005",
+    "rule_version": "1.0",
+    "category_number": 7,
+    "category": "2.7 Filesystem, uploads, archives and path traversal",
+    "description": "Uploaded file extension trusted as content type or executable disposition",
+    "cwe": "CWE-434",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: content/magic/storage policy validated",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-FIL-006",
+    "short_id": "FIL-006",
+    "rule_version": "1.0",
+    "category_number": 7,
+    "category": "2.7 Filesystem, uploads, archives and path traversal",
+    "description": "User upload stored in executable/public directory with unsafe permissions",
+    "cwe": "CWE-434",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: isolated non-executable storage",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-FIL-007",
+    "short_id": "FIL-007",
+    "rule_version": "1.0",
+    "category_number": 7,
+    "category": "2.7 Filesystem, uploads, archives and path traversal",
+    "description": "Filename allows path separators, control chars or Unicode normalization escape",
+    "cwe": "CWE-22",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: normalized safe generated storage identity",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
