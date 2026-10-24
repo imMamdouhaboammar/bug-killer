@@ -2,7 +2,9 @@ use tokio::sync::broadcast;
 use tokio_stream::StreamExt;
 use tokio_stream::wrappers::BroadcastStream;
 
-use crate::omni_proto::{RuntimeEvent, RuntimeEventType};
+use crate::omni_proto::RuntimeEvent;
+#[cfg(not(target_os = "linux"))]
+use crate::omni_proto::RuntimeEventType;
 
 pub struct EbpfTracer {
     tx: broadcast::Sender<RuntimeEvent>,
