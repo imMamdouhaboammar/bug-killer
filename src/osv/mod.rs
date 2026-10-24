@@ -1,9 +1,9 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+use crate::types::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::fs;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use crate::types::*;
 
 pub struct OsvClient {
     pub endpoint: String,
@@ -17,7 +17,7 @@ impl Default for OsvClient {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredPackage {
     pub file_path: PathBuf,
     pub name: String,
@@ -87,7 +87,11 @@ impl OsvClient {
                     return true;
                 }
                 let name = e.file_name().to_string_lossy();
-                name != ".git" && name != "node_modules" && name != "vendor" && name != "target" && name != ".aegis"
+                name != ".git"
+                    && name != "node_modules"
+                    && name != "vendor"
+                    && name != "target"
+                    && name != ".aegis"
             })
             .filter_map(|e| e.ok())
         {
@@ -100,8 +104,16 @@ impl OsvClient {
 
             if file_name == "package.json" {
                 packages.extend(Self::extract_node_packages(path));
+            } else if file_name == "package-lock.json" {
+                packages.extend(Self::extract_package_lock_packages(path));
             } else if file_name == "composer.json" {
                 packages.extend(Self::extract_composer_packages(path));
+            } else if file_name == "composer.lock" {
+                packages.extend(Self::extract_composer_lock_packages(path));
+            } else if file_name == "yarn.lock" {
+                packages.extend(Self::extract_yarn_lock_packages(path));
+            } else if file_name == "pnpm-lock.yaml" || file_name == "pnpm-lock.yml" {
+                packages.extend(Self::extract_pnpm_lock_packages(path));
             } else if file_name == "requirements.txt" {
                 packages.extend(Self::extract_python_requirements(path));
             } else if file_name == "Cargo.lock" {
@@ -116,6 +128,13 @@ impl OsvClient {
                 packages.extend(Self::extract_ruby_gemfile_packages(path));
             } else if file_name == "poetry.lock" {
                 packages.extend(Self::extract_poetry_packages(path));
+            } else if file_name == "bom.json"
+                || file_name == "cyclonedx.json"
+                || file_name.ends_with(".cdx.json")
+            {
+                packages.extend(Self::extract_cyclonedx_packages(path));
+            } else if file_name == "spdx.json" || file_name.ends_with(".spdx.json") {
+                packages.extend(Self::extract_spdx_packages(path));
             }
         }
 
@@ -312,7 +331,12 @@ impl OsvClient {
                     artifact_id.clear();
                     version.clear();
                 } else if trimmed.contains("</dependency>") {
-                    if in_dep && !group_id.is_empty() && !artifact_id.is_empty() && !version.is_empty() && !version.starts_with("${") {
+                    if in_dep
+                        && !group_id.is_empty()
+                        && !artifact_id.is_empty()
+                        && !version.is_empty()
+                        && !version.starts_with("${")
+                    {
                         let pkg_name = format!("{}:{}", group_id, artifact_id);
                         if let Some(cleaned) = Self::clean_version(&version) {
                             list.push(DiscoveredPackage {
@@ -361,7 +385,9 @@ impl OsvClient {
                         for (_framework, fw_deps) in deps {
                             if let Some(pkgs) = fw_deps.as_object() {
                                 for (pkg_name, details) in pkgs {
-                                    if let Some(ver) = details.get("resolved").and_then(|v| v.as_str()) {
+                                    if let Some(ver) =
+                                        details.get("resolved").and_then(|v| v.as_str())
+                                    {
                                         if let Some(cleaned) = Self::clean_version(ver) {
                                             list.push(DiscoveredPackage {
                                                 file_path: path.to_path_buf(),
@@ -456,11 +482,17 @@ impl OsvClient {
             for line in content.lines() {
                 let trimmed = line.trim();
                 if trimmed.starts_with("name = ") {
-                    let name = trimmed.trim_start_matches("name = ").trim_matches('"').trim_matches('\'');
+                    let name = trimmed
+                        .trim_start_matches("name = ")
+                        .trim_matches('"')
+                        .trim_matches('\'');
                     current_name = Some(name.to_string());
                 } else if trimmed.starts_with("version = ") {
                     if let Some(name) = current_name.take() {
-                        let ver = trimmed.trim_start_matches("version = ").trim_matches('"').trim_matches('\'');
+                        let ver = trimmed
+                            .trim_start_matches("version = ")
+                            .trim_matches('"')
+                            .trim_matches('\'');
                         if let Some(cleaned) = Self::clean_version(ver) {
                             list.push(DiscoveredPackage {
                                 file_path: path.to_path_buf(),
@@ -469,6 +501,306 @@ impl OsvClient {
                                 ecosystem: "PyPI",
                                 target_kind: TargetKind::PythonPoetryManifest,
                             });
+                        }
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    pub fn parse_purl(purl: &str) -> Option<(String, String, &'static str)> {
+        let stripped = purl.strip_prefix("pkg:")?;
+        let (ecosystem_part, rest) = stripped.split_once('/')?;
+        let (name_part, version_part) = rest.split_once('@')?;
+        let version = version_part
+            .split('?')
+            .next()
+            .unwrap_or(version_part)
+            .split('#')
+            .next()
+            .unwrap_or(version_part);
+
+        let (ecosystem, norm_name) = match ecosystem_part.to_lowercase().as_str() {
+            "npm" => ("npm", name_part.replace("%40", "@")),
+            "pypi" => ("PyPI", name_part.to_string()),
+            "cargo" | "crates.io" => ("crates.io", name_part.to_string()),
+            "composer" => ("Packagist", name_part.to_string()),
+            "golang" | "go" => ("Go", name_part.to_string()),
+            "maven" => {
+                let parts: Vec<&str> = name_part.split('/').collect();
+                if parts.len() >= 2 {
+                    ("Maven", format!("{}:{}", parts[0], parts[1]))
+                } else {
+                    ("Maven", name_part.to_string())
+                }
+            }
+            "nuget" => ("NuGet", name_part.to_string()),
+            "gem" | "rubygems" => ("RubyGems", name_part.to_string()),
+            _ => return None,
+        };
+
+        Some((norm_name, version.to_string(), ecosystem))
+    }
+
+    pub fn extract_cyclonedx_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                if let Some(components) = val.get("components").and_then(|c| c.as_array()) {
+                    for comp in components {
+                        let name_opt = comp.get("name").and_then(|n| n.as_str());
+                        let ver_opt = comp.get("version").and_then(|v| v.as_str());
+                        let purl_opt = comp.get("purl").and_then(|p| p.as_str());
+
+                        if let Some(purl) = purl_opt {
+                            if let Some((purl_name, purl_ver, eco)) = Self::parse_purl(purl) {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: purl_name,
+                                    version: purl_ver,
+                                    ecosystem: eco,
+                                    target_kind: TargetKind::CycloneDxSbom,
+                                });
+                                continue;
+                            }
+                        }
+
+                        if let (Some(name), Some(ver)) = (name_opt, ver_opt) {
+                            if let Some(cleaned) = Self::clean_version(ver) {
+                                let eco = if comp
+                                    .get("group")
+                                    .and_then(|g| g.as_str())
+                                    .is_some_and(|g| g.contains('.'))
+                                {
+                                    "Maven"
+                                } else {
+                                    "npm"
+                                };
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: name.to_string(),
+                                    version: cleaned,
+                                    ecosystem: eco,
+                                    target_kind: TargetKind::CycloneDxSbom,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    pub fn extract_spdx_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                if let Some(packages) = val.get("packages").and_then(|p| p.as_array()) {
+                    for pkg in packages {
+                        let name = pkg.get("name").and_then(|n| n.as_str()).unwrap_or_default();
+                        let version = pkg
+                            .get("versionInfo")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default();
+
+                        let mut matched_purl = None;
+                        if let Some(refs) = pkg.get("externalRefs").and_then(|r| r.as_array()) {
+                            for r in refs {
+                                if r.get("referenceType").and_then(|t| t.as_str()) == Some("purl") {
+                                    if let Some(locator) =
+                                        r.get("referenceLocator").and_then(|l| l.as_str())
+                                    {
+                                        if let Some(parsed) = Self::parse_purl(locator) {
+                                            matched_purl = Some(parsed);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if let Some((pname, pver, eco)) = matched_purl {
+                            list.push(DiscoveredPackage {
+                                file_path: path.to_path_buf(),
+                                name: pname,
+                                version: pver,
+                                ecosystem: eco,
+                                target_kind: TargetKind::SpdxSbom,
+                            });
+                        } else if !name.is_empty() && !version.is_empty() {
+                            if let Some(cleaned) = Self::clean_version(version) {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: name.to_string(),
+                                    version: cleaned,
+                                    ecosystem: "npm",
+                                    target_kind: TargetKind::SpdxSbom,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    pub fn extract_package_lock_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                if let Some(packages) = val.get("packages").and_then(|p| p.as_object()) {
+                    for (pkg_path, details) in packages {
+                        if pkg_path.is_empty() || !pkg_path.contains("node_modules/") {
+                            continue;
+                        }
+                        let name = pkg_path.rsplit("node_modules/").next().unwrap_or(pkg_path);
+                        if let Some(ver) = details.get("version").and_then(|v| v.as_str()) {
+                            if let Some(cleaned) = Self::clean_version(ver) {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: name.to_string(),
+                                    version: cleaned,
+                                    ecosystem: "npm",
+                                    target_kind: TargetKind::NodeLockfile,
+                                });
+                            }
+                        }
+                    }
+                }
+                if list.is_empty() {
+                    if let Some(deps) = val.get("dependencies").and_then(|d| d.as_object()) {
+                        for (name, details) in deps {
+                            if let Some(ver) = details.get("version").and_then(|v| v.as_str()) {
+                                if let Some(cleaned) = Self::clean_version(ver) {
+                                    list.push(DiscoveredPackage {
+                                        file_path: path.to_path_buf(),
+                                        name: name.clone(),
+                                        version: cleaned,
+                                        ecosystem: "npm",
+                                        target_kind: TargetKind::NodeLockfile,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    pub fn extract_composer_lock_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                let sections = ["packages", "packages-dev"];
+                for sec in sections {
+                    if let Some(pkgs) = val.get(sec).and_then(|p| p.as_array()) {
+                        for pkg in pkgs {
+                            let name_opt = pkg.get("name").and_then(|n| n.as_str());
+                            let ver_opt = pkg.get("version").and_then(|v| v.as_str());
+                            if let (Some(name), Some(ver)) = (name_opt, ver_opt) {
+                                if name.starts_with("php") || name.starts_with("ext-") {
+                                    continue;
+                                }
+                                if let Some(cleaned) = Self::clean_version(ver) {
+                                    list.push(DiscoveredPackage {
+                                        file_path: path.to_path_buf(),
+                                        name: name.to_string(),
+                                        version: cleaned,
+                                        ecosystem: "Packagist",
+                                        target_kind: TargetKind::ComposerLockfile,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    pub fn extract_yarn_lock_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            let mut current_pkg = None;
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.is_empty() || trimmed.starts_with('#') {
+                    continue;
+                }
+                if !line.starts_with(' ') && !line.starts_with('\t') {
+                    let header = trimmed.trim_end_matches(':');
+                    let first = header
+                        .split(',')
+                        .next()
+                        .unwrap_or(header)
+                        .trim()
+                        .trim_matches('"');
+                    if let Some((name, _)) = first.rsplit_once('@') {
+                        if !name.is_empty() {
+                            current_pkg = Some(name.to_string());
+                        }
+                    }
+                } else if let Some(pkg_name) = current_pkg.as_ref() {
+                    if let Some(stripped) = trimmed.strip_prefix("version ") {
+                        let ver = stripped.trim().trim_matches('"');
+                        if let Some(cleaned) = Self::clean_version(ver) {
+                            list.push(DiscoveredPackage {
+                                file_path: path.to_path_buf(),
+                                name: pkg_name.clone(),
+                                version: cleaned,
+                                ecosystem: "npm",
+                                target_kind: TargetKind::NodeLockfile,
+                            });
+                        }
+                        current_pkg = None;
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    pub fn extract_pnpm_lock_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            let mut in_packages = false;
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed == "packages:" {
+                    in_packages = true;
+                    continue;
+                }
+                if in_packages {
+                    if !line.starts_with(' ') && !trimmed.is_empty() {
+                        in_packages = false;
+                        continue;
+                    }
+                    if line.starts_with("  /")
+                        || line.starts_with("  '")
+                        || line.starts_with("  \"")
+                    {
+                        let entry = trimmed
+                            .trim_start_matches('/')
+                            .trim_matches('\'')
+                            .trim_matches('"')
+                            .trim_end_matches(':');
+                        if let Some((name, ver)) = entry.rsplit_once('@') {
+                            let clean_ver = ver.split('(').next().unwrap_or(ver).trim();
+                            if let Some(cleaned) = Self::clean_version(clean_ver) {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: name.to_string(),
+                                    version: cleaned,
+                                    ecosystem: "npm",
+                                    target_kind: TargetKind::NodeLockfile,
+                                });
+                            }
                         }
                     }
                 }
@@ -550,26 +882,50 @@ impl OsvClient {
                 .unwrap_or_else(|| "Check upstream advisory for fixed version".into());
 
             let remediation = if let Some(ref fix) = fixed_version {
-                format!("Upgrade {} from {} to {} in {}", pkg.name, pkg.version, fix, pkg.file_path.display())
+                format!(
+                    "Upgrade {} from {} to {} in {}",
+                    pkg.name,
+                    pkg.version,
+                    fix,
+                    pkg.file_path.display()
+                )
             } else {
-                format!("Inspect advisory {} and update {} to patched release", primary_id, pkg.name)
+                format!(
+                    "Inspect advisory {} and update {} to patched release",
+                    primary_id, pkg.name
+                )
             };
 
-            findings.push(Finding {
-                id: format!("osv-{}-{}", vuln.id, pkg.name),
-                cve: CveId::Custom {
-                    id: primary_id,
+            let mut finding = Finding::new(
+                format!("osv-{}-{}", vuln.id, pkg.name),
+                CveId::Custom {
+                    id: primary_id.clone(),
                     title: summary,
                 },
                 severity,
-                target_kind: pkg.target_kind.clone(),
-                file_path: Some(pkg.file_path.clone()),
-                line_number: None,
-                detected_version_or_pattern: format!("{} @ {} ({})", pkg.name, pkg.version, pkg.ecosystem),
+                pkg.target_kind.clone(),
+                Some(pkg.file_path.clone()),
+                None,
+                format!("{} @ {} ({})", pkg.name, pkg.version, pkg.ecosystem),
                 safe_threshold,
-                description: vuln.details.unwrap_or_else(|| "No extended advisory details provided.".into()),
-                suggested_remediation: remediation,
-            });
+                vuln.details
+                    .unwrap_or_else(|| "No extended advisory details provided.".into()),
+                remediation,
+            );
+            finding.detector_id = "osv-dev".to_string();
+            finding.package_source = Some(pkg.ecosystem.to_string());
+            finding.component_identity = pkg.name.clone();
+            finding.installed_build = Some(pkg.version.clone());
+            finding.advisory_ids = if vuln.aliases.is_empty() {
+                vec![vuln.id.clone()]
+            } else {
+                vuln.aliases.clone()
+            };
+            finding.affectedness = Affectedness::ConfirmedAffected;
+            finding.reachability = Reachability::PotentiallyReachable;
+            finding.confidence = Confidence::High;
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
         Ok(findings)

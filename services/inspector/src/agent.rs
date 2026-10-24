@@ -1,6 +1,6 @@
-use std::path::Path;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::path::Path;
 use thiserror::Error;
 
 use rig::completion::{CompletionRequest, ToolDefinition};
@@ -209,8 +209,12 @@ impl Tool for ProcessMemoryAuditTool {
         _context: &mut ToolContext,
         args: Self::Args,
     ) -> Result<Self::Output, Self::Error> {
-        let finding = ProcessMemoryAuditor::audit_process(args.pid)
-            .map_err(|e| AgentSecurityError::ToolExecution(format!("Memory audit failed for PID {}: {}", args.pid, e)))?;
+        let finding = ProcessMemoryAuditor::audit_process(args.pid).map_err(|e| {
+            AgentSecurityError::ToolExecution(format!(
+                "Memory audit failed for PID {}: {}",
+                args.pid, e
+            ))
+        })?;
 
         Ok(ProcessMemoryOutput {
             pid: finding.pid,
@@ -389,19 +393,44 @@ impl Default for AgentModelConfig {
     fn default() -> Self {
         // Automatically check environment variables
         let (provider, model, base_url, key) = if let Ok(k) = std::env::var("DEEPSEEK_API_KEY") {
-            (ModelProvider::DeepSeek, "deepseek-chat".to_string(), None, Some(k))
+            (
+                ModelProvider::DeepSeek,
+                "deepseek-chat".to_string(),
+                None,
+                Some(k),
+            )
         } else if let Ok(k) = std::env::var("MOONSHOT_API_KEY") {
             (ModelProvider::Kimi, "kimi-k3".to_string(), None, Some(k))
         } else if let Ok(k) = std::env::var("MINIMAX_API_KEY") {
-            (ModelProvider::MiniMax, "MiniMax-M3".to_string(), None, Some(k))
+            (
+                ModelProvider::MiniMax,
+                "MiniMax-M3".to_string(),
+                None,
+                Some(k),
+            )
         } else if let Ok(k) = std::env::var("ANTHROPIC_API_KEY") {
-            (ModelProvider::Claude, "claude-3-5-sonnet-20241022".to_string(), None, Some(k))
+            (
+                ModelProvider::Claude,
+                "claude-3-5-sonnet-20241022".to_string(),
+                None,
+                Some(k),
+            )
         } else if let Ok(k) = std::env::var("GEMINI_API_KEY") {
-            (ModelProvider::Gemini, "gemini-2.5-flash".to_string(), None, Some(k))
+            (
+                ModelProvider::Gemini,
+                "gemini-2.5-flash".to_string(),
+                None,
+                Some(k),
+            )
         } else if let Ok(k) = std::env::var("OPENAI_API_KEY") {
             (ModelProvider::OpenAi, "gpt-4o".to_string(), None, Some(k))
         } else if let Ok(url) = std::env::var("OLLAMA_API_BASE_URL") {
-            (ModelProvider::Ollama, "llama3.3".to_string(), Some(url), None)
+            (
+                ModelProvider::Ollama,
+                "llama3.3".to_string(),
+                Some(url),
+                None,
+            )
         } else {
             (
                 ModelProvider::DeterministicHeuristic,
@@ -507,10 +536,7 @@ impl AgenticSecuritySupervisor {
 
     /// Invokes the configured LLM provider (Kimi, MiniMax, DeepSeek, Claude, Gemini, OpenAI, Ollama, Open-Weights)
     /// to reason dynamically about complex multi-stage attack chains or incident forensics.
-    pub async fn run_model_reasoning(
-        &self,
-        prompt: &str,
-    ) -> Result<String, AgentSecurityError> {
+    pub async fn run_model_reasoning(&self, prompt: &str) -> Result<String, AgentSecurityError> {
         let key = self.config.api_key.clone().unwrap_or_default();
         let model = &self.config.model_name;
         let req = CompletionRequest::new(prompt);
@@ -520,61 +546,73 @@ impl AgenticSecuritySupervisor {
                 let client = if !key.is_empty() {
                     rig::providers::deepseek::new(key)
                 } else {
-                    rig::providers::deepseek::from_env()
-                        .map_err(|e| AgentSecurityError::Provider(format!("DeepSeek config error: {}", e)))?
+                    rig::providers::deepseek::from_env().map_err(|e| {
+                        AgentSecurityError::Provider(format!("DeepSeek config error: {}", e))
+                    })?
                 };
-                let resp = client.chat(model).call(req).await
-                    .map_err(|e| AgentSecurityError::Provider(format!("DeepSeek call error: {}", e)))?;
+                let resp = client.chat(model).call(req).await.map_err(|e| {
+                    AgentSecurityError::Provider(format!("DeepSeek call error: {}", e))
+                })?;
                 Ok(resp.text())
             }
             ModelProvider::Kimi => {
                 let client = if !key.is_empty() {
                     rig::providers::moonshot::new(key)
                 } else {
-                    rig::providers::moonshot::from_env()
-                        .map_err(|e| AgentSecurityError::Provider(format!("Kimi/Moonshot config error: {}", e)))?
+                    rig::providers::moonshot::from_env().map_err(|e| {
+                        AgentSecurityError::Provider(format!("Kimi/Moonshot config error: {}", e))
+                    })?
                 };
-                let resp = client.chat(model).call(req).await
-                    .map_err(|e| AgentSecurityError::Provider(format!("Kimi call error: {}", e)))?;
+                let resp =
+                    client.chat(model).call(req).await.map_err(|e| {
+                        AgentSecurityError::Provider(format!("Kimi call error: {}", e))
+                    })?;
                 Ok(resp.text())
             }
             ModelProvider::MiniMax => {
                 let client = if !key.is_empty() {
                     rig::providers::minimax::new(key)
                 } else {
-                    rig::providers::minimax::from_env()
-                        .map_err(|e| AgentSecurityError::Provider(format!("MiniMax config error: {}", e)))?
+                    rig::providers::minimax::from_env().map_err(|e| {
+                        AgentSecurityError::Provider(format!("MiniMax config error: {}", e))
+                    })?
                 };
-                let resp = client.chat(model).call(req).await
-                    .map_err(|e| AgentSecurityError::Provider(format!("MiniMax call error: {}", e)))?;
+                let resp = client.chat(model).call(req).await.map_err(|e| {
+                    AgentSecurityError::Provider(format!("MiniMax call error: {}", e))
+                })?;
                 Ok(resp.text())
             }
             ModelProvider::Claude => {
                 let client = if !key.is_empty() {
                     rig::providers::anthropic::Anthropic::new(key)
                 } else {
-                    rig::providers::anthropic::Anthropic::from_env()
-                        .map_err(|e| AgentSecurityError::Provider(format!("Anthropic config error: {}", e)))?
+                    rig::providers::anthropic::Anthropic::from_env().map_err(|e| {
+                        AgentSecurityError::Provider(format!("Anthropic config error: {}", e))
+                    })?
                 };
-                let resp = client.completion(model).call(req).await
-                    .map_err(|e| AgentSecurityError::Provider(format!("Anthropic call error: {}", e)))?;
+                let resp = client.completion(model).call(req).await.map_err(|e| {
+                    AgentSecurityError::Provider(format!("Anthropic call error: {}", e))
+                })?;
                 Ok(resp.text())
             }
             ModelProvider::Gemini => {
                 let client = if !key.is_empty() {
                     rig::providers::gemini::Gemini::new(key)
                 } else {
-                    rig::providers::gemini::Gemini::from_env()
-                        .map_err(|e| AgentSecurityError::Provider(format!("Gemini config error: {}", e)))?
+                    rig::providers::gemini::Gemini::from_env().map_err(|e| {
+                        AgentSecurityError::Provider(format!("Gemini config error: {}", e))
+                    })?
                 };
-                let resp = client.completion(model).call(req).await
-                    .map_err(|e| AgentSecurityError::Provider(format!("Gemini call error: {}", e)))?;
+                let resp = client.completion(model).call(req).await.map_err(|e| {
+                    AgentSecurityError::Provider(format!("Gemini call error: {}", e))
+                })?;
                 Ok(resp.text())
             }
             ModelProvider::Ollama => {
                 let client = rig::providers::ollama::Ollama::new();
-                let resp = client.completion(model).call(req).await
-                    .map_err(|e| AgentSecurityError::Provider(format!("Ollama call error: {}", e)))?;
+                let resp = client.completion(model).call(req).await.map_err(|e| {
+                    AgentSecurityError::Provider(format!("Ollama call error: {}", e))
+                })?;
                 Ok(resp.text())
             }
             ModelProvider::OpenAi | ModelProvider::OpenWeightsCompatible => {
@@ -583,13 +621,15 @@ impl AgenticSecuritySupervisor {
                     config = config.with_base_url(base_url);
                 }
                 let client = config.client();
-                let resp = client.chat(model).call(req).await
-                    .map_err(|e| AgentSecurityError::Provider(format!("OpenAI/Compatible call error: {}", e)))?;
+                let resp = client.chat(model).call(req).await.map_err(|e| {
+                    AgentSecurityError::Provider(format!("OpenAI/Compatible call error: {}", e))
+                })?;
                 Ok(resp.text())
             }
-            ModelProvider::DeterministicHeuristic => {
-                Ok("Deterministic Heuristic Engine active: Zero-latency air-gapped evaluation.".to_string())
-            }
+            ModelProvider::DeterministicHeuristic => Ok(
+                "Deterministic Heuristic Engine active: Zero-latency air-gapped evaluation."
+                    .to_string(),
+            ),
         }
     }
 
@@ -632,18 +672,32 @@ impl AgenticSecuritySupervisor {
         // 3. Determine vulnerability tag from binary/memory findings or incident context
         let vuln_id = if let Some(ref b) = binary_res {
             if !b.unsafe_symbols_found.is_empty() {
-                b.unsafe_symbols_found[0].split(':').next().unwrap_or("CVE-2026-109618").trim().to_string()
+                b.unsafe_symbols_found[0]
+                    .split(':')
+                    .next()
+                    .unwrap_or("CVE-2026-109618")
+                    .trim()
+                    .to_string()
             } else {
-                context.cve_hint.clone().unwrap_or_else(|| "GENERIC_ANOMALY".to_string())
+                context
+                    .cve_hint
+                    .clone()
+                    .unwrap_or_else(|| "GENERIC_ANOMALY".to_string())
             }
         } else if let Some(ref m) = mem_res {
             if m.is_exposed {
                 "CVE-2026-109618".to_string()
             } else {
-                context.cve_hint.clone().unwrap_or_else(|| "GENERIC_ANOMALY".to_string())
+                context
+                    .cve_hint
+                    .clone()
+                    .unwrap_or_else(|| "GENERIC_ANOMALY".to_string())
             }
         } else {
-            context.cve_hint.clone().unwrap_or_else(|| "GENERIC_ANOMALY".to_string())
+            context
+                .cve_hint
+                .clone()
+                .unwrap_or_else(|| "GENERIC_ANOMALY".to_string())
         };
 
         let target_comp = if let Some(ref b) = binary_res {
@@ -680,13 +734,12 @@ impl AgenticSecuritySupervisor {
         // 6. Synthesis Narrative (Dynamic multi-model reasoning with deterministic air-gapped fallback)
         let root_cause = format!(
             "Incident {} alerted by {}: {}. Vulnerability classification: {}.",
-            context.incident_id,
-            context.alert_source,
-            context.anomaly_description,
-            vuln_id
+            context.incident_id, context.alert_source, context.anomaly_description, vuln_id
         );
 
-        let synthesized_remediation = if self.config.provider != ModelProvider::DeterministicHeuristic {
+        let synthesized_remediation = if self.config.provider
+            != ModelProvider::DeterministicHeuristic
+        {
             let prompt = format!(
                 "You are an Autonomous Cyber Security Principal Architect and Systems Engineer.\n\
                  Incident Context: ID={}, Source={}, Anomaly={}, Classification={}.\n\
@@ -694,8 +747,13 @@ impl AgenticSecuritySupervisor {
                  Memory Findings: {:?}\n\
                  Virtual Patch Proposal: {:?}\n\
                  Provide an authoritative, technical, zero-fluff incident response diagnosis and remediation directives.",
-                context.incident_id, context.alert_source, context.anomaly_description, vuln_id,
-                binary_res, mem_res, patch_res
+                context.incident_id,
+                context.alert_source,
+                context.anomaly_description,
+                vuln_id,
+                binary_res,
+                mem_res,
+                patch_res
             );
             match self.run_model_reasoning(&prompt).await {
                 Ok(reasoning) if !reasoning.trim().is_empty() => reasoning,
@@ -710,7 +768,8 @@ impl AgenticSecuritySupervisor {
                             p.safe_rollback_procedure
                         )
                     } else {
-                        "Apply safe system quarantine and review system process integrity.".to_string()
+                        "Apply safe system quarantine and review system process integrity."
+                            .to_string()
                     }
                 }
             }

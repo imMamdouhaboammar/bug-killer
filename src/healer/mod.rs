@@ -1,16 +1,20 @@
+pub mod approval;
 pub mod backup;
-pub mod virtual_patch;
 pub mod manifest_patch;
-pub mod source_patch;
 pub mod rollback;
+pub mod source_patch;
+pub mod virtual_patch;
 
-use std::path::{Path, PathBuf};
-use crate::types::*;
-use crate::rules::{RuleEngine, VulnerabilityRule};
+#[allow(unused_imports)]
+pub use approval::{ApprovalManager, ApprovalReceipt};
+
 use self::backup::BackupManager;
-use self::virtual_patch::VirtualPatcher;
 use self::manifest_patch::ManifestPatcher;
 use self::source_patch::SourcePatcher;
+use self::virtual_patch::VirtualPatcher;
+use crate::rules::{RuleEngine, VulnerabilityRule};
+use crate::types::*;
+use std::path::{Path, PathBuf};
 
 pub struct AutopilotHealer;
 
@@ -22,7 +26,10 @@ impl AutopilotHealer {
     }
 
     /// Generates healing plan using an explicit set of rules.
-    pub fn plan_healing_with_rules(report: &ScanReport, rules: &[VulnerabilityRule]) -> Vec<PatchAction> {
+    pub fn plan_healing_with_rules(
+        report: &ScanReport,
+        rules: &[VulnerabilityRule],
+    ) -> Vec<PatchAction> {
         let mut plan = Vec::new();
 
         for finding in &report.findings {
@@ -32,11 +39,17 @@ impl AutopilotHealer {
             };
 
             // 1. Check if finding originated from a dynamic rule
-            if let CveId::Custom { id: ref rule_id, .. } = finding.cve {
+            if let CveId::Custom {
+                id: ref rule_id, ..
+            } = finding.cve
+            {
                 if let Some(rule) = rules.iter().find(|r| &r.id == rule_id) {
                     if let Ok(content) = std::fs::read_to_string(path) {
                         if let Some(action) = RuleEngine::plan_patch(path, &content, rule) {
-                            if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                            if !plan
+                                .iter()
+                                .any(|a: &PatchAction| a.target_file == action.target_file)
+                            {
                                 plan.push(action);
                                 continue;
                             }
@@ -48,25 +61,42 @@ impl AutopilotHealer {
             // 2. Check if finding originated from OSV database (id starts with "osv-")
             if finding.id.starts_with("osv-") {
                 if let Some(fix_ver) = finding.safe_threshold.strip_prefix("Upgrade to >= ") {
-                    let pkg_name = finding.detected_version_or_pattern.split('@').next().unwrap_or("").trim();
+                    let pkg_name = finding
+                        .detected_version_or_pattern
+                        .split('@')
+                        .next()
+                        .unwrap_or("")
+                        .trim();
                     if !pkg_name.is_empty() {
                         let action = match finding.target_kind {
                             TargetKind::NodePackageManifest => {
-                                ManifestPatcher::plan_generic_npm_dependency_bump(path, pkg_name, fix_ver)
+                                ManifestPatcher::plan_generic_npm_dependency_bump(
+                                    path, pkg_name, fix_ver,
+                                )
                             }
-                            TargetKind::GenericConfigFile if path.file_name().and_then(|s| s.to_str()) == Some("requirements.txt") => {
-                                ManifestPatcher::plan_generic_python_requirements_bump(path, pkg_name, fix_ver)
+                            TargetKind::GenericConfigFile
+                                if path.file_name().and_then(|s| s.to_str())
+                                    == Some("requirements.txt") =>
+                            {
+                                ManifestPatcher::plan_generic_python_requirements_bump(
+                                    path, pkg_name, fix_ver,
+                                )
                             }
                             TargetKind::GoModManifest => {
                                 ManifestPatcher::plan_generic_go_mod_bump(path, pkg_name, fix_ver)
                             }
                             TargetKind::DotnetCsprojManifest => {
-                                ManifestPatcher::plan_generic_dotnet_csproj_bump(path, pkg_name, fix_ver)
+                                ManifestPatcher::plan_generic_dotnet_csproj_bump(
+                                    path, pkg_name, fix_ver,
+                                )
                             }
                             _ => None,
                         };
                         if let Some(act) = action {
-                            if !plan.iter().any(|a: &PatchAction| a.target_file == act.target_file) {
+                            if !plan
+                                .iter()
+                                .any(|a: &PatchAction| a.target_file == act.target_file)
+                            {
                                 plan.push(act);
                                 continue;
                             }
@@ -79,35 +109,50 @@ impl AutopilotHealer {
             match finding.target_kind {
                 TargetKind::NginxConfig => {
                     if let Some(action) = VirtualPatcher::plan_nginx_patch(path) {
-                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                        if !plan
+                            .iter()
+                            .any(|a: &PatchAction| a.target_file == action.target_file)
+                        {
                             plan.push(action);
                         }
                     }
                 }
                 TargetKind::NodePackageManifest => {
                     if let Some(action) = ManifestPatcher::plan_package_json_patch(path) {
-                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                        if !plan
+                            .iter()
+                            .any(|a: &PatchAction| a.target_file == action.target_file)
+                        {
                             plan.push(action);
                         }
                     }
                 }
                 TargetKind::ComposerManifest => {
                     if let Some(action) = ManifestPatcher::plan_composer_json_patch(path) {
-                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                        if !plan
+                            .iter()
+                            .any(|a: &PatchAction| a.target_file == action.target_file)
+                        {
                             plan.push(action);
                         }
                     }
                 }
                 TargetKind::Dockerfile => {
                     if let Some(action) = ManifestPatcher::plan_dockerfile_patch(path) {
-                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                        if !plan
+                            .iter()
+                            .any(|a: &PatchAction| a.target_file == action.target_file)
+                        {
                             plan.push(action);
                         }
                     }
                 }
                 TargetKind::NodeSourceFile => {
                     if let Some(action) = SourcePatcher::plan_express_guard_patch(path) {
-                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                        if !plan
+                            .iter()
+                            .any(|a: &PatchAction| a.target_file == action.target_file)
+                        {
                             plan.push(action);
                         }
                     }
@@ -120,7 +165,10 @@ impl AutopilotHealer {
     }
 
     /// Executes the healing plan atomically: creates backup, replaces file contents, and verifies write.
-    pub fn execute_healing(root: &Path, actions: &[PatchAction]) -> Result<(BackupManifest, usize), String> {
+    pub fn execute_healing(
+        root: &Path,
+        actions: &[PatchAction],
+    ) -> Result<(BackupManifest, usize), String> {
         if actions.is_empty() {
             return Err("No healing actions to execute".into());
         }
@@ -130,21 +178,49 @@ impl AutopilotHealer {
             .map_err(|e| format!("Failed to create safety backup: {}", e))?;
 
         let mut applied_count = 0;
+        let mut apply_error = None;
 
         for action in actions {
             // Write atomically via tempfile
             let parent_dir = action.target_file.parent().unwrap_or(root);
-            let mut temp = tempfile::NamedTempFile::new_in(parent_dir)
-                .map_err(|e| format!("Failed to create temporary file: {}", e))?;
+            let write_res = (|| -> Result<(), String> {
+                let mut temp = tempfile::NamedTempFile::new_in(parent_dir)
+                    .map_err(|e| format!("Failed to create temporary file: {}", e))?;
 
-            use std::io::Write;
-            temp.write_all(action.replacement_content.as_bytes())
-                .map_err(|e| format!("Failed to write replacement content: {}", e))?;
+                use std::io::Write;
+                temp.write_all(action.replacement_content.as_bytes())
+                    .map_err(|e| format!("Failed to write replacement content: {}", e))?;
 
-            temp.persist(&action.target_file)
-                .map_err(|e| format!("Failed to atomically persist {:?}: {}", action.target_file, e))?;
+                temp.persist(&action.target_file).map_err(|e| {
+                    format!(
+                        "Failed to atomically persist {:?}: {}",
+                        action.target_file, e
+                    )
+                })?;
+                Ok(())
+            })();
 
-            applied_count += 1;
+            match write_res {
+                Ok(()) => {
+                    applied_count += 1;
+                }
+                Err(e) => {
+                    apply_error = Some(e);
+                    break;
+                }
+            }
+        }
+
+        if let Some(err) = apply_error {
+            // Multi-file Transaction Safety: Rollback any partially applied changes
+            if applied_count > 0 {
+                let _ =
+                    crate::healer::rollback::RollbackManager::rollback(root, &manifest.backup_id);
+            }
+            return Err(format!(
+                "Multi-file healing transaction aborted: {}. All {} intermediate changes safely rolled back.",
+                err, applied_count
+            ));
         }
 
         Ok((manifest, applied_count))

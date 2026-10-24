@@ -49,9 +49,21 @@ func NewStatefulHealerServer(backupDir string) (*StatefulHealerServer, error) {
 		return nil, fmt.Errorf("failed to initialize backup directory %s: %w", backupDir, err)
 	}
 
-	pub, priv, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate ed25519 agent identity key: %w", err)
+	keyPath := filepath.Join(backupDir, "agent_identity.key")
+	var pub ed25519.PublicKey
+	var priv ed25519.PrivateKey
+	if data, err := os.ReadFile(keyPath); err == nil && len(data) == ed25519.PrivateKeySize {
+		priv = ed25519.PrivateKey(data)
+		pub = priv.Public().(ed25519.PublicKey)
+	} else {
+		var err error
+		pub, priv, err = ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate ed25519 agent identity key: %w", err)
+		}
+		if err := os.WriteFile(keyPath, priv, 0600); err != nil {
+			return nil, fmt.Errorf("failed to persist agent identity key: %w", err)
+		}
 	}
 
 	return &StatefulHealerServer{

@@ -47,6 +47,7 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-i+[Surveillance polling interval in seconds (default\: 3)]:INTERVAL:_default' \
 '--interval=[Surveillance polling interval in seconds (default\: 3)]:INTERVAL:_default' \
+'--rules=[Custom path to rules directory or JSON rule file]:RULES:_files' \
 '--auto-heal[Automatically apply safe healing patches upon detecting vulnerabilities]' \
 '-h[Print help]' \
 '--help[Print help]' \
@@ -62,8 +63,29 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (scan)
 _arguments "${_arguments_options[@]}" : \
+'--rules=[Custom path to rules directory or JSON rule file]:RULES:_files' \
 '--json[Output results as JSON]' \
 '--check-runtime[Also inspect host binary runtimes (php, node) on PATH]' \
+'--osv[Also query free open vulnerability database (OSV.dev) for dependencies]' \
+'--taint[Also perform scope-aware taint analysis on source code]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(probe)
+_arguments "${_arguments_options[@]}" : \
+'-t+[Request timeout in seconds (default\: 10)]:TIMEOUT:_default' \
+'--timeout=[Request timeout in seconds (default\: 10)]:TIMEOUT:_default' \
+'--json[Output diagnostic probe report as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':url -- Target URL (e.g. http\://localhost\:8080 or https\://example.com):_default' \
+&& ret=0
+;;
+(osv)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output results as JSON]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '::path -- Target directory path (default\: current directory):_files' \
@@ -71,8 +93,11 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (heal)
 _arguments "${_arguments_options[@]}" : \
+'--rules=[Custom path to rules directory or JSON rule file]:RULES:_files' \
 '--dry-run[Show planned patches and diffs without modifying files]' \
-'--auto-apply[Automatically apply all safe patches without confirmation]' \
+'--apply[Apply planned safe patches to filesystem (Default\: false, plan-only mode)]' \
+'--auto-apply[Automatically apply all safe patches (Alias for --apply, Default\: false)]' \
+'--osv[Include OSV open vulnerability database findings in healing]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '::path -- Target directory path (default\: current directory):_files' \
@@ -99,6 +124,174 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 ':cve_id -- CVE identifier (e.g. CVE-2026-109618, CVE-2026-109619, CVE-2026-111497):_default' \
 && ret=0
+;;
+(agent)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__agent_commands" \
+"*::: :->agent" \
+&& ret=0
+
+    case $state in
+    (agent)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-agent-command-$line[1]:"
+        case $line[1] in
+            (doctor)
+_arguments "${_arguments_options[@]}" : \
+'--provider=[Provider name (local, openai, deepseek, kimi, minimax, claude, gemini, ollama)]:PROVIDER:_default' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(investigate)
+_arguments "${_arguments_options[@]}" : \
+'--provider=[Provider name (local, deepseek, kimi, minimax, claude, gemini, openai, ollama)]:PROVIDER:_default' \
+'--model=[Model identifier override (e.g. deepseek-chat, gpt-4o, llama3.3)]:MODEL:_default' \
+'--mode=[Execution mode (strictly read-only)]:MODE:_default' \
+'--max-steps=[Maximum investigation steps before terminal halt (default\: 24)]:MAX_STEPS:_default' \
+'--export-profile=[Approved export profile name for remote providers (required if allow_remote_data_export is true)]:EXPORT_PROFILE:_default' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__agent__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-agent-help-command-$line[1]:"
+        case $line[1] in
+            (doctor)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(investigate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(evidence)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':finding_id -- Finding ID or fingerprint prefix:_default' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(plan)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':finding_id -- Finding ID or fingerprint prefix:_default' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(approve)
+_arguments "${_arguments_options[@]}" : \
+'--approver=[Operator email or identity key]:APPROVER:_default' \
+'--validity-mins=[Validity duration in minutes (default\: 60)]:VALIDITY_MINS:_default' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':plan_id -- Finding ID or plan identifier to approve:_default' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(apply)
+_arguments "${_arguments_options[@]}" : \
+'--approval-file=[Explicit path to operator approval receipt file]:APPROVAL_FILE:_files' \
+'-h[Print help]' \
+'--help[Print help]' \
+':plan_id -- Finding ID or plan identifier to apply:_default' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(mcp)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__mcp_commands" \
+"*::: :->mcp" \
+&& ret=0
+
+    case $state in
+    (mcp)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-mcp-command-$line[1]:"
+        case $line[1] in
+            (serve)
+_arguments "${_arguments_options[@]}" : \
+'--transport=[Transport protocol (stdio)]:TRANSPORT:_default' \
+'--read-only[Run in strictly read-only mode prohibiting state mutations (default\: true)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Root workspace directory (default\: current directory):_files' \
+&& ret=0
+;;
+(config)
+_arguments "${_arguments_options[@]}" : \
+'--host=[Target host agent (claude, codex, gemini, all)]:HOST:_default' \
+'--binary=[Custom path to bug-killer binary]:BINARY:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__mcp__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-mcp-help-command-$line[1]:"
+        case $line[1] in
+            (serve)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(config)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
@@ -132,6 +325,14 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(probe)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(osv)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (heal)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
@@ -147,6 +348,70 @@ _arguments "${_arguments_options[@]}" : \
 (cve-info)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
+;;
+(agent)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__agent_commands" \
+"*::: :->agent" \
+&& ret=0
+
+    case $state in
+    (agent)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-agent-command-$line[1]:"
+        case $line[1] in
+            (doctor)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(investigate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(evidence)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(plan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(approve)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(apply)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(mcp)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__mcp_commands" \
+"*::: :->mcp" \
+&& ret=0
+
+    case $state in
+    (mcp)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-mcp-command-$line[1]:"
+        case $line[1] in
+            (serve)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(config)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
@@ -169,13 +434,74 @@ _bug-killer_commands() {
 'watch:Start live surveillance monitoring filesystem for security regressions' \
 'completion:Generate shell auto-completion script for bash, zsh, fish, or powershell' \
 'scan:Scan target directories and systems for PHP2Shell (CVE-2026-109618, CVE-2026-109619) and Node2Shell (CVE-2026-111497)' \
+'probe:Defensively probe a live web application endpoint for security posture, headers, and disclosures' \
+'osv:Query open-source vulnerability database (https\://osv.dev) for dependencies across npm, Packagist, PyPI, and crates.io' \
 'heal:Plan and automatically heal vulnerable configurations, Dockerfiles, manifests, and web servers' \
 'rollback:Roll back an applied healing session using a backup ID' \
 'history:List all healing snapshots and backups' \
 'cve-info:Display deep technical teardown and remediation blueprint for a specific CVE' \
+'agent:Model-agnostic AI agent investigation and capability diagnostics' \
+'evidence:Retrieve full evidence receipts and cryptographic hashes for a specific finding' \
+'plan:Plan a prospective, non-mutating repair for a finding with cryptographic diff hash' \
+'approve:Issue an operator approval receipt for a planned remediation' \
+'apply:Apply an approved prospective remediation plan with operator approval verification' \
+'mcp:Model Context Protocol (MCP) server and integration commands' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'bug-killer commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__agent_commands] )) ||
+_bug-killer__subcmd__agent_commands() {
+    local commands; commands=(
+'doctor:Inspect configured model provider capability and health without leaking secrets' \
+'investigate:Run bounded read-only autonomous investigation loop over target workspace' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer agent commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__agent__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__agent__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer agent doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__agent__subcmd__help_commands] )) ||
+_bug-killer__subcmd__agent__subcmd__help_commands() {
+    local commands; commands=(
+'doctor:Inspect configured model provider capability and health without leaking secrets' \
+'investigate:Run bounded read-only autonomous investigation loop over target workspace' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer agent help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__agent__subcmd__help__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__agent__subcmd__help__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer agent help doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__agent__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__agent__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer agent help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__agent__subcmd__help__subcmd__investigate_commands] )) ||
+_bug-killer__subcmd__agent__subcmd__help__subcmd__investigate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer agent help investigate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__agent__subcmd__investigate_commands] )) ||
+_bug-killer__subcmd__agent__subcmd__investigate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer agent investigate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__apply_commands] )) ||
+_bug-killer__subcmd__apply_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer apply commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__approve_commands] )) ||
+_bug-killer__subcmd__approve_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer approve commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__completion_commands] )) ||
 _bug-killer__subcmd__completion_commands() {
@@ -192,6 +518,11 @@ _bug-killer__subcmd__doctor_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer doctor commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__evidence_commands] )) ||
+_bug-killer__subcmd__evidence_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer evidence commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__heal_commands] )) ||
 _bug-killer__subcmd__heal_commands() {
     local commands; commands=()
@@ -205,13 +536,49 @@ _bug-killer__subcmd__help_commands() {
 'watch:Start live surveillance monitoring filesystem for security regressions' \
 'completion:Generate shell auto-completion script for bash, zsh, fish, or powershell' \
 'scan:Scan target directories and systems for PHP2Shell (CVE-2026-109618, CVE-2026-109619) and Node2Shell (CVE-2026-111497)' \
+'probe:Defensively probe a live web application endpoint for security posture, headers, and disclosures' \
+'osv:Query open-source vulnerability database (https\://osv.dev) for dependencies across npm, Packagist, PyPI, and crates.io' \
 'heal:Plan and automatically heal vulnerable configurations, Dockerfiles, manifests, and web servers' \
 'rollback:Roll back an applied healing session using a backup ID' \
 'history:List all healing snapshots and backups' \
 'cve-info:Display deep technical teardown and remediation blueprint for a specific CVE' \
+'agent:Model-agnostic AI agent investigation and capability diagnostics' \
+'evidence:Retrieve full evidence receipts and cryptographic hashes for a specific finding' \
+'plan:Plan a prospective, non-mutating repair for a finding with cryptographic diff hash' \
+'approve:Issue an operator approval receipt for a planned remediation' \
+'apply:Apply an approved prospective remediation plan with operator approval verification' \
+'mcp:Model Context Protocol (MCP) server and integration commands' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'bug-killer help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__agent_commands] )) ||
+_bug-killer__subcmd__help__subcmd__agent_commands() {
+    local commands; commands=(
+'doctor:Inspect configured model provider capability and health without leaking secrets' \
+'investigate:Run bounded read-only autonomous investigation loop over target workspace' \
+    )
+    _describe -t commands 'bug-killer help agent commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__agent__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__help__subcmd__agent__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help agent doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__agent__subcmd__investigate_commands] )) ||
+_bug-killer__subcmd__help__subcmd__agent__subcmd__investigate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help agent investigate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__apply_commands] )) ||
+_bug-killer__subcmd__help__subcmd__apply_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help apply commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__approve_commands] )) ||
+_bug-killer__subcmd__help__subcmd__approve_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help approve commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__help__subcmd__completion_commands] )) ||
 _bug-killer__subcmd__help__subcmd__completion_commands() {
@@ -228,6 +595,11 @@ _bug-killer__subcmd__help__subcmd__doctor_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help doctor commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__help__subcmd__evidence_commands] )) ||
+_bug-killer__subcmd__help__subcmd__evidence_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help evidence commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__help__subcmd__heal_commands] )) ||
 _bug-killer__subcmd__help__subcmd__heal_commands() {
     local commands; commands=()
@@ -242,6 +614,39 @@ _bug-killer__subcmd__help__subcmd__help_commands() {
 _bug-killer__subcmd__help__subcmd__history_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help history commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__mcp_commands] )) ||
+_bug-killer__subcmd__help__subcmd__mcp_commands() {
+    local commands; commands=(
+'serve:Run the stdio MCP server for external agent integration' \
+'config:Generate copy-pasteable MCP server configuration snippets for external coding agents' \
+    )
+    _describe -t commands 'bug-killer help mcp commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__mcp__subcmd__config_commands] )) ||
+_bug-killer__subcmd__help__subcmd__mcp__subcmd__config_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help mcp config commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__mcp__subcmd__serve_commands] )) ||
+_bug-killer__subcmd__help__subcmd__mcp__subcmd__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help mcp serve commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__osv_commands] )) ||
+_bug-killer__subcmd__help__subcmd__osv_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help osv commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__help__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__probe_commands] )) ||
+_bug-killer__subcmd__help__subcmd__probe_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help probe commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__help__subcmd__rollback_commands] )) ||
 _bug-killer__subcmd__help__subcmd__rollback_commands() {
@@ -267,6 +672,64 @@ _bug-killer__subcmd__help__subcmd__watch_commands() {
 _bug-killer__subcmd__history_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer history commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__mcp_commands] )) ||
+_bug-killer__subcmd__mcp_commands() {
+    local commands; commands=(
+'serve:Run the stdio MCP server for external agent integration' \
+'config:Generate copy-pasteable MCP server configuration snippets for external coding agents' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer mcp commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__mcp__subcmd__config_commands] )) ||
+_bug-killer__subcmd__mcp__subcmd__config_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer mcp config commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__mcp__subcmd__help_commands] )) ||
+_bug-killer__subcmd__mcp__subcmd__help_commands() {
+    local commands; commands=(
+'serve:Run the stdio MCP server for external agent integration' \
+'config:Generate copy-pasteable MCP server configuration snippets for external coding agents' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer mcp help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__mcp__subcmd__help__subcmd__config_commands] )) ||
+_bug-killer__subcmd__mcp__subcmd__help__subcmd__config_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer mcp help config commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__mcp__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__mcp__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer mcp help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__mcp__subcmd__help__subcmd__serve_commands] )) ||
+_bug-killer__subcmd__mcp__subcmd__help__subcmd__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer mcp help serve commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__mcp__subcmd__serve_commands] )) ||
+_bug-killer__subcmd__mcp__subcmd__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer mcp serve commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__osv_commands] )) ||
+_bug-killer__subcmd__osv_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer osv commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__probe_commands] )) ||
+_bug-killer__subcmd__probe_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer probe commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__rollback_commands] )) ||
 _bug-killer__subcmd__rollback_commands() {

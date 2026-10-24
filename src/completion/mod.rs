@@ -1,6 +1,6 @@
-use std::io;
 use clap::Command;
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
+use std::io;
 
 pub struct CompletionGenerator;
 

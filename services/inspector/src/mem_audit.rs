@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProcessMemoryFinding {
@@ -23,7 +23,10 @@ impl ProcessMemoryAuditor {
                 is_exposed: false,
                 mapped_vulnerable_libraries: vec![],
                 execution_regions_count: 0,
-                risk_summary: format!("PID {} not running or non-Linux environment (/proc unavailable)", pid),
+                risk_summary: format!(
+                    "PID {} not running or non-Linux environment (/proc unavailable)",
+                    pid
+                ),
             });
         }
 
@@ -56,9 +59,16 @@ impl ProcessMemoryAuditor {
 
         let is_exposed = !vuln_libs.is_empty();
         let risk_summary = if is_exposed {
-            format!("Process {} mapped {} vulnerable runtime libraries into active memory space.", pid, vuln_libs.len())
+            format!(
+                "Process {} mapped {} vulnerable runtime libraries into active memory space.",
+                pid,
+                vuln_libs.len()
+            )
         } else {
-            format!("Process {} verified: zero unpatched runtime memory segments mapped.", pid)
+            format!(
+                "Process {} verified: zero unpatched runtime memory segments mapped.",
+                pid
+            )
         };
 
         Ok(ProcessMemoryFinding {

@@ -22,7 +22,8 @@ fn test_end_to_end_scan_and_heal_and_rollback() {
   }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 2. Create vulnerable composer.json
     let composer_json = root.join("composer.json");
@@ -35,7 +36,8 @@ fn test_end_to_end_scan_and_heal_and_rollback() {
   }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 3. Create vulnerable Dockerfile
     let dockerfile = root.join("Dockerfile");
@@ -45,7 +47,8 @@ fn test_end_to_end_scan_and_heal_and_rollback() {
 WORKDIR /var/www
 COPY . .
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 4. Create vulnerable Nginx configuration
     let nginx_conf = root.join("nginx.conf");
@@ -60,7 +63,8 @@ COPY . .
     }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 5. Create vulnerable Express entrypoint
     let server_js = root.join("server.js");
@@ -73,7 +77,8 @@ const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.get('/', (req, res) => res.send('OK'));
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Run Scanner directly
     let report = bug_killer::scanner::FleetScanner::scan_directory(root, false);
@@ -85,11 +90,14 @@ app.get('/', (req, res) => res.send('OK'));
     assert!(!plan.is_empty());
 
     // Record original SHA256 of package.json
-    let original_package_hash = bug_killer::healer::backup::BackupManager::compute_sha256(&package_json).unwrap();
-    let original_dockerfile_hash = bug_killer::healer::backup::BackupManager::compute_sha256(&dockerfile).unwrap();
+    let original_package_hash =
+        bug_killer::healer::backup::BackupManager::compute_sha256(&package_json).unwrap();
+    let original_dockerfile_hash =
+        bug_killer::healer::backup::BackupManager::compute_sha256(&dockerfile).unwrap();
 
     // Execute Live Healing
-    let (manifest, applied_count) = bug_killer::healer::AutopilotHealer::execute_healing(root, &plan).unwrap();
+    let (manifest, applied_count) =
+        bug_killer::healer::AutopilotHealer::execute_healing(root, &plan).unwrap();
     assert_eq!(applied_count, plan.len());
 
     // Verify package.json is patched
@@ -115,16 +123,23 @@ app.get('/', (req, res) => res.send('OK'));
     // Rescan: should detect virtual patch and zero unhandled exposures for healed targets
     let rescan_report = bug_killer::scanner::FleetScanner::scan_directory(root, false);
     let new_plan = bug_killer::healer::AutopilotHealer::plan_healing(&rescan_report);
-    assert_eq!(new_plan.len(), 0, "Idempotency invariant violated: planned patches on already-healed target");
+    assert_eq!(
+        new_plan.len(),
+        0,
+        "Idempotency invariant violated: planned patches on already-healed target"
+    );
 
     // Execute Rollback
-    let restored = bug_killer::healer::rollback::RollbackManager::rollback(root, &manifest.backup_id).unwrap();
+    let restored =
+        bug_killer::healer::rollback::RollbackManager::rollback(root, &manifest.backup_id).unwrap();
     assert_eq!(restored, applied_count);
 
     // Verify bit-for-bit restoration
-    let restored_package_hash = bug_killer::healer::backup::BackupManager::compute_sha256(&package_json).unwrap();
+    let restored_package_hash =
+        bug_killer::healer::backup::BackupManager::compute_sha256(&package_json).unwrap();
     assert_eq!(original_package_hash, restored_package_hash);
 
-    let restored_dockerfile_hash = bug_killer::healer::backup::BackupManager::compute_sha256(&dockerfile).unwrap();
+    let restored_dockerfile_hash =
+        bug_killer::healer::backup::BackupManager::compute_sha256(&dockerfile).unwrap();
     assert_eq!(original_dockerfile_hash, restored_dockerfile_hash);
 }

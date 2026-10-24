@@ -1,8 +1,10 @@
 use tokio::sync::broadcast;
-use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 
-use crate::omni_proto::{RuntimeEvent, RuntimeEventType};
+use crate::omni_proto::RuntimeEvent;
+#[cfg(not(target_os = "linux"))]
+use crate::omni_proto::RuntimeEventType;
 
 pub struct EbpfTracer {
     tx: broadcast::Sender<RuntimeEvent>,
@@ -30,7 +32,8 @@ impl EbpfTracer {
         &self,
         filter_types: Vec<i32>,
         target_pid_filter: i32,
-    ) -> impl tokio_stream::Stream<Item = Result<RuntimeEvent, tonic::Status>> + Send + 'static {
+    ) -> impl tokio_stream::Stream<Item = Result<RuntimeEvent, tonic::Status>> + Send + 'static
+    {
         let rx = self.tx.subscribe();
         let broadcast_stream = BroadcastStream::new(rx);
 
@@ -56,7 +59,7 @@ impl EbpfTracer {
         {
             // Linux eBPF tracepoint driver:
             // Hooks tracepoint:syscalls:sys_enter_execve and signal delivery
-            let tx = self.tx.clone();
+            let _tx = self.tx.clone();
             tokio::spawn(async move {
                 eprintln!("[+] Aya eBPF: Linux kernel tracepoint engine initialized");
                 let mut interval = tokio::time::interval(std::time::Duration::from_millis(500));
@@ -76,7 +79,10 @@ impl EbpfTracer {
                 loop {
                     interval.tick().await;
                     let _ = tx.send(RuntimeEvent {
-                        event_id: format!("evt-{}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)),
+                        event_id: format!(
+                            "evt-{}",
+                            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)
+                        ),
                         timestamp_unix_ns: chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
                         process_id: std::process::id() as i32,
                         parent_process_id: 1,

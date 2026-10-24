@@ -51,6 +51,8 @@ func main() {
 			fmt.Fprintf(os.Stderr, "[-] Failed to listen on UDS socket %s: %v\n", *udsSocket, err)
 			os.Exit(1)
 		}
+		// Security hardening: enforce strict 0600 permissions on the privileged gRPC UDS socket
+		_ = os.Chmod(*udsSocket, 0600)
 		defer func() {
 			lis.Close()
 			_ = os.Remove(*udsSocket)

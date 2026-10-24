@@ -1,13 +1,13 @@
-use std::fs::File;
-use std::path::Path;
-use memmap2::Mmap;
 use goblin::Object;
+use memmap2::Mmap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::path::Path;
 
 use crate::omni_proto::{
-    BinaryInspectionRequest, BinaryInspectionResponse, SecurityHardeningFlags,
-    Severity, TargetArchitecture, UnsafeSymbolReference,
+    BinaryInspectionRequest, BinaryInspectionResponse, SecurityHardeningFlags, Severity,
+    TargetArchitecture, UnsafeSymbolReference,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,7 +30,8 @@ impl BinaryAuditor {
     /// Zero-copy binary parser and symbol reachability auditor.
     pub fn audit_binary(path: &Path) -> Result<DeepBinaryFinding, String> {
         let file = File::open(path).map_err(|e| format!("Cannot open binary {:?}: {}", path, e))?;
-        let mmap = unsafe { Mmap::map(&file).map_err(|e| format!("Failed to mmap {:?}: {}", path, e))? };
+        let mmap =
+            unsafe { Mmap::map(&file).map_err(|e| format!("Failed to mmap {:?}: {}", path, e))? };
 
         let mut format = "Raw";
         let mut symbols: Vec<String> = Vec::new();
@@ -87,7 +88,11 @@ impl BinaryAuditor {
             }
         } else if bytes.starts_with(b"\x7fELF") {
             format = "ELF";
-        } else if bytes.starts_with(b"\xfe\xed\xfa\xce") || bytes.starts_with(b"\xce\xfa\xed\xfe") || bytes.starts_with(b"\xcf\xfa\xed\xfe") || bytes.starts_with(b"\xfe\xed\xfa\xcf") {
+        } else if bytes.starts_with(b"\xfe\xed\xfa\xce")
+            || bytes.starts_with(b"\xce\xfa\xed\xfe")
+            || bytes.starts_with(b"\xcf\xfa\xed\xfe")
+            || bytes.starts_with(b"\xfe\xed\xfa\xcf")
+        {
             format = "Mach-O";
         } else if bytes.starts_with(b"MZ") {
             format = "PE";
@@ -95,9 +100,17 @@ impl BinaryAuditor {
 
         // Fast zero-copy string scanning for versions
         let path_str = path.to_string_lossy();
-        if path_str.contains("php") || symbols.iter().any(|s| s.contains("php") || s.contains("zend")) {
+        if path_str.contains("php")
+            || symbols
+                .iter()
+                .any(|s| s.contains("php") || s.contains("zend"))
+        {
             return Self::analyze_php(path, bytes, format, symbols);
-        } else if path_str.contains("node") || symbols.iter().any(|s| s.contains("Brotli") || s.contains("node")) {
+        } else if path_str.contains("node")
+            || symbols
+                .iter()
+                .any(|s| s.contains("Brotli") || s.contains("node"))
+        {
             return Self::analyze_node(path, bytes, format, symbols);
         }
 
@@ -170,7 +183,8 @@ impl BinaryAuditor {
                     // Scan segments for NX stack and RELRO
                     for ph in &elf.program_headers {
                         if ph.p_type == goblin::elf::program_header::PT_GNU_STACK {
-                            hardening.nx_stack_enabled = (ph.p_flags & goblin::elf::program_header::PF_X) == 0;
+                            hardening.nx_stack_enabled =
+                                (ph.p_flags & goblin::elf::program_header::PF_X) == 0;
                         }
                         if ph.p_type == goblin::elf::program_header::PT_GNU_RELRO {
                             hardening.relro_full = true;
@@ -208,12 +222,19 @@ impl BinaryAuditor {
                     match mach {
                         goblin::mach::Mach::Binary(macho) => {
                             detected_arch = match macho.header.cputype {
-                                goblin::mach::constants::cputype::CPU_TYPE_X86_64 => TargetArchitecture::ArchX8664,
-                                goblin::mach::constants::cputype::CPU_TYPE_ARM64 => TargetArchitecture::ArchAarch64,
-                                goblin::mach::constants::cputype::CPU_TYPE_ARM => TargetArchitecture::ArchArmv7,
+                                goblin::mach::constants::cputype::CPU_TYPE_X86_64 => {
+                                    TargetArchitecture::ArchX8664
+                                }
+                                goblin::mach::constants::cputype::CPU_TYPE_ARM64 => {
+                                    TargetArchitecture::ArchAarch64
+                                }
+                                goblin::mach::constants::cputype::CPU_TYPE_ARM => {
+                                    TargetArchitecture::ArchArmv7
+                                }
                                 _ => TargetArchitecture::ArchUnspecified,
                             };
-                            hardening.pie_enabled = (macho.header.flags & goblin::mach::header::MH_PIE) != 0;
+                            hardening.pie_enabled =
+                                (macho.header.flags & goblin::mach::header::MH_PIE) != 0;
 
                             for sym in macho.symbols() {
                                 if let Ok((name, nlist)) = sym {
@@ -257,7 +278,11 @@ impl BinaryAuditor {
         } else if bytes.starts_with(b"\x7fELF") {
             binary_format = "ELF".to_string();
             detected_arch = TargetArchitecture::ArchX8664;
-        } else if bytes.starts_with(b"\xfe\xed\xfa\xce") || bytes.starts_with(b"\xce\xfa\xed\xfe") || bytes.starts_with(b"\xcf\xfa\xed\xfe") || bytes.starts_with(b"\xfe\xed\xfa\xcf") {
+        } else if bytes.starts_with(b"\xfe\xed\xfa\xce")
+            || bytes.starts_with(b"\xce\xfa\xed\xfe")
+            || bytes.starts_with(b"\xcf\xfa\xed\xfe")
+            || bytes.starts_with(b"\xfe\xed\xfa\xcf")
+        {
             binary_format = "Mach-O".to_string();
             detected_arch = TargetArchitecture::ArchAarch64;
         } else if bytes.starts_with(b"MZ") {
@@ -266,24 +291,34 @@ impl BinaryAuditor {
         }
 
         // Check for longjmp without catch / missing cleanup frame
-        let has_longjmp = unsafe_symbols.iter().any(|s| s.symbol_name.contains("longjmp"));
+        let has_longjmp = unsafe_symbols
+            .iter()
+            .any(|s| s.symbol_name.contains("longjmp"));
         if has_longjmp {
-            missing_cleanups.push("Unwound longjmp context without RAII exception landing pad".to_string());
+            missing_cleanups
+                .push("Unwound longjmp context without RAII exception landing pad".to_string());
         }
 
         // Perform known vulnerability heuristics (PHP2Shell & Node2Shell)
         let sample_text = String::from_utf8_lossy(&bytes[..bytes.len().min(5_000_000)]);
         let mut is_vuln = false;
         let mut severity = Severity::Low;
-        let mut summary = "Static binary analysis passed. No active exploit state detected.".to_string();
+        let mut summary =
+            "Static binary analysis passed. No active exploit state detected.".to_string();
 
-        if sample_text.contains("X-Powered-By: PHP") || sample_text.contains("PHP Version") || req.file_path.contains("php") {
+        if sample_text.contains("X-Powered-By: PHP")
+            || sample_text.contains("PHP Version")
+            || req.file_path.contains("php")
+        {
             if has_longjmp && sample_text.contains("brotli") {
                 is_vuln = true;
                 severity = Severity::Critical;
                 summary = "CVE-2026-109618: PHP Zend allocator longjmp error unwinding exposed via Brotli decompression.".to_string();
             }
-        } else if sample_text.contains("node/v") || sample_text.contains("BrotliDecoder") || req.file_path.contains("node") {
+        } else if sample_text.contains("node/v")
+            || sample_text.contains("BrotliDecoder")
+            || req.file_path.contains("node")
+        {
             if sample_text.contains("BrotliDecoderCreateInstance") {
                 is_vuln = true;
                 severity = Severity::High;
@@ -329,7 +364,12 @@ impl BinaryAuditor {
             || n.contains("php_request_shutdown")
     }
 
-    fn analyze_php(path: &Path, bytes: &[u8], format: &str, symbols: Vec<String>) -> Result<DeepBinaryFinding, String> {
+    fn analyze_php(
+        path: &Path,
+        bytes: &[u8],
+        format: &str,
+        symbols: Vec<String>,
+    ) -> Result<DeepBinaryFinding, String> {
         let path_str = path.to_string_lossy().to_string();
         let re_ver = Regex::new(r"X-Powered-By: PHP/(\d+\.\d+\.\d+)").unwrap();
         let re_alt = Regex::new(r"PHP Version (\d+\.\d+\.\d+)").unwrap();
@@ -344,7 +384,8 @@ impl BinaryAuditor {
 
         let is_vuln;
         let mut cve = None;
-        let mut explanation = "PHP binary inspected; within supported or patched release".to_string();
+        let mut explanation =
+            "PHP binary inspected; within supported or patched release".to_string();
 
         if let Some(ref ver) = detected_version {
             let parts: Vec<&str> = ver.split('.').collect();
@@ -389,15 +430,29 @@ impl BinaryAuditor {
             binary_format: format.to_string(),
             detected_version,
             vulnerability_id: cve,
-            severity: if is_vuln { "CRITICAL".into() } else { "PASS".into() },
+            severity: if is_vuln {
+                "CRITICAL".into()
+            } else {
+                "PASS".into()
+            },
             matched_symbols: symbols,
-            reachability_status: if is_vuln { "Vulnerable Entry Point Verified" } else { "Secure" }.into(),
+            reachability_status: if is_vuln {
+                "Vulnerable Entry Point Verified"
+            } else {
+                "Secure"
+            }
+            .into(),
             explanation,
             safe_threshold: "PHP >= 8.2.35, 8.3.36, 8.4.27, 8.5.12".into(),
         })
     }
 
-    fn analyze_node(path: &Path, bytes: &[u8], format: &str, symbols: Vec<String>) -> Result<DeepBinaryFinding, String> {
+    fn analyze_node(
+        path: &Path,
+        bytes: &[u8],
+        format: &str,
+        symbols: Vec<String>,
+    ) -> Result<DeepBinaryFinding, String> {
         let path_str = path.to_string_lossy().to_string();
         let re_ver = Regex::new(r"node/v(\d+\.\d+\.\d+)").unwrap();
         let re_alt = Regex::new(r"NODE_VERSION\s*=\s*v?(\d+\.\d+\.\d+)").unwrap();
@@ -410,7 +465,8 @@ impl BinaryAuditor {
             detected_version = Some(cap[1].to_string());
         }
 
-        let has_brotli = symbols.iter().any(|s| s.contains("BrotliDecoder")) || text_sample.contains("BrotliDecoderCreateInstance");
+        let has_brotli = symbols.iter().any(|s| s.contains("BrotliDecoder"))
+            || text_sample.contains("BrotliDecoderCreateInstance");
 
         let mut is_vuln = false;
         let mut cve = None;
@@ -449,9 +505,18 @@ impl BinaryAuditor {
             binary_format: format.to_string(),
             detected_version,
             vulnerability_id: cve,
-            severity: if is_vuln { "HIGH".into() } else { "PASS".into() },
+            severity: if is_vuln {
+                "HIGH".into()
+            } else {
+                "PASS".into()
+            },
             matched_symbols: symbols,
-            reachability_status: if is_vuln { "Exposed Decompression Channel" } else { "Hardened" }.into(),
+            reachability_status: if is_vuln {
+                "Exposed Decompression Channel"
+            } else {
+                "Hardened"
+            }
+            .into(),
             explanation,
             safe_threshold: "Node.js >= v22.23.4, v24.22.1, v26.12.1".into(),
         })

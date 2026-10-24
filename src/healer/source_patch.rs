@@ -1,12 +1,13 @@
+use crate::healer::backup::BackupManager;
+use crate::types::*;
 use std::fs;
 use std::path::Path;
-use crate::types::*;
-use crate::healer::backup::BackupManager;
 
 pub struct SourcePatcher;
 
 impl SourcePatcher {
-    pub const GUARD_COMMENT: &'static str = "// [BUG-KILLER-GUARD] Brotli Request Body Protection (CVE-2026-111497)";
+    pub const GUARD_COMMENT: &'static str =
+        "// [BUG-KILLER-GUARD] Brotli Request Body Protection (CVE-2026-111497)";
 
     /// Injects an Express / Connect middleware guard before body parsing routes in an entrypoint file (like `index.js`, `app.js`, `server.ts`).
     pub fn plan_express_guard_patch(path: &Path) -> Option<PatchAction> {
@@ -43,7 +44,11 @@ if (typeof app !== 'undefined' && app.use) {{
         for line in content.lines() {
             modified.push_str(line);
             modified.push('\n');
-            if !injected && (line.contains("const app = express()") || line.contains("let app = express()") || line.contains("var app = express()")) {
+            if !injected
+                && (line.contains("const app = express()")
+                    || line.contains("let app = express()")
+                    || line.contains("var app = express()"))
+            {
                 modified.push_str(&guard_code);
                 injected = true;
             }
@@ -57,7 +62,8 @@ if (typeof app !== 'undefined' && app.use) {{
             action_type: PatchActionType::NodeMiddlewareGuard,
             target_file: path.to_path_buf(),
             original_checksum: sha256,
-            diff_description: "Inject Express middleware guard rejecting Brotli-compressed request bodies".into(),
+            diff_description:
+                "Inject Express middleware guard rejecting Brotli-compressed request bodies".into(),
             replacement_content: modified,
         })
     }

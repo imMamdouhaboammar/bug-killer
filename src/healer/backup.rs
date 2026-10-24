@@ -1,8 +1,8 @@
+use crate::types::*;
+use chrono::Utc;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
-use sha2::{Sha256, Digest};
-use chrono::Utc;
-use crate::types::*;
 
 pub struct BackupManager;
 
@@ -29,7 +29,11 @@ impl BackupManager {
             }
 
             let sha256 = Self::compute_sha256(file)?;
-            let backup_file_name = format!("{}_{}", idx, file.file_name().unwrap_or_default().to_string_lossy());
+            let backup_file_name = format!(
+                "{}_{}",
+                idx,
+                file.file_name().unwrap_or_default().to_string_lossy()
+            );
             let backup_path = backup_dir.join(&backup_file_name);
 
             fs::copy(file, backup_path)?;
@@ -56,10 +60,14 @@ impl BackupManager {
             signature: None,
         };
 
-        // Cryptographically sign the manifest via AgentIdentity
-        if let Ok(identity) = crate::identity::AgentIdentity::get_or_create(root) {
-            identity.sign_manifest(&mut manifest);
-        }
+        // Cryptographically sign the manifest via AgentIdentity (fail-closed)
+        let identity = crate::identity::AgentIdentity::get_or_create(root).map_err(|e| {
+            std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                format!("Failed to initialize agent identity for signing: {}", e),
+            )
+        })?;
+        identity.sign_manifest(&mut manifest);
 
         let manifest_path = backup_dir.join("manifest.json");
         let manifest_json = serde_json::to_string_pretty(&manifest)?;

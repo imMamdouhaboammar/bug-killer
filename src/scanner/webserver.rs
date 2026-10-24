@@ -1,6 +1,6 @@
+use crate::types::*;
 use std::fs;
 use std::path::Path;
-use crate::types::*;
 
 pub struct WebServerScanner;
 
@@ -13,39 +13,53 @@ impl WebServerScanner {
             Err(_) => return findings,
         };
 
-        let has_virtual_patch = content.contains("BUG KILLER VIRTUAL PATCH (CVE-2026-111497") || content.contains("AEGIS VIRTUAL PATCH (CVE-2026-111497");
-        let has_brotli_filter = content.contains("$http_content_encoding") && content.contains("br");
+        let has_virtual_patch = content.contains("BUG KILLER VIRTUAL PATCH (CVE-2026-111497")
+            || content.contains("AEGIS VIRTUAL PATCH (CVE-2026-111497");
+        let has_brotli_filter =
+            content.contains("$http_content_encoding") && content.contains("br");
         let proxies_to_node_or_upstream = content.contains("proxy_pass");
         let proxies_to_php = content.contains("fastcgi_pass") || content.contains("php");
 
         if proxies_to_node_or_upstream && !has_brotli_filter && !has_virtual_patch {
-            findings.push(Finding {
-                id: "NGINX-NODE-MISSING-BROTLI-FILTER".to_string(),
-                cve: CveId::Node2ShellBrotli("CVE-2026-111497".into()),
-                severity: Severity::High,
-                target_kind: TargetKind::NginxConfig,
-                file_path: Some(path.to_path_buf()),
-                line_number: None,
-                detected_version_or_pattern: "proxy_pass configured without request body Content-Encoding: br filter".to_string(),
-                safe_threshold: "Inject Bug Killer Nginx virtual patch blocking uninspected 'Content-Encoding: br'".to_string(),
-                description: "Nginx reverse proxy passes client request bodies directly to upstream without checking for Brotli encoding, allowing CVE-2026-111497 exploit payloads to reach Node.js decoder.".to_string(),
-                suggested_remediation: "Apply Bug Killer Nginx virtual patch to return 415 on Brotli-compressed request bodies.".to_string(),
-            });
+            let mut finding = Finding::new(
+                "NGINX-NODE-MISSING-BROTLI-FILTER",
+                CveId::Node2ShellBrotli("CVE-2026-111497".into()),
+                Severity::High,
+                TargetKind::NginxConfig,
+                Some(path.to_path_buf()),
+                None,
+                "proxy_pass configured without request body Content-Encoding: br filter",
+                "Inject Bug Killer Nginx virtual patch blocking uninspected 'Content-Encoding: br'",
+                "Nginx reverse proxy passes client request bodies directly to upstream without checking for Brotli encoding, allowing CVE-2026-111497 exploit payloads to reach Node.js decoder.",
+                "Apply Bug Killer Nginx virtual patch to return 415 on Brotli-compressed request bodies.",
+            );
+            finding.detector_id = "nginx-proxy".to_string();
+            finding.affectedness = Affectedness::PotentiallyAffected;
+            finding.reachability = Reachability::PotentiallyReachable;
+            finding.confidence = Confidence::Medium;
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
         if proxies_to_php && !content.contains("fastcgi_buffer_size") {
-            findings.push(Finding {
-                id: "NGINX-PHP-UNBOUNDED-BUFFERS".to_string(),
-                cve: CveId::Php2ShellOom("CVE-2026-109618".into()),
-                severity: Severity::Medium,
-                target_kind: TargetKind::NginxConfig,
-                file_path: Some(path.to_path_buf()),
-                line_number: None,
-                detected_version_or_pattern: "fastcgi_pass without bounded buffer size configuration".to_string(),
-                safe_threshold: "Explicit fastcgi_buffer_size 128k; fastcgi_buffers 4 256k;".to_string(),
-                description: "FastCGI pass lacks explicit buffer boundaries, facilitating memory exhaustion attacks against PHP-FPM pools.".to_string(),
-                suggested_remediation: "Harden Nginx FastCGI buffer parameters.".to_string(),
-            });
+            let mut finding = Finding::new(
+                "NGINX-PHP-UNBOUNDED-BUFFERS",
+                CveId::Php2ShellOom("CVE-2026-109618".into()),
+                Severity::Medium,
+                TargetKind::NginxConfig,
+                Some(path.to_path_buf()),
+                None,
+                "fastcgi_pass without bounded buffer size configuration",
+                "Explicit fastcgi_buffer_size 128k; fastcgi_buffers 4 256k;",
+                "FastCGI pass lacks explicit buffer boundaries, facilitating memory exhaustion attacks against PHP-FPM pools.",
+                "Harden Nginx FastCGI buffer parameters.",
+            );
+            finding.detector_id = "nginx-fastcgi".to_string();
+            finding.affectedness = Affectedness::PotentiallyAffected;
+            finding.reachability = Reachability::PotentiallyReachable;
+            finding.confidence = Confidence::Medium;
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
         findings
@@ -60,18 +74,24 @@ impl WebServerScanner {
         };
 
         if content.contains("mod_php") {
-            findings.push(Finding {
-                id: "APACHE-MOD-PHP-DETECTED".to_string(),
-                cve: CveId::Php2ShellStale("CVE-2026-109619".into()),
-                severity: Severity::Critical,
-                target_kind: TargetKind::ApacheConfig,
-                file_path: Some(path.to_path_buf()),
-                line_number: None,
-                detected_version_or_pattern: "mod_php Apache module enabled".to_string(),
-                safe_threshold: "Migrate to PHP-FPM with isolated worker pools and updated PHP runtime >= 8.2.35".to_string(),
-                description: "Apache mod_php runs PHP directly inside web server worker process memory. Stale global state from CVE-2026-109619 corrupts Apache worker memory directly across requests.".to_string(),
-                suggested_remediation: "Disable mod_php, migrate to PHP-FPM with strict worker recycling and upgrade PHP runtime.".to_string(),
-            });
+            let mut finding = Finding::new(
+                "APACHE-MOD-PHP-DETECTED",
+                CveId::Php2ShellStale("CVE-2026-109619".into()),
+                Severity::Critical,
+                TargetKind::ApacheConfig,
+                Some(path.to_path_buf()),
+                None,
+                "mod_php Apache module enabled",
+                "Migrate to PHP-FPM with isolated worker pools and updated PHP runtime >= 8.2.35",
+                "Apache mod_php runs PHP directly inside web server worker process memory. Stale global state from CVE-2026-109619 corrupts Apache worker memory directly across requests.",
+                "Disable mod_php, migrate to PHP-FPM with strict worker recycling and upgrade PHP runtime.",
+            );
+            finding.detector_id = "apache-mod-php".to_string();
+            finding.affectedness = Affectedness::ConfirmedAffected;
+            finding.reachability = Reachability::ConfirmedReachable;
+            finding.confidence = Confidence::High;
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
         findings

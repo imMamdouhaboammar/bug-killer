@@ -1,9 +1,9 @@
-use std::fs;
-use tempfile::tempdir;
+use bug_killer::completion::CompletionGenerator;
 use bug_killer::doctor::SystemDoctor;
 use bug_killer::watcher::WatcherEngine;
-use bug_killer::completion::CompletionGenerator;
 use clap::Command;
+use std::fs;
+use tempfile::tempdir;
 
 #[test]
 fn test_doctor_diagnostic_execution() {
@@ -15,7 +15,10 @@ fn test_doctor_diagnostic_execution() {
     assert!(report.items.len() >= 6);
 
     let has_permissions = report.items.iter().any(|i| i.name.contains("Permissions"));
-    assert!(has_permissions, "Doctor must evaluate workspace permissions");
+    assert!(
+        has_permissions,
+        "Doctor must evaluate workspace permissions"
+    );
 }
 
 #[test]
@@ -59,13 +62,11 @@ fn test_agent_identity_signature_and_tamper_detection() {
         backup_id: "20261024_000000".into(),
         created_at: "2026-10-24T00:00:00Z".into(),
         root_dir: root.to_string_lossy().to_string(),
-        records: vec![
-            bug_killer::types::BackupRecord {
-                relative_target_path: "server.js".into(),
-                original_sha256: "abcdef123456".into(),
-                backup_file_name: "0_server.js".into(),
-            }
-        ],
+        records: vec![bug_killer::types::BackupRecord {
+            relative_target_path: "server.js".into(),
+            original_sha256: "abcdef123456".into(),
+            backup_file_name: "0_server.js".into(),
+        }],
         signer_public_key: None,
         signature: None,
     };

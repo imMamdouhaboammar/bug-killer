@@ -1,7 +1,7 @@
+use crate::types::*;
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use regex::Regex;
-use crate::types::{CveId, Finding, Severity, TargetKind};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(dead_code)]
@@ -28,8 +28,12 @@ impl TaintSinkKind {
             Self::SqlInjection => "SQL Injection (Unsanitized User Input in SQL Query)",
             Self::CommandInjection => "Command Injection (Direct Execution of User Input)",
             Self::PathTraversal => "Path Traversal (Unvalidated File Path Access)",
-            Self::ServerSideRequestForgery => "SSRF (Untrusted Destination URL in Outgoing HTTP Request)",
-            Self::ReflectedXss => "Reflected Cross-Site Scripting (Unescaped User Input in HTTP Response)",
+            Self::ServerSideRequestForgery => {
+                "SSRF (Untrusted Destination URL in Outgoing HTTP Request)"
+            }
+            Self::ReflectedXss => {
+                "Reflected Cross-Site Scripting (Unescaped User Input in HTTP Response)"
+            }
         }
     }
 
@@ -68,26 +72,42 @@ pub struct TaintFinding {
 
 impl TaintFinding {
     pub fn into_finding(self) -> Finding {
-        let title = format!("{}: {}", self.sink_kind.cve_identifier(), self.sink_kind.title());
+        let title = format!(
+            "{}: {}",
+            self.sink_kind.cve_identifier(),
+            self.sink_kind.title()
+        );
         let desc = format!(
             "Untrusted input from line {} ({}) propagates into dangerous sink at line {} without sanitization.",
-            self.source_line, self.source_snippet.trim(), self.sink_line
+            self.source_line,
+            self.source_snippet.trim(),
+            self.sink_line
         );
-        Finding {
-            id: format!("taint-{}-L{}", self.sink_kind.cve_identifier().to_lowercase(), self.sink_line),
-            cve: CveId::Custom {
+        let mut finding = Finding::new(
+            format!(
+                "taint-{}-L{}",
+                self.sink_kind.cve_identifier().to_lowercase(),
+                self.sink_line
+            ),
+            CveId::Custom {
                 id: self.sink_kind.cve_identifier().to_string(),
                 title,
             },
-            severity: self.sink_kind.severity(),
-            target_kind: TargetKind::GenericSourceFile,
-            file_path: Some(self.file_path),
-            line_number: Some(self.sink_line),
-            detected_version_or_pattern: self.sink_snippet.trim().to_string(),
-            safe_threshold: "Sanitize input, parameterize queries, or bind to safe validator".into(),
-            description: desc,
-            suggested_remediation: self.remediation,
-        }
+            self.sink_kind.severity(),
+            TargetKind::GenericSourceFile,
+            Some(self.file_path),
+            Some(self.sink_line),
+            self.sink_snippet.trim().to_string(),
+            "Sanitize input, parameterize queries, or bind to safe validator",
+            desc,
+            self.remediation,
+        );
+        finding.detector_id = "taint-engine".to_string();
+        finding.affectedness = Affectedness::ConfirmedAffected;
+        finding.reachability = Reachability::ConfirmedReachable;
+        finding.confidence = Confidence::High;
+        finding.compute_dedupe_fingerprint();
+        finding
     }
 }
 
@@ -103,20 +123,43 @@ impl TaintEngine {
 
         // Regex patterns for Source extraction
         let re_js_source = Regex::new(r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:req\.(?:query|body|params|headers)|request\.(?:query|body|params))"#).unwrap();
-        let re_py_source = Regex::new(r#"([a-zA-Z0-9_]+)\s*=\s*request\.(?:args|form|values|json|GET|POST)(?:\[|\.get\()"#).unwrap();
-        let re_php_source = Regex::new(r#"(\$[a-zA-Z0-9_]+)\s*=\s*\$_(?:GET|POST|REQUEST|COOKIE)\["#).unwrap();
-        let re_go_source = Regex::new(r#"([a-zA-Z0-9_]+)\s*:=\s*r\.(?:URL\.Query\(\)\.Get|FormValue|PostFormValue)\("#).unwrap();
+        let re_py_source = Regex::new(
+            r#"([a-zA-Z0-9_]+)\s*=\s*request\.(?:args|form|values|json|GET|POST)(?:\[|\.get\()"#,
+        )
+        .unwrap();
+        let re_php_source =
+            Regex::new(r#"(\$[a-zA-Z0-9_]+)\s*=\s*\$_(?:GET|POST|REQUEST|COOKIE)\["#).unwrap();
+        let re_go_source = Regex::new(
+            r#"([a-zA-Z0-9_]+)\s*:=\s*r\.(?:URL\.Query\(\)\.Get|FormValue|PostFormValue)\("#,
+        )
+        .unwrap();
 
         // Derived taint propagation patterns (e.g. sql = "..." + var, f"...", format())
-        let re_js_concat = Regex::new(r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*.*?\+\s*([a-zA-Z0-9_$]+)"#).unwrap();
-        let re_js_template = Regex::new(r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*`.*?\$\{([a-zA-Z0-9_$]+)\}.*?`"#).unwrap();
-        let re_py_fstring = Regex::new(r#"([a-zA-Z0-9_]+)\s*=\s*f["'].*?\{([a-zA-Z0-9_]+)\}.*?["']"#).unwrap();
-        let re_php_concat = Regex::new(r#"(\$[a-zA-Z0-9_]+)\s*=\s*.*?\.\s*(\$[a-zA-Z0-9_]+)"#).unwrap();
+        let re_js_concat =
+            Regex::new(r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*.*?\+\s*([a-zA-Z0-9_$]+)"#)
+                .unwrap();
+        let re_js_template = Regex::new(
+            r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*`.*?\$\{([a-zA-Z0-9_$]+)\}.*?`"#,
+        )
+        .unwrap();
+        let re_py_fstring =
+            Regex::new(r#"([a-zA-Z0-9_]+)\s*=\s*f["'].*?\{([a-zA-Z0-9_]+)\}.*?["']"#).unwrap();
+        let re_php_concat =
+            Regex::new(r#"(\$[a-zA-Z0-9_]+)\s*=\s*.*?\.\s*(\$[a-zA-Z0-9_]+)"#).unwrap();
 
         // Sanitizer patterns
         let sanitizers = [
-            "escape", "quote", "parseInt", "Number(", "encodeURIComponent", "htmlspecialchars",
-            "htmlentities", "filepath.Clean", "int(", "float(", "sanitize",
+            "escape",
+            "quote",
+            "parseInt",
+            "Number(",
+            "encodeURIComponent",
+            "htmlspecialchars",
+            "htmlentities",
+            "filepath.Clean",
+            "int(",
+            "float(",
+            "sanitize",
         ];
 
         let lines: Vec<&str> = content.lines().collect();
@@ -144,22 +187,34 @@ impl TaintEngine {
             // 2. Discover primary sources
             if let Some(caps) = re_js_source.captures(trimmed) {
                 let var = caps[1].to_string();
-                tainted_vars.insert(var.clone(), (TaintSourceKind::HttpParam, line_no, trimmed.to_string()));
+                tainted_vars.insert(
+                    var.clone(),
+                    (TaintSourceKind::HttpParam, line_no, trimmed.to_string()),
+                );
                 continue;
             }
             if let Some(caps) = re_py_source.captures(trimmed) {
                 let var = caps[1].to_string();
-                tainted_vars.insert(var.clone(), (TaintSourceKind::HttpParam, line_no, trimmed.to_string()));
+                tainted_vars.insert(
+                    var.clone(),
+                    (TaintSourceKind::HttpParam, line_no, trimmed.to_string()),
+                );
                 continue;
             }
             if let Some(caps) = re_php_source.captures(trimmed) {
                 let var = caps[1].to_string();
-                tainted_vars.insert(var.clone(), (TaintSourceKind::HttpParam, line_no, trimmed.to_string()));
+                tainted_vars.insert(
+                    var.clone(),
+                    (TaintSourceKind::HttpParam, line_no, trimmed.to_string()),
+                );
                 continue;
             }
             if let Some(caps) = re_go_source.captures(trimmed) {
                 let var = caps[1].to_string();
-                tainted_vars.insert(var.clone(), (TaintSourceKind::HttpParam, line_no, trimmed.to_string()));
+                tainted_vars.insert(
+                    var.clone(),
+                    (TaintSourceKind::HttpParam, line_no, trimmed.to_string()),
+                );
                 continue;
             }
 
@@ -214,8 +269,13 @@ impl TaintEngine {
                 }
 
                 // Sink A: SQL Injection
-                if (trimmed.contains("db.query(") || trimmed.contains("pool.query(") || trimmed.contains("cursor.execute(") || trimmed.contains("mysqli_query(") || trimmed.contains("->query("))
-                    && !trimmed.contains(", [") && !trimmed.contains(", (")
+                if (trimmed.contains("db.query(")
+                    || trimmed.contains("pool.query(")
+                    || trimmed.contains("cursor.execute(")
+                    || trimmed.contains("mysqli_query(")
+                    || trimmed.contains("->query("))
+                    && !trimmed.contains(", [")
+                    && !trimmed.contains(", (")
                 {
                     findings.push(TaintFinding {
                         file_path: path.to_path_buf(),
@@ -232,9 +292,14 @@ impl TaintEngine {
                 }
 
                 // Sink B: Command Injection
-                if trimmed.contains("exec(") || trimmed.contains("execSync(") || trimmed.contains("child_process.exec(")
-                    || trimmed.contains("os.system(") || trimmed.contains("subprocess.Popen(") || trimmed.contains("shell_exec(")
-                    || trimmed.contains("system(") || trimmed.contains("passthru(")
+                if trimmed.contains("exec(")
+                    || trimmed.contains("execSync(")
+                    || trimmed.contains("child_process.exec(")
+                    || trimmed.contains("os.system(")
+                    || trimmed.contains("subprocess.Popen(")
+                    || trimmed.contains("shell_exec(")
+                    || trimmed.contains("system(")
+                    || trimmed.contains("passthru(")
                 {
                     findings.push(TaintFinding {
                         file_path: path.to_path_buf(),
@@ -251,8 +316,14 @@ impl TaintEngine {
                 }
 
                 // Sink C: Path Traversal
-                if (trimmed.contains("fs.readFile(") || trimmed.contains("fs.readFileSync(") || trimmed.contains("open(") || trimmed.contains("file_get_contents(") || trimmed.contains("include "))
-                    && (trimmed.contains("path.join(") || trimmed.contains("+") || trimmed.contains('.'))
+                if (trimmed.contains("fs.readFile(")
+                    || trimmed.contains("fs.readFileSync(")
+                    || trimmed.contains("open(")
+                    || trimmed.contains("file_get_contents(")
+                    || trimmed.contains("include "))
+                    && (trimmed.contains("path.join(")
+                        || trimmed.contains("+")
+                        || trimmed.contains('.'))
                 {
                     findings.push(TaintFinding {
                         file_path: path.to_path_buf(),
@@ -269,7 +340,10 @@ impl TaintEngine {
                 }
 
                 // Sink D: SSRF
-                if (trimmed.contains("fetch(") || trimmed.contains("axios.get(") || trimmed.contains("requests.get(") || trimmed.contains("http.Get("))
+                if (trimmed.contains("fetch(")
+                    || trimmed.contains("axios.get(")
+                    || trimmed.contains("requests.get(")
+                    || trimmed.contains("http.Get("))
                     && !trimmed.contains("https://api.trusted.")
                 {
                     findings.push(TaintFinding {
@@ -287,7 +361,11 @@ impl TaintEngine {
                 }
 
                 // Sink E: Reflected XSS
-                if trimmed.contains("res.send(") || trimmed.contains("res.write(") || trimmed.contains("echo ") || trimmed.contains("document.write(") {
+                if trimmed.contains("res.send(")
+                    || trimmed.contains("res.write(")
+                    || trimmed.contains("echo ")
+                    || trimmed.contains("document.write(")
+                {
                     findings.push(TaintFinding {
                         file_path: path.to_path_buf(),
                         source_kind: source_kind.clone(),

@@ -1,11 +1,11 @@
+use crate::healer::AutopilotHealer;
+use crate::scanner::FleetScanner;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
-use crate::scanner::FleetScanner;
-use crate::healer::AutopilotHealer;
 
 pub struct WatcherEngine;
 
@@ -24,7 +24,14 @@ impl WatcherEngine {
         println!("=======================================================");
         println!("Target Directory:   {}", target_dir.display());
         println!("Polling Interval:   {}s", interval_secs);
-        println!("Autopilot Healing:  {}", if auto_heal { "ENABLED" } else { "DISABLED (Alert Only)" });
+        println!(
+            "Autopilot Healing:  {}",
+            if auto_heal {
+                "ENABLED"
+            } else {
+                "DISABLED (Alert Only)"
+            }
+        );
         println!("Press Ctrl+C to terminate surveillance.\n");
 
         let mut file_state: HashMap<PathBuf, u64> = Self::snapshot_mtimes(target_dir);
@@ -47,7 +54,10 @@ impl WatcherEngine {
             if has_modifications || cycle == 1 {
                 file_state = current_state;
                 let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ");
-                println!("[{}] Filesystem delta detected. Triggering scan...", timestamp);
+                println!(
+                    "[{}] Filesystem delta detected. Triggering scan...",
+                    timestamp
+                );
 
                 let report = FleetScanner::scan_directory(target_dir, false);
 
@@ -60,8 +70,17 @@ impl WatcherEngine {
                     );
 
                     for finding in &report.findings {
-                        let path_str = finding.file_path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "runtime".into());
-                        println!("   - [{}] {} @ {}", finding.cve.as_str(), finding.cve.title(), path_str);
+                        let path_str = finding
+                            .file_path
+                            .as_ref()
+                            .map(|p| p.display().to_string())
+                            .unwrap_or_else(|| "runtime".into());
+                        println!(
+                            "   - [{}] {} @ {}",
+                            finding.cve.as_str(),
+                            finding.cve.title(),
+                            path_str
+                        );
                     }
 
                     if auto_heal {
@@ -70,7 +89,10 @@ impl WatcherEngine {
                             println!("🩹 Applying {} autopilot healing patches...", plan.len());
                             match AutopilotHealer::execute_healing(target_dir, &plan) {
                                 Ok((manifest, count)) => {
-                                    println!("✅ Successfully applied {} healing patches! Snapshot ID: {}", count, manifest.backup_id);
+                                    println!(
+                                        "✅ Successfully applied {} healing patches! Snapshot ID: {}",
+                                        count, manifest.backup_id
+                                    );
                                     // Update state to include healed files
                                     file_state = Self::snapshot_mtimes(target_dir);
                                 }
@@ -95,7 +117,10 @@ impl WatcherEngine {
                     return true;
                 }
                 let name = e.file_name().to_string_lossy();
-                !name.starts_with('.') && name != "node_modules" && name != "vendor" && name != "target"
+                !name.starts_with('.')
+                    && name != "node_modules"
+                    && name != "vendor"
+                    && name != "target"
             })
             .flatten()
         {
@@ -103,7 +128,9 @@ impl WatcherEngine {
             if path.is_file() {
                 if let Ok(metadata) = path.metadata() {
                     if let Ok(mtime) = metadata.modified() {
-                        let duration = mtime.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+                        let duration = mtime
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default();
                         map.insert(path.to_path_buf(), duration.as_secs());
                     }
                 }
