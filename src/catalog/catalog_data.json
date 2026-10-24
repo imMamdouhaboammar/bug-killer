@@ -4403,5 +4403,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: values redacted in job logs/artifacts",
     "verification_requirements": "Verify via SECRET+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-007",
+    "short_id": "CIC-007",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "Unsafe artifact/cache reuse between untrusted PR and release job",
+    "cwe": "CWE-829",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: provenance and cache isolation",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-008",
+    "short_id": "CIC-008",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "Deployment triggered without branch/environment approval controls",
+    "cwe": "CWE-284",
+    "detection_method": "CONFIG",
+    "required_evidence": [
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: required protected environment gates",
+    "verification_requirements": "Verify via CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-009",
+    "short_id": "CIC-009",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "Release generated from a different commit than tested/reviewed",
+    "cwe": "CWE-494",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: immutable commit provenance bound",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-010",
+    "short_id": "CIC-010",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "Test/security jobs optional, skipped or configured with `continue-on-error` while reported green",
+    "cwe": null,
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: required checks actually enforced",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-011",
+    "short_id": "CIC-011",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "Package scripts execute with privileged token, network and filesystem by default",
+    "cwe": "CWE-250",
+    "detection_method": "CONFIG",
+    "required_evidence": [
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: controlled untrusted build runner",
+    "verification_requirements": "Verify via CONFIG evidence and regression test"
   }
 ]
