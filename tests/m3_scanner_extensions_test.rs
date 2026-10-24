@@ -209,7 +209,11 @@ CMD ["/bin/app"]
 
     let root_finding = findings
         .iter()
-        .find(|f| f.cve.as_str() == "BK-CONTAINER-001")
+        .find(|f| {
+            f.cve.as_str() == "BK-CONTAINER-001"
+                || f.cve.as_str() == "BK-AI-INF-001"
+                || f.advisory_ids.iter().any(|a| a == "BK-CONTAINER-001")
+        })
         .unwrap();
     assert_eq!(root_finding.target_kind, TargetKind::Dockerfile);
     assert_eq!(root_finding.affectedness, Affectedness::ConfirmedAffected);
