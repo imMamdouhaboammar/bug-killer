@@ -2636,5 +2636,130 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: identity and certificate policy sound",
     "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-NET-009",
+    "short_id": "NET-009",
+    "rule_version": "1.0",
+    "category_number": 8,
+    "category": "2.8 SSRF, outbound HTTP and network trust",
+    "description": "Secret-bearing headers forwarded across redirect or unrelated origin",
+    "cwe": "CWE-201",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: origin-bound credentials",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-NET-010",
+    "short_id": "NET-010",
+    "rule_version": "1.0",
+    "category_number": 8,
+    "category": "2.8 SSRF, outbound HTTP and network trust",
+    "description": "Network calls have no deadline, response cap or concurrency bound",
+    "cwe": "CWE-400",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: time/size/resource limits enforced",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-001",
+    "short_id": "CRY-001",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "Password hashes use MD5/SHA1/plain SHA or reversible encryption",
+    "cwe": "CWE-916",
+    "detection_method": "AST+REVIEW",
+    "required_evidence": [
+      "AST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: approved password KDF",
+    "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-002",
+    "short_id": "CRY-002",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "Predictable token/nonce/OTP/password reset values",
+    "cwe": "CWE-330",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: cryptographic RNG used",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-003",
+    "short_id": "CRY-003",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "Custom invented crypto or homegrown cipher/protocol",
+    "cwe": "CWE-327",
+    "detection_method": "AST+REVIEW",
+    "required_evidence": [
+      "AST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: vetted primitives/protocol",
+    "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
   }
 ]
