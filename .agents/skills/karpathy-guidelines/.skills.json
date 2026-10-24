@@ -1,0 +1,14 @@
+{
+  "$schema": "https://skills.sh/schema.json",
+  "name": "karpathy-guidelines",
+  "version": "1.0.0",
+  "description": "Behavioral guidelines to reduce common LLM coding mistakes, overcomplication, and unintended edits",
+  "author": "Andrej Karpathy & Multica AI",
+  "license": "MIT",
+  "skill": "SKILL.md",
+  "tags": [
+    "agent-skill",
+    "automation",
+    "developer-tools"
+  ]
+}

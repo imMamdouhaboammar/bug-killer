@@ -15,3 +15,15 @@ sha2 = "0.10"
 walkdir = "2.5"
 goblin = "0.9"
 chrono = "0.4"
+tokio = { version = "1.40", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+tonic = "0.12"
+prost = "0.13"
+async-stream = "0.3"
+tower = { version = "0.4", features = ["util"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+rig = { package = "rig-core", version = "0.45.0", features = ["reqwest"] }
+thiserror = "2.0"
+
+[build-dependencies]
+tonic-build = "0.12"

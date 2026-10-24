@@ -5,6 +5,11 @@ use goblin::Object;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
+use crate::omni_proto::{
+    BinaryInspectionRequest, BinaryInspectionResponse, SecurityHardeningFlags,
+    Severity, TargetArchitecture, UnsafeSymbolReference,
+};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeepBinaryFinding {
     pub file_path: String,
@@ -80,6 +85,12 @@ impl BinaryAuditor {
                 }
                 _ => {}
             }
+        } else if bytes.starts_with(b"\x7fELF") {
+            format = "ELF";
+        } else if bytes.starts_with(b"\xfe\xed\xfa\xce") || bytes.starts_with(b"\xce\xfa\xed\xfe") || bytes.starts_with(b"\xcf\xfa\xed\xfe") || bytes.starts_with(b"\xfe\xed\xfa\xcf") {
+            format = "Mach-O";
+        } else if bytes.starts_with(b"MZ") {
+            format = "PE";
         }
 
         // Fast zero-copy string scanning for versions
@@ -104,6 +115,211 @@ impl BinaryAuditor {
         })
     }
 
+    /// Full gRPC Protobuf inspection handler
+    pub fn audit_binary_proto(req: &BinaryInspectionRequest) -> BinaryInspectionResponse {
+        let bytes = if !req.binary_payload.is_empty() {
+            req.binary_payload.clone()
+        } else if !req.file_path.is_empty() {
+            std::fs::read(&req.file_path).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
+
+        if bytes.is_empty() {
+            return BinaryInspectionResponse {
+                request_id: req.request_id.clone(),
+                target_path: req.file_path.clone(),
+                binary_format: "UNKNOWN".to_string(),
+                detected_arch: TargetArchitecture::ArchUnspecified as i32,
+                hardening_flags: None,
+                unsafe_symbols: Vec::new(),
+                missing_cleanups: Vec::new(),
+                is_vulnerable: false,
+                calculated_severity: Severity::Unspecified as i32,
+                diagnostic_summary: "Empty binary payload or invalid file path".to_string(),
+            };
+        }
+
+        let mut binary_format = "Raw".to_string();
+        let mut detected_arch = TargetArchitecture::ArchUnspecified;
+        let mut hardening = SecurityHardeningFlags {
+            pie_enabled: false,
+            nx_stack_enabled: true,
+            relro_full: false,
+            stack_canary_present: false,
+            fortified_source: false,
+        };
+        let mut unsafe_symbols: Vec<UnsafeSymbolReference> = Vec::new();
+        let mut missing_cleanups: Vec<String> = Vec::new();
+
+        if let Ok(obj) = Object::parse(&bytes) {
+            match obj {
+                Object::Elf(elf) => {
+                    binary_format = "ELF".to_string();
+                    detected_arch = match elf.header.e_machine {
+                        goblin::elf::header::EM_X86_64 => TargetArchitecture::ArchX8664,
+                        goblin::elf::header::EM_AARCH64 => TargetArchitecture::ArchAarch64,
+                        goblin::elf::header::EM_ARM => TargetArchitecture::ArchArmv7,
+                        goblin::elf::header::EM_RISCV => TargetArchitecture::ArchRiscv64,
+                        _ => TargetArchitecture::ArchUnspecified,
+                    };
+
+                    // Check PIE (ET_DYN)
+                    hardening.pie_enabled = elf.header.e_type == goblin::elf::header::ET_DYN;
+
+                    // Scan segments for NX stack and RELRO
+                    for ph in &elf.program_headers {
+                        if ph.p_type == goblin::elf::program_header::PT_GNU_STACK {
+                            hardening.nx_stack_enabled = (ph.p_flags & goblin::elf::program_header::PF_X) == 0;
+                        }
+                        if ph.p_type == goblin::elf::program_header::PT_GNU_RELRO {
+                            hardening.relro_full = true;
+                        }
+                    }
+
+                    // Extract and check symbols
+                    for sym in elf.syms.iter().chain(elf.dynsyms.iter()) {
+                        let name_opt = if let Some(n) = elf.strtab.get_at(sym.st_name) {
+                            Some(n)
+                        } else {
+                            elf.dynstrtab.get_at(sym.st_name)
+                        };
+
+                        if let Some(name) = name_opt {
+                            if name.contains("__stack_chk_fail") {
+                                hardening.stack_canary_present = true;
+                            }
+                            if name.contains("_chk") {
+                                hardening.fortified_source = true;
+                            }
+                            if let Some(risk) = Self::classify_unsafe_symbol(name) {
+                                unsafe_symbols.push(UnsafeSymbolReference {
+                                    symbol_name: name.to_string(),
+                                    virtual_address: sym.st_value,
+                                    section_name: ".text".to_string(),
+                                    risk_category: risk.to_string(),
+                                });
+                            }
+                        }
+                    }
+                }
+                Object::Mach(mach) => {
+                    binary_format = "Mach-O".to_string();
+                    match mach {
+                        goblin::mach::Mach::Binary(macho) => {
+                            detected_arch = match macho.header.cputype {
+                                goblin::mach::constants::cputype::CPU_TYPE_X86_64 => TargetArchitecture::ArchX8664,
+                                goblin::mach::constants::cputype::CPU_TYPE_ARM64 => TargetArchitecture::ArchAarch64,
+                                goblin::mach::constants::cputype::CPU_TYPE_ARM => TargetArchitecture::ArchArmv7,
+                                _ => TargetArchitecture::ArchUnspecified,
+                            };
+                            hardening.pie_enabled = (macho.header.flags & goblin::mach::header::MH_PIE) != 0;
+
+                            for sym in macho.symbols() {
+                                if let Ok((name, nlist)) = sym {
+                                    if name.contains("__stack_chk_fail") {
+                                        hardening.stack_canary_present = true;
+                                    }
+                                    if let Some(risk) = Self::classify_unsafe_symbol(name) {
+                                        unsafe_symbols.push(UnsafeSymbolReference {
+                                            symbol_name: name.to_string(),
+                                            virtual_address: nlist.n_value,
+                                            section_name: "__text".to_string(),
+                                            risk_category: risk.to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        goblin::mach::Mach::Fat(_) => {
+                            binary_format = "Mach-O (Fat)".to_string();
+                        }
+                    }
+                }
+                Object::PE(pe) => {
+                    binary_format = "PE".to_string();
+                    detected_arch = TargetArchitecture::ArchX8664;
+                    for exp in &pe.exports {
+                        if let Some(name) = exp.name {
+                            if let Some(risk) = Self::classify_unsafe_symbol(name) {
+                                unsafe_symbols.push(UnsafeSymbolReference {
+                                    symbol_name: name.to_string(),
+                                    virtual_address: exp.rva as u64,
+                                    section_name: ".edata".to_string(),
+                                    risk_category: risk.to_string(),
+                                });
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        } else if bytes.starts_with(b"\x7fELF") {
+            binary_format = "ELF".to_string();
+            detected_arch = TargetArchitecture::ArchX8664;
+        } else if bytes.starts_with(b"\xfe\xed\xfa\xce") || bytes.starts_with(b"\xce\xfa\xed\xfe") || bytes.starts_with(b"\xcf\xfa\xed\xfe") || bytes.starts_with(b"\xfe\xed\xfa\xcf") {
+            binary_format = "Mach-O".to_string();
+            detected_arch = TargetArchitecture::ArchAarch64;
+        } else if bytes.starts_with(b"MZ") {
+            binary_format = "PE".to_string();
+            detected_arch = TargetArchitecture::ArchX8664;
+        }
+
+        // Check for longjmp without catch / missing cleanup frame
+        let has_longjmp = unsafe_symbols.iter().any(|s| s.symbol_name.contains("longjmp"));
+        if has_longjmp {
+            missing_cleanups.push("Unwound longjmp context without RAII exception landing pad".to_string());
+        }
+
+        // Perform known vulnerability heuristics (PHP2Shell & Node2Shell)
+        let sample_text = String::from_utf8_lossy(&bytes[..bytes.len().min(5_000_000)]);
+        let mut is_vuln = false;
+        let mut severity = Severity::Low;
+        let mut summary = "Static binary analysis passed. No active exploit state detected.".to_string();
+
+        if sample_text.contains("X-Powered-By: PHP") || sample_text.contains("PHP Version") || req.file_path.contains("php") {
+            if has_longjmp && sample_text.contains("brotli") {
+                is_vuln = true;
+                severity = Severity::Critical;
+                summary = "CVE-2026-109618: PHP Zend allocator longjmp error unwinding exposed via Brotli decompression.".to_string();
+            }
+        } else if sample_text.contains("node/v") || sample_text.contains("BrotliDecoder") || req.file_path.contains("node") {
+            if sample_text.contains("BrotliDecoderCreateInstance") {
+                is_vuln = true;
+                severity = Severity::High;
+                summary = "CVE-2026-111497: Node.js Brotli decoder static bundle exposes out-of-bounds heap flaw.".to_string();
+            }
+        }
+
+        BinaryInspectionResponse {
+            request_id: req.request_id.clone(),
+            target_path: req.file_path.clone(),
+            binary_format,
+            detected_arch: detected_arch as i32,
+            hardening_flags: Some(hardening),
+            unsafe_symbols,
+            missing_cleanups,
+            is_vulnerable: is_vuln,
+            calculated_severity: severity as i32,
+            diagnostic_summary: summary,
+        }
+    }
+
+    fn classify_unsafe_symbol(name: &str) -> Option<&'static str> {
+        let n = name.trim_start_matches('_');
+        if n == "strcpy" || n == "strcat" || n == "gets" {
+            Some("UNBOUNDED_STRING_COPY: Buffer overflow vector")
+        } else if n == "sprintf" || n == "vsprintf" {
+            Some("UNBOUNDED_FORMAT_STRING: Arbitrary write risk")
+        } else if n.contains("longjmp") || n.contains("siglongjmp") {
+            Some("NON_LOCAL_JUMP: Bypasses stack unwind / heap cleanup")
+        } else if n == "system" || n == "popen" {
+            Some("COMMAND_EXECUTION_PRIMITIVE: Shell injection risk")
+        } else {
+            None
+        }
+    }
+
     fn is_critical_symbol(name: &str) -> bool {
         let n = name.trim_start_matches('_');
         n.contains("BrotliDecoder")
@@ -119,8 +335,6 @@ impl BinaryAuditor {
         let re_alt = Regex::new(r"PHP Version (\d+\.\d+\.\d+)").unwrap();
 
         let mut detected_version = None;
-
-        // Scan sample of binary strings
         let text_sample = String::from_utf8_lossy(&bytes[..bytes.len().min(5_000_000)]);
         if let Some(cap) = re_ver.captures(&text_sample) {
             detected_version = Some(cap[1].to_string());
@@ -158,7 +372,6 @@ impl BinaryAuditor {
                 is_vuln = false;
             }
         } else {
-            // If version string not directly embedded, check critical symbols presence
             let has_hash_destroy = symbols.iter().any(|s| s.contains("zend_hash_destroy"));
             let has_url_encode = symbols.iter().any(|s| s.contains("php_url_encode"));
             if has_hash_destroy && has_url_encode {

@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package omni.messaging.v1;
+
+option go_package = "github.com/aegis/proto/v1;omniv1";
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_LOW = 1;
+  SEVERITY_MEDIUM = 2;
+  SEVERITY_HIGH = 3;
+  SEVERITY_CRITICAL = 4;
+}
+
+enum TargetArchitecture {
+  ARCH_UNSPECIFIED = 0;
+  ARCH_X86_64 = 1;
+  ARCH_AARCH64 = 2;
+  ARCH_ARMV7 = 3;
+  ARCH_RISCV64 = 4;
+}
+
+enum RuntimeEventType {
+  EVENT_UNSPECIFIED = 0;
+  EVENT_EXECVE = 1;
+  EVENT_SIGSEGV = 2;
+  EVENT_OOM_KILL = 3;
+  EVENT_ANOMALOUS_MMAP = 4;
+}
+
+enum RemediationType {
+  REMEDIATION_UNSPECIFIED = 0;
+  REMEDIATION_VIRTUAL_PATCH_WAF = 1;
+  REMEDIATION_PACKAGE_UPGRADE = 2;
+  REMEDIATION_PROCESS_RELOAD = 3;
+  REMEDIATION_CONFIG_HARDENING = 4;
+}
+
+message BinaryInspectionRequest {
+  string request_id = 1;
+  string file_path = 2;
+  bytes binary_payload = 3;
+  TargetArchitecture expected_arch = 4;
+  bool extract_symbols = 5;
+  bool verify_hardening_flags = 6;
+}
+
+message SecurityHardeningFlags {
+  bool pie_enabled = 1;
+  bool nx_stack_enabled = 2;
+  bool relro_full = 3;
+  bool stack_canary_present = 4;
+  bool fortified_source = 5;
+}
+
+message UnsafeSymbolReference {
+  string symbol_name = 1;
+  uint64 virtual_address = 2;
+  string section_name = 3;
+  string risk_category = 4;
+}
+
+message BinaryInspectionResponse {
+  string request_id = 1;
+  string target_path = 2;
+  string binary_format = 3;
+  TargetArchitecture detected_arch = 4;
+  SecurityHardeningFlags hardening_flags = 5;
+  repeated UnsafeSymbolReference unsafe_symbols = 6;
+  repeated string missing_cleanups = 7;
+  bool is_vulnerable = 8;
+  Severity calculated_severity = 9;
+  string diagnostic_summary = 10;
+}
+
+message PacketStreamInspectionRequest {
+  string capture_session_id = 1;
+  string network_interface = 2;
+  string source_endpoint = 3;
+  string destination_endpoint = 4;
+  string protocol = 5;
+  bytes raw_payload = 6;
+  map<string, string> extracted_headers = 7;
+}
+
+message PacketStreamInspectionResponse {
+  string capture_session_id = 1;
+  bool malicious_intent_detected = 2;
+  string matched_signature = 3;
+  Severity severity = 4;
+  string recommended_waf_action = 5;
+  bytes sanitized_payload = 6;
+}
+
+message RuntimeEvent {
+  string event_id = 1;
+  int64 timestamp_unix_ns = 2;
+  int32 process_id = 3;
+  int32 parent_process_id = 4;
+  string binary_path = 5;
+  RuntimeEventType event_type = 6;
+  repeated string execution_arguments = 7;
+  repeated string environment_variables = 8;
+  uint64 faulting_memory_address = 9;
+  string container_id = 10;
+  string cgroup_path = 11;
+}
+
+message RuntimeEventSubscription {
+  string subscriber_id = 1;
+  repeated RuntimeEventType filter_types = 2;
+  int32 target_pid_filter = 3;
+}
+
+message HealingDirective {
+  string directive_id = 1;
+  RemediationType remediation_type = 2;
+  string target_identifier = 3;
+  string target_file_path = 4;
+  string package_name = 5;
+  string desired_version = 6;
+  string inline_config_block = 7;
+  bool dry_run = 8;
+}
+
+message HealingResult {
+  string directive_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  string applied_diff = 4;
+  string backup_manifest_id = 5;
+  string ed25519_agent_signature = 6;
+  int64 applied_timestamp_unix = 7;
+}
+
+service OmniBinaryInspector {
+  rpc InspectBinary(BinaryInspectionRequest) returns (BinaryInspectionResponse);
+  rpc InspectPacketStream(PacketStreamInspectionRequest) returns (PacketStreamInspectionResponse);
+  rpc StreamRuntimeEvents(RuntimeEventSubscription) returns (stream RuntimeEvent);
+}
+
+service OmniStatefulHealer {
+  rpc ExecuteRemediation(HealingDirective) returns (HealingResult);
+  rpc RollbackRemediation(HealingDirective) returns (HealingResult);
+}

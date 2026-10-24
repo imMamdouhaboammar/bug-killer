@@ -1,0 +1,35 @@
+{
+  "skill_name": "karpathy-guidelines",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Refactor this 20-line function to be more flexible and add configurable plugin hooks.",
+      "expected_output": "Pushes back on speculative abstractions, asks for explicit requirements, and suggests minimal implementation.",
+      "expectations": [
+        "Pushes back against speculative configurability and unnecessary abstractions",
+        "Asks for clarification if requirements are ambiguous"
+      ],
+      "category": "core"
+    },
+    {
+      "id": 2,
+      "prompt": "Fix this bug where user names are null in the response.",
+      "expected_output": "Reproduces bug with a test or verifiable criteria, and fixes only the specific bug without orthogonal changes.",
+      "expectations": [
+        "Makes surgical edits without modifying unrelated code or comments",
+        "Defines verifiable success criteria before editing"
+      ],
+      "category": "guard"
+    },
+    {
+      "id": 3,
+      "prompt": "Add pagination to the user listing API endpoint.",
+      "expected_output": "Surfaces assumptions and edge cases, defines test criteria, and implements minimal required pagination.",
+      "expectations": [
+        "States assumptions explicitly before implementing",
+        "Implements minimal necessary code without speculative features"
+      ],
+      "category": "core"
+    }
+  ]
+}

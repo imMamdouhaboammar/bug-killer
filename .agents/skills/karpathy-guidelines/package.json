@@ -1,0 +1,38 @@
+{
+  "name": "karpathy-guidelines",
+  "version": "1.0.0",
+  "description": "Behavioral guidelines to reduce common LLM coding mistakes, overcomplication, and unintended edits",
+  "type": "module",
+  "main": "bin/cli.js",
+  "bin": {
+    "karpathy-guidelines": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "references",
+    "SKILL.md",
+    "marketplace.json",
+    "install.sh"
+  ],
+  "scripts": {
+    "start": "bun bin/cli.js",
+    "test": "bun test"
+  },
+  "keywords": [
+    "agent-skill",
+    "skills.sh",
+    "claude-code",
+    "cursor",
+    "codex",
+    "gemini",
+    "antigravity",
+    "bun"
+  ],
+  "author": "Andrej Karpathy & Multica AI",
+  "license": "MIT",
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18.0.0"
+  }
+}

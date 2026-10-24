@@ -1,0 +1,30 @@
+{
+  "name": "karpathy-guidelines",
+  "id": "karpathy-guidelines",
+  "owner": {
+    "name": "Andrej Karpathy & Multica AI"
+  },
+  "metadata": {
+    "description": "Behavioral guidelines to reduce common LLM coding mistakes, overcomplication, and unintended edits",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "karpathy-guidelines",
+      "source": "./",
+      "description": "Behavioral guidelines to reduce common LLM coding mistakes: Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution",
+      "version": "1.0.0",
+      "author": {
+        "name": "Andrej Karpathy & Multica AI"
+      },
+      "keywords": [
+        "guidelines",
+        "best-practices",
+        "coding",
+        "karpathy",
+        "agent-skill"
+      ],
+      "category": "workflow"
+    }
+  ]
+}

@@ -4,20 +4,26 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
+	omniv1 "github.com/aegis/healer/omniv1"
 	"github.com/aegis/healer/pkgmgr"
+	"github.com/aegis/healer/server"
 	"github.com/aegis/healer/supervisor"
 	"github.com/aegis/healer/waf"
+	"google.golang.org/grpc"
 )
 
 type AuditFinding struct {
-	FilePath            string `json:"file_path"`
-	IsVulnerable        bool   `json:"is_vulnerable"`
-	VulnerabilityID     string `json:"vulnerability_id"`
-	Severity            string `json:"severity"`
-	SafeThreshold       string `json:"safe_threshold"`
-	ReachabilityStatus  string `json:"reachability_status"`
+	FilePath           string `json:"file_path"`
+	IsVulnerable       bool   `json:"is_vulnerable"`
+	VulnerabilityID    string `json:"vulnerability_id"`
+	Severity           string `json:"severity"`
+	SafeThreshold      string `json:"safe_threshold"`
+	ReachabilityStatus string `json:"reachability_status"`
 }
 
 type AuditReportInput struct {
@@ -26,15 +32,56 @@ type AuditReportInput struct {
 }
 
 func main() {
+	udsSocket := flag.String("uds", "", "Start as UDS gRPC server on socket path (e.g. /tmp/omni_healer.sock)")
+	backupDir := flag.String("backup-dir", "/tmp/.omni_backups", "Directory to store Ed25519 signed backups")
 	findingsPath := flag.String("findings", "findings.json", "Path to findings.json from inspector")
 	nginxConf := flag.String("nginx", "", "Path to Nginx config to inject virtual patch")
 	haproxyConf := flag.String("haproxy", "", "Path to HAProxy config to inject guard")
 	apacheConf := flag.String("apache", "", "Path to Apache config to inject guard")
-	upgradeRuntime := flag.String("upgrade", "", "Upgrade runtime via package manager ('php' or 'node')")
+	upgradeRuntime := flag.String("upgrade", "", "Upgrade runtime via package manager ('php', 'node', or 'npm')")
 	reloadService := flag.String("reload", "", "Reload system service after patch ('nginx', 'php-fpm', etc.)")
 	dryRun := flag.Bool("dry-run", false, "Preview actions without applying changes")
 	flag.Parse()
 
+	// 1. UDS gRPC Server Mode
+	if *udsSocket != "" {
+		_ = os.Remove(*udsSocket)
+		lis, err := net.Listen("unix", *udsSocket)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[-] Failed to listen on UDS socket %s: %v\n", *udsSocket, err)
+			os.Exit(1)
+		}
+		defer func() {
+			lis.Close()
+			_ = os.Remove(*udsSocket)
+		}()
+
+		healerSvc, err := server.NewStatefulHealerServer(*backupDir)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[-] Failed to initialize Healer Server: %v\n", err)
+			os.Exit(1)
+		}
+
+		grpcServer := grpc.NewServer()
+		omniv1.RegisterOmniStatefulHealerServer(grpcServer, healerSvc)
+
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+		go func() {
+			<-sigChan
+			fmt.Println("\n[*] Shutting down Omni-Healer UDS server...")
+			grpcServer.GracefulStop()
+		}()
+
+		fmt.Printf("[✓] Omni-Healer: Listening on UDS socket %s (Ed25519 Non-Repudiation Active)\n", *udsSocket)
+		if err := grpcServer.Serve(lis); err != nil {
+			fmt.Fprintf(os.Stderr, "[-] gRPC serve error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// 2. Standalone CLI Healer Mode
 	fmt.Println("=======================================================")
 	fmt.Println("  🛡️  AEGIS AUTOPILOT HEALER (SERVICE C)")
 	fmt.Printf("  Dry-Run Mode: %v\n", *dryRun)
@@ -44,7 +91,6 @@ func main() {
 	pu := pkgmgr.NewPackageUpgrader()
 	super := supervisor.NewProcessSupervisor()
 
-	// 1. WAF Virtual Patch Injection
 	if *nginxConf != "" {
 		fmt.Printf("[+] Ingesting Nginx configuration: %s\n", *nginxConf)
 		if *dryRun {
@@ -89,7 +135,6 @@ func main() {
 		}
 	}
 
-	// 2. Package Manager Upgrade
 	if *upgradeRuntime != "" {
 		fmt.Printf("[+] Requesting package upgrade for runtime: %s (Manager: %s)\n", *upgradeRuntime, pu.Manager)
 		out, err := pu.ExecuteUpgrade(*upgradeRuntime, *dryRun)
@@ -100,7 +145,6 @@ func main() {
 		}
 	}
 
-	// 3. Service Reload
 	if *reloadService != "" {
 		fmt.Printf("[+] Requesting service reload for: %s\n", *reloadService)
 		out, err := super.ReloadService(*reloadService, *dryRun)
@@ -111,7 +155,6 @@ func main() {
 		}
 	}
 
-	// 4. Auto-audit findings report if file exists
 	if _, err := os.Stat(*findingsPath); err == nil && *nginxConf == "" && *upgradeRuntime == "" {
 		data, err := os.ReadFile(*findingsPath)
 		if err == nil {
