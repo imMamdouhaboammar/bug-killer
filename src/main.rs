@@ -9,6 +9,7 @@ mod watcher;
 mod shell;
 mod completion;
 mod identity;
+mod rules;
 
 use clap::{CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
@@ -21,6 +22,7 @@ use doctor::SystemDoctor;
 use watcher::WatcherEngine;
 use shell::ShellEngine;
 use completion::CompletionGenerator;
+use rules::RuleEngine;
 
 #[derive(Parser, Debug)]
 #[command(name = "bug-killer")]
@@ -63,6 +65,10 @@ enum Commands {
         /// Automatically apply safe healing patches upon detecting vulnerabilities
         #[arg(long, default_value_t = false)]
         auto_heal: bool,
+
+        /// Custom path to rules directory or JSON rule file
+        #[arg(long)]
+        rules: Option<PathBuf>,
     },
 
     /// Generate shell auto-completion script for bash, zsh, fish, or powershell
@@ -84,6 +90,10 @@ enum Commands {
         /// Also inspect host binary runtimes (php, node) on PATH
         #[arg(long, default_value_t = false)]
         check_runtime: bool,
+
+        /// Custom path to rules directory or JSON rule file
+        #[arg(long)]
+        rules: Option<PathBuf>,
     },
 
     /// Plan and automatically heal vulnerable configurations, Dockerfiles, manifests, and web servers
@@ -99,6 +109,10 @@ enum Commands {
         /// Automatically apply all safe patches without confirmation
         #[arg(long, default_value_t = true)]
         auto_apply: bool,
+
+        /// Custom path to rules directory or JSON rule file
+        #[arg(long)]
+        rules: Option<PathBuf>,
     },
 
     /// Roll back an applied healing session using a backup ID
@@ -164,7 +178,7 @@ fn main() {
             println!();
         }
 
-        Commands::Watch { path, interval, auto_heal } => {
+        Commands::Watch { path, interval, auto_heal, rules: _ } => {
             WatcherEngine::watch(&path, interval, auto_heal, None);
         }
 
@@ -176,8 +190,9 @@ fn main() {
             }
         }
 
-        Commands::Scan { path, json, check_runtime } => {
-            let report = FleetScanner::scan_directory(&path, check_runtime);
+        Commands::Scan { path, json, check_runtime, rules } => {
+            let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
+            let report = FleetScanner::scan_directory_with_rules(&path, check_runtime, &active_rules);
 
             if json {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
@@ -190,13 +205,14 @@ fn main() {
             println!("Target:               {}", report.target_dir.display());
             println!("Timestamp:            {}", report.scan_time);
             println!("Total Files Audited:  {}", report.total_files_scanned);
+            println!("Active Dynamic Rules: {}", active_rules.len());
             println!("Vulnerabilities:      {}", if report.is_vulnerable { "EXPOSED ⚠️" } else { "CLEAN ✅" });
             println!("Critical:             {}", report.critical_count);
             println!("High:                 {}", report.high_count);
             println!("-------------------------------------------------------\n");
 
             if report.findings.is_empty() {
-                println!("✅ Zero PHP2Shell or Node2Shell exposures detected.");
+                println!("✅ Zero exposures or vulnerability violations detected.");
                 return;
             }
 
@@ -222,14 +238,16 @@ fn main() {
             println!("Run 'bug-killer heal {} --dry-run' to preview automated remediation.", path.display());
         }
 
-        Commands::Heal { path, dry_run, auto_apply } => {
-            let report = FleetScanner::scan_directory(&path, false);
-            let plan = AutopilotHealer::plan_healing(&report);
+        Commands::Heal { path, dry_run, auto_apply, rules } => {
+            let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
+            let report = FleetScanner::scan_directory_with_rules(&path, false, &active_rules);
+            let plan = AutopilotHealer::plan_healing_with_rules(&report, &active_rules);
 
             println!("\n=======================================================");
             println!("  🎯  BUG KILLER: AUTOPILOT HEALER");
             println!("=======================================================");
             println!("Target:               {}", path.display());
+            println!("Active Dynamic Rules: {}", active_rules.len());
             println!("Vulnerable Findings:  {}", report.findings.len());
             println!("Planned Patches:      {}", plan.len());
             println!("Dry-Run Mode:         {}", if dry_run { "ENABLED (No files will be modified)" } else { "DISABLED (Live Execution)" });

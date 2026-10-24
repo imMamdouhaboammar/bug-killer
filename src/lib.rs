@@ -9,3 +9,4 @@ pub mod watcher;
 pub mod shell;
 pub mod completion;
 pub mod identity;
+pub mod rules;

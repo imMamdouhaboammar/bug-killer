@@ -6,6 +6,7 @@ pub enum CveId {
     Php2ShellOom(String),     // CVE-2026-109618
     Php2ShellStale(String),   // CVE-2026-109619
     Node2ShellBrotli(String), // CVE-2026-111497
+    Custom { id: String, title: String },
 }
 
 impl CveId {
@@ -14,6 +15,7 @@ impl CveId {
             CveId::Php2ShellOom(_) => "CVE-2026-109618",
             CveId::Php2ShellStale(_) => "CVE-2026-109619",
             CveId::Node2ShellBrotli(_) => "CVE-2026-111497",
+            CveId::Custom { id, .. } => id.as_str(),
         }
     }
 
@@ -22,6 +24,7 @@ impl CveId {
             CveId::Php2ShellOom(_) => "PHP2Shell: RCE via Out-of-Memory (OOM) Heap Corruption",
             CveId::Php2ShellStale(_) => "PHP2Shell: RCE via Stale Global State / Use-After-Free Across Requests",
             CveId::Node2ShellBrotli(_) => "Node2Shell: Out-of-Bounds Memory Write in Bundled Google Brotli Decoder",
+            CveId::Custom { title, .. } => title.as_str(),
         }
     }
 }
@@ -48,6 +51,9 @@ pub enum TargetKind {
     ApacheConfig,
     CaddyConfig,
     Dockerfile,
+    GenericSourceFile,
+    GenericConfigFile,
+    EnvironmentFile,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,6 +79,8 @@ pub enum PatchActionType {
     ComposerVersionBump,
     DockerfileBaseImageBump,
     PhpIniHardening,
+    GenericReplace,
+    GenericAppend,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

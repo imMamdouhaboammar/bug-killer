@@ -1,0 +1,76 @@
+[
+  {
+    "id": "CVE-2024-5480",
+    "title": "PyTorch Insecure Deserialization via torch.load",
+    "severity": "Critical",
+    "description": "Insecure deserialization in torch.load() without weights_only=True allows arbitrary code execution via crafted pickle payloads.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.py", "*.ipynb"],
+    "detection": {
+      "type": "regex",
+      "pattern": "torch\\.load\\s*\\(([^)]*)\\)",
+      "not_matching": "weights_only\\s*=\\s*True"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "torch\\.load\\(([^)]*)\\)",
+      "replace": "torch.load($1, weights_only=True)",
+      "description": "Enforce safe deserialization by adding weights_only=True"
+    }
+  },
+  {
+    "id": "CVE-2023-44487",
+    "title": "HTTP/2 Rapid Reset Attack (DDoS Stream Cancellation)",
+    "severity": "High",
+    "description": "Rapid reset flood exploits HTTP/2 stream cancellations to exhaust web server worker threads and CPU.",
+    "target_kind": "NginxConfig",
+    "file_patterns": ["nginx.conf", "*.conf"],
+    "detection": {
+      "type": "missing_pattern",
+      "required_pattern": "limit_req_zone"
+    },
+    "remediation": {
+      "type": "append_block",
+      "snippet": "limit_req_zone $binary_remote_addr zone=bk_ratelimit:10m rate=100r/s;\nlimit_req zone=bk_ratelimit burst=150 nodelay;",
+      "description": "Inject HTTP/2 rate limiting and burst bounds into Nginx configuration"
+    }
+  },
+  {
+    "id": "SEC-001-EXPOSED-ENV-SECRETS",
+    "title": "Exposed Cloud / Service Access Key in Source Code",
+    "severity": "Critical",
+    "description": "Hardcoded secret access keys detected in source code. Credentials must be extracted to environment variables.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.js", "*.ts", "*.py", "*.php", "*.go"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(AKIA[0-9A-Z]{16}|sk_live_[0-9a-zA-Z]{24})",
+      "not_matching": "process\\.env|os\\.environ|dummy|example"
+    },
+    "remediation": {
+      "type": "string_replace",
+      "search": "AKIA",
+      "replace": "process.env.AWS_ACCESS_KEY_ID /* REDACTED_BY_BUG_KILLER */",
+      "description": "Redact exposed cloud secret key from source code"
+    }
+  },
+  {
+    "id": "SEC-002-PYTHON-UNSAFE-EVAL",
+    "title": "Arbitrary Code Execution via Insecure Python eval()",
+    "severity": "High",
+    "description": "Direct evaluation of dynamic input using eval() allows arbitrary Python bytecode execution.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.py"],
+    "detection": {
+      "type": "regex",
+      "pattern": "eval\\s*\\(\\s*(request|input|param|query|body|data)",
+      "not_matching": "ast\\.literal_eval"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "eval\\((request|input|param|query|body|data)([^)]*)\\)",
+      "replace": "ast.literal_eval($1$2)",
+      "description": "Replace insecure eval() with safe ast.literal_eval()"
+    }
+  }
+]

@@ -6,6 +6,7 @@ use std::path::Path;
 use walkdir::WalkDir;
 use chrono::Utc;
 use crate::types::*;
+use crate::rules::{RuleEngine, VulnerabilityRule};
 use self::php::PhpScanner;
 use self::node::NodeScanner;
 use self::webserver::WebServerScanner;
@@ -13,8 +14,14 @@ use self::webserver::WebServerScanner;
 pub struct FleetScanner;
 
 impl FleetScanner {
-    /// Recursively scans a filesystem root directory for PHP2Shell and Node2Shell exposure.
+    /// Recursively scans a filesystem root directory for both built-in CVEs and dynamic rules.
     pub fn scan_directory(root: &Path, check_host_runtimes: bool) -> ScanReport {
+        let rules = RuleEngine::load_rules(None, root);
+        Self::scan_directory_with_rules(root, check_host_runtimes, &rules)
+    }
+
+    /// Recursively scans a filesystem root directory using an explicit set of vulnerability rules.
+    pub fn scan_directory_with_rules(root: &Path, check_host_runtimes: bool, rules: &[VulnerabilityRule]) -> ScanReport {
         let mut findings = Vec::new();
         let mut total_files = 0;
 
@@ -32,6 +39,9 @@ impl FleetScanner {
         for entry in WalkDir::new(root)
             .into_iter()
             .filter_entry(|e| {
+                if e.depth() == 0 {
+                    return true;
+                }
                 let name = e.file_name().to_string_lossy();
                 // Skip version control and heavy build directories
                 name != ".git" && name != "node_modules" && name != "vendor" && name != "target" && name != ".aegis"
@@ -82,6 +92,17 @@ impl FleetScanner {
                 || file_name.ends_with(".cjs")
             {
                 findings.extend(NodeScanner::scan_source_file(path));
+            }
+
+            // 3. Dynamic vulnerability rules evaluation
+            if !rules.is_empty() && rules.iter().any(|r| RuleEngine::matches_file_pattern(path, &r.file_patterns)) {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    for rule in rules {
+                        if let Some(finding) = RuleEngine::scan_file(path, &content, rule) {
+                            findings.push(finding);
+                        }
+                    }
+                }
             }
         }
 

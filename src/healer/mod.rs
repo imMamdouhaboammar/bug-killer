@@ -6,6 +6,7 @@ pub mod rollback;
 
 use std::path::{Path, PathBuf};
 use crate::types::*;
+use crate::rules::{RuleEngine, VulnerabilityRule};
 use self::backup::BackupManager;
 use self::virtual_patch::VirtualPatcher;
 use self::manifest_patch::ManifestPatcher;
@@ -16,6 +17,12 @@ pub struct AutopilotHealer;
 impl AutopilotHealer {
     /// Generates a comprehensive plan of atomic patches to heal detected vulnerabilities.
     pub fn plan_healing(report: &ScanReport) -> Vec<PatchAction> {
+        let rules = RuleEngine::load_rules(None, &report.target_dir);
+        Self::plan_healing_with_rules(report, &rules)
+    }
+
+    /// Generates healing plan using an explicit set of rules.
+    pub fn plan_healing_with_rules(report: &ScanReport, rules: &[VulnerabilityRule]) -> Vec<PatchAction> {
         let mut plan = Vec::new();
 
         for finding in &report.findings {
@@ -24,6 +31,21 @@ impl AutopilotHealer {
                 None => continue,
             };
 
+            // 1. Check if finding originated from a dynamic rule
+            if let CveId::Custom { id: ref rule_id, .. } = finding.cve {
+                if let Some(rule) = rules.iter().find(|r| &r.id == rule_id) {
+                    if let Ok(content) = std::fs::read_to_string(path) {
+                        if let Some(action) = RuleEngine::plan_patch(path, &content, rule) {
+                            if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                                plan.push(action);
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Built-in hardcoded remediations for zero-day CVEs
             match finding.target_kind {
                 TargetKind::NginxConfig => {
                     if let Some(action) = VirtualPatcher::plan_nginx_patch(path) {
