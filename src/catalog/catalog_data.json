@@ -5275,5 +5275,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: path count/time/memory limits",
     "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DOS-012",
+    "short_id": "DOS-012",
+    "rule_version": "1.0",
+    "category_number": 16,
+    "category": "2.16 Availability, denial of service and resource budgets",
+    "description": "Error path repeatedly writes huge logs/reports causing disk exhaustion",
+    "cwe": "CWE-400",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: log/report caps and retention",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-001",
+    "short_id": "RAC-001",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "TOCTOU on path, URL, credentials or permissions",
+    "cwe": "CWE-367",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: check and use bound atomically",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-002",
+    "short_id": "RAC-002",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Double-submit/double-charge due to non-idempotent retries",
+    "cwe": "CWE-362",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: duplicate requests cause one side effect",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-003",
+    "short_id": "RAC-003",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Token refresh/rotation race permits replay",
+    "cwe": "CWE-362",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: concurrent refresh invariants",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-004",
+    "short_id": "RAC-004",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Shared mutable state used without synchronization",
+    "cwe": "CWE-362",
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: race-free under concurrent harness",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
   }
 ]
