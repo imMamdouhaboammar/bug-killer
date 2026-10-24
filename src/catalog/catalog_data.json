@@ -8068,5 +8068,133 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: safe data-only parsing",
     "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-014",
+    "short_id": "LNG-014",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Flask/Django/FastAPI debug, secret, route dependency/auth controls misconfigured",
+    "cwe": null,
+    "detection_method": "AST+CONFIG",
+    "required_evidence": [
+      "AST",
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: environment-aware secure defaults",
+    "verification_requirements": "Verify via AST+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-015",
+    "short_id": "LNG-015",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Go `exec.Command` arguments accept attacker-controlled flags/subcommands",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: argument grammar constrained",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-016",
+    "short_id": "LNG-016",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Go HTTP clients follow redirects into forbidden origins or lack deadlines",
+    "cwe": null,
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: controlled transport and redirect policy",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-017",
+    "short_id": "LNG-017",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Go template uses `text/template` for user-controlled HTML where `html/template` expected",
+    "cwe": null,
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: context-aware HTML escaping",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-018",
+    "short_id": "LNG-018",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Go path check uses `strings.HasPrefix` without symlink/segment safety",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: canonical path containment",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
   }
 ]
