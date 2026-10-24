@@ -6786,5 +6786,134 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: fail-closed conditions still hold",
     "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-014",
+    "short_id": "AIC-014",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "Generated fix changes data type, unit, signature, ownership or contract and breaks downstream enforcement",
+    "cwe": "CWE-841",
+    "detection_method": "TEST+REVIEW",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: integration contract tests and trust transition checks",
+    "verification_requirements": "Verify via TEST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-015",
+    "short_id": "AIC-015",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "AI-produced security recommendation cites nonexistent advisory/CVE or mismatches package",
+    "cwe": null,
+    "detection_method": "SCA+REVIEW",
+    "required_evidence": [
+      "SCA",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows",
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: advisory authority, package ID, affected range verified",
+    "verification_requirements": "Verify via SCA+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-016",
+    "short_id": "AIC-016",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "AI reports \"fixed\" based only on edited code without running functional and security tests",
+    "cwe": null,
+    "detection_method": "TEST+AGENT",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: proof receipts required before fixed status",
+    "verification_requirements": "Verify via TEST+AGENT evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LLM-001",
+    "short_id": "LLM-001",
+    "rule_version": "1.0",
+    "category_number": 22,
+    "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+    "description": "Untrusted web/file/tool text treated as executable agent instruction",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: instruction/data boundary enforced",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LLM-002",
+    "short_id": "LLM-002",
+    "rule_version": "1.0",
+    "category_number": 22,
+    "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+    "description": "Prompt content alone used to authorize file, network, SQL, shell or deployment actions",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: independent policy denies unapproved effect",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
   }
 ]
