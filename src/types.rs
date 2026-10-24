@@ -572,3 +572,99 @@ impl ScanReport {
         !self.is_vulnerable && self.coverage.is_complete()
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ScanStatus {
+    NotRun,
+    Running,
+    Completed,
+    Partial,
+    Failed,
+    Blocked,
+    Unsupported,
+}
+
+#[allow(dead_code)]
+impl ScanStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ScanStatus::NotRun => "NOT_RUN",
+            ScanStatus::Running => "RUNNING",
+            ScanStatus::Completed => "COMPLETED",
+            ScanStatus::Partial => "PARTIAL",
+            ScanStatus::Failed => "FAILED",
+            ScanStatus::Blocked => "BLOCKED",
+            ScanStatus::Unsupported => "UNSUPPORTED",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ResultClassification {
+    Confirmed,
+    Suspected,
+    NoFindingInCoverage,
+    NotAssessed,
+}
+
+#[allow(dead_code)]
+impl ResultClassification {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ResultClassification::Confirmed => "CONFIRMED",
+            ResultClassification::Suspected => "SUSPECTED",
+            ResultClassification::NoFindingInCoverage => "NO_FINDING_IN_COVERAGE",
+            ResultClassification::NotAssessed => "NOT_ASSESSED",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ScanProfile {
+    Quick,
+    Project,
+    Ci,
+    Deep,
+}
+
+#[allow(dead_code)]
+impl ScanProfile {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ScanProfile::Quick => "QUICK",
+            ScanProfile::Project => "PROJECT",
+            ScanProfile::Ci => "CI",
+            ScanProfile::Deep => "DEEP",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityGuardReport {
+    pub workspace_root: PathBuf,
+    pub scan_time: String,
+    pub scan_profile: ScanProfile,
+    pub status: ScanStatus,
+    pub result_classification: ResultClassification,
+    pub files_assessed: usize,
+    pub findings: Vec<Finding>,
+    pub rules_evaluated: Vec<String>,
+    pub applicable_rules: Vec<String>,
+    pub unsupported_rules: Vec<String>,
+    pub coverage: ScanCoverage,
+    pub receipts: Vec<CoverageReceipt>,
+    pub unexamined_reasons: Vec<String>,
+}
+
+#[allow(dead_code)]
+impl SecurityGuardReport {
+    pub fn is_clean(&self) -> bool {
+        self.findings.is_empty()
+            && self.status == ScanStatus::Completed
+            && self.result_classification == ResultClassification::NoFindingInCoverage
+            && self.coverage.is_complete()
+    }
+}
