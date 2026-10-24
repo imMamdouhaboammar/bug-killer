@@ -48,6 +48,7 @@ impl FleetScanner {
     ) -> ScanReport {
         let mut raw_findings = Vec::new();
         let mut total_files = 0;
+        let mut taint_files_evaluated = 0;
         let mut parser_failures = Vec::new();
         let files_excluded = AtomicUsize::new(0);
 
@@ -243,6 +244,7 @@ impl FleetScanner {
                     || file_name.ends_with(".php")
                     || file_name.ends_with(".go"))
             {
+                taint_files_evaluated += 1;
                 if let Ok(content) = std::fs::read_to_string(path) {
                     for tf in crate::taint::TaintEngine::scan_source(path, &content) {
                         raw_findings.push(tf.into_finding());
@@ -285,12 +287,27 @@ impl FleetScanner {
             CoverageStatus::Partial
         };
 
+        let mut receipts = Vec::new();
+        if enable_taint {
+            receipts.push(CoverageReceipt {
+                scanner_id: "taint-sast".to_string(),
+                scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+                target_id: root.display().to_string(),
+                status: CoverageStatus::Complete,
+                items_examined: taint_files_evaluated as u64,
+                skipped_reasons: Vec::new(),
+                errors: Vec::new(),
+                completed_at: chrono::Utc::now().to_rfc3339(),
+            });
+        }
+
         let coverage = ScanCoverage {
             files_scanned: total_files,
             files_excluded: files_excluded.load(Ordering::Relaxed),
             parser_failures,
             unsupported_targets: Vec::new(),
             coverage_status,
+            receipts,
         };
 
         ScanReport {

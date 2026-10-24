@@ -1,4 +1,4 @@
-use bug_killer::dast::DastProber;
+use bug_killer::dast::{DastProber, DastScopeConfig};
 use bug_killer::types::Severity;
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -34,7 +34,14 @@ fn test_dast_probe_against_mock_server() {
         }
     });
 
-    let report = DastProber::probe(&url, 5).expect("DAST probe should complete successfully");
+    let config = DastScopeConfig {
+        allow_sensitive_paths: true,
+        timeout_seconds: 5,
+        max_response_bytes: 1024 * 1024,
+    };
+
+    let report = DastProber::probe_with_config(&url, &config)
+        .expect("DAST probe should complete successfully");
 
     assert!(
         report.is_vulnerable,

@@ -85,6 +85,15 @@ impl McpServer {
                         "reachability": {
                             "type": "string",
                             "description": "Filter by reachability (REACHABLE, UNREACHABLE, UNKNOWN)"
+                        },
+                        "evidence_certainty": {
+                            "type": "string",
+                            "description": "Filter by evidence certainty (Confirmed, StronglySupported, Suspected, PatternIndicator, Unknown)"
+                        },
+                        "taint": {
+                            "type": "boolean",
+                            "description": "Include AST taint analysis dataflow checking (default: true)",
+                            "default": true
                         }
                     }
                 }),
@@ -300,13 +309,25 @@ impl McpServer {
             }
 
             "bk.scan" => {
-                let scan_report = FleetScanner::scan_directory(&target_path, true);
+                let taint = args.get("taint").and_then(Value::as_bool).unwrap_or(false);
+                let scan_report = FleetScanner::scan_directory_with_rules_and_taint(
+                    &target_path,
+                    true,
+                    &[],
+                    taint,
+                );
                 CallToolResult::ok_json(&scan_report)
                     .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
             }
 
             "bk.findings" => {
-                let scan_report = FleetScanner::scan_directory(&target_path, true);
+                let taint = args.get("taint").and_then(Value::as_bool).unwrap_or(true);
+                let scan_report = FleetScanner::scan_directory_with_rules_and_taint(
+                    &target_path,
+                    true,
+                    &[],
+                    taint,
+                );
                 let cve_filter = args
                     .get("cve")
                     .and_then(Value::as_str)
@@ -321,6 +342,10 @@ impl McpServer {
                     .map(|s| s.to_lowercase());
                 let reach_filter = args
                     .get("reachability")
+                    .and_then(Value::as_str)
+                    .map(|s| s.to_lowercase());
+                let certainty_filter = args
+                    .get("evidence_certainty")
                     .and_then(Value::as_str)
                     .map(|s| s.to_lowercase());
 
@@ -346,6 +371,12 @@ impl McpServer {
                         }
                         if let Some(ref r) = reach_filter {
                             if !f.reachability.as_str().to_lowercase().contains(r) {
+                                return false;
+                            }
+                        }
+                        if let Some(ref cert) = certainty_filter {
+                            let f_cert = format!("{:?}", f.evidence_certainty).to_lowercase();
+                            if !f_cert.contains(cert) {
                                 return false;
                             }
                         }

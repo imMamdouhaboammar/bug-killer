@@ -21,7 +21,7 @@ use agent::privacy::PrivacyPolicy;
 use agent::provider::{AgentModelConfig, ModelProvider, ProviderAdapter};
 use clap::{CommandFactory, Parser, Subcommand};
 use completion::CompletionGenerator;
-use dast::DastProber;
+use dast::{DastProber, DastScopeConfig};
 use doctor::SystemDoctor;
 use healer::AutopilotHealer;
 use healer::approval::ApprovalManager;
@@ -131,6 +131,10 @@ enum Commands {
         /// Request timeout in seconds (default: 10)
         #[arg(short, long, default_value_t = 10)]
         timeout: u64,
+
+        /// Allow probing sensitive endpoints (/.env, /.git/HEAD) on authorized local targets (default: false)
+        #[arg(long, default_value_t = false)]
+        sensitive_paths: bool,
     },
 
     /// Query open-source vulnerability database (https://osv.dev) for dependencies across npm, Packagist, PyPI, and crates.io
@@ -444,7 +448,11 @@ fn main() {
 
             if osv {
                 let osv_client = OsvClient::new();
-                let osv_findings = osv_client.scan_workspace(&path);
+                let (osv_findings, osv_receipt) = osv_client.scan_workspace_with_receipt(&path);
+                if osv_receipt.status != types::CoverageStatus::Complete {
+                    report.coverage.coverage_status = types::CoverageStatus::Partial;
+                }
+                report.coverage.receipts.push(osv_receipt);
                 for f in osv_findings {
                     if !report.findings.iter().any(|existing| existing.id == f.id) {
                         if f.severity == Severity::Critical {
@@ -596,10 +604,14 @@ fn main() {
         Commands::Osv { path, json } => {
             println!("🔍 Querying open-source vulnerability database (https://osv.dev)...");
             let osv_client = OsvClient::new();
-            let findings = osv_client.scan_workspace(&path);
+            let (findings, receipt) = osv_client.scan_workspace_with_receipt(&path);
 
             if json {
-                println!("{}", serde_json::to_string_pretty(&findings).unwrap());
+                let output = serde_json::json!({
+                    "findings": findings,
+                    "receipt": receipt
+                });
+                println!("{}", serde_json::to_string_pretty(&output).unwrap());
                 return;
             }
 
@@ -608,10 +620,35 @@ fn main() {
             println!("=======================================================");
             println!("Target Workspace:     {}", path.display());
             println!("Data Source:          https://osv.dev (Google / OpenSSF)");
+            println!("Coverage Status:      {:?}", receipt.status);
+            println!("Packages Examined:    {}", receipt.items_examined);
             println!("Total Advisories:     {}\n", findings.len());
 
+            if !receipt.skipped_reasons.is_empty() {
+                println!("ℹ️  Skipped constraints (require lockfile for exact CVE lookup):");
+                for r in &receipt.skipped_reasons {
+                    println!("   • {}", r);
+                }
+                println!();
+            }
+
+            if !receipt.errors.is_empty() {
+                println!("⚠️  OSV API lookup errors:");
+                for e in &receipt.errors {
+                    println!("   • {}", e);
+                }
+                println!();
+            }
+
             if findings.is_empty() {
-                println!("✅ Zero known open-source vulnerabilities reported by OSV.dev.");
+                if receipt.status == types::CoverageStatus::Complete {
+                    println!("✅ Zero known open-source vulnerabilities reported by OSV.dev.");
+                } else {
+                    println!(
+                        "⚠️  Zero findings reported, but coverage is incomplete ({:?}).",
+                        receipt.status
+                    );
+                }
                 return;
             }
 
@@ -773,66 +810,78 @@ fn main() {
             }
         }
 
-        Commands::Probe { url, json, timeout } => match DastProber::probe(&url, timeout) {
-            Ok(report) => {
-                if json {
-                    println!("{}", serde_json::to_string_pretty(&report).unwrap());
-                    return;
-                }
-
-                println!("\n=======================================================");
-                println!("  🛡️  BUG KILLER: DEFENSIVE DAST PROBE REPORT");
-                println!("=======================================================");
-                println!("Target URL:           {}", report.target_url);
-                println!("Timestamp:            {}", report.probe_time);
-                println!("Status Code:          HTTP {}", report.status_code);
-                println!("Duration:             {}ms", report.duration_ms);
-                println!("Headers Audited:      {}", report.headers_checked);
-                println!("Endpoints Audited:    {}", report.endpoints_audited);
-                println!(
-                    "Vulnerabilities:      {}",
-                    if report.is_vulnerable {
-                        "EXPOSED ⚠️"
-                    } else {
-                        "HARDENED ✅"
+        Commands::Probe {
+            url,
+            json,
+            timeout,
+            sensitive_paths,
+        } => {
+            let config = DastScopeConfig {
+                allow_sensitive_paths: sensitive_paths,
+                timeout_seconds: timeout,
+                max_response_bytes: 1024 * 1024,
+            };
+            match DastProber::probe_with_config(&url, &config) {
+                Ok(report) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                        return;
                     }
-                );
-                println!("Critical:             {}", report.critical_count);
-                println!("High:                 {}", report.high_count);
-                println!("-------------------------------------------------------\n");
 
-                if report.findings.is_empty() {
+                    println!("\n=======================================================");
+                    println!("  🛡️  BUG KILLER: DEFENSIVE DAST PROBE REPORT");
+                    println!("=======================================================");
+                    println!("Target URL:           {}", report.target_url);
+                    println!("Timestamp:            {}", report.probe_time);
+                    println!("Status Code:          HTTP {}", report.status_code);
+                    println!("Duration:             {}ms", report.duration_ms);
+                    println!("Headers Audited:      {}", report.headers_checked);
+                    println!("Endpoints Audited:    {}", report.endpoints_audited);
                     println!(
-                        "✅ All inspected security headers and defensive endpoints are hardened."
+                        "Vulnerabilities:      {}",
+                        if report.is_vulnerable {
+                            "EXPOSED ⚠️"
+                        } else {
+                            "HARDENED ✅"
+                        }
                     );
-                    return;
+                    println!("Critical:             {}", report.critical_count);
+                    println!("High:                 {}", report.high_count);
+                    println!("-------------------------------------------------------\n");
+
+                    if report.findings.is_empty() {
+                        println!(
+                            "✅ All inspected security headers and defensive endpoints are hardened."
+                        );
+                        return;
+                    }
+
+                    for (idx, finding) in report.findings.iter().enumerate() {
+                        let sev_badge = match finding.severity {
+                            Severity::Critical => "[CRITICAL]",
+                            Severity::High => "[HIGH]",
+                            Severity::Medium => "[MEDIUM]",
+                            Severity::Low => "[LOW]",
+                        };
+
+                        println!(
+                            "{}. {} {} - {}",
+                            idx + 1,
+                            sev_badge,
+                            finding.id,
+                            finding.title
+                        );
+                        println!("   Target:      {}", finding.target_url);
+                        println!("   Evidence:    {}", finding.evidence);
+                        println!("   Remediation: {}\n", finding.remediation);
+                    }
                 }
-
-                for (idx, finding) in report.findings.iter().enumerate() {
-                    let sev_badge = match finding.severity {
-                        Severity::Critical => "[CRITICAL]",
-                        Severity::High => "[HIGH]",
-                        Severity::Medium => "[MEDIUM]",
-                        Severity::Low => "[LOW]",
-                    };
-
-                    println!(
-                        "{}. {} {} - {}",
-                        idx + 1,
-                        sev_badge,
-                        finding.id,
-                        finding.title
-                    );
-                    println!("   Target:      {}", finding.target_url);
-                    println!("   Evidence:    {}", finding.evidence);
-                    println!("   Remediation: {}\n", finding.remediation);
+                Err(e) => {
+                    eprintln!("❌ DAST Probe Error: {}", e);
+                    std::process::exit(1);
                 }
             }
-            Err(e) => {
-                eprintln!("❌ DAST Probe Error: {}", e);
-                std::process::exit(1);
-            }
-        },
+        }
 
         Commands::CveInfo { cve_id } => {
             let norm = cve_id.trim().to_uppercase();
