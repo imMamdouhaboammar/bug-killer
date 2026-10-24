@@ -45,7 +45,31 @@ impl AutopilotHealer {
                 }
             }
 
-            // 2. Built-in hardcoded remediations for zero-day CVEs
+            // 2. Check if finding originated from OSV database (id starts with "osv-")
+            if finding.id.starts_with("osv-") {
+                if let Some(fix_ver) = finding.safe_threshold.strip_prefix("Upgrade to >= ") {
+                    let pkg_name = finding.detected_version_or_pattern.split('@').next().unwrap_or("").trim();
+                    if !pkg_name.is_empty() {
+                        let action = match finding.target_kind {
+                            TargetKind::NodePackageManifest => {
+                                ManifestPatcher::plan_generic_npm_dependency_bump(path, pkg_name, fix_ver)
+                            }
+                            TargetKind::GenericConfigFile if path.file_name().and_then(|s| s.to_str()) == Some("requirements.txt") => {
+                                ManifestPatcher::plan_generic_python_requirements_bump(path, pkg_name, fix_ver)
+                            }
+                            _ => None,
+                        };
+                        if let Some(act) = action {
+                            if !plan.iter().any(|a: &PatchAction| a.target_file == act.target_file) {
+                                plan.push(act);
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Built-in hardcoded remediations for zero-day CVEs
             match finding.target_kind {
                 TargetKind::NginxConfig => {
                     if let Some(action) = VirtualPatcher::plan_nginx_patch(path) {

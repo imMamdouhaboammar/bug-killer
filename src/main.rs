@@ -10,6 +10,7 @@ mod shell;
 mod completion;
 mod identity;
 mod rules;
+mod osv;
 
 use clap::{CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
@@ -23,6 +24,7 @@ use watcher::WatcherEngine;
 use shell::ShellEngine;
 use completion::CompletionGenerator;
 use rules::RuleEngine;
+use osv::OsvClient;
 
 #[derive(Parser, Debug)]
 #[command(name = "bug-killer")]
@@ -94,6 +96,21 @@ enum Commands {
         /// Custom path to rules directory or JSON rule file
         #[arg(long)]
         rules: Option<PathBuf>,
+
+        /// Also query free open vulnerability database (OSV.dev) for dependencies
+        #[arg(long, default_value_t = false)]
+        osv: bool,
+    },
+
+    /// Query open-source vulnerability database (https://osv.dev) for dependencies across npm, Packagist, PyPI, and crates.io
+    Osv {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
     },
 
     /// Plan and automatically heal vulnerable configurations, Dockerfiles, manifests, and web servers
@@ -113,6 +130,10 @@ enum Commands {
         /// Custom path to rules directory or JSON rule file
         #[arg(long)]
         rules: Option<PathBuf>,
+
+        /// Include OSV open vulnerability database findings in healing
+        #[arg(long, default_value_t = false)]
+        osv: bool,
     },
 
     /// Roll back an applied healing session using a backup ID
@@ -190,9 +211,25 @@ fn main() {
             }
         }
 
-        Commands::Scan { path, json, check_runtime, rules } => {
+        Commands::Scan { path, json, check_runtime, rules, osv } => {
             let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
-            let report = FleetScanner::scan_directory_with_rules(&path, check_runtime, &active_rules);
+            let mut report = FleetScanner::scan_directory_with_rules(&path, check_runtime, &active_rules);
+
+            if osv {
+                let osv_client = OsvClient::new();
+                let osv_findings = osv_client.scan_workspace(&path);
+                for f in osv_findings {
+                    if !report.findings.iter().any(|existing| existing.id == f.id) {
+                        if f.severity == Severity::Critical {
+                            report.critical_count += 1;
+                        } else if f.severity == Severity::High {
+                            report.high_count += 1;
+                        }
+                        report.findings.push(f);
+                    }
+                }
+                report.is_vulnerable = !report.findings.is_empty();
+            }
 
             if json {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
@@ -206,6 +243,7 @@ fn main() {
             println!("Timestamp:            {}", report.scan_time);
             println!("Total Files Audited:  {}", report.total_files_scanned);
             println!("Active Dynamic Rules: {}", active_rules.len());
+            println!("OSV.dev Integration:  {}", if osv { "ENABLED (Live Query)" } else { "DISABLED (Use --osv to enable)" });
             println!("Vulnerabilities:      {}", if report.is_vulnerable { "EXPOSED ⚠️" } else { "CLEAN ✅" });
             println!("Critical:             {}", report.critical_count);
             println!("High:                 {}", report.high_count);
@@ -235,12 +273,65 @@ fn main() {
                 println!("   Remediation: {}\n", finding.suggested_remediation);
             }
 
-            println!("Run 'bug-killer heal {} --dry-run' to preview automated remediation.", path.display());
+            println!("Run 'bug-killer heal {} --dry-run{}' to preview automated remediation.", path.display(), if osv { " --osv" } else { "" });
         }
 
-        Commands::Heal { path, dry_run, auto_apply, rules } => {
+        Commands::Osv { path, json } => {
+            println!("🔍 Querying open-source vulnerability database (https://osv.dev)...");
+            let osv_client = OsvClient::new();
+            let findings = osv_client.scan_workspace(&path);
+
+            if json {
+                println!("{}", serde_json::to_string_pretty(&findings).unwrap());
+                return;
+            }
+
+            println!("\n=======================================================");
+            println!("  🌐  OSV.DEV OPEN VULNERABILITY AUDIT REPORT");
+            println!("=======================================================");
+            println!("Target Workspace:     {}", path.display());
+            println!("Data Source:          https://osv.dev (Google / OpenSSF)");
+            println!("Total Advisories:     {}\n", findings.len());
+
+            if findings.is_empty() {
+                println!("✅ Zero known open-source vulnerabilities reported by OSV.dev.");
+                return;
+            }
+
+            for (idx, finding) in findings.iter().enumerate() {
+                let sev_badge = match finding.severity {
+                    Severity::Critical => "[CRITICAL]",
+                    Severity::High => "[HIGH]",
+                    Severity::Medium => "[MEDIUM]",
+                    Severity::Low => "[LOW]",
+                };
+
+                println!("{}. {} {} - {}", idx + 1, sev_badge, finding.cve.as_str(), finding.cve.title());
+                if let Some(ref p) = finding.file_path {
+                    println!("   Manifest:    {}", p.display());
+                }
+                println!("   Package:     {}", finding.detected_version_or_pattern);
+                println!("   Threshold:   {}", finding.safe_threshold);
+                println!("   Remediation: {}\n", finding.suggested_remediation);
+            }
+
+            println!("Run 'bug-killer heal {} --osv' to automatically upgrade vulnerable packages.", path.display());
+        }
+
+        Commands::Heal { path, dry_run, auto_apply, rules, osv } => {
             let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
-            let report = FleetScanner::scan_directory_with_rules(&path, false, &active_rules);
+            let mut report = FleetScanner::scan_directory_with_rules(&path, false, &active_rules);
+
+            if osv {
+                let osv_client = OsvClient::new();
+                let osv_findings = osv_client.scan_workspace(&path);
+                for f in osv_findings {
+                    if !report.findings.iter().any(|existing| existing.id == f.id) {
+                        report.findings.push(f);
+                    }
+                }
+            }
+
             let plan = AutopilotHealer::plan_healing_with_rules(&report, &active_rules);
 
             println!("\n=======================================================");
@@ -248,6 +339,7 @@ fn main() {
             println!("=======================================================");
             println!("Target:               {}", path.display());
             println!("Active Dynamic Rules: {}", active_rules.len());
+            println!("OSV.dev Integration:  {}", if osv { "ENABLED" } else { "DISABLED" });
             println!("Vulnerable Findings:  {}", report.findings.len());
             println!("Planned Patches:      {}", plan.len());
             println!("Dry-Run Mode:         {}", if dry_run { "ENABLED (No files will be modified)" } else { "DISABLED (Live Execution)" });

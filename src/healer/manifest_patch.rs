@@ -147,4 +147,76 @@ impl ManifestPatcher {
             replacement_content: modified,
         })
     }
+
+    /// Bumps an arbitrary package dependency in `package.json` to a safe version.
+    pub fn plan_generic_npm_dependency_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+        let content = fs::read_to_string(path).ok()?;
+        let mut json: serde_json::Value = serde_json::from_str(&content).ok()?;
+        let sha256 = BackupManager::compute_sha256(path).ok()?;
+
+        let mut changed = false;
+        let sections = ["dependencies", "devDependencies"];
+
+        if let Some(obj) = json.as_object_mut() {
+            for sec in sections {
+                if let Some(deps) = obj.get_mut(sec).and_then(|d| d.as_object_mut()) {
+                    if let Some(curr) = deps.get(package_name).and_then(|v| v.as_str()) {
+                        let clean_curr = curr.trim_start_matches('^').trim_start_matches('~').trim();
+                        if clean_curr == safe_version {
+                            return None;
+                        }
+                        deps.insert(package_name.to_string(), serde_json::Value::String(format!("^{}", safe_version)));
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if !changed {
+            return None;
+        }
+
+        let new_content = serde_json::to_string_pretty(&json).ok()? + "\n";
+        Some(PatchAction {
+            action_type: PatchActionType::PackageManifestVersionBump,
+            target_file: path.to_path_buf(),
+            original_checksum: sha256,
+            diff_description: format!("Upgrade {} to safe release ^{} in package.json", package_name, safe_version),
+            replacement_content: new_content,
+        })
+    }
+
+    /// Bumps an arbitrary package dependency in `requirements.txt` to a safe version.
+    pub fn plan_generic_python_requirements_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+        let content = fs::read_to_string(path).ok()?;
+        let sha256 = BackupManager::compute_sha256(path).ok()?;
+
+        let mut lines = Vec::new();
+        let mut changed = false;
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if let Some((pkg, _)) = trimmed.split_once("==") {
+                if pkg.trim() == package_name {
+                    lines.push(format!("{}=={}", package_name, safe_version));
+                    changed = true;
+                    continue;
+                }
+            }
+            lines.push(line.to_string());
+        }
+
+        if !changed {
+            return None;
+        }
+
+        let new_content = lines.join("\n") + "\n";
+        Some(PatchAction {
+            action_type: PatchActionType::GenericReplace,
+            target_file: path.to_path_buf(),
+            original_checksum: sha256,
+            diff_description: format!("Upgrade {} to safe release =={} in requirements.txt", package_name, safe_version),
+            replacement_content: new_content,
+        })
+    }
 }
