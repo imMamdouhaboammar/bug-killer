@@ -3642,5 +3642,134 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: safe loader and allowed types",
     "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-003",
+    "short_id": "PAR-003",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Java/.NET/Ruby/PHP object deserialization permits gadgets/unsafe types",
+    "cwe": "CWE-502",
+    "detection_method": "FLOW+REVIEW",
+    "required_evidence": [
+      "FLOW",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "php"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: untrusted object graph refused",
+    "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-004",
+    "short_id": "PAR-004",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "XML external entity resolution or entity expansion enabled for untrusted XML",
+    "cwe": "CWE-611",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: external entities/DTD appropriately disabled",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-005",
+    "short_id": "PAR-005",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Untrusted JSON/object keys trigger prototype pollution or unsafe merge",
+    "cwe": "CWE-1321",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: dangerous prototype keys refused",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-006",
+    "short_id": "PAR-006",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Unsafe reflection/dynamic class construction from untrusted type name",
+    "cwe": "CWE-470",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: class/type allowlist",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-007",
+    "short_id": "PAR-007",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Parser consumes unbounded nesting, arrays, strings or recursive references",
+    "cwe": "CWE-400",
+    "detection_method": "FUZZ+TEST",
+    "required_evidence": [
+      "TEST",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: bounded parsing",
+    "verification_requirements": "Verify via FUZZ+TEST evidence and regression test"
   }
 ]
