@@ -9327,5 +9327,80 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: local fixtures and network containment",
     "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-010",
+    "short_id": "QAT-010",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "Report hides unknown coverage or suppressions when producing summary/dashboard",
+    "cwe": null,
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: coverage and exclusions visible in all exports",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-011",
+    "short_id": "QAT-011",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "Automatic repair writes without showing diff, impact, backup state or verification outcome",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: action-bound receipt and rollback path",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-012",
+    "short_id": "QAT-012",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "One LLM reviews its own output and marks security as proven without independent evidence",
+    "cwe": null,
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: deterministic corroboration or human security sign-off",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
   }
 ]
