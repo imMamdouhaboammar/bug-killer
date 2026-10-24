@@ -6275,5 +6275,127 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: duplicate/cross-user effect denied",
     "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BIZ-006",
+    "short_id": "BIZ-006",
+    "rule_version": "1.0",
+    "category_number": 20,
+    "category": "2.20 Business logic, workflows and monetary/privileged effects",
+    "description": "Order completion performed without verified settlement/fulfilment state",
+    "cwe": "CWE-841",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: external state reconciled",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BIZ-007",
+    "short_id": "BIZ-007",
+    "rule_version": "1.0",
+    "category_number": 20,
+    "category": "2.20 Business logic, workflows and monetary/privileged effects",
+    "description": "Reused webhook event alters account more than once",
+    "cwe": "CWE-841",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: event deduplicated and authentic",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BIZ-008",
+    "short_id": "BIZ-008",
+    "rule_version": "1.0",
+    "category_number": 20,
+    "category": "2.20 Business logic, workflows and monetary/privileged effects",
+    "description": "Account deletion/transfer misses shared resources or leaves active keys",
+    "cwe": "CWE-613",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: assets and credentials revoked",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BIZ-009",
+    "short_id": "BIZ-009",
+    "rule_version": "1.0",
+    "category_number": 20,
+    "category": "2.20 Business logic, workflows and monetary/privileged effects",
+    "description": "Multi-tenant report aggregates privileged records before access filtering",
+    "cwe": "CWE-200",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: aggregation preserves isolation",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BIZ-010",
+    "short_id": "BIZ-010",
+    "rule_version": "1.0",
+    "category_number": 20,
+    "category": "2.20 Business logic, workflows and monetary/privileged effects",
+    "description": "Feature flag/admin backdoor bypasses required policy in production",
+    "cwe": "CWE-862",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: bypass unavailable to untrusted actors",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
   }
 ]
