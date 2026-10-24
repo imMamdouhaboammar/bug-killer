@@ -17,13 +17,35 @@ impl Default for OsvClient {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum VersionResolution {
+    ResolvedExact,
+    DeclaredRequirement,
+}
+
+fn default_version_resolution() -> VersionResolution {
+    VersionResolution::ResolvedExact
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredPackage {
     pub file_path: PathBuf,
     pub name: String,
     pub version: String,
+    #[serde(default)]
+    pub declared_requirement: Option<String>,
+    #[serde(default = "default_version_resolution")]
+    pub resolution: VersionResolution,
     pub ecosystem: &'static str,
     pub target_kind: TargetKind,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OsvPackageRef {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub ecosystem: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,6 +68,8 @@ pub struct OsvRange {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsvAffected {
+    #[serde(default)]
+    pub package: Option<OsvPackageRef>,
     #[serde(default)]
     pub ranges: Vec<OsvRange>,
 }
@@ -76,7 +100,54 @@ impl OsvClient {
         Self::default()
     }
 
-    /// Discovers all package dependencies across package.json, composer.json, requirements.txt, and Cargo.lock.
+    #[allow(dead_code)]
+    pub fn with_endpoint(endpoint: impl Into<String>) -> Self {
+        Self {
+            endpoint: endpoint.into(),
+        }
+    }
+
+    pub fn is_exact_version(raw: &str) -> bool {
+        let trimmed = raw.trim();
+        if trimmed.is_empty()
+            || trimmed.contains('^')
+            || trimmed.contains('~')
+            || trimmed.contains('>')
+            || trimmed.contains('<')
+            || trimmed.contains('*')
+            || trimmed.contains("||")
+            || trimmed.contains(" - ")
+            || trimmed == "latest"
+            || trimmed.chars().any(char::is_whitespace)
+        {
+            return false;
+        }
+        let stripped = trimmed.trim_start_matches('=').trim_start_matches('v');
+        stripped
+            .chars()
+            .next()
+            .map(|c| c.is_ascii_digit())
+            .unwrap_or(false)
+    }
+
+    pub fn clean_version(raw: &str) -> Option<String> {
+        let trimmed = raw.trim();
+        if !Self::is_exact_version(trimmed) {
+            None
+        } else {
+            let ver = trimmed
+                .trim_start_matches('=')
+                .trim_start_matches('v')
+                .trim();
+            if ver.is_empty() {
+                None
+            } else {
+                Some(ver.to_string())
+            }
+        }
+    }
+
+    /// Discovers all package dependencies across package.json, composer.json, requirements.txt, Cargo.lock, etc.
     pub fn discover_packages(root: &Path) -> Vec<DiscoveredPackage> {
         let mut packages = Vec::new();
 
@@ -141,26 +212,6 @@ impl OsvClient {
         packages
     }
 
-    fn clean_version(raw: &str) -> Option<String> {
-        let trimmed = raw.trim();
-        let cleaned = trimmed
-            .trim_start_matches('^')
-            .trim_start_matches('~')
-            .trim_start_matches(">=")
-            .trim_start_matches("<=")
-            .trim_start_matches('>')
-            .trim_start_matches('<')
-            .trim_start_matches('=')
-            .trim();
-
-        if cleaned.is_empty() || cleaned.contains('*') || cleaned == "latest" {
-            None
-        } else {
-            let first_part = cleaned.split_whitespace().next().unwrap_or(cleaned);
-            Some(first_part.to_string())
-        }
-    }
-
     fn extract_node_packages(path: &Path) -> Vec<DiscoveredPackage> {
         let mut list = Vec::new();
         if let Ok(content) = fs::read_to_string(path) {
@@ -175,6 +226,18 @@ impl OsvClient {
                                         file_path: path.to_path_buf(),
                                         name: pkg.clone(),
                                         version: cleaned,
+                                        declared_requirement: None,
+                                        resolution: VersionResolution::ResolvedExact,
+                                        ecosystem: "npm",
+                                        target_kind: TargetKind::NodePackageManifest,
+                                    });
+                                } else {
+                                    list.push(DiscoveredPackage {
+                                        file_path: path.to_path_buf(),
+                                        name: pkg.clone(),
+                                        version: ver_str.to_string(),
+                                        declared_requirement: Some(ver_str.to_string()),
+                                        resolution: VersionResolution::DeclaredRequirement,
                                         ecosystem: "npm",
                                         target_kind: TargetKind::NodePackageManifest,
                                     });
@@ -205,6 +268,18 @@ impl OsvClient {
                                         file_path: path.to_path_buf(),
                                         name: pkg.clone(),
                                         version: cleaned,
+                                        declared_requirement: None,
+                                        resolution: VersionResolution::ResolvedExact,
+                                        ecosystem: "Packagist",
+                                        target_kind: TargetKind::ComposerManifest,
+                                    });
+                                } else {
+                                    list.push(DiscoveredPackage {
+                                        file_path: path.to_path_buf(),
+                                        name: pkg.clone(),
+                                        version: ver_str.to_string(),
+                                        declared_requirement: Some(ver_str.to_string()),
+                                        resolution: VersionResolution::DeclaredRequirement,
                                         ecosystem: "Packagist",
                                         target_kind: TargetKind::ComposerManifest,
                                     });
@@ -231,9 +306,28 @@ impl OsvClient {
                         file_path: path.to_path_buf(),
                         name: pkg.trim().to_string(),
                         version: ver.trim().to_string(),
+                        declared_requirement: None,
+                        resolution: VersionResolution::ResolvedExact,
                         ecosystem: "PyPI",
                         target_kind: TargetKind::GenericConfigFile,
                     });
+                } else {
+                    let name = trimmed
+                        .split(['>', '<', '~', '=', ';', '!'])
+                        .next()
+                        .unwrap_or(trimmed)
+                        .trim();
+                    if !name.is_empty() {
+                        list.push(DiscoveredPackage {
+                            file_path: path.to_path_buf(),
+                            name: name.to_string(),
+                            version: trimmed.to_string(),
+                            declared_requirement: Some(trimmed.to_string()),
+                            resolution: VersionResolution::DeclaredRequirement,
+                            ecosystem: "PyPI",
+                            target_kind: TargetKind::GenericConfigFile,
+                        });
+                    }
                 }
             }
         }
@@ -256,6 +350,8 @@ impl OsvClient {
                             file_path: path.to_path_buf(),
                             name,
                             version: ver.to_string(),
+                            declared_requirement: None,
+                            resolution: VersionResolution::ResolvedExact,
                             ecosystem: "crates.io",
                             target_kind: TargetKind::CargoLockManifest,
                         });
@@ -292,6 +388,8 @@ impl OsvClient {
                             file_path: path.to_path_buf(),
                             name: pkg.to_string(),
                             version: ver.to_string(),
+                            declared_requirement: None,
+                            resolution: VersionResolution::ResolvedExact,
                             ecosystem: "Go",
                             target_kind: TargetKind::GoModManifest,
                         });
@@ -305,6 +403,8 @@ impl OsvClient {
                             file_path: path.to_path_buf(),
                             name: pkg.to_string(),
                             version: ver.to_string(),
+                            declared_requirement: None,
+                            resolution: VersionResolution::ResolvedExact,
                             ecosystem: "Go",
                             target_kind: TargetKind::GoModManifest,
                         });
@@ -331,18 +431,37 @@ impl OsvClient {
                     artifact_id.clear();
                     version.clear();
                 } else if trimmed.contains("</dependency>") {
-                    if in_dep
-                        && !group_id.is_empty()
-                        && !artifact_id.is_empty()
-                        && !version.is_empty()
-                        && !version.starts_with("${")
-                    {
+                    if in_dep && !group_id.is_empty() && !artifact_id.is_empty() {
                         let pkg_name = format!("{}:{}", group_id, artifact_id);
-                        if let Some(cleaned) = Self::clean_version(&version) {
+                        if !version.is_empty() && !version.starts_with("${") {
+                            if let Some(cleaned) = Self::clean_version(&version) {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: pkg_name,
+                                    version: cleaned,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
+                                    ecosystem: "Maven",
+                                    target_kind: TargetKind::JavaPomManifest,
+                                });
+                            } else {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: pkg_name,
+                                    version: version.clone(),
+                                    declared_requirement: Some(version.clone()),
+                                    resolution: VersionResolution::DeclaredRequirement,
+                                    ecosystem: "Maven",
+                                    target_kind: TargetKind::JavaPomManifest,
+                                });
+                            }
+                        } else if version.starts_with("${") {
                             list.push(DiscoveredPackage {
                                 file_path: path.to_path_buf(),
                                 name: pkg_name,
-                                version: cleaned,
+                                version: version.clone(),
+                                declared_requirement: Some(version.clone()),
+                                resolution: VersionResolution::DeclaredRequirement,
                                 ecosystem: "Maven",
                                 target_kind: TargetKind::JavaPomManifest,
                             });
@@ -393,6 +512,8 @@ impl OsvClient {
                                                 file_path: path.to_path_buf(),
                                                 name: pkg_name.clone(),
                                                 version: cleaned,
+                                                declared_requirement: None,
+                                                resolution: VersionResolution::ResolvedExact,
                                                 ecosystem: "NuGet",
                                                 target_kind: TargetKind::DotnetCsprojManifest,
                                             });
@@ -415,6 +536,18 @@ impl OsvClient {
                                     file_path: path.to_path_buf(),
                                     name: pkg.to_string(),
                                     version: cleaned,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
+                                    ecosystem: "NuGet",
+                                    target_kind: TargetKind::DotnetCsprojManifest,
+                                });
+                            } else {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: pkg.to_string(),
+                                    version: ver.to_string(),
+                                    declared_requirement: Some(ver.to_string()),
+                                    resolution: VersionResolution::DeclaredRequirement,
                                     ecosystem: "NuGet",
                                     target_kind: TargetKind::DotnetCsprojManifest,
                                 });
@@ -463,6 +596,8 @@ impl OsvClient {
                                     file_path: path.to_path_buf(),
                                     name: name.to_string(),
                                     version: cleaned,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
                                     ecosystem: "RubyGems",
                                     target_kind: TargetKind::RubyGemfileManifest,
                                 });
@@ -498,6 +633,8 @@ impl OsvClient {
                                 file_path: path.to_path_buf(),
                                 name,
                                 version: cleaned,
+                                declared_requirement: None,
+                                resolution: VersionResolution::ResolvedExact,
                                 ecosystem: "PyPI",
                                 target_kind: TargetKind::PythonPoetryManifest,
                             });
@@ -559,6 +696,8 @@ impl OsvClient {
                                     file_path: path.to_path_buf(),
                                     name: purl_name,
                                     version: purl_ver,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
                                     ecosystem: eco,
                                     target_kind: TargetKind::CycloneDxSbom,
                                 });
@@ -581,6 +720,8 @@ impl OsvClient {
                                     file_path: path.to_path_buf(),
                                     name: name.to_string(),
                                     version: cleaned,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
                                     ecosystem: eco,
                                     target_kind: TargetKind::CycloneDxSbom,
                                 });
@@ -626,6 +767,8 @@ impl OsvClient {
                                 file_path: path.to_path_buf(),
                                 name: pname,
                                 version: pver,
+                                declared_requirement: None,
+                                resolution: VersionResolution::ResolvedExact,
                                 ecosystem: eco,
                                 target_kind: TargetKind::SpdxSbom,
                             });
@@ -635,6 +778,8 @@ impl OsvClient {
                                     file_path: path.to_path_buf(),
                                     name: name.to_string(),
                                     version: cleaned,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
                                     ecosystem: "npm",
                                     target_kind: TargetKind::SpdxSbom,
                                 });
@@ -663,6 +808,8 @@ impl OsvClient {
                                     file_path: path.to_path_buf(),
                                     name: name.to_string(),
                                     version: cleaned,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
                                     ecosystem: "npm",
                                     target_kind: TargetKind::NodeLockfile,
                                 });
@@ -679,6 +826,8 @@ impl OsvClient {
                                         file_path: path.to_path_buf(),
                                         name: name.clone(),
                                         version: cleaned,
+                                        declared_requirement: None,
+                                        resolution: VersionResolution::ResolvedExact,
                                         ecosystem: "npm",
                                         target_kind: TargetKind::NodeLockfile,
                                     });
@@ -711,6 +860,8 @@ impl OsvClient {
                                         file_path: path.to_path_buf(),
                                         name: name.to_string(),
                                         version: cleaned,
+                                        declared_requirement: None,
+                                        resolution: VersionResolution::ResolvedExact,
                                         ecosystem: "Packagist",
                                         target_kind: TargetKind::ComposerLockfile,
                                     });
@@ -754,6 +905,8 @@ impl OsvClient {
                                 file_path: path.to_path_buf(),
                                 name: pkg_name.clone(),
                                 version: cleaned,
+                                declared_requirement: None,
+                                resolution: VersionResolution::ResolvedExact,
                                 ecosystem: "npm",
                                 target_kind: TargetKind::NodeLockfile,
                             });
@@ -797,6 +950,8 @@ impl OsvClient {
                                     file_path: path.to_path_buf(),
                                     name: name.to_string(),
                                     version: cleaned,
+                                    declared_requirement: None,
+                                    resolution: VersionResolution::ResolvedExact,
                                     ecosystem: "npm",
                                     target_kind: TargetKind::NodeLockfile,
                                 });
@@ -831,8 +986,11 @@ impl OsvClient {
         let mut findings = Vec::new();
 
         for vuln in query_resp.vulns {
-            let primary_id = vuln
-                .aliases
+            let mut aliases = vuln.aliases.clone();
+            aliases.sort();
+            aliases.dedup();
+
+            let primary_id = aliases
                 .iter()
                 .find(|a| a.starts_with("CVE-"))
                 .cloned()
@@ -843,8 +1001,14 @@ impl OsvClient {
                 .clone()
                 .unwrap_or_else(|| format!("Security vulnerability in {}", pkg.name));
 
+            // M2-C: Extract fixed version only from affected entry matching pkg.name
             let mut fixed_version = None;
             for aff in &vuln.affected {
+                if let Some(ref p) = aff.package {
+                    if !p.name.is_empty() && !p.name.eq_ignore_ascii_case(&pkg.name) {
+                        continue;
+                    }
+                }
                 for r in &aff.ranges {
                     for ev in &r.events {
                         if let Some(ref fix) = ev.fixed {
@@ -916,14 +1080,20 @@ impl OsvClient {
             finding.package_source = Some(pkg.ecosystem.to_string());
             finding.component_identity = pkg.name.clone();
             finding.installed_build = Some(pkg.version.clone());
-            finding.advisory_ids = if vuln.aliases.is_empty() {
+            finding.advisory_ids = if aliases.is_empty() {
                 vec![vuln.id.clone()]
             } else {
-                vuln.aliases.clone()
+                aliases
             };
             finding.affectedness = Affectedness::ConfirmedAffected;
             finding.reachability = Reachability::PotentiallyReachable;
             finding.confidence = Confidence::High;
+            finding.evidence_certainty = EvidenceCertainty::Confirmed;
+            if fixed_version.is_none() {
+                finding
+                    .uncertainty_reasons
+                    .push("Fixed version not disclosed in package affected ranges".into());
+            }
             finding.compute_dedupe_fingerprint();
             findings.push(finding);
         }
@@ -931,17 +1101,60 @@ impl OsvClient {
         Ok(findings)
     }
 
-    /// Scans a workspace root directory against OSV.dev using high-throughput querybatch API.
-    pub fn scan_workspace(&self, root: &Path) -> Vec<Finding> {
+    /// Scans a workspace root directory against OSV.dev and returns both findings and a truthful CoverageReceipt.
+    pub fn scan_workspace_with_receipt(&self, root: &Path) -> (Vec<Finding>, CoverageReceipt) {
+        let mut receipt = CoverageReceipt {
+            scanner_id: "sca-osv".into(),
+            scanner_version: "1.0.0".into(),
+            target_id: root.to_string_lossy().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: 0,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: chrono::Utc::now().to_rfc3339(),
+        };
+
         let packages = Self::discover_packages(root);
+        receipt.items_examined = packages.len() as u64;
+
         if packages.is_empty() {
-            return Vec::new();
+            receipt.status = CoverageStatus::NotRun;
+            return (Vec::new(), receipt);
+        }
+
+        let mut exact_packages = Vec::new();
+        for pkg in &packages {
+            if pkg.resolution == VersionResolution::ResolvedExact {
+                exact_packages.push(pkg);
+            } else {
+                let req = pkg.declared_requirement.as_deref().unwrap_or(&pkg.version);
+                receipt.skipped_reasons.push(format!(
+                    "{}: declared constraint '{}' skipped from exact OSV lookup (requires resolved lockfile)",
+                    pkg.name, req
+                ));
+            }
+        }
+
+        if exact_packages.is_empty() {
+            if !receipt.skipped_reasons.is_empty() {
+                receipt.status = CoverageStatus::Partial;
+            }
+            return (Vec::new(), receipt);
         }
 
         let mut findings = Vec::new();
+        let mut had_network_error = false;
 
-        // Process in batches of 50 for near-instant execution
-        for chunk in packages.chunks(50) {
+        let batch_endpoint = if self.endpoint.ends_with("/query") {
+            format!("{}batch", self.endpoint)
+        } else if self.endpoint.ends_with("/query/") {
+            format!("{}batch", self.endpoint.trim_end_matches('/'))
+        } else {
+            format!("{}/batch", self.endpoint.trim_end_matches('/'))
+        };
+
+        // Process in batches of 50
+        for chunk in exact_packages.chunks(50) {
             let queries: Vec<Value> = chunk
                 .iter()
                 .map(|p| {
@@ -957,16 +1170,28 @@ impl OsvClient {
 
             let batch_body = serde_json::json!({ "queries": queries });
 
-            let resp = match ureq::post("https://api.osv.dev/v1/querybatch")
+            let resp = match ureq::post(&batch_endpoint)
                 .header("Content-Type", "application/json")
                 .send_json(&batch_body)
             {
                 Ok(r) => r,
-                Err(_) => {
+                Err(e) => {
+                    let err_msg = format!("OSV querybatch API error: {}", e);
+                    let mut fallback_success = true;
                     for pkg in chunk {
-                        if let Ok(vulns) = self.query_package(pkg) {
-                            findings.extend(vulns);
+                        match self.query_package(pkg) {
+                            Ok(vulns) => findings.extend(vulns),
+                            Err(fallback_err) => {
+                                receipt
+                                    .errors
+                                    .push(format!("{}: {}", pkg.name, fallback_err));
+                                fallback_success = false;
+                            }
                         }
+                    }
+                    if !fallback_success {
+                        had_network_error = true;
+                        receipt.errors.push(err_msg);
                     }
                     continue;
                 }
@@ -975,16 +1200,26 @@ impl OsvClient {
             let mut reader = resp.into_body().into_reader();
             let batch_val: Value = match serde_json::from_reader(&mut reader) {
                 Ok(v) => v,
-                Err(_) => continue,
+                Err(e) => {
+                    had_network_error = true;
+                    receipt
+                        .errors
+                        .push(format!("OSV batch JSON parse error: {}", e));
+                    continue;
+                }
             };
 
             if let Some(results) = batch_val.get("results").and_then(|r| r.as_array()) {
                 for (idx, res) in results.iter().enumerate() {
                     if let Some(vulns) = res.get("vulns").and_then(|v| v.as_array()) {
-                        if !vulns.is_empty() {
-                            let pkg = &chunk[idx];
-                            if let Ok(full_findings) = self.query_package(pkg) {
-                                findings.extend(full_findings);
+                        if !vulns.is_empty() && idx < chunk.len() {
+                            let pkg = chunk[idx];
+                            match self.query_package(pkg) {
+                                Ok(full_findings) => findings.extend(full_findings),
+                                Err(e) => {
+                                    had_network_error = true;
+                                    receipt.errors.push(format!("{}: {}", pkg.name, e));
+                                }
                             }
                         }
                     }
@@ -992,6 +1227,21 @@ impl OsvClient {
             }
         }
 
-        findings
+        if had_network_error {
+            receipt.status = if findings.is_empty() {
+                CoverageStatus::Error
+            } else {
+                CoverageStatus::Partial
+            };
+        } else if !receipt.skipped_reasons.is_empty() {
+            receipt.status = CoverageStatus::Partial;
+        }
+
+        (findings, receipt)
+    }
+
+    /// Scans a workspace root directory against OSV.dev using high-throughput querybatch API.
+    pub fn scan_workspace(&self, root: &Path) -> Vec<Finding> {
+        self.scan_workspace_with_receipt(root).0
     }
 }

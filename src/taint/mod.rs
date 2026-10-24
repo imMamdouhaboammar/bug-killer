@@ -103,9 +103,14 @@ impl TaintFinding {
             self.remediation,
         );
         finding.detector_id = "taint-engine".to_string();
-        finding.affectedness = Affectedness::ConfirmedAffected;
-        finding.reachability = Reachability::ConfirmedReachable;
-        finding.confidence = Confidence::High;
+        finding.affectedness = Affectedness::PotentiallyAffected;
+        finding.reachability = Reachability::PotentiallyReachable;
+        finding.confidence = Confidence::Medium;
+        finding.evidence_certainty = EvidenceCertainty::PatternIndicator;
+        finding.uncertainty_reasons.push(
+            "Lexical pattern indicator; interprocedural dataflow, contextual sanitization, and runtime execution reachability are unverified."
+                .to_string(),
+        );
         finding.compute_dedupe_fingerprint();
         finding
     }
@@ -133,19 +138,6 @@ impl TaintEngine {
             r#"([a-zA-Z0-9_]+)\s*:=\s*r\.(?:URL\.Query\(\)\.Get|FormValue|PostFormValue)\("#,
         )
         .unwrap();
-
-        // Derived taint propagation patterns (e.g. sql = "..." + var, f"...", format())
-        let re_js_concat =
-            Regex::new(r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*.*?\+\s*([a-zA-Z0-9_$]+)"#)
-                .unwrap();
-        let re_js_template = Regex::new(
-            r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*`.*?\$\{([a-zA-Z0-9_$]+)\}.*?`"#,
-        )
-        .unwrap();
-        let re_py_fstring =
-            Regex::new(r#"([a-zA-Z0-9_]+)\s*=\s*f["'].*?\{([a-zA-Z0-9_]+)\}.*?["']"#).unwrap();
-        let re_php_concat =
-            Regex::new(r#"(\$[a-zA-Z0-9_]+)\s*=\s*.*?\.\s*(\$[a-zA-Z0-9_]+)"#).unwrap();
 
         // Sanitizer patterns
         let sanitizers = [
@@ -218,37 +210,29 @@ impl TaintEngine {
                 continue;
             }
 
-            // 3. Propagate taint to derived variables
-            if let Some(caps) = re_js_concat.captures(trimmed) {
-                let target_var = caps[1].to_string();
-                let source_var = caps[2].to_string();
-                if let Some(source_info) = tainted_vars.get(&source_var).cloned() {
-                    tainted_vars.insert(target_var, source_info);
-                    continue;
-                }
-            }
-            if let Some(caps) = re_js_template.captures(trimmed) {
-                let target_var = caps[1].to_string();
-                let source_var = caps[2].to_string();
-                if let Some(source_info) = tainted_vars.get(&source_var).cloned() {
-                    tainted_vars.insert(target_var, source_info);
-                    continue;
-                }
-            }
-            if let Some(caps) = re_py_fstring.captures(trimmed) {
-                let target_var = caps[1].to_string();
-                let source_var = caps[2].to_string();
-                if let Some(source_info) = tainted_vars.get(&source_var).cloned() {
-                    tainted_vars.insert(target_var, source_info);
-                    continue;
-                }
-            }
-            if let Some(caps) = re_php_concat.captures(trimmed) {
-                let target_var = caps[1].to_string();
-                let source_var = caps[2].to_string();
-                if let Some(source_info) = tainted_vars.get(&source_var).cloned() {
-                    tainted_vars.insert(target_var, source_info);
-                    continue;
+            // 3. Propagate taint to derived variables across JS, Python, PHP, and Go
+            if let Some(eq_idx) = trimmed.find('=') {
+                let left_part = trimmed[..eq_idx].trim();
+                let right_part = trimmed[eq_idx + 1..].trim();
+
+                let target_var = left_part
+                    .trim_start_matches("const ")
+                    .trim_start_matches("let ")
+                    .trim_start_matches("var ")
+                    .trim_end_matches(':')
+                    .trim();
+
+                if !target_var.is_empty()
+                    && !target_var.contains(' ')
+                    && !target_var.contains('(')
+                    && !target_var.contains('[')
+                {
+                    for (source_var, source_info) in tainted_vars.clone() {
+                        if right_part.contains(&source_var) && target_var != source_var {
+                            tainted_vars.insert(target_var.to_string(), source_info);
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -291,7 +275,7 @@ impl TaintEngine {
                     break;
                 }
 
-                // Sink B: Command Injection
+                // Sink B: Command Injection / Dynamic Code Execution
                 if trimmed.contains("exec(")
                     || trimmed.contains("execSync(")
                     || trimmed.contains("child_process.exec(")
@@ -300,6 +284,7 @@ impl TaintEngine {
                     || trimmed.contains("shell_exec(")
                     || trimmed.contains("system(")
                     || trimmed.contains("passthru(")
+                    || trimmed.contains("eval(")
                 {
                     findings.push(TaintFinding {
                         file_path: path.to_path_buf(),
@@ -318,6 +303,8 @@ impl TaintEngine {
                 // Sink C: Path Traversal
                 if (trimmed.contains("fs.readFile(")
                     || trimmed.contains("fs.readFileSync(")
+                    || trimmed.contains("os.ReadFile(")
+                    || trimmed.contains("os.Open(")
                     || trimmed.contains("open(")
                     || trimmed.contains("file_get_contents(")
                     || trimmed.contains("include "))

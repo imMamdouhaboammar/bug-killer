@@ -218,6 +218,32 @@ fn default_operator_status() -> OperatorStatus {
     OperatorStatus::Unreviewed
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EvidenceCertainty {
+    Confirmed,
+    StronglySupported,
+    Suspected,
+    PatternIndicator,
+    Unknown,
+}
+
+impl EvidenceCertainty {
+    #[allow(dead_code)]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            EvidenceCertainty::Confirmed => "CONFIRMED",
+            EvidenceCertainty::StronglySupported => "STRONGLY_SUPPORTED",
+            EvidenceCertainty::Suspected => "SUSPECTED",
+            EvidenceCertainty::PatternIndicator => "PATTERN_INDICATOR",
+            EvidenceCertainty::Unknown => "UNKNOWN",
+        }
+    }
+}
+
+fn default_evidence_certainty() -> EvidenceCertainty {
+    EvidenceCertainty::Unknown
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Finding {
     pub id: String,
@@ -280,6 +306,8 @@ pub struct Finding {
     pub proposed_remediation_ids: Vec<String>,
     #[serde(default = "default_operator_status")]
     pub operator_status: OperatorStatus,
+    #[serde(default = "default_evidence_certainty")]
+    pub evidence_certainty: EvidenceCertainty,
     #[serde(default)]
     pub dedupe_fingerprint: String,
 }
@@ -324,6 +352,7 @@ impl Default for Finding {
             missing_checks: Vec::new(),
             proposed_remediation_ids: Vec::new(),
             operator_status: OperatorStatus::Unreviewed,
+            evidence_certainty: EvidenceCertainty::Unknown,
             dedupe_fingerprint: String::new(),
         }
     }
@@ -429,6 +458,58 @@ pub enum CoverageStatus {
     Partial,
     ScanIncomplete,
     Unsupported,
+    NotRun,
+    Error,
+}
+
+impl CoverageStatus {
+    #[allow(dead_code)]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CoverageStatus::Complete => "COMPLETE",
+            CoverageStatus::Partial => "PARTIAL",
+            CoverageStatus::ScanIncomplete => "SCAN_INCOMPLETE",
+            CoverageStatus::Unsupported => "UNSUPPORTED",
+            CoverageStatus::NotRun => "NOT_RUN",
+            CoverageStatus::Error => "ERROR",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CoverageReceipt {
+    pub scanner_id: String,
+    pub scanner_version: String,
+    pub target_id: String,
+    pub status: CoverageStatus,
+    pub items_examined: u64,
+    #[serde(default)]
+    pub skipped_reasons: Vec<String>,
+    #[serde(default)]
+    pub errors: Vec<String>,
+    pub completed_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct ScanLimits {
+    pub max_file_size_bytes: u64,
+    pub max_files_scanned: usize,
+    pub max_depth: usize,
+    pub follow_symlinks: bool,
+    pub timeout_seconds: u64,
+}
+
+impl Default for ScanLimits {
+    fn default() -> Self {
+        Self {
+            max_file_size_bytes: 5 * 1024 * 1024, // 5 MB
+            max_files_scanned: 50_000,
+            max_depth: 32,
+            follow_symlinks: false,
+            timeout_seconds: 300,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -444,6 +525,8 @@ pub struct ScanCoverage {
     pub parser_failures: Vec<ParserFailure>,
     pub unsupported_targets: Vec<String>,
     pub coverage_status: CoverageStatus,
+    #[serde(default)]
+    pub receipts: Vec<CoverageReceipt>,
 }
 
 impl Default for ScanCoverage {
@@ -454,13 +537,19 @@ impl Default for ScanCoverage {
             parser_failures: Vec::new(),
             unsupported_targets: Vec::new(),
             coverage_status: CoverageStatus::Complete,
+            receipts: Vec::new(),
         }
     }
 }
 
 impl ScanCoverage {
     pub fn is_complete(&self) -> bool {
-        self.coverage_status == CoverageStatus::Complete && self.parser_failures.is_empty()
+        self.coverage_status == CoverageStatus::Complete
+            && self.parser_failures.is_empty()
+            && self
+                .receipts
+                .iter()
+                .all(|r| r.status == CoverageStatus::Complete && r.errors.is_empty())
     }
 }
 

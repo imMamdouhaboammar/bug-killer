@@ -1,0 +1,13 @@
+{
+  "name": "fixture-npm-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "express": "4.18.2",
+    "minimist": ">=1.2.0 <1.2.6",
+    "debug": "~2.6.9"
+  },
+  "devDependencies": {
+    "mocha": "^10.0.0"
+  }
+}
