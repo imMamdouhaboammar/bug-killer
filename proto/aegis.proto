@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package aegis.v1;
+
+option go_package = "aegis/v1;aegisv1";
+
+service InspectionService {
+  rpc AuditBinary (BinaryAuditRequest) returns (BinaryAuditResponse);
+  rpc AuditProcessMemory (ProcessMemoryRequest) returns (ProcessMemoryResponse);
+}
+
+service RemediationService {
+  rpc ExecutePlan (RemediationPlanRequest) returns (RemediationPlanResponse);
+  rpc RollbackPlan (RollbackRequest) returns (RollbackResponse);
+}
+
+message BinaryAuditRequest {
+  string file_path = 1;
+  string runtime_type = 2; // "php", "node", "bun", "native"
+  bytes header_sample = 3;
+}
+
+message BinaryAuditResponse {
+  string file_path = 1;
+  bool is_vulnerable = 2;
+  string detected_version = 3;
+  string vulnerability_id = 4;
+  string severity = 5;
+  string explanation = 6;
+  repeated string missing_symbols = 7;
+  repeated string dangerous_symbols = 8;
+  string safe_threshold = 9;
+}
+
+message ProcessMemoryRequest {
+  int32 pid = 1;
+  string process_name = 2;
+  repeated string mapped_libraries = 3;
+}
+
+message ProcessMemoryResponse {
+  int32 pid = 1;
+  bool active_exposure = 2;
+  string memory_region = 3;
+  string vulnerable_library = 4;
+  string risk_summary = 5;
+}
+
+message RemediationPlanRequest {
+  string target_root = 1;
+  repeated string vulnerability_ids = 2;
+  bool dry_run = 3;
+  bool allow_restart = 4;
+  bool force_waf_only = 5;
+}
+
+message PatchItem {
+  string target_type = 1; // "nginx", "apache", "haproxy", "package_manifest", "dockerfile"
+  string target_file = 2;
+  string diff = 3;
+  string original_sha256 = 4;
+}
+
+message RemediationPlanResponse {
+  string plan_id = 1;
+  bool success = 2;
+  repeated PatchItem patches_applied = 3;
+  repeated string services_restarted = 4;
+  string backup_manifest_path = 5;
+  string error_message = 6;
+}
+
+message RollbackRequest {
+  string backup_id = 1;
+  string target_root = 2;
+}
+
+message RollbackResponse {
+  bool success = 3;
+  int32 restored_files_count = 4;
+  string message = 5;
+}

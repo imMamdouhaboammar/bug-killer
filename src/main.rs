@@ -1,0 +1,238 @@
+#![allow(clippy::collapsible_if, clippy::doc_lazy_continuation)]
+
+mod types;
+mod cve_db;
+mod scanner;
+mod healer;
+
+use clap::{Parser, Subcommand};
+use std::path::PathBuf;
+use types::Severity;
+use scanner::FleetScanner;
+use healer::AutopilotHealer;
+use healer::backup::BackupManager;
+use healer::rollback::RollbackManager;
+
+#[derive(Parser, Debug)]
+#[command(name = "bug-killer")]
+#[command(about = "Bug Killer: Let Your AI Find Deep & Ghosty Bugs, Vulnerabilities, and Security Issues and Heal From Them", version = "0.1.0")]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Scan target directories and systems for PHP2Shell (CVE-2026-109618, CVE-2026-109619) and Node2Shell (CVE-2026-111497)
+    Scan {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+
+        /// Also inspect host binary runtimes (php, node) on PATH
+        #[arg(long, default_value_t = false)]
+        check_runtime: bool,
+    },
+
+    /// Plan and automatically heal vulnerable configurations, Dockerfiles, manifests, and web servers
+    Heal {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Show planned patches and diffs without modifying files
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Automatically apply all safe patches without confirmation
+        #[arg(long, default_value_t = true)]
+        auto_apply: bool,
+    },
+
+    /// Roll back an applied healing session using a backup ID
+    Rollback {
+        /// Backup ID (from 'aegis history')
+        backup_id: String,
+
+        /// Root directory where backup was created (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
+
+    /// List all healing snapshots and backups
+    History {
+        /// Root directory (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
+
+    /// Display deep technical teardown and remediation blueprint for a specific CVE
+    CveInfo {
+        /// CVE identifier (e.g. CVE-2026-109618, CVE-2026-109619, CVE-2026-111497)
+        cve_id: String,
+    },
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    match cli.command {
+        Commands::Scan { path, json, check_runtime } => {
+            let report = FleetScanner::scan_directory(&path, check_runtime);
+
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                return;
+            }
+
+            println!("\n=======================================================");
+            println!("  🎯  BUG KILLER: DEEP VULNERABILITY AUDIT REPORT");
+            println!("=======================================================");
+            println!("Target:               {}", report.target_dir.display());
+            println!("Timestamp:            {}", report.scan_time);
+            println!("Total Files Audited:  {}", report.total_files_scanned);
+            println!("Vulnerabilities:      {}", if report.is_vulnerable { "EXPOSED ⚠️" } else { "CLEAN ✅" });
+            println!("Critical:             {}", report.critical_count);
+            println!("High:                 {}", report.high_count);
+            println!("-------------------------------------------------------\n");
+
+            if report.findings.is_empty() {
+                println!("✅ Zero PHP2Shell or Node2Shell exposures detected.");
+                return;
+            }
+
+            for (idx, finding) in report.findings.iter().enumerate() {
+                let sev_badge = match finding.severity {
+                    Severity::Critical => "[CRITICAL]",
+                    Severity::High => "[HIGH]",
+                    Severity::Medium => "[MEDIUM]",
+                    Severity::Low => "[LOW]",
+                };
+
+                println!("{}. {} {} - {}", idx + 1, sev_badge, finding.cve.as_str(), finding.cve.title());
+                if let Some(ref p) = finding.file_path {
+                    let line_str = finding.line_number.map(|l| format!(":{}", l)).unwrap_or_default();
+                    println!("   Location:    {}{}", p.display(), line_str);
+                }
+                println!("   Pattern:     {}", finding.detected_version_or_pattern);
+                println!("   Threshold:   {}", finding.safe_threshold);
+                println!("   Details:     {}", finding.description);
+                println!("   Remediation: {}\n", finding.suggested_remediation);
+            }
+
+            println!("Run 'bug-killer heal {} --dry-run' to preview automated remediation.", path.display());
+        }
+
+        Commands::Heal { path, dry_run, auto_apply } => {
+            let report = FleetScanner::scan_directory(&path, false);
+            let plan = AutopilotHealer::plan_healing(&report);
+
+            println!("\n=======================================================");
+            println!("  🎯  BUG KILLER: AUTOPILOT HEALER");
+            println!("=======================================================");
+            println!("Target:               {}", path.display());
+            println!("Vulnerable Findings:  {}", report.findings.len());
+            println!("Planned Patches:      {}", plan.len());
+            println!("Dry-Run Mode:         {}", if dry_run { "ENABLED (No files will be modified)" } else { "DISABLED (Live Execution)" });
+            println!("-------------------------------------------------------\n");
+
+            if plan.is_empty() {
+                println!("ℹ️ No automated file patches applicable or all files already patched.");
+                return;
+            }
+
+            for (idx, action) in plan.iter().enumerate() {
+                println!("{}. Action:  {:?}", idx + 1, action.action_type);
+                println!("   Target:  {}", action.target_file.display());
+                println!("   Diff:    {}", action.diff_description);
+                println!("   SHA256:  {}\n", action.original_checksum);
+            }
+
+            if dry_run {
+                println!("To apply these changes, run without --dry-run:");
+                println!("  bug-killer heal {}", path.display());
+                return;
+            }
+
+            if auto_apply {
+                match AutopilotHealer::execute_healing(&path, &plan) {
+                    Ok((manifest, count)) => {
+                        println!("✅ Successfully applied {} automated healing patches!", count);
+                        println!("📦 Backup Snapshot Created: {}", manifest.backup_id);
+                        println!("   To rollback if needed: bug-killer rollback {}", manifest.backup_id);
+                    }
+                    Err(e) => {
+                        eprintln!("❌ Healing execution failed: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+        }
+
+        Commands::Rollback { backup_id, path } => {
+            println!("Attempting cryptographic rollback for snapshot '{}'...", backup_id);
+            match RollbackManager::rollback(&path, &backup_id) {
+                Ok(count) => {
+                    println!("✅ Successfully rolled back {} files from backup snapshot {}.", count, backup_id);
+                }
+                Err(e) => {
+                    eprintln!("❌ Rollback failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        Commands::History { path } => {
+            let backups = BackupManager::list_backups(&path);
+            println!("\n=======================================================");
+            println!("  📜  BUG KILLER: BACKUP SNAPSHOT HISTORY");
+            println!("=======================================================");
+            if backups.is_empty() {
+                println!("Zero backup snapshots recorded in .aegis/backups/");
+                return;
+            }
+
+            for b in backups {
+                println!("Snapshot ID:  {}", b.backup_id);
+                println!("Created At:   {}", b.created_at);
+                println!("Files Backed: {}", b.records.len());
+                for r in b.records {
+                    println!("  - {} (SHA256: {})", r.relative_target_path, &r.original_sha256[..12]);
+                }
+                println!("-------------------------------------------------------");
+            }
+        }
+
+        Commands::CveInfo { cve_id } => {
+            let norm = cve_id.trim().to_uppercase();
+            if norm.contains("109618") {
+                println!("\n=== CVE-2026-109618: PHP2Shell (Out-of-Memory Heap Corruption) ===");
+                println!("CVSS: 9.2 (Critical) | Vector: Remote Code Execution (RCE)");
+                println!("Root Cause: PHP runtime uses longjmp() on OOM errors to abort requests.");
+                println!("In certain SAPI contexts, request memory is left uninitialized prior to allocation.");
+                println!("Subsequent cleanups evaluate uninitialized heap structures, yielding reliable RCE.");
+                println!("Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)");
+            } else if norm.contains("109619") {
+                println!("\n=== CVE-2026-109619: PHP2Shell (Stale Global State / Use-After-Free) ===");
+                println!("CVSS: 9.8 (Critical) | Vector: Remote Code Execution (RCE)");
+                println!("Root Cause: Global state variables pointing into request memory fail to reset properly");
+                println!("under error-handling conditions. The memory is freed but globals retain stale references.");
+                println!("Consecutive requests reuse stale heap pointers leading to UAF code execution.");
+                println!("Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)");
+            } else if norm.contains("111497") {
+                println!("\n=== CVE-2026-111497: Node2Shell (Bundled Brotli Decoder Out-of-Bounds Write) ===");
+                println!("CVSS: 8.8 (High/Critical) | Vector: Memory Corruption / RCE");
+                println!("Root Cause: Missing bounds check in Google reference Brotli library (v1.0.3 - 1.2.0)");
+                println!("statically linked inside Node.js native runtime (node:zlib).");
+                println!("Attack Vector: Malformed Brotli payload sent via HTTP 'Content-Encoding: br' or fetch().");
+                println!("Fixed Releases: Node.js v22.23.4+, v24.22.1+, v26.12.1+ (Node <= 20 is EOL)");
+            } else {
+                println!("Unknown CVE ID. Supported: CVE-2026-109618, CVE-2026-109619, CVE-2026-111497");
+            }
+        }
+    }
+}

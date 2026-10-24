@@ -1,0 +1,36 @@
+# Bug Killer Source-Available & Business Attribution License (Version 1.0)
+
+Copyright (c) 2026 Mamdouh Aboammar (<mamdouhfces1997@gmail.com>). All Rights Reserved.
+
+Subject to the terms and conditions of this License, the Licensor hereby grants you a worldwide, royalty-free, non-exclusive license to:
+
+1. **Fork, Inspect, and Develop:**
+   You are free to fork, clone, inspect, compile, modify, and contribute to this repository and its codebase.
+
+2. **Internal Business & Operational Use:**
+   You are permitted to use, run, and execute this Software internally within any business, commercial entity, enterprise, non-profit, educational, or government organization to scan, monitor, protect, and heal your own organization's internal infrastructure, source repositories, containers, applications, and servers without paying royalties.
+
+---
+
+### CRITICAL CONDITIONS & RESTRICTIONS:
+
+1. **Mandatory Attribution Retention (حفظ الحقوق الأصلية):**
+   All copies, forks, modifications, substantial portions, and derivative works of this Software MUST prominently retain the original Copyright notice:
+   `Copyright (c) 2026 Mamdouh Aboammar`
+   as well as this entire License text and original author attribution in all source files, documentation, UI/CLI headers, and distribution packages. Stripping, removing, obfuscating, or replacing the original copyright notice or author credits is strictly prohibited under all circumstances.
+
+2. **Commercial Resale & Paid Service Prohibition (حظر تحويله لخدمة مدفوعة):**
+   You may NOT, directly or indirectly:
+   - Offer, resell, distribute, sublicense, lease, or host this Software or any derivative work as a commercial paid service, Software-as-a-Service (SaaS), Security-as-a-Service, managed security service provider (MSSP) offering, or paid product for sale to third parties;
+   - Charge fees, subscriptions, or monetary compensation for providing access to this Software's scanning, healing, or vulnerability detection capabilities to third parties;
+   
+   **WITHOUT PRIOR EXPLICIT WRITTEN CONSENT AND A SEPARATE COMMERCIAL LICENSE SIGNED DIRECTLY WITH MAMDOUH ABOAMMAR.**
+
+3. **Derivative Works & Reciprocity:**
+   Any public fork, modified version, or derivative work based upon this Software must be published and distributed under these exact same license terms, preserving all original author credits and commercial service restrictions.
+
+---
+
+### DISCLAIMER OF WARRANTY & LIMITATION OF LIABILITY:
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

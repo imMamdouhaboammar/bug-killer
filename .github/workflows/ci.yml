@@ -1,0 +1,57 @@
+name: Bug Killer CI Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test-rust:
+    name: Rust Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Rust Check & Format
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-targets -- -D warnings
+      - name: Run Rust Workspace Tests
+        run: cargo test --workspace --verbose
+
+  test-go:
+    name: Go Microservices Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Test Orchestrator
+        run: |
+          cd services/orchestrator
+          go vet ./...
+          go test -v ./...
+      - name: Test Healer
+        run: |
+          cd services/healer
+          go vet ./...
+          go test -v ./...
+
+  end-to-end-integration:
+    name: E2E Integration & Verification
+    needs: [test-rust, test-go]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Full System Build
+        run: make build
+      - name: Run Full Test Suite
+        run: make test

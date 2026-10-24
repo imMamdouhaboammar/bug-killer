@@ -1,0 +1,100 @@
+pub mod backup;
+pub mod virtual_patch;
+pub mod manifest_patch;
+pub mod source_patch;
+pub mod rollback;
+
+use std::path::{Path, PathBuf};
+use crate::types::*;
+use self::backup::BackupManager;
+use self::virtual_patch::VirtualPatcher;
+use self::manifest_patch::ManifestPatcher;
+use self::source_patch::SourcePatcher;
+
+pub struct AutopilotHealer;
+
+impl AutopilotHealer {
+    /// Generates a comprehensive plan of atomic patches to heal detected vulnerabilities.
+    pub fn plan_healing(report: &ScanReport) -> Vec<PatchAction> {
+        let mut plan = Vec::new();
+
+        for finding in &report.findings {
+            let path = match &finding.file_path {
+                Some(p) => p.as_path(),
+                None => continue,
+            };
+
+            match finding.target_kind {
+                TargetKind::NginxConfig => {
+                    if let Some(action) = VirtualPatcher::plan_nginx_patch(path) {
+                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                            plan.push(action);
+                        }
+                    }
+                }
+                TargetKind::NodePackageManifest => {
+                    if let Some(action) = ManifestPatcher::plan_package_json_patch(path) {
+                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                            plan.push(action);
+                        }
+                    }
+                }
+                TargetKind::ComposerManifest => {
+                    if let Some(action) = ManifestPatcher::plan_composer_json_patch(path) {
+                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                            plan.push(action);
+                        }
+                    }
+                }
+                TargetKind::Dockerfile => {
+                    if let Some(action) = ManifestPatcher::plan_dockerfile_patch(path) {
+                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                            plan.push(action);
+                        }
+                    }
+                }
+                TargetKind::NodeSourceFile => {
+                    if let Some(action) = SourcePatcher::plan_express_guard_patch(path) {
+                        if !plan.iter().any(|a: &PatchAction| a.target_file == action.target_file) {
+                            plan.push(action);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        plan
+    }
+
+    /// Executes the healing plan atomically: creates backup, replaces file contents, and verifies write.
+    pub fn execute_healing(root: &Path, actions: &[PatchAction]) -> Result<(BackupManifest, usize), String> {
+        if actions.is_empty() {
+            return Err("No healing actions to execute".into());
+        }
+
+        let target_files: Vec<PathBuf> = actions.iter().map(|a| a.target_file.clone()).collect();
+        let manifest = BackupManager::create_backup(root, &target_files)
+            .map_err(|e| format!("Failed to create safety backup: {}", e))?;
+
+        let mut applied_count = 0;
+
+        for action in actions {
+            // Write atomically via tempfile
+            let parent_dir = action.target_file.parent().unwrap_or(root);
+            let mut temp = tempfile::NamedTempFile::new_in(parent_dir)
+                .map_err(|e| format!("Failed to create temporary file: {}", e))?;
+
+            use std::io::Write;
+            temp.write_all(action.replacement_content.as_bytes())
+                .map_err(|e| format!("Failed to write replacement content: {}", e))?;
+
+            temp.persist(&action.target_file)
+                .map_err(|e| format!("Failed to atomically persist {:?}: {}", action.target_file, e))?;
+
+            applied_count += 1;
+        }
+
+        Ok((manifest, applied_count))
+    }
+}

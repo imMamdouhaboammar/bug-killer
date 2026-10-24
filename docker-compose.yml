@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  bug-killer-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: orchestrator
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/host:ro
+      - bug-killer-shared:/var/bug-killer
+    environment:
+      - HOST_ROOT=/host
+    command: ["/app/bug-killer-orchestrator", "-path", "/host", "-out", "/var/bug-killer/coverage-ledger.json"]
+
+  bug-killer-inspector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: inspector
+    volumes:
+      - /:/host:ro
+      - bug-killer-shared:/var/bug-killer
+    depends_on:
+      - bug-killer-orchestrator
+    command: ["/app/bug-killer-inspector", "--ledger", "/var/bug-killer/coverage-ledger.json", "--out", "/var/bug-killer/findings.json"]
+
+volumes:
+  bug-killer-shared:

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "skills": {
+    "dont-it-yourself": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/dont-it-yourself/SKILL.md",
+      "computedHash": "74099573f4e9630246737610a42e18f42dab8d36bb0cd53586ac304cec8936b6"
+    },
+    "host-workspace-operator": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/host-workspace-operator/SKILL.md",
+      "computedHash": "0dfc1b6df848a8dd48912d531ed77de825da7a5689ff742f8efd49310bcfaa81"
+    },
+    "humanity-and-humanness": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/humanity-and-humanness/SKILL.md",
+      "computedHash": "4295b5a345d7295225ab0af4d399daa5ec1f7aa3ff5b24d0c7abda97afef058c"
+    },
+    "integrate": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/integrate/SKILL.md",
+      "computedHash": "94af121abf25c004051d35f5217716ead1304e527b94e14b4144b395bd763c07"
+    },
+    "measure-dont-guess": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/measure-dont-guess/SKILL.md",
+      "computedHash": "1173f9d657c95295a95748e2d64bc491e95f2b879ed7e9dfda1501843363539a"
+    },
+    "omni-skill": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/omni-skill/SKILL.md",
+      "computedHash": "f3f031ed4b61cf27a4fe479fd2d116796f1ad572012101849673646986dacc28"
+    },
+    "poteto-principles": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/poteto-principles/SKILL.md",
+      "computedHash": "a05ed7402646726aa7fe8a5cf1a649432a27bd2521e3fcfc292d17c63b1e764d"
+    },
+    "repo-craft-and-distribute": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/repo-craft-and-distribute/SKILL.md",
+      "computedHash": "b54c1ce3190b5d26aeb761117ce4a03ec33303890cb500f33e6ac2991562cd15"
+    },
+    "sandbox-python-executor": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/sandbox-python-executor/SKILL.md",
+      "computedHash": "24808aee86f9dd4362aff647f5147042efad33e7f23c1e6cbfcec178d46ef41e"
+    },
+    "skill-architect": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/skill-architect/SKILL.md",
+      "computedHash": "fb5f452beda156540a4b37bcbef82f4dfb5a2baca5cee058637e7bfd0ae7b07e"
+    },
+    "skill-authoring": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/skill-authoring/SKILL.md",
+      "computedHash": "d82f6cedbfadecb86ef25d573d991e14786700aaa31dcc59520f3000d3e480d0"
+    },
+    "skill-conductor": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/skill-conductor/SKILL.md",
+      "computedHash": "ab154e5c111909f1ea2e2655c0a838a862db3d406f45e3fb06c15910b9153b99"
+    },
+    "skill-evaluator": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/skill-evaluator/SKILL.md",
+      "computedHash": "fab7b6875299b2d46efc6f5ed1df71f439995d35a98c52a5785508a81011aefd"
+    },
+    "skill-portability-compiler": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/skill-portability-compiler/SKILL.md",
+      "computedHash": "c032212d984ca67f4adff6ed97143dd4ca52cfafdae4c0729cd0c7117e14492b"
+    },
+    "writing": {
+      "source": "imMamdouhaboammar/omni-skill",
+      "sourceType": "github",
+      "skillPath": "skills/writing/SKILL.md",
+      "computedHash": "7771f45501d324f34d82e4446ec50e2540a6084b9dbfd19e06661b81fa155243"
+    }
+  }
+}
