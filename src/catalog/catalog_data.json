@@ -8196,5 +8196,131 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: canonical path containment",
     "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-019",
+    "short_id": "LNG-019",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Rust `unsafe`/FFI/parser code claims compiler guarantees for unchecked memory",
+    "cwe": null,
+    "detection_method": "AST+REVIEW+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: unsafe invariants audited",
+    "verification_requirements": "Verify via AST+REVIEW+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-020",
+    "short_id": "LNG-020",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Rust `unwrap`/`expect` on attacker-controlled parser path causes service crash",
+    "cwe": null,
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: untrusted input cannot panic process",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-021",
+    "short_id": "LNG-021",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Rust error fallback returns empty findings/success after IO failure",
+    "cwe": null,
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: partial/failed status preserved",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-022",
+    "short_id": "LNG-022",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Java deserialization, expression language or unsafe JNDI lookup",
+    "cwe": null,
+    "detection_method": "FLOW+CONFIG",
+    "required_evidence": [
+      "FLOW",
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: external values cannot select code",
+    "verification_requirements": "Verify via FLOW+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-023",
+    "short_id": "LNG-023",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": ".NET middleware/policy attribute omitted on controller/minimal API",
+    "cwe": null,
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: endpoint authorization matrix",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
