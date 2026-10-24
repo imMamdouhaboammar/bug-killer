@@ -148,6 +148,7 @@ impl ContainerScanner {
                 );
                 finding.detector_id = "container-scanner".to_string();
                 finding.category = "container-hardening".to_string();
+                finding.advisory_ids.push("BK-AI-INF-004".to_string());
                 finding.affectedness = Affectedness::ConfirmedAffected;
                 finding.reachability = Reachability::ConfirmedReachable;
                 finding.confidence = Confidence::High;
@@ -181,7 +182,7 @@ impl ContainerScanner {
             let mut finding = Finding::new(
                 format!("container-root-user-{}", &file_digest[..8]),
                 CveId::Custom {
-                    id: "BK-CONTAINER-001".to_string(),
+                    id: "BK-AI-INF-001".to_string(),
                     title,
                 },
                 sev,
@@ -195,6 +196,8 @@ impl ContainerScanner {
             );
             finding.detector_id = "container-scanner".to_string();
             finding.category = "container-hardening".to_string();
+            finding.advisory_ids.push("BK-CONTAINER-001".to_string());
+            finding.advisory_ids.push("BK-AI-INF-003".to_string());
             finding.affectedness = Affectedness::ConfirmedAffected;
             finding.reachability = Reachability::ConfirmedReachable;
             finding.confidence = Confidence::High;
