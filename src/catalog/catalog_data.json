@@ -4527,5 +4527,131 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: controlled untrusted build runner",
     "verification_requirements": "Verify via CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-012",
+    "short_id": "CIC-012",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "Artifact signing/attestation missing where project trust contract requires it",
+    "cwe": "CWE-494",
+    "detection_method": "CONFIG+REVIEW",
+    "required_evidence": [
+      "CONFIG",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: verifiable artifact identity",
+    "verification_requirements": "Verify via CONFIG+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-013",
+    "short_id": "CIC-013",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "PR bot auto-merges without review of changed security boundaries",
+    "cwe": "CWE-863",
+    "detection_method": "AGENT+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: required independent checks before merge",
+    "verification_requirements": "Verify via AGENT+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CIC-014",
+    "short_id": "CIC-014",
+    "rule_version": "1.0",
+    "category_number": 14,
+    "category": "2.14 CI/CD, build pipelines and repository automation",
+    "description": "Workflow writes to repo based on arbitrary external issue/comment content",
+    "cwe": "CWE-78",
+    "detection_method": "FLOW+CONFIG",
+    "required_evidence": [
+      "FLOW",
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: inputs constrained and authority scoped",
+    "verification_requirements": "Verify via FLOW+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-INF-001",
+    "short_id": "INF-001",
+    "rule_version": "1.0",
+    "category_number": 15,
+    "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
+    "description": "API/service exposed on `0.0.0.0` when only loopback/private access was intended",
+    "cwe": "CWE-668",
+    "detection_method": "CONFIG+REVIEW",
+    "required_evidence": [
+      "CONFIG",
+      "REVIEW"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: intended exposure vs actual bind/firewall",
+    "verification_requirements": "Verify via CONFIG+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-INF-002",
+    "short_id": "INF-002",
+    "rule_version": "1.0",
+    "category_number": 15,
+    "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
+    "description": "Storage bucket/container/DB endpoint accidentally public",
+    "cwe": "CWE-732",
+    "detection_method": "CONFIG",
+    "required_evidence": [
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "dockerfile",
+      "yaml"
+    ],
+    "supported_targets": [
+      "Dockerfile",
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: public grants explicitly approved",
+    "verification_requirements": "Verify via CONFIG evidence and regression test"
   }
 ]
