@@ -7806,5 +7806,135 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: no untrusted command path",
     "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-004",
+    "short_id": "LNG-004",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "PHP upload/filename checks rely solely on extension or client MIME",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "php"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: actual content and non-exec storage",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-005",
+    "short_id": "LNG-005",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "PHP debug/errors exposed publicly or dangerous runtime settings enabled",
+    "cwe": null,
+    "detection_method": "CONFIG+DAST",
+    "required_evidence": [
+      "AST",
+      "CONFIG",
+      "DAST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "php"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: environment-aware settings",
+    "verification_requirements": "Verify via CONFIG+DAST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-006",
+    "short_id": "LNG-006",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Node.js `child_process.exec()` receives request data",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no shell injection",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-007",
+    "short_id": "LNG-007",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Node/Bun `eval`, `vm`, dynamic import of untrusted strings",
+    "cwe": null,
+    "detection_method": "FLOW+REVIEW",
+    "required_evidence": [
+      "FLOW",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: trusted code modules only",
+    "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-008",
+    "short_id": "LNG-008",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "Node/Express prototype pollution via unsafe deep merge",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: hostile keys blocked",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
   }
 ]
