@@ -1,5 +1,6 @@
 #![allow(clippy::collapsible_if, clippy::doc_lazy_continuation)]
 
+pub mod agent;
 pub mod completion;
 pub mod cve_db;
 pub mod dast;

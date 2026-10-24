@@ -11,4 +11,5 @@ test-findings.json
 *.sock
 
 # repowise owner-digest key (local)
-.repowise/events.key
+.repowise/
+.vscode/

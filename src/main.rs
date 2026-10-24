@@ -1,5 +1,6 @@
 #![allow(clippy::collapsible_if, clippy::doc_lazy_continuation)]
 
+mod agent;
 mod completion;
 mod cve_db;
 mod dast;
@@ -14,6 +15,9 @@ mod taint;
 mod types;
 mod watcher;
 
+use agent::investigation::InvestigationSupervisor;
+use agent::privacy::PrivacyPolicy;
+use agent::provider::{AgentModelConfig, ModelProvider, ProviderAdapter};
 use clap::{CommandFactory, Parser, Subcommand};
 use completion::CompletionGenerator;
 use dast::DastProber;
@@ -185,6 +189,83 @@ enum Commands {
     CveInfo {
         /// CVE identifier (e.g. CVE-2026-109618, CVE-2026-109619, CVE-2026-111497)
         cve_id: String,
+    },
+
+    /// Model-agnostic AI agent investigation and capability diagnostics
+    #[command(subcommand)]
+    Agent(AgentCommands),
+
+    /// Retrieve full evidence receipts and cryptographic hashes for a specific finding
+    Evidence {
+        /// Finding ID or fingerprint prefix
+        finding_id: String,
+
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Plan a prospective, non-mutating repair for a finding with cryptographic diff hash
+    Plan {
+        /// Finding ID or fingerprint prefix
+        finding_id: String,
+
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum AgentCommands {
+    /// Inspect configured model provider capability and health without leaking secrets
+    Doctor {
+        /// Provider name (local, openai, deepseek, kimi, minimax, claude, gemini, ollama)
+        #[arg(long, default_value = "local")]
+        provider: String,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Run bounded read-only autonomous investigation loop over target workspace
+    Investigate {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Provider name (local, deepseek, kimi, minimax, claude, gemini, openai, ollama)
+        #[arg(long, default_value = "local")]
+        provider: String,
+
+        /// Model identifier override (e.g. deepseek-chat, gpt-4o, llama3.3)
+        #[arg(long)]
+        model: Option<String>,
+
+        /// Execution mode (strictly read-only)
+        #[arg(long, default_value = "read-only")]
+        mode: String,
+
+        /// Maximum investigation steps before terminal halt (default: 24)
+        #[arg(long, default_value_t = 24)]
+        max_steps: usize,
+
+        /// Approved export profile name for remote providers (required if allow_remote_data_export is true)
+        #[arg(long)]
+        export_profile: Option<String>,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -697,6 +778,217 @@ fn main() {
                 println!(
                     "Unknown CVE ID. Supported: CVE-2026-109618, CVE-2026-109619, CVE-2026-111497"
                 );
+            }
+        }
+
+        Commands::Agent(agent_cmd) => match agent_cmd {
+            AgentCommands::Doctor { provider, json } => {
+                let model_provider = ModelProvider::from_str_loose(&provider);
+                let config = AgentModelConfig {
+                    provider: model_provider,
+                    model_name: "default".into(),
+                    ..Default::default()
+                };
+                let adapter = ProviderAdapter::new(config);
+                let health = adapter.check_health();
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&health).unwrap());
+                    return;
+                }
+                println!("\n=======================================================");
+                println!("  🤖  BUG KILLER AGENT PROVIDER HEALTH & CAPABILITY");
+                println!("=======================================================");
+                println!("Provider:          {}", health.provider);
+                println!("Model:             {}", health.model);
+                println!(
+                    "Available:         {}",
+                    if health.is_available {
+                        "READY ✅"
+                    } else {
+                        "NOT READY ⚠️"
+                    }
+                );
+                println!(
+                    "Local / Offline:   {}",
+                    if health.is_local {
+                        "YES (Air-gapped)"
+                    } else {
+                        "NO (Remote Network)"
+                    }
+                );
+                println!("Endpoint:          {}", health.endpoint);
+                println!(
+                    "Requires Key:      {}",
+                    if health.requires_key { "YES" } else { "NO" }
+                );
+                println!(
+                    "Key Configured:    {}",
+                    if health.key_configured {
+                        "YES (Set in environment)"
+                    } else {
+                        "NO (Unset)"
+                    }
+                );
+                println!(
+                    "Function Calling:  {}",
+                    if health.capability.supports_function_calling {
+                        "YES"
+                    } else {
+                        "NO"
+                    }
+                );
+                println!(
+                    "Structured Output: {}",
+                    if health.capability.supports_structured_output {
+                        "YES"
+                    } else {
+                        "NO"
+                    }
+                );
+                println!(
+                    "Max Context:       {} tokens",
+                    health.capability.max_context_tokens
+                );
+                println!(
+                    "Max Output:        {} tokens\n",
+                    health.capability.max_output_tokens
+                );
+            }
+
+            AgentCommands::Investigate {
+                path,
+                provider,
+                model,
+                mode: _mode,
+                max_steps,
+                export_profile,
+                json,
+            } => {
+                let model_prov = ModelProvider::from_str_loose(&provider);
+                let model_name = model.unwrap_or_else(|| "default".into());
+                let privacy_policy = if let Some(ref _profile) = export_profile {
+                    PrivacyPolicy::new_approved_export(vec![provider.clone()])
+                } else {
+                    PrivacyPolicy::default()
+                };
+
+                let config = AgentModelConfig {
+                    provider: model_prov,
+                    model_name,
+                    privacy_policy,
+                    ..Default::default()
+                };
+
+                let adapter = ProviderAdapter::new(config);
+                let mut supervisor = InvestigationSupervisor::new(adapter, max_steps);
+                match supervisor.run_investigation(&path) {
+                    Ok(report) => {
+                        if json {
+                            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                            return;
+                        }
+                        println!("\n=======================================================");
+                        println!("  🔍  AUTONOMOUS AGENT INVESTIGATION REPORT");
+                        println!("=======================================================");
+                        println!("Investigation ID:  {}", report.investigation_id);
+                        println!("Target Directory:  {}", report.target_dir.display());
+                        println!("Terminal State:    {:?}", report.state);
+                        println!(
+                            "Steps Executed:    {}/{}",
+                            report.total_steps, report.max_steps_allowed
+                        );
+                        println!("Findings Found:    {}", report.findings.len());
+                        println!("Plans Proposed:    {}", report.proposed_plans.len());
+                        println!("Vetoes Triggered:  {}", report.vetoes.len());
+                        println!("Audit Digest:      {}\n", report.audit_digest);
+
+                        for step in &report.steps_history {
+                            println!(
+                                "Step {}: [{:?}] {} -> {}",
+                                step.step_index, step.state, step.action, step.outcome_summary
+                            );
+                        }
+                        println!();
+                    }
+                    Err(e) => {
+                        eprintln!("Investigation failed: {}", e);
+                        std::process::exit(4);
+                    }
+                }
+            }
+        },
+
+        Commands::Evidence {
+            finding_id,
+            path,
+            json,
+        } => {
+            let scan_report = FleetScanner::scan_directory(&path, true);
+            let target_finding = scan_report
+                .findings
+                .iter()
+                .find(|f| f.id == finding_id || f.dedupe_fingerprint.starts_with(&finding_id));
+            if let Some(f) = target_finding {
+                if json {
+                    println!("{}", serde_json::to_string_pretty(f).unwrap());
+                    return;
+                }
+                println!("\n=== EVIDENCE RECORD FOR FINDING {} ===", f.id);
+                println!("CVE:               {}", f.cve.as_str());
+                println!("Severity:          {:?}", f.severity);
+                println!("Affectedness:      {}", f.affectedness.as_str());
+                println!("Reachability:      {}", f.reachability.as_str());
+                println!("Confidence:        {}", f.confidence.as_str());
+                println!("Target Kind:       {:?}", f.target_kind);
+                println!(
+                    "Target File:       {}",
+                    f.file_path
+                        .as_ref()
+                        .map(|p| p.display().to_string())
+                        .unwrap_or_else(|| "none".into())
+                );
+                println!("Pattern/Version:   {}", f.detected_version_or_pattern);
+                println!("Dedupe Hash:       {}", f.dedupe_fingerprint);
+                println!("Supported Checks:  {:?}", f.supported_checks);
+                println!("Missing Checks:    {:?}", f.missing_checks);
+                println!("Uncertainty:       {:?}\n", f.uncertainty_reasons);
+            } else {
+                eprintln!("Finding '{}' not found in workspace scan.", finding_id);
+                std::process::exit(1);
+            }
+        }
+
+        Commands::Plan {
+            finding_id,
+            path,
+            json,
+        } => {
+            let scan_report = FleetScanner::scan_directory(&path, true);
+            let target_finding = scan_report
+                .findings
+                .iter()
+                .find(|f| f.id == finding_id || f.dedupe_fingerprint.starts_with(&finding_id));
+            if let Some(f) = target_finding {
+                let single_report = types::ScanReport {
+                    findings: vec![f.clone()],
+                    ..scan_report
+                };
+                let plan = AutopilotHealer::plan_healing(&single_report);
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&plan).unwrap());
+                    return;
+                }
+                println!("\n=== REMEDIATION PLAN FOR FINDING {} ===", f.id);
+                for action in plan {
+                    println!("Action Type:   {:?}", action.action_type);
+                    println!("Target File:   {}", action.target_file.display());
+                    println!("Diff:          {}", action.diff_description);
+                    println!("Original Hash: {}", action.original_checksum);
+                }
+                println!();
+            } else {
+                eprintln!("Finding '{}' not found in workspace scan.", finding_id);
+                std::process::exit(1);
             }
         }
     }
