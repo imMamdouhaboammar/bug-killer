@@ -4,3 +4,7 @@ pub mod types;
 pub mod cve_db;
 pub mod scanner;
 pub mod healer;
+pub mod doctor;
+pub mod watcher;
+pub mod shell;
+pub mod completion;

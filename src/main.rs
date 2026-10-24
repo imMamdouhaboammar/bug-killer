@@ -4,14 +4,22 @@ mod types;
 mod cve_db;
 mod scanner;
 mod healer;
+mod doctor;
+mod watcher;
+mod shell;
+mod completion;
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
 use types::Severity;
 use scanner::FleetScanner;
 use healer::AutopilotHealer;
 use healer::backup::BackupManager;
 use healer::rollback::RollbackManager;
+use doctor::SystemDoctor;
+use watcher::WatcherEngine;
+use shell::ShellEngine;
+use completion::CompletionGenerator;
 
 #[derive(Parser, Debug)]
 #[command(name = "bug-killer")]
@@ -23,6 +31,45 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
+    /// Launch the interactive Bug Killer REPL shell
+    Shell {
+        /// Initial working directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
+
+    /// Run diagnostic system and environment health audit
+    Doctor {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output diagnostic report as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Start live surveillance monitoring filesystem for security regressions
+    Watch {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Surveillance polling interval in seconds (default: 3)
+        #[arg(short, long, default_value_t = 3)]
+        interval: u64,
+
+        /// Automatically apply safe healing patches upon detecting vulnerabilities
+        #[arg(long, default_value_t = false)]
+        auto_heal: bool,
+    },
+
+    /// Generate shell auto-completion script for bash, zsh, fish, or powershell
+    Completion {
+        /// Target shell (bash, zsh, fish, powershell, elvish)
+        shell: String,
+    },
+
     /// Scan target directories and systems for PHP2Shell (CVE-2026-109618, CVE-2026-109619) and Node2Shell (CVE-2026-111497)
     Scan {
         /// Target directory path (default: current directory)
@@ -55,7 +102,7 @@ enum Commands {
 
     /// Roll back an applied healing session using a backup ID
     Rollback {
-        /// Backup ID (from 'aegis history')
+        /// Backup ID (from 'bug-killer history')
         backup_id: String,
 
         /// Root directory where backup was created (default: current directory)
@@ -81,6 +128,53 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Shell { path } => {
+            let mut shell = ShellEngine::new(path);
+            shell.run();
+        }
+
+        Commands::Doctor { path, json } => {
+            let report = SystemDoctor::diagnose(&path);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                return;
+            }
+
+            println!("\n=======================================================");
+            println!("  🩺  BUG KILLER SYSTEM DOCTOR REPORT");
+            println!("=======================================================");
+            println!("Target Workspace:  {}", path.display());
+            println!("Operating System:  {}", report.os);
+            println!("Architecture:      {}", report.arch);
+            println!("Overall Health:    {}\n", if report.overall_healthy { "HEALTHY ✅" } else { "ATTENTION REQUIRED ⚠️" });
+
+            for item in report.items {
+                let badge = match item.status {
+                    doctor::CheckStatus::Ok => "✅ OK  ",
+                    doctor::CheckStatus::Warning => "⚠️ WARN",
+                    doctor::CheckStatus::Failure => "❌ FAIL",
+                    doctor::CheckStatus::NotInstalled => "⚪ NONE",
+                };
+                println!("{} {:<32} {}", badge, item.name, item.detected);
+                if item.status != doctor::CheckStatus::Ok {
+                    println!("   Recommendation: {}", item.recommendation);
+                }
+            }
+            println!();
+        }
+
+        Commands::Watch { path, interval, auto_heal } => {
+            WatcherEngine::watch(&path, interval, auto_heal, None);
+        }
+
+        Commands::Completion { shell } => {
+            let mut cmd = Cli::command();
+            if let Err(e) = CompletionGenerator::generate_completion(&shell, &mut cmd) {
+                eprintln!("Error: {}", e);
+                std::process::exit(1);
+            }
+        }
+
         Commands::Scan { path, json, check_runtime } => {
             let report = FleetScanner::scan_directory(&path, check_runtime);
 
@@ -201,7 +295,8 @@ fn main() {
                 println!("Created At:   {}", b.created_at);
                 println!("Files Backed: {}", b.records.len());
                 for r in b.records {
-                    println!("  - {} (SHA256: {})", r.relative_target_path, &r.original_sha256[..12]);
+                    let hash_prefix = if r.original_sha256.len() >= 12 { &r.original_sha256[..12] } else { &r.original_sha256 };
+                    println!("  - {} (SHA256: {})", r.relative_target_path, hash_prefix);
                 }
                 println!("-------------------------------------------------------");
             }

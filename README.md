@@ -115,46 +115,100 @@ docker build -t bug-killer:latest .
 
 ### 1. Standalone Core CLI (`bug-killer` / `bk`)
 
+#### Interactive REPL Shell (`bk shell`)
+```bash
+# Launch interactive session for workspace
+bk shell .
+
+# Supported interactive commands inside the shell:
+# bk [silly-kepler] (idle) > doctor
+# bk [silly-kepler] (idle) > scan
+# bk [silly-kepler] (⚠️ vuln:2) > findings
+# bk [silly-kepler] (⚠️ vuln:2) > plan
+# bk [silly-kepler] (⚠️ vuln:2) > diff
+# bk [silly-kepler] (⚠️ vuln:2) > heal --dry-run
+# bk [silly-kepler] (⚠️ vuln:2) > heal
+# bk [silly-kepler] (✅ clean) > verify
+# bk [silly-kepler] (✅ clean) > rollback <backup_id>
+# bk [silly-kepler] (✅ clean) > exit
+```
+
+#### System & Runtime Environment Doctor (`bk doctor`)
+```bash
+# Audit host runtimes (Node.js, PHP), proxies (Nginx, HAProxy), Docker socket, and procfs
+bk doctor .
+
+# Machine-readable diagnostic JSON
+bk doctor . --json
+```
+
+#### Live Surveillance & Continuous Watcher Engine (`bk watch`)
+```bash
+# Monitor directory for file modifications and trigger audits every 3 seconds
+bk watch . --interval 3
+
+# Continuous autonomous healing mode
+bk watch /var/www --interval 5 --auto-heal
+```
+
+#### Shell Completions
+```bash
+# Generate shell autocompletion scripts
+bk completion bash > ~/.local/share/bash-completion/completions/bk
+bk completion zsh > ~/.zsh/completion/_bk
+bk completion fish > ~/.config/fish/completions/bk.fish
+```
+
 #### Scan Directory or Repository
 ```bash
 # Standard console audit
-bug-killer scan .
+bk scan .
 
 # Machine-readable JSON output
-bug-killer scan /var/www --json > audit-report.json
+bk scan /var/www --json > audit-report.json
 
 # Scan filesystem plus host PATH binaries (node, php)
-bug-killer scan . --check-runtime
+bk scan . --check-runtime
 ```
 
 #### Preview Remediation Plan (Dry-Run)
 ```bash
-bug-killer heal . --dry-run
+bk heal . --dry-run
 ```
 
 #### Execute Live Atomic Healing
 ```bash
-bug-killer heal . --auto-apply
+bk heal . --auto-apply
 ```
 
 #### Revert Healing Session (Cryptographic Rollback)
 ```bash
 # List all created backup snapshots
-bug-killer history
+bk history
 
 # Rollback to exact snapshot state
-bug-killer rollback 20261024_111448
+bk rollback 20261024_111448
 ```
 
 #### CVE Technical Deep Dive
 ```bash
-bug-killer cve-info CVE-2026-109618
-bug-killer cve-info CVE-2026-111497
+bk cve-info CVE-2026-109618
+bk cve-info CVE-2026-111497
 ```
 
 ---
 
-### 2. Microservices Pipeline
+### 2. Shell Automation Utilities (`scripts/`)
+
+| Script | Purpose | Execution |
+|---|---|---|
+| [`bk-shell.sh`](scripts/bk-shell.sh) | Interactive REPL launcher with terminal color setup | `./scripts/bk-shell.sh [dir]` |
+| [`bk-triage.sh`](scripts/bk-triage.sh) | Automated 3-step rapid incident response triage (Doctor $\to$ Scan $\to$ Dry-run) | `./scripts/bk-triage.sh [dir]` |
+| [`bk-watch.sh`](scripts/bk-watch.sh) | Background surveillance loop daemon wrapper | `./scripts/bk-watch.sh [dir] [interval] [--auto-heal]` |
+
+---
+
+### 3. Microservices Pipeline
 
 ```bash
 # Step 1: Orchestrator maps target environment into structured ledger

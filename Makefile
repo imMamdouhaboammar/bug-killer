@@ -5,7 +5,7 @@ PREFIX ?= /usr/local/bin
 
 all: build test
 
-build: build-rust build-go
+build: build-rust build-go completions
 
 build-rust:
 	@echo "==> Building Bug Killer Rust Core..."
@@ -16,6 +16,13 @@ build-rust:
 	@echo "==> Building Deep Binary Inspector..."
 	cd services/inspector && cargo build --release
 	@cp services/inspector/target/release/bug-killer-inspector $(TARGET_DIR)/bug-killer-inspector
+
+completions:
+	@echo "==> Generating Shell Completions..."
+	@mkdir -p completions
+	@$(TARGET_DIR)/bug-killer completion bash > completions/bug-killer.bash
+	@$(TARGET_DIR)/bug-killer completion zsh > completions/_bug-killer
+	@$(TARGET_DIR)/bug-killer completion fish > completions/bug-killer.fish
 
 build-go:
 	@echo "==> Building Go Orchestrator..."
@@ -47,6 +54,9 @@ install: build
 	install -m 755 $(TARGET_DIR)/bug-killer-orchestrator $(PREFIX)/bug-killer-orchestrator
 	install -m 755 $(TARGET_DIR)/bug-killer-inspector $(PREFIX)/bug-killer-inspector
 	install -m 755 $(TARGET_DIR)/bug-killer-healer $(PREFIX)/bug-killer-healer
+	install -m 755 scripts/bk-shell.sh $(PREFIX)/bk-shell
+	install -m 755 scripts/bk-triage.sh $(PREFIX)/bk-triage
+	install -m 755 scripts/bk-watch.sh $(PREFIX)/bk-watch
 	ln -sf $(PREFIX)/bug-killer $(PREFIX)/bk
 	@echo "==> Installation complete!"
 

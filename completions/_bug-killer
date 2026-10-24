@@ -1,0 +1,296 @@
+#compdef bug-killer
+
+autoload -U is-at-least
+
+_bug-killer() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_bug-killer_commands" \
+"*::: :->bug-killer" \
+&& ret=0
+    case $state in
+    (bug-killer)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-command-$line[1]:"
+        case $line[1] in
+            (shell)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Initial working directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(doctor)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output diagnostic report as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(watch)
+_arguments "${_arguments_options[@]}" : \
+'-i+[Surveillance polling interval in seconds (default\: 3)]:INTERVAL:_default' \
+'--interval=[Surveillance polling interval in seconds (default\: 3)]:INTERVAL:_default' \
+'--auto-heal[Automatically apply safe healing patches upon detecting vulnerabilities]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(completion)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':shell -- Target shell (bash, zsh, fish, powershell, elvish):_default' \
+&& ret=0
+;;
+(scan)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output results as JSON]' \
+'--check-runtime[Also inspect host binary runtimes (php, node) on PATH]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(heal)
+_arguments "${_arguments_options[@]}" : \
+'--dry-run[Show planned patches and diffs without modifying files]' \
+'--auto-apply[Automatically apply all safe patches without confirmation]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(rollback)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':backup_id -- Backup ID (from '\''bug-killer history'\''):_default' \
+'::path -- Root directory where backup was created (default\: current directory):_files' \
+&& ret=0
+;;
+(history)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Root directory (default\: current directory):_files' \
+&& ret=0
+;;
+(cve-info)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':cve_id -- CVE identifier (e.g. CVE-2026-109618, CVE-2026-109619, CVE-2026-111497):_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-command-$line[1]:"
+        case $line[1] in
+            (shell)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(doctor)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(watch)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(completion)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(scan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(heal)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rollback)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(history)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(cve-info)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_bug-killer_commands] )) ||
+_bug-killer_commands() {
+    local commands; commands=(
+'shell:Launch the interactive Bug Killer REPL shell' \
+'doctor:Run diagnostic system and environment health audit' \
+'watch:Start live surveillance monitoring filesystem for security regressions' \
+'completion:Generate shell auto-completion script for bash, zsh, fish, or powershell' \
+'scan:Scan target directories and systems for PHP2Shell (CVE-2026-109618, CVE-2026-109619) and Node2Shell (CVE-2026-111497)' \
+'heal:Plan and automatically heal vulnerable configurations, Dockerfiles, manifests, and web servers' \
+'rollback:Roll back an applied healing session using a backup ID' \
+'history:List all healing snapshots and backups' \
+'cve-info:Display deep technical teardown and remediation blueprint for a specific CVE' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__completion_commands] )) ||
+_bug-killer__subcmd__completion_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer completion commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__cve-info_commands] )) ||
+_bug-killer__subcmd__cve-info_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer cve-info commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__heal_commands] )) ||
+_bug-killer__subcmd__heal_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer heal commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help_commands] )) ||
+_bug-killer__subcmd__help_commands() {
+    local commands; commands=(
+'shell:Launch the interactive Bug Killer REPL shell' \
+'doctor:Run diagnostic system and environment health audit' \
+'watch:Start live surveillance monitoring filesystem for security regressions' \
+'completion:Generate shell auto-completion script for bash, zsh, fish, or powershell' \
+'scan:Scan target directories and systems for PHP2Shell (CVE-2026-109618, CVE-2026-109619) and Node2Shell (CVE-2026-111497)' \
+'heal:Plan and automatically heal vulnerable configurations, Dockerfiles, manifests, and web servers' \
+'rollback:Roll back an applied healing session using a backup ID' \
+'history:List all healing snapshots and backups' \
+'cve-info:Display deep technical teardown and remediation blueprint for a specific CVE' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__completion_commands] )) ||
+_bug-killer__subcmd__help__subcmd__completion_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help completion commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__cve-info_commands] )) ||
+_bug-killer__subcmd__help__subcmd__cve-info_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help cve-info commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__help__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__heal_commands] )) ||
+_bug-killer__subcmd__help__subcmd__heal_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help heal commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__history_commands] )) ||
+_bug-killer__subcmd__help__subcmd__history_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help history commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__rollback_commands] )) ||
+_bug-killer__subcmd__help__subcmd__rollback_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help rollback commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__scan_commands] )) ||
+_bug-killer__subcmd__help__subcmd__scan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help scan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__shell_commands] )) ||
+_bug-killer__subcmd__help__subcmd__shell_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help shell commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__watch_commands] )) ||
+_bug-killer__subcmd__help__subcmd__watch_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help watch commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__history_commands] )) ||
+_bug-killer__subcmd__history_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer history commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__rollback_commands] )) ||
+_bug-killer__subcmd__rollback_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer rollback commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__scan_commands] )) ||
+_bug-killer__subcmd__scan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer scan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__shell_commands] )) ||
+_bug-killer__subcmd__shell_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer shell commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__watch_commands] )) ||
+_bug-killer__subcmd__watch_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer watch commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_bug-killer" ]; then
+    _bug-killer "$@"
+else
+    compdef _bug-killer bug-killer
+fi
