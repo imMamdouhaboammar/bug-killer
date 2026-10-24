@@ -626,5 +626,131 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: identity denied when verifier unavailable",
     "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AUT-010",
+    "short_id": "AUT-010",
+    "rule_version": "1.0",
+    "category_number": 2,
+    "category": "2.2 Authentication and account lifecycle",
+    "description": "Authentication relies on client-side JS, hidden button or route guard alone",
+    "cwe": "CWE-602",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: backend independently rejects unauthorized calls",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AUT-011",
+    "short_id": "AUT-011",
+    "rule_version": "1.0",
+    "category_number": 2,
+    "category": "2.2 Authentication and account lifecycle",
+    "description": "Untrusted JWT claims used before signature/issuer/audience/expiry verification",
+    "cwe": "CWE-347",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: all verification prerequisites enforced",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AUT-012",
+    "short_id": "AUT-012",
+    "rule_version": "1.0",
+    "category_number": 2,
+    "category": "2.2 Authentication and account lifecycle",
+    "description": "OAuth/OIDC state, nonce, PKCE or callback/redirect checks omitted where required",
+    "cwe": "CWE-346",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: replay, substitution and redirect binding blocked",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-001",
+    "short_id": "AZ-001",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "IDOR/BOLA: object ID accepted without per-object ownership check",
+    "cwe": "CWE-639",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: cross-user access denied",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-002",
+    "short_id": "AZ-002",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "Tenant ID read from body/query/header and trusted without session-bound scope",
+    "cwe": "CWE-863",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: tenant scope derived from trusted identity",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
   }
 ]
