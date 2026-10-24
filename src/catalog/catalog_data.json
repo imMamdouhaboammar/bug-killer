@@ -1762,5 +1762,130 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: server enforces type, length, shape, enum",
     "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-002",
+    "short_id": "API-002",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "Unknown/extra fields accepted into privileged model without allowlist",
+    "cwe": "CWE-915",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: reject or strip unauthorized fields",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-003",
+    "short_id": "API-003",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "No per-actor rate/size limit on expensive API operations",
+    "cwe": "CWE-770",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: bounded usage by identity/tenant",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-004",
+    "short_id": "API-004",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "GraphQL depth, complexity or introspection exposure lacks threat-appropriate control",
+    "cwe": "CWE-400",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: bounded query cost; deliberate schema exposure",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-005",
+    "short_id": "API-005",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "WebSocket upgrade/authentication checked once, not per message or room",
+    "cwe": "CWE-862",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: membership and operations rechecked",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-006",
+    "short_id": "API-006",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "gRPC metadata/auth interceptors omit service or streaming methods",
+    "cwe": "CWE-306",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: all privileged RPC paths gated",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
