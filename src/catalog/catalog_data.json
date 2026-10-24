@@ -7682,5 +7682,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: approval cryptographically or server-state bound",
     "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AGS-011",
+    "short_id": "AGS-011",
+    "rule_version": "1.0",
+    "category_number": 23,
+    "category": "2.23 Model, plugin and agent supply-chain integrity",
+    "description": "Retry after partial tool execution duplicates privileged action",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: idempotency and rollback receipt",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AGS-012",
+    "short_id": "AGS-012",
+    "rule_version": "1.0",
+    "category_number": 23,
+    "category": "2.23 Model, plugin and agent supply-chain integrity",
+    "description": "Nested tool invocation delegates greater permissions than initiating actor owns",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: delegated authority is subset only",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-001",
+    "short_id": "LNG-001",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "PHP `include`, `require` or template path controlled by user",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "php"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: finite template set",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-002",
+    "short_id": "LNG-002",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "PHP `unserialize()` called on attacker-provided bytes",
+    "cwe": null,
+    "detection_method": "FLOW",
+    "required_evidence": [
+      "FLOW"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "php"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: object injection path gated",
+    "verification_requirements": "Verify via FLOW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LNG-003",
+    "short_id": "LNG-003",
+    "rule_version": "1.0",
+    "category_number": 24,
+    "category": "2.24 Language/runtime-specific red flags",
+    "description": "PHP `shell_exec`, `system`, `passthru` fed from request",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "php"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no untrusted command path",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
   }
 ]
