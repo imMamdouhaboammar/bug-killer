@@ -11,3 +11,5 @@ pub mod completion;
 pub mod identity;
 pub mod rules;
 pub mod osv;
+pub mod taint;
+pub mod dast;

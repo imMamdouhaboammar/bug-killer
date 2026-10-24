@@ -219,4 +219,79 @@ impl ManifestPatcher {
             replacement_content: new_content,
         })
     }
+
+    /// Bumps a Go module dependency in `go.mod` to a safe version.
+    pub fn plan_generic_go_mod_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+        let content = fs::read_to_string(path).ok()?;
+        let sha256 = BackupManager::compute_sha256(path).ok()?;
+
+        let mut lines = Vec::new();
+        let mut changed = false;
+        let formatted_ver = if safe_version.starts_with('v') { safe_version.to_string() } else { format!("v{}", safe_version) };
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.contains(package_name) {
+                let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                if parts.len() >= 2 && (parts[0] == package_name || (parts[0] == "require" && parts.len() >= 3 && parts[1] == package_name)) {
+                    let indent = line.chars().take_while(|c| c.is_whitespace()).collect::<String>();
+                    if parts[0] == "require" {
+                        lines.push(format!("{}require {} {}", indent, package_name, formatted_ver));
+                    } else {
+                        lines.push(format!("{}{} {}", indent, package_name, formatted_ver));
+                    }
+                    changed = true;
+                    continue;
+                }
+            }
+            lines.push(line.to_string());
+        }
+
+        if !changed {
+            return None;
+        }
+
+        let new_content = lines.join("\n") + "\n";
+        Some(PatchAction {
+            action_type: PatchActionType::GenericReplace,
+            target_file: path.to_path_buf(),
+            original_checksum: sha256,
+            diff_description: format!("Upgrade {} to safe release {} in go.mod", package_name, formatted_ver),
+            replacement_content: new_content,
+        })
+    }
+
+    /// Bumps a NuGet PackageReference in `.csproj` to a safe version.
+    pub fn plan_generic_dotnet_csproj_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+        let content = fs::read_to_string(path).ok()?;
+        let sha256 = BackupManager::compute_sha256(path).ok()?;
+
+        let mut lines = Vec::new();
+        let mut changed = false;
+
+        let re = Regex::new(&format!(r#"(?i)(<PackageReference\s+Include="{}"\s+Version=")([^"]+)(")"#, regex::escape(package_name))).ok()?;
+
+        for line in content.lines() {
+            if re.is_match(line) {
+                let replaced = re.replace(line, format!("${{1}}{}${{3}}", safe_version));
+                lines.push(replaced.to_string());
+                changed = true;
+            } else {
+                lines.push(line.to_string());
+            }
+        }
+
+        if !changed {
+            return None;
+        }
+
+        let new_content = lines.join("\n") + "\n";
+        Some(PatchAction {
+            action_type: PatchActionType::GenericReplace,
+            target_file: path.to_path_buf(),
+            original_checksum: sha256,
+            diff_description: format!("Upgrade {} to safe release {} in .csproj", package_name, safe_version),
+            replacement_content: new_content,
+        })
+    }
 }

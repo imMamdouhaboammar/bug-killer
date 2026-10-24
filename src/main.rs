@@ -11,6 +11,8 @@ mod completion;
 mod identity;
 mod rules;
 mod osv;
+mod taint;
+mod dast;
 
 use clap::{CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
@@ -25,6 +27,7 @@ use shell::ShellEngine;
 use completion::CompletionGenerator;
 use rules::RuleEngine;
 use osv::OsvClient;
+use dast::DastProber;
 
 #[derive(Parser, Debug)]
 #[command(name = "bug-killer")]
@@ -100,6 +103,24 @@ enum Commands {
         /// Also query free open vulnerability database (OSV.dev) for dependencies
         #[arg(long, default_value_t = false)]
         osv: bool,
+
+        /// Also perform scope-aware taint analysis on source code
+        #[arg(long, default_value_t = false)]
+        taint: bool,
+    },
+
+    /// Defensively probe a live web application endpoint for security posture, headers, and disclosures
+    Probe {
+        /// Target URL (e.g. http://localhost:8080 or https://example.com)
+        url: String,
+
+        /// Output diagnostic probe report as JSON
+        #[arg(long)]
+        json: bool,
+
+        /// Request timeout in seconds (default: 10)
+        #[arg(short, long, default_value_t = 10)]
+        timeout: u64,
     },
 
     /// Query open-source vulnerability database (https://osv.dev) for dependencies across npm, Packagist, PyPI, and crates.io
@@ -211,9 +232,9 @@ fn main() {
             }
         }
 
-        Commands::Scan { path, json, check_runtime, rules, osv } => {
+        Commands::Scan { path, json, check_runtime, rules, osv, taint } => {
             let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
-            let mut report = FleetScanner::scan_directory_with_rules(&path, check_runtime, &active_rules);
+            let mut report = FleetScanner::scan_directory_with_rules_and_taint(&path, check_runtime, &active_rules, taint);
 
             if osv {
                 let osv_client = OsvClient::new();
@@ -244,6 +265,7 @@ fn main() {
             println!("Total Files Audited:  {}", report.total_files_scanned);
             println!("Active Dynamic Rules: {}", active_rules.len());
             println!("OSV.dev Integration:  {}", if osv { "ENABLED (Live Query)" } else { "DISABLED (Use --osv to enable)" });
+            println!("Taint Analysis:       {}", if taint { "ENABLED (AST Dataflow)" } else { "DISABLED (Use --taint to enable)" });
             println!("Vulnerabilities:      {}", if report.is_vulnerable { "EXPOSED ⚠️" } else { "CLEAN ✅" });
             println!("Critical:             {}", report.critical_count);
             println!("High:                 {}", report.high_count);
@@ -410,6 +432,54 @@ fn main() {
                     println!("  - {} (SHA256: {})", r.relative_target_path, hash_prefix);
                 }
                 println!("-------------------------------------------------------");
+            }
+        }
+
+        Commands::Probe { url, json, timeout } => {
+            match DastProber::probe(&url, timeout) {
+                Ok(report) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                        return;
+                    }
+
+                    println!("\n=======================================================");
+                    println!("  🛡️  BUG KILLER: DEFENSIVE DAST PROBE REPORT");
+                    println!("=======================================================");
+                    println!("Target URL:           {}", report.target_url);
+                    println!("Timestamp:            {}", report.probe_time);
+                    println!("Status Code:          HTTP {}", report.status_code);
+                    println!("Duration:             {}ms", report.duration_ms);
+                    println!("Headers Audited:      {}", report.headers_checked);
+                    println!("Endpoints Audited:    {}", report.endpoints_audited);
+                    println!("Vulnerabilities:      {}", if report.is_vulnerable { "EXPOSED ⚠️" } else { "HARDENED ✅" });
+                    println!("Critical:             {}", report.critical_count);
+                    println!("High:                 {}", report.high_count);
+                    println!("-------------------------------------------------------\n");
+
+                    if report.findings.is_empty() {
+                        println!("✅ All inspected security headers and defensive endpoints are hardened.");
+                        return;
+                    }
+
+                    for (idx, finding) in report.findings.iter().enumerate() {
+                        let sev_badge = match finding.severity {
+                            Severity::Critical => "[CRITICAL]",
+                            Severity::High => "[HIGH]",
+                            Severity::Medium => "[MEDIUM]",
+                            Severity::Low => "[LOW]",
+                        };
+
+                        println!("{}. {} {} - {}", idx + 1, sev_badge, finding.id, finding.title);
+                        println!("   Target:      {}", finding.target_url);
+                        println!("   Evidence:    {}", finding.evidence);
+                        println!("   Remediation: {}\n", finding.remediation);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("❌ DAST Probe Error: {}", e);
+                    std::process::exit(1);
+                }
             }
         }
 

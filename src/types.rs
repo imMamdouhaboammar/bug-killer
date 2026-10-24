@@ -54,6 +54,12 @@ pub enum TargetKind {
     GenericSourceFile,
     GenericConfigFile,
     EnvironmentFile,
+    GoModManifest,
+    JavaPomManifest,
+    DotnetCsprojManifest,
+    RubyGemfileManifest,
+    PythonPoetryManifest,
+    CargoLockManifest,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

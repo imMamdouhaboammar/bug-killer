@@ -106,6 +106,16 @@ impl OsvClient {
                 packages.extend(Self::extract_python_requirements(path));
             } else if file_name == "Cargo.lock" {
                 packages.extend(Self::extract_cargo_lock_packages(path));
+            } else if file_name == "go.mod" {
+                packages.extend(Self::extract_go_mod_packages(path));
+            } else if file_name == "pom.xml" {
+                packages.extend(Self::extract_java_pom_packages(path));
+            } else if file_name.ends_with(".csproj") || file_name == "packages.lock.json" {
+                packages.extend(Self::extract_dotnet_packages(path));
+            } else if file_name == "Gemfile.lock" {
+                packages.extend(Self::extract_ruby_gemfile_packages(path));
+            } else if file_name == "poetry.lock" {
+                packages.extend(Self::extract_poetry_packages(path));
             }
         }
 
@@ -228,8 +238,238 @@ impl OsvClient {
                             name,
                             version: ver.to_string(),
                             ecosystem: "crates.io",
-                            target_kind: TargetKind::GenericConfigFile,
+                            target_kind: TargetKind::CargoLockManifest,
                         });
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    fn extract_go_mod_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            let mut in_require_block = false;
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("//") || trimmed.is_empty() {
+                    continue;
+                }
+                if trimmed == "require (" {
+                    in_require_block = true;
+                    continue;
+                }
+                if in_require_block && trimmed == ")" {
+                    in_require_block = false;
+                    continue;
+                }
+                if in_require_block {
+                    let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                    if parts.len() >= 2 {
+                        let pkg = parts[0];
+                        let ver = parts[1];
+                        list.push(DiscoveredPackage {
+                            file_path: path.to_path_buf(),
+                            name: pkg.to_string(),
+                            version: ver.to_string(),
+                            ecosystem: "Go",
+                            target_kind: TargetKind::GoModManifest,
+                        });
+                    }
+                } else if let Some(stripped) = trimmed.strip_prefix("require ") {
+                    let parts: Vec<&str> = stripped.split_whitespace().collect();
+                    if parts.len() >= 2 {
+                        let pkg = parts[0];
+                        let ver = parts[1];
+                        list.push(DiscoveredPackage {
+                            file_path: path.to_path_buf(),
+                            name: pkg.to_string(),
+                            version: ver.to_string(),
+                            ecosystem: "Go",
+                            target_kind: TargetKind::GoModManifest,
+                        });
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    fn extract_java_pom_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            let mut in_dep = false;
+            let mut group_id = String::new();
+            let mut artifact_id = String::new();
+            let mut version = String::new();
+
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.contains("<dependency>") {
+                    in_dep = true;
+                    group_id.clear();
+                    artifact_id.clear();
+                    version.clear();
+                } else if trimmed.contains("</dependency>") {
+                    if in_dep && !group_id.is_empty() && !artifact_id.is_empty() && !version.is_empty() && !version.starts_with("${") {
+                        let pkg_name = format!("{}:{}", group_id, artifact_id);
+                        if let Some(cleaned) = Self::clean_version(&version) {
+                            list.push(DiscoveredPackage {
+                                file_path: path.to_path_buf(),
+                                name: pkg_name,
+                                version: cleaned,
+                                ecosystem: "Maven",
+                                target_kind: TargetKind::JavaPomManifest,
+                            });
+                        }
+                    }
+                    in_dep = false;
+                } else if in_dep {
+                    if let Some(val) = Self::extract_xml_tag(trimmed, "groupId") {
+                        group_id = val.to_string();
+                    } else if let Some(val) = Self::extract_xml_tag(trimmed, "artifactId") {
+                        artifact_id = val.to_string();
+                    } else if let Some(val) = Self::extract_xml_tag(trimmed, "version") {
+                        version = val.to_string();
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    fn extract_xml_tag<'a>(line: &'a str, tag: &str) -> Option<&'a str> {
+        let open_tag = format!("<{}>", tag);
+        let close_tag = format!("</{}>", tag);
+        if let Some(start) = line.find(&open_tag) {
+            if let Some(end) = line.find(&close_tag) {
+                let val = &line[start + open_tag.len()..end];
+                return Some(val.trim());
+            }
+        }
+        None
+    }
+
+    fn extract_dotnet_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+            if file_name == "packages.lock.json" {
+                if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                    if let Some(deps) = val.get("dependencies").and_then(|d| d.as_object()) {
+                        for (_framework, fw_deps) in deps {
+                            if let Some(pkgs) = fw_deps.as_object() {
+                                for (pkg_name, details) in pkgs {
+                                    if let Some(ver) = details.get("resolved").and_then(|v| v.as_str()) {
+                                        if let Some(cleaned) = Self::clean_version(ver) {
+                                            list.push(DiscoveredPackage {
+                                                file_path: path.to_path_buf(),
+                                                name: pkg_name.clone(),
+                                                version: cleaned,
+                                                ecosystem: "NuGet",
+                                                target_kind: TargetKind::DotnetCsprojManifest,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if trimmed.contains("<PackageReference") {
+                        let pkg_opt = Self::extract_attr_value(trimmed, "Include");
+                        let ver_opt = Self::extract_attr_value(trimmed, "Version");
+                        if let (Some(pkg), Some(ver)) = (pkg_opt, ver_opt) {
+                            if let Some(cleaned) = Self::clean_version(ver) {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: pkg.to_string(),
+                                    version: cleaned,
+                                    ecosystem: "NuGet",
+                                    target_kind: TargetKind::DotnetCsprojManifest,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    fn extract_attr_value<'a>(line: &'a str, attr: &str) -> Option<&'a str> {
+        let pattern = format!("{}=\"", attr);
+        if let Some(pos) = line.find(&pattern) {
+            let rest = &line[pos + pattern.len()..];
+            if let Some(end) = rest.find('"') {
+                return Some(&rest[..end]);
+            }
+        }
+        None
+    }
+
+    fn extract_ruby_gemfile_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            let mut in_specs = false;
+            for line in content.lines() {
+                if line.starts_with("  specs:") {
+                    in_specs = true;
+                    continue;
+                }
+                if in_specs {
+                    if !line.starts_with("    ") {
+                        if !line.starts_with(' ') && !line.is_empty() {
+                            in_specs = false;
+                        }
+                        continue;
+                    }
+                    if line.starts_with("    ") && !line.starts_with("      ") {
+                        let trimmed = line.trim();
+                        if let Some((name, rest)) = trimmed.split_once(' ') {
+                            let ver = rest.trim_matches('(').trim_matches(')').trim();
+                            if let Some(cleaned) = Self::clean_version(ver) {
+                                list.push(DiscoveredPackage {
+                                    file_path: path.to_path_buf(),
+                                    name: name.to_string(),
+                                    version: cleaned,
+                                    ecosystem: "RubyGems",
+                                    target_kind: TargetKind::RubyGemfileManifest,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list
+    }
+
+    fn extract_poetry_packages(path: &Path) -> Vec<DiscoveredPackage> {
+        let mut list = Vec::new();
+        if let Ok(content) = fs::read_to_string(path) {
+            let mut current_name = None;
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("name = ") {
+                    let name = trimmed.trim_start_matches("name = ").trim_matches('"').trim_matches('\'');
+                    current_name = Some(name.to_string());
+                } else if trimmed.starts_with("version = ") {
+                    if let Some(name) = current_name.take() {
+                        let ver = trimmed.trim_start_matches("version = ").trim_matches('"').trim_matches('\'');
+                        if let Some(cleaned) = Self::clean_version(ver) {
+                            list.push(DiscoveredPackage {
+                                file_path: path.to_path_buf(),
+                                name,
+                                version: cleaned,
+                                ecosystem: "PyPI",
+                                target_kind: TargetKind::PythonPoetryManifest,
+                            });
+                        }
                     }
                 }
             }

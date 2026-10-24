@@ -57,6 +57,12 @@ impl AutopilotHealer {
                             TargetKind::GenericConfigFile if path.file_name().and_then(|s| s.to_str()) == Some("requirements.txt") => {
                                 ManifestPatcher::plan_generic_python_requirements_bump(path, pkg_name, fix_ver)
                             }
+                            TargetKind::GoModManifest => {
+                                ManifestPatcher::plan_generic_go_mod_bump(path, pkg_name, fix_ver)
+                            }
+                            TargetKind::DotnetCsprojManifest => {
+                                ManifestPatcher::plan_generic_dotnet_csproj_bump(path, pkg_name, fix_ver)
+                            }
                             _ => None,
                         };
                         if let Some(act) = action {

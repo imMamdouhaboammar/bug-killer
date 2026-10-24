@@ -22,6 +22,16 @@ impl FleetScanner {
 
     /// Recursively scans a filesystem root directory using an explicit set of vulnerability rules.
     pub fn scan_directory_with_rules(root: &Path, check_host_runtimes: bool, rules: &[VulnerabilityRule]) -> ScanReport {
+        Self::scan_directory_with_rules_and_taint(root, check_host_runtimes, rules, false)
+    }
+
+    /// Recursively scans a filesystem root directory with rules and optional taint analysis.
+    pub fn scan_directory_with_rules_and_taint(
+        root: &Path,
+        check_host_runtimes: bool,
+        rules: &[VulnerabilityRule],
+        enable_taint: bool,
+    ) -> ScanReport {
         let mut findings = Vec::new();
         let mut total_files = 0;
 
@@ -101,6 +111,23 @@ impl FleetScanner {
                         if let Some(finding) = RuleEngine::scan_file(path, &content, rule) {
                             findings.push(finding);
                         }
+                    }
+                }
+            }
+
+            // 4. Lightweight Scope-Aware Taint Analysis
+            if enable_taint
+                && (file_name.ends_with(".js")
+                    || file_name.ends_with(".ts")
+                    || file_name.ends_with(".mjs")
+                    || file_name.ends_with(".cjs")
+                    || file_name.ends_with(".py")
+                    || file_name.ends_with(".php")
+                    || file_name.ends_with(".go"))
+            {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    for tf in crate::taint::TaintEngine::scan_source(path, &content) {
+                        findings.push(tf.into_finding());
                     }
                 }
             }
