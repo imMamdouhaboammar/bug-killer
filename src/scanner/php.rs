@@ -23,25 +23,30 @@ impl PhpScanner {
                 if let Some((cve, severity, safe_threshold)) =
                     CveDatabase::check_php_version(major, minor, patch)
                 {
-                    return Some(Finding {
-                        id: format!("PHP-HOST-{}", cve.as_str()),
-                        cve: cve.clone(),
+                    let mut finding = Finding::new(
+                        format!("PHP-HOST-{}", cve.as_str()),
+                        cve.clone(),
                         severity,
-                        target_kind: TargetKind::PhpRuntime,
-                        file_path: None,
-                        line_number: None,
-                        detected_version_or_pattern: format!("Host PHP {}", ver_str),
-                        safe_threshold: safe_threshold.to_string(),
-                        description: format!(
+                        TargetKind::PhpRuntime,
+                        None,
+                        None,
+                        format!("Host PHP {}", ver_str),
+                        safe_threshold.to_string(),
+                        format!(
                             "Host PHP binary is vulnerable to {}: {}. Unauthenticated remote memory corruption via OOM/abnormal request exit.",
                             cve.as_str(),
                             cve.title()
                         ),
-                        suggested_remediation: format!(
-                            "Update system PHP package to {}",
-                            safe_threshold
-                        ),
-                    });
+                        format!("Update system PHP package to {}", safe_threshold),
+                    );
+                    finding.detector_id = "php-runtime".to_string();
+                    finding.installed_build = Some(ver_str.to_string());
+                    finding.affectedness = Affectedness::ConfirmedAffected;
+                    finding.reachability = Reachability::ConfirmedReachable;
+                    finding.confidence = Confidence::High;
+                    finding.exploitability_signal = ExploitabilitySignal::PublicPocAvailable;
+                    finding.compute_dedupe_fingerprint();
+                    return Some(finding);
                 }
             }
         }
@@ -71,24 +76,39 @@ impl PhpScanner {
                         if let Some((cve, severity, safe_threshold)) =
                             CveDatabase::check_php_version(major, minor, patch)
                         {
-                            findings.push(Finding {
-                                id: format!("COMPOSER-{}", cve.as_str()),
+                            let mut finding = Finding::new(
+                                format!("COMPOSER-{}", cve.as_str()),
                                 cve,
                                 severity,
-                                target_kind: TargetKind::ComposerManifest,
-                                file_path: Some(path.to_path_buf()),
-                                line_number: None,
-                                detected_version_or_pattern: format!("require.php: '{}'", php_val),
-                                safe_threshold: safe_threshold.to_string(),
-                                description: format!(
+                                TargetKind::ComposerManifest,
+                                Some(path.to_path_buf()),
+                                None,
+                                format!("require.php: '{}'", php_val),
+                                safe_threshold.to_string(),
+                                format!(
                                     "composer.json explicitly permits vulnerable PHP versions ({}) exposed to PHP2Shell.",
                                     php_val
                                 ),
-                                suggested_remediation: format!(
+                                format!(
                                     "Update require.php to enforce safe patch levels (e.g. '{}')",
                                     safe_threshold
                                 ),
-                            });
+                            );
+                            finding.detector_id = "php-composer".to_string();
+                            finding.affectedness = Affectedness::PotentiallyAffected;
+                            finding.reachability = Reachability::Unknown;
+                            finding.confidence = Confidence::Medium;
+                            finding.uncertainty_reasons.push(
+                                "composer.json allows vulnerable PHP version, but active host/container interpreter was not verified.".to_string(),
+                            );
+                            finding
+                                .missing_checks
+                                .push("verify_installed_php_version".to_string());
+                            finding
+                                .missing_checks
+                                .push("verify_fpm_process".to_string());
+                            finding.compute_dedupe_fingerprint();
+                            findings.push(finding);
                             break;
                         }
                     }
@@ -115,24 +135,30 @@ impl PhpScanner {
                     if let Some((cve, severity, safe_threshold)) =
                         CveDatabase::check_php_version(major, minor, patch)
                     {
-                        findings.push(Finding {
-                            id: format!("DOCKER-PHP-{}", cve.as_str()),
+                        let mut finding = Finding::new(
+                            format!("DOCKER-PHP-{}", cve.as_str()),
                             cve,
                             severity,
-                            target_kind: TargetKind::Dockerfile,
-                            file_path: Some(path.to_path_buf()),
-                            line_number: Some(idx + 1),
-                            detected_version_or_pattern: line.trim().to_string(),
-                            safe_threshold: safe_threshold.to_string(),
-                            description: format!(
+                            TargetKind::Dockerfile,
+                            Some(path.to_path_buf()),
+                            Some(idx + 1),
+                            line.trim(),
+                            safe_threshold.to_string(),
+                            format!(
                                 "Dockerfile pins vulnerable base image 'php:{}' susceptible to PHP2Shell RCE.",
                                 tag
                             ),
-                            suggested_remediation: format!(
+                            format!(
                                 "Update base image tag in Dockerfile to safe release: {}",
                                 safe_threshold
                             ),
-                        });
+                        );
+                        finding.detector_id = "docker-php".to_string();
+                        finding.affectedness = Affectedness::ConfirmedAffected;
+                        finding.reachability = Reachability::PotentiallyReachable;
+                        finding.confidence = Confidence::High;
+                        finding.compute_dedupe_fingerprint();
+                        findings.push(finding);
                     }
                 }
             }
@@ -160,18 +186,24 @@ impl PhpScanner {
             if trimmed.contains("memory_limit")
                 && (trimmed.contains("-1") || trimmed.contains("= -1"))
             {
-                findings.push(Finding {
-                    id: "PHP-INI-UNLIMITED-MEMORY".to_string(),
-                    cve: CveId::Php2ShellOom("CVE-2026-109618".into()),
-                    severity: Severity::Medium,
-                    target_kind: TargetKind::PhpConfigFile,
-                    file_path: Some(path.to_path_buf()),
-                    line_number: Some(idx + 1),
-                    detected_version_or_pattern: trimmed.to_string(),
-                    safe_threshold: "memory_limit = 256M".to_string(),
-                    description: "Disabling memory_limit (-1) allows unbounded heap growth, exacerbating out-of-memory exhaustion attack vectors.".to_string(),
-                    suggested_remediation: "Set a deterministic memory_limit (e.g. 256M) in php.ini".to_string(),
-                });
+                let mut finding = Finding::new(
+                    "PHP-INI-UNLIMITED-MEMORY",
+                    CveId::Php2ShellOom("CVE-2026-109618".into()),
+                    Severity::Medium,
+                    TargetKind::PhpConfigFile,
+                    Some(path.to_path_buf()),
+                    Some(idx + 1),
+                    trimmed,
+                    "memory_limit = 256M",
+                    "Disabling memory_limit (-1) allows unbounded heap growth, exacerbating out-of-memory exhaustion attack vectors.",
+                    "Set a deterministic memory_limit (e.g. 256M) in php.ini",
+                );
+                finding.detector_id = "php-config".to_string();
+                finding.affectedness = Affectedness::PotentiallyAffected;
+                finding.reachability = Reachability::PotentiallyReachable;
+                finding.confidence = Confidence::Medium;
+                finding.compute_dedupe_fingerprint();
+                findings.push(finding);
             }
         }
 

@@ -21,22 +21,30 @@ impl NodeScanner {
             if let Some((cve, severity, safe_threshold)) =
                 CveDatabase::check_node_version(major, minor, patch)
             {
-                return Some(Finding {
-                    id: format!("NODE-HOST-{}", cve.as_str()),
-                    cve: cve.clone(),
+                let mut finding = Finding::new(
+                    format!("NODE-HOST-{}", cve.as_str()),
+                    cve.clone(),
                     severity,
-                    target_kind: TargetKind::NodeRuntime,
-                    file_path: None,
-                    line_number: None,
-                    detected_version_or_pattern: format!("Host Node.js v{}", ver_str),
-                    safe_threshold: safe_threshold.to_string(),
-                    description: format!(
+                    TargetKind::NodeRuntime,
+                    None,
+                    None,
+                    format!("Host Node.js v{}", ver_str),
+                    safe_threshold.to_string(),
+                    format!(
                         "Host Node.js binary bundles vulnerable Google Brotli decoder ({}: {}). Out-of-bounds write / buffer overflow on malformed compressed streams.",
                         cve.as_str(),
                         cve.title()
                     ),
-                    suggested_remediation: format!("Update system Node.js to {}", safe_threshold),
-                });
+                    format!("Update system Node.js to {}", safe_threshold),
+                );
+                finding.detector_id = "node-runtime".to_string();
+                finding.installed_build = Some(format!("v{}", ver_str));
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::PotentiallyReachable;
+                finding.confidence = Confidence::High;
+                finding.exploitability_signal = ExploitabilitySignal::PublicPocAvailable;
+                finding.compute_dedupe_fingerprint();
+                return Some(finding);
             }
         }
         None
@@ -65,21 +73,27 @@ impl NodeScanner {
                         if let Some((cve, severity, safe_threshold)) =
                             CveDatabase::check_node_version(major, minor, patch)
                         {
-                            findings.push(Finding {
-                                id: format!("PACKAGE-JSON-{}", cve.as_str()),
+                            let mut finding = Finding::new(
+                                format!("PACKAGE-JSON-{}", cve.as_str()),
                                 cve,
                                 severity,
-                                target_kind: TargetKind::NodePackageManifest,
-                                file_path: Some(path.to_path_buf()),
-                                line_number: None,
-                                detected_version_or_pattern: format!("engines.node: '{}'", node_val),
-                                safe_threshold: safe_threshold.to_string(),
-                                description: format!(
+                                TargetKind::NodePackageManifest,
+                                Some(path.to_path_buf()),
+                                None,
+                                format!("engines.node: '{}'", node_val),
+                                safe_threshold.to_string(),
+                                format!(
                                     "package.json specifies Node.js engine constraint '{}' matching vulnerable Brotli decoder.",
                                     node_val
                                 ),
-                                suggested_remediation: format!("Bump engines.node to '{}'", safe_threshold),
-                            });
+                                format!("Bump engines.node to '{}'", safe_threshold),
+                            );
+                            finding.detector_id = "node-manifest".to_string();
+                            finding.affectedness = Affectedness::ConfirmedAffected;
+                            finding.reachability = Reachability::PotentiallyReachable;
+                            finding.confidence = Confidence::High;
+                            finding.compute_dedupe_fingerprint();
+                            findings.push(finding);
                             break;
                         }
                     }
@@ -114,24 +128,39 @@ impl NodeScanner {
         let has_fastify = f1 || f2;
 
         if has_body_parser || has_express || has_fastify {
-            findings.push(Finding {
-                id: "NODE-HTTP-BODY-DECOMPRESSOR".to_string(),
-                cve: CveId::Node2ShellBrotli("CVE-2026-111497".into()),
-                severity: Severity::Medium,
-                target_kind: TargetKind::NodePackageManifest,
-                file_path: Some(path.to_path_buf()),
-                line_number: None,
-                detected_version_or_pattern: format!(
+            let mut finding = Finding::new(
+                "NODE-HTTP-BODY-DECOMPRESSOR",
+                CveId::Node2ShellBrotli("CVE-2026-111497".into()),
+                Severity::Medium,
+                TargetKind::NodePackageManifest,
+                Some(path.to_path_buf()),
+                None,
+                format!(
                     "HTTP server dependencies detected: express={}, body-parser={}, fastify={}",
                     has_express, has_body_parser, has_fastify
                 ),
-                safe_threshold: "Runtime patch or WAF/middleware Brotli request body filtering".to_string(),
-                description: "Application uses HTTP frameworks capable of automatic body decompression. Untrusted 'Content-Encoding: br' payloads reach bundled Brotli decoder.".to_string(),
-                suggested_remediation: "Deploy Aegis middleware guard or reverse-proxy WAF rule to reject or sanitize 'Content-Encoding: br' request bodies until runtime is upgraded.".to_string(),
-            });
+                "Runtime patch or WAF/middleware Brotli request body filtering",
+                "Application declares HTTP frameworks capable of body decompression. Attacker reachability to bundled Brotli decoder is unproven without source/runtime verification.",
+                "Deploy Bug Killer middleware guard or reverse-proxy WAF rule to reject or sanitize 'Content-Encoding: br' request bodies until runtime is upgraded.",
+            );
+            finding.detector_id = "node-manifest".to_string();
+            finding.affectedness = Affectedness::PotentiallyAffected;
+            finding.reachability = Reachability::Unknown;
+            finding.confidence = Confidence::Low;
+            finding.uncertainty_reasons.push(
+                "Framework presence detected, but attacker-controlled Brotli decompression reachability is unproven without source/runtime proof.".to_string(),
+            );
+            finding
+                .missing_checks
+                .push("verify_runtime_node_version".to_string());
+            finding
+                .missing_checks
+                .push("verify_brotli_decompression_call".to_string());
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
-        // Check for unguarded Express / HTTP body parsing
+        // Check for unguarded Express / HTTP body parsing in code if package.json has scripts
         let has_express_app = content.contains("express()");
         let has_body_parser = content.contains("bodyParser")
             || content.contains("body-parser")
@@ -140,18 +169,27 @@ impl NodeScanner {
         let has_guard = content.contains("[BUG-KILLER-GUARD]") || content.contains("[AEGIS-GUARD]");
 
         if has_express_app && has_body_parser && !has_guard {
-            findings.push(Finding {
-                id: format!("EXPRESS-UNGUARDED-BODY-PARSER-{}", path.file_name().unwrap_or_default().to_string_lossy()),
-                cve: CveId::Node2ShellBrotli("CVE-2026-111497".into()),
-                severity: Severity::Medium,
-                target_kind: TargetKind::NodeSourceFile,
-                file_path: Some(path.to_path_buf()),
-                line_number: None,
-                detected_version_or_pattern: "Express HTTP server parsing bodies without Brotli payload guard".to_string(),
-                safe_threshold: "Inject Bug Killer [BUG-KILLER-GUARD] middleware before body parsers".to_string(),
-                description: "Express application parses request bodies without rejecting 'Content-Encoding: br', exposing native Brotli decoder (CVE-2026-111497).".to_string(),
-                suggested_remediation: "Inject Bug Killer middleware guard or apply reverse proxy WAF rule.".to_string(),
-            });
+            let mut finding = Finding::new(
+                format!(
+                    "EXPRESS-UNGUARDED-BODY-PARSER-{}",
+                    path.file_name().unwrap_or_default().to_string_lossy()
+                ),
+                CveId::Node2ShellBrotli("CVE-2026-111497".into()),
+                Severity::Medium,
+                TargetKind::NodeSourceFile,
+                Some(path.to_path_buf()),
+                None,
+                "Express HTTP server parsing bodies without Brotli payload guard",
+                "Inject Bug Killer [BUG-KILLER-GUARD] middleware before body parsers",
+                "Express application parses request bodies without rejecting 'Content-Encoding: br', exposing native Brotli decoder (CVE-2026-111497).",
+                "Inject Bug Killer middleware guard or apply reverse proxy WAF rule.",
+            );
+            finding.detector_id = "node-source-guard".to_string();
+            finding.affectedness = Affectedness::PotentiallyAffected;
+            finding.reachability = Reachability::PotentiallyReachable;
+            finding.confidence = Confidence::Medium;
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
         findings
@@ -176,21 +214,28 @@ impl NodeScanner {
 
         for (idx, line) in content.lines().enumerate() {
             if let Some(caps) = re_brotli.captures(line) {
-                findings.push(Finding {
-                    id: format!("CODE-BROTLI-CALL-{}", idx + 1),
-                    cve: CveId::Node2ShellBrotli("CVE-2026-111497".into()),
-                    severity: Severity::High,
-                    target_kind: TargetKind::NodeSourceFile,
-                    file_path: Some(path.to_path_buf()),
-                    line_number: Some(idx + 1),
-                    detected_version_or_pattern: line.trim().to_string(),
-                    safe_threshold: "Node.js runtime >= v22.23.4 / v24.22.1 / v26.12.1".to_string(),
-                    description: format!(
+                let mut finding = Finding::new(
+                    format!("CODE-BROTLI-CALL-{}", idx + 1),
+                    CveId::Node2ShellBrotli("CVE-2026-111497".into()),
+                    Severity::High,
+                    TargetKind::NodeSourceFile,
+                    Some(path.to_path_buf()),
+                    Some(idx + 1),
+                    line.trim(),
+                    "Node.js runtime >= v22.23.4 / v24.22.1 / v26.12.1",
+                    format!(
                         "Direct call to native Brotli decompression API ('{}') found in source code. Susceptible to memory corruption if input is untrusted.",
                         &caps[1]
                     ),
-                    suggested_remediation: "Wrap input in size and chunk verification guards or upgrade runtime immediately.".to_string(),
-                });
+                    "Wrap input in size and chunk verification guards or upgrade runtime immediately.",
+                );
+                finding.detector_id = "node-source-brotli".to_string();
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::ConfirmedReachable;
+                finding.confidence = Confidence::Confirmed;
+                finding.exploitability_signal = ExploitabilitySignal::PublicPocAvailable;
+                finding.compute_dedupe_fingerprint();
+                findings.push(finding);
             }
         }
 
@@ -203,18 +248,27 @@ impl NodeScanner {
         let has_guard = content.contains("[BUG-KILLER-GUARD]") || content.contains("[AEGIS-GUARD]");
 
         if has_express_app && has_body_parser && !has_guard {
-            findings.push(Finding {
-                id: format!("EXPRESS-UNGUARDED-BODY-PARSER-{}", path.file_name().unwrap_or_default().to_string_lossy()),
-                cve: CveId::Node2ShellBrotli("CVE-2026-111497".into()),
-                severity: Severity::Medium,
-                target_kind: TargetKind::NodeSourceFile,
-                file_path: Some(path.to_path_buf()),
-                line_number: None,
-                detected_version_or_pattern: "Express HTTP server parsing bodies without Brotli payload guard".to_string(),
-                safe_threshold: "Inject Bug Killer [BUG-KILLER-GUARD] middleware before body parsers".to_string(),
-                description: "Express application parses request bodies without rejecting 'Content-Encoding: br', exposing native Brotli decoder (CVE-2026-111497).".to_string(),
-                suggested_remediation: "Inject Bug Killer middleware guard or apply reverse proxy WAF rule.".to_string(),
-            });
+            let mut finding = Finding::new(
+                format!(
+                    "EXPRESS-UNGUARDED-BODY-PARSER-{}",
+                    path.file_name().unwrap_or_default().to_string_lossy()
+                ),
+                CveId::Node2ShellBrotli("CVE-2026-111497".into()),
+                Severity::Medium,
+                TargetKind::NodeSourceFile,
+                Some(path.to_path_buf()),
+                None,
+                "Express HTTP server parsing bodies without Brotli payload guard",
+                "Inject Bug Killer [BUG-KILLER-GUARD] middleware before body parsers",
+                "Express application parses request bodies without rejecting 'Content-Encoding: br', exposing native Brotli decoder (CVE-2026-111497).",
+                "Inject Bug Killer middleware guard or apply reverse proxy WAF rule.",
+            );
+            finding.detector_id = "node-source-guard".to_string();
+            finding.affectedness = Affectedness::PotentiallyAffected;
+            finding.reachability = Reachability::PotentiallyReachable;
+            finding.confidence = Confidence::Medium;
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
         findings
@@ -236,24 +290,30 @@ impl NodeScanner {
                     if let Some((cve, severity, safe_threshold)) =
                         CveDatabase::check_node_version(major, minor, patch)
                     {
-                        findings.push(Finding {
-                            id: format!("DOCKER-NODE-{}", cve.as_str()),
+                        let mut finding = Finding::new(
+                            format!("DOCKER-NODE-{}", cve.as_str()),
                             cve,
                             severity,
-                            target_kind: TargetKind::Dockerfile,
-                            file_path: Some(path.to_path_buf()),
-                            line_number: Some(idx + 1),
-                            detected_version_or_pattern: line.trim().to_string(),
-                            safe_threshold: safe_threshold.to_string(),
-                            description: format!(
+                            TargetKind::Dockerfile,
+                            Some(path.to_path_buf()),
+                            Some(idx + 1),
+                            line.trim(),
+                            safe_threshold.to_string(),
+                            format!(
                                 "Dockerfile pins vulnerable base image 'node:{}' carrying vulnerable bundled Brotli decoder.",
                                 tag
                             ),
-                            suggested_remediation: format!(
+                            format!(
                                 "Update base image tag in Dockerfile to safe release: {}",
                                 safe_threshold
                             ),
-                        });
+                        );
+                        finding.detector_id = "docker-node".to_string();
+                        finding.affectedness = Affectedness::ConfirmedAffected;
+                        finding.reachability = Reachability::PotentiallyReachable;
+                        finding.confidence = Confidence::High;
+                        finding.compute_dedupe_fingerprint();
+                        findings.push(finding);
                     }
                 }
             }

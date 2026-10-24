@@ -312,19 +312,49 @@ fn main() {
                 }
             );
             println!(
-                "Vulnerabilities:      {}",
+                "Audit Status:         {}",
                 if report.is_vulnerable {
                     "EXPOSED ⚠️"
+                } else if !report.is_clean() {
+                    "PARTIAL / INCOMPLETE ⚠️"
                 } else {
                     "CLEAN ✅"
                 }
             );
+            println!(
+                "Coverage Status:      {:?}",
+                report.coverage.coverage_status
+            );
+            println!("Files Audited:        {}", report.total_files_scanned);
+            println!("Files Excluded:       {}", report.coverage.files_excluded);
+            if !report.coverage.parser_failures.is_empty() {
+                println!(
+                    "Parser/I/O Failures:  {}",
+                    report.coverage.parser_failures.len()
+                );
+            }
             println!("Critical:             {}", report.critical_count);
             println!("High:                 {}", report.high_count);
             println!("-------------------------------------------------------\n");
 
+            if !report.coverage.parser_failures.is_empty() {
+                println!("⚠️  Scanner encountered the following parser/read failures:");
+                for failure in &report.coverage.parser_failures {
+                    println!("   • {}: {}", failure.path.display(), failure.reason);
+                }
+                println!();
+            }
+
             if report.findings.is_empty() {
-                println!("✅ Zero exposures or vulnerability violations detected.");
+                if report.is_clean() {
+                    println!(
+                        "✅ Zero exposures or vulnerability violations detected across full coverage."
+                    );
+                } else {
+                    println!(
+                        "⚠️ Zero exposures detected in audited files, but scan coverage was PARTIAL / INCOMPLETE."
+                    );
+                }
                 return;
             }
 
@@ -348,12 +378,24 @@ fn main() {
                         .line_number
                         .map(|l| format!(":{}", l))
                         .unwrap_or_default();
-                    println!("   Location:    {}{}", p.display(), line_str);
+                    println!("   Location:     {}{}", p.display(), line_str);
                 }
-                println!("   Pattern:     {}", finding.detected_version_or_pattern);
-                println!("   Threshold:   {}", finding.safe_threshold);
-                println!("   Details:     {}", finding.description);
-                println!("   Remediation: {}\n", finding.suggested_remediation);
+                println!("   Affectedness: {}", finding.affectedness.as_str());
+                println!("   Reachability: {}", finding.reachability.as_str());
+                println!("   Confidence:   {}", finding.confidence.as_str());
+                println!("   Pattern:      {}", finding.detected_version_or_pattern);
+                println!("   Threshold:    {}", finding.safe_threshold);
+                if !finding.uncertainty_reasons.is_empty() {
+                    println!(
+                        "   Uncertainty:  {}",
+                        finding.uncertainty_reasons.join("; ")
+                    );
+                }
+                if !finding.missing_checks.is_empty() {
+                    println!("   Missing:      {}", finding.missing_checks.join(", "));
+                }
+                println!("   Details:      {}", finding.description);
+                println!("   Remediation:  {}\n", finding.suggested_remediation);
             }
 
             println!(

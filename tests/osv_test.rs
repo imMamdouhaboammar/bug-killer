@@ -52,6 +52,7 @@ fn test_osv_package_discovery_and_live_query() {
         is_vulnerable: true,
         critical_count: 0,
         high_count: findings.len(),
+        coverage: ScanCoverage::default(),
     };
 
     let plan = AutopilotHealer::plan_healing(&report);

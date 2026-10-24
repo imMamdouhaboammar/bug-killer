@@ -1,4 +1,4 @@
-use crate::types::{CveId, Finding, Severity, TargetKind};
+use crate::types::*;
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -83,26 +83,31 @@ impl TaintFinding {
             self.source_snippet.trim(),
             self.sink_line
         );
-        Finding {
-            id: format!(
+        let mut finding = Finding::new(
+            format!(
                 "taint-{}-L{}",
                 self.sink_kind.cve_identifier().to_lowercase(),
                 self.sink_line
             ),
-            cve: CveId::Custom {
+            CveId::Custom {
                 id: self.sink_kind.cve_identifier().to_string(),
                 title,
             },
-            severity: self.sink_kind.severity(),
-            target_kind: TargetKind::GenericSourceFile,
-            file_path: Some(self.file_path),
-            line_number: Some(self.sink_line),
-            detected_version_or_pattern: self.sink_snippet.trim().to_string(),
-            safe_threshold: "Sanitize input, parameterize queries, or bind to safe validator"
-                .into(),
-            description: desc,
-            suggested_remediation: self.remediation,
-        }
+            self.sink_kind.severity(),
+            TargetKind::GenericSourceFile,
+            Some(self.file_path),
+            Some(self.sink_line),
+            self.sink_snippet.trim().to_string(),
+            "Sanitize input, parameterize queries, or bind to safe validator",
+            desc,
+            self.remediation,
+        );
+        finding.detector_id = "taint-engine".to_string();
+        finding.affectedness = Affectedness::ConfirmedAffected;
+        finding.reachability = Reachability::ConfirmedReachable;
+        finding.confidence = Confidence::High;
+        finding.compute_dedupe_fingerprint();
+        finding
     }
 }
 

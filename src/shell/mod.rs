@@ -233,11 +233,14 @@ impl ShellEngine {
             );
             if let Some(ref p) = f.file_path {
                 let line_str = f.line_number.map(|l| format!(":{}", l)).unwrap_or_default();
-                println!("   Location:    {}{}", p.display(), line_str);
+                println!("   Location:     {}{}", p.display(), line_str);
             }
-            println!("   Pattern:     {}", f.detected_version_or_pattern);
-            println!("   Threshold:   {}", f.safe_threshold);
-            println!("   Remediation: {}\n", f.suggested_remediation);
+            println!("   Affectedness: {}", f.affectedness.as_str());
+            println!("   Reachability: {}", f.reachability.as_str());
+            println!("   Confidence:   {}", f.confidence.as_str());
+            println!("   Pattern:      {}", f.detected_version_or_pattern);
+            println!("   Threshold:    {}", f.safe_threshold);
+            println!("   Remediation:  {}\n", f.suggested_remediation);
         }
     }
 

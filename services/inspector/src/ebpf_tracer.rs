@@ -2,7 +2,7 @@ use tokio::sync::broadcast;
 use tokio_stream::StreamExt;
 use tokio_stream::wrappers::BroadcastStream;
 
-use crate::omni_proto::RuntimeEvent;
+use crate::omni_proto::{RuntimeEvent, RuntimeEventType};
 
 pub struct EbpfTracer {
     tx: broadcast::Sender<RuntimeEvent>,
@@ -70,7 +70,7 @@ impl EbpfTracer {
 
         #[cfg(not(target_os = "linux"))]
         {
-            let _tx = self.tx.clone();
+            let tx = self.tx.clone();
             tokio::spawn(async move {
                 // Non-Linux development heartbeat telemetry
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));

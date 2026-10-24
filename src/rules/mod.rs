@@ -195,21 +195,20 @@ impl RuleEngine {
                     let line_number = content[..mat.start()].lines().count() + 1;
                     let detected_snippet = mat.as_str().trim().to_string();
 
-                    Some(Finding {
-                        id: format!("dynamic-{}-{}", rule.id, path.display()),
-                        cve: CveId::Custom {
+                    let mut finding = Finding::new(
+                        format!("dynamic-{}-{}", rule.id, path.display()),
+                        CveId::Custom {
                             id: rule.id.clone(),
                             title: rule.title.clone(),
                         },
-                        severity: rule.severity,
-                        target_kind: rule.target_kind.clone(),
-                        file_path: Some(path.to_path_buf()),
-                        line_number: Some(line_number),
-                        detected_version_or_pattern: detected_snippet,
-                        safe_threshold: "Refer to remediation blueprint".into(),
-                        description: rule.description.clone(),
-                        suggested_remediation: rule
-                            .remediation
+                        rule.severity,
+                        rule.target_kind.clone(),
+                        Some(path.to_path_buf()),
+                        Some(line_number),
+                        detected_snippet,
+                        "Refer to remediation blueprint",
+                        rule.description.clone(),
+                        rule.remediation
                             .as_ref()
                             .map(|r| match r {
                                 RemediationStrategy::StringReplace { description, .. } => {
@@ -226,7 +225,13 @@ impl RuleEngine {
                                 }
                             })
                             .unwrap_or_else(|| "Manual inspection required".into()),
-                    })
+                    );
+                    finding.detector_id = "dynamic-rules".to_string();
+                    finding.affectedness = Affectedness::ConfirmedAffected;
+                    finding.reachability = Reachability::PotentiallyReachable;
+                    finding.confidence = Confidence::High;
+                    finding.compute_dedupe_fingerprint();
+                    Some(finding)
                 } else {
                     None
                 }
@@ -243,21 +248,20 @@ impl RuleEngine {
                     }
 
                     let line_number = content[..pos].lines().count() + 1;
-                    Some(Finding {
-                        id: format!("dynamic-{}-{}", rule.id, path.display()),
-                        cve: CveId::Custom {
+                    let mut finding = Finding::new(
+                        format!("dynamic-{}-{}", rule.id, path.display()),
+                        CveId::Custom {
                             id: rule.id.clone(),
                             title: rule.title.clone(),
                         },
-                        severity: rule.severity,
-                        target_kind: rule.target_kind.clone(),
-                        file_path: Some(path.to_path_buf()),
-                        line_number: Some(line_number),
-                        detected_version_or_pattern: search.clone(),
-                        safe_threshold: "Remediation rule available".into(),
-                        description: rule.description.clone(),
-                        suggested_remediation: rule
-                            .remediation
+                        rule.severity,
+                        rule.target_kind.clone(),
+                        Some(path.to_path_buf()),
+                        Some(line_number),
+                        search.clone(),
+                        "Remediation rule available",
+                        rule.description.clone(),
+                        rule.remediation
                             .as_ref()
                             .map(|r| match r {
                                 RemediationStrategy::StringReplace { description, .. } => {
@@ -274,34 +278,33 @@ impl RuleEngine {
                                 }
                             })
                             .unwrap_or_else(|| "Manual inspection required".into()),
-                    })
+                    );
+                    finding.detector_id = "dynamic-rules".to_string();
+                    finding.affectedness = Affectedness::ConfirmedAffected;
+                    finding.reachability = Reachability::PotentiallyReachable;
+                    finding.confidence = Confidence::High;
+                    finding.compute_dedupe_fingerprint();
+                    Some(finding)
                 } else {
                     None
                 }
             }
             DetectionMatcher::MissingPattern { required_pattern } => {
                 if !content.contains(required_pattern) {
-                    Some(Finding {
-                        id: format!("dynamic-{}-{}", rule.id, path.display()),
-                        cve: CveId::Custom {
+                    let mut finding = Finding::new(
+                        format!("dynamic-{}-{}", rule.id, path.display()),
+                        CveId::Custom {
                             id: rule.id.clone(),
                             title: rule.title.clone(),
                         },
-                        severity: rule.severity,
-                        target_kind: rule.target_kind.clone(),
-                        file_path: Some(path.to_path_buf()),
-                        line_number: Some(1),
-                        detected_version_or_pattern: format!(
-                            "Missing required configuration: '{}'",
-                            required_pattern
-                        ),
-                        safe_threshold: format!(
-                            "Configuration must include: '{}'",
-                            required_pattern
-                        ),
-                        description: rule.description.clone(),
-                        suggested_remediation: rule
-                            .remediation
+                        rule.severity,
+                        rule.target_kind.clone(),
+                        Some(path.to_path_buf()),
+                        Some(1),
+                        format!("Missing required configuration: '{}'", required_pattern),
+                        format!("Configuration must include: '{}'", required_pattern),
+                        rule.description.clone(),
+                        rule.remediation
                             .as_ref()
                             .map(|r| match r {
                                 RemediationStrategy::StringReplace { description, .. } => {
@@ -318,7 +321,13 @@ impl RuleEngine {
                                 }
                             })
                             .unwrap_or_else(|| "Manual configuration required".into()),
-                    })
+                    );
+                    finding.detector_id = "dynamic-rules".to_string();
+                    finding.affectedness = Affectedness::ConfirmedAffected;
+                    finding.reachability = Reachability::PotentiallyReachable;
+                    finding.confidence = Confidence::High;
+                    finding.compute_dedupe_fingerprint();
+                    Some(finding)
                 } else {
                     None
                 }
@@ -353,30 +362,30 @@ impl RuleEngine {
                         if let Ok(req) = semver::VersionReq::parse(vulnerable_range) {
                             if let Ok(sem) = semver::Version::parse(clean_ver) {
                                 if req.matches(&sem) {
-                                    return Some(Finding {
-                                        id: format!("dynamic-{}-{}", rule.id, path.display()),
-                                        cve: CveId::Custom {
+                                    let mut finding = Finding::new(
+                                        format!("dynamic-{}-{}", rule.id, path.display()),
+                                        CveId::Custom {
                                             id: rule.id.clone(),
                                             title: rule.title.clone(),
                                         },
-                                        severity: rule.severity,
-                                        target_kind: rule.target_kind.clone(),
-                                        file_path: Some(path.to_path_buf()),
-                                        line_number: None,
-                                        detected_version_or_pattern: format!(
-                                            "{} @ {}",
-                                            package_name, ver_str
-                                        ),
-                                        safe_threshold: format!(
-                                            "Must not match {}",
-                                            vulnerable_range
-                                        ),
-                                        description: rule.description.clone(),
-                                        suggested_remediation: format!(
+                                        rule.severity,
+                                        rule.target_kind.clone(),
+                                        Some(path.to_path_buf()),
+                                        None,
+                                        format!("{} @ {}", package_name, ver_str),
+                                        format!("Must not match {}", vulnerable_range),
+                                        rule.description.clone(),
+                                        format!(
                                             "Upgrade {} out of vulnerable range {}",
                                             package_name, vulnerable_range
                                         ),
-                                    });
+                                    );
+                                    finding.detector_id = "dynamic-rules".to_string();
+                                    finding.affectedness = Affectedness::ConfirmedAffected;
+                                    finding.reachability = Reachability::PotentiallyReachable;
+                                    finding.confidence = Confidence::High;
+                                    finding.compute_dedupe_fingerprint();
+                                    return Some(finding);
                                 }
                             }
                         }

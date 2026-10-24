@@ -9,3 +9,6 @@ findings.json
 test-ledger.json
 test-findings.json
 *.sock
+
+# repowise owner-digest key (local)
+.repowise/events.key

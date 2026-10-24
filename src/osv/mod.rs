@@ -581,26 +581,36 @@ impl OsvClient {
                 )
             };
 
-            findings.push(Finding {
-                id: format!("osv-{}-{}", vuln.id, pkg.name),
-                cve: CveId::Custom {
-                    id: primary_id,
+            let mut finding = Finding::new(
+                format!("osv-{}-{}", vuln.id, pkg.name),
+                CveId::Custom {
+                    id: primary_id.clone(),
                     title: summary,
                 },
                 severity,
-                target_kind: pkg.target_kind.clone(),
-                file_path: Some(pkg.file_path.clone()),
-                line_number: None,
-                detected_version_or_pattern: format!(
-                    "{} @ {} ({})",
-                    pkg.name, pkg.version, pkg.ecosystem
-                ),
+                pkg.target_kind.clone(),
+                Some(pkg.file_path.clone()),
+                None,
+                format!("{} @ {} ({})", pkg.name, pkg.version, pkg.ecosystem),
                 safe_threshold,
-                description: vuln
-                    .details
+                vuln.details
                     .unwrap_or_else(|| "No extended advisory details provided.".into()),
-                suggested_remediation: remediation,
-            });
+                remediation,
+            );
+            finding.detector_id = "osv-dev".to_string();
+            finding.package_source = Some(pkg.ecosystem.to_string());
+            finding.component_identity = pkg.name.clone();
+            finding.installed_build = Some(pkg.version.clone());
+            finding.advisory_ids = if vuln.aliases.is_empty() {
+                vec![vuln.id.clone()]
+            } else {
+                vuln.aliases.clone()
+            };
+            finding.affectedness = Affectedness::ConfirmedAffected;
+            finding.reachability = Reachability::PotentiallyReachable;
+            finding.confidence = Confidence::High;
+            finding.compute_dedupe_fingerprint();
+            findings.push(finding);
         }
 
         Ok(findings)
