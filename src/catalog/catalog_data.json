@@ -5649,5 +5649,131 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: non-null/valid handle proof",
     "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-005",
+    "short_id": "MEM-005",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Stack/heap buffer copy lacks verified bounds",
+    "cwe": "CWE-120",
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no overflow under edge corpus",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-006",
+    "short_id": "MEM-006",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "`unsafe` Rust or FFI uses unchecked slice/pointer conversion",
+    "cwe": "CWE-119",
+    "detection_method": "AST+REVIEW",
+    "required_evidence": [
+      "AST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: every safety precondition documented/tested",
+    "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-007",
+    "short_id": "MEM-007",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "C/C++ string encoding or truncation produces security control mismatch",
+    "cwe": "CWE-170",
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: termination and byte-count correct",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-008",
+    "short_id": "MEM-008",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Untrusted native decoder or plugin runs in privileged host process",
+    "cwe": "CWE-250",
+    "detection_method": "CONFIG+FUZZ",
+    "required_evidence": [
+      "CONFIG",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: isolation and privileges constrained",
+    "verification_requirements": "Verify via CONFIG+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-009",
+    "short_id": "MEM-009",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Rust/Go panic or C++ exception crosses foreign function boundary unsafely",
+    "cwe": "CWE-755",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "go",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: ABI-safe error handling",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
   }
 ]
