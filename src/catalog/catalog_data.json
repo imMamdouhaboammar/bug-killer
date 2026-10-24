@@ -122,5 +122,134 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: all configured sink aliases included",
     "verification_requirements": "Verify via FLOW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-INJ-006",
+    "short_id": "INJ-006",
+    "rule_version": "1.0",
+    "category_number": 1,
+    "category": "2.1 Injection and interpreter boundaries",
+    "description": "JavaScript `eval`, `new Function`, dynamic `vm` execution of untrusted content",
+    "cwe": "CWE-94",
+    "detection_method": "FLOW+REVIEW",
+    "required_evidence": [
+      "FLOW",
+      "REVIEW"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no untrusted code execution path",
+    "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-INJ-007",
+    "short_id": "INJ-007",
+    "rule_version": "1.0",
+    "category_number": 1,
+    "category": "2.1 Injection and interpreter boundaries",
+    "description": "Python `eval`/`exec` or generated Python script from untrusted input",
+    "cwe": "CWE-94",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "python",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no execution of attacker-controlled code",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-INJ-008",
+    "short_id": "INJ-008",
+    "rule_version": "1.0",
+    "category_number": 1,
+    "category": "2.1 Injection and interpreter boundaries",
+    "description": "Server-side template expressions compiled from user data",
+    "cwe": "CWE-1336",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: template is fixed; data stays data",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-INJ-009",
+    "short_id": "INJ-009",
+    "rule_version": "1.0",
+    "category_number": 1,
+    "category": "2.1 Injection and interpreter boundaries",
+    "description": "Template escape bypass (`safe`, raw output) applied to untrusted values",
+    "cwe": "CWE-79",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: context-appropriate encoding at sink",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-INJ-010",
+    "short_id": "INJ-010",
+    "rule_version": "1.0",
+    "category_number": 1,
+    "category": "2.1 Injection and interpreter boundaries",
+    "description": "XPath/XQuery expression assembled from inputs",
+    "cwe": "CWE-643",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: untrusted values cannot change query structure",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
   }
 ]
