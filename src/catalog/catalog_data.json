@@ -5775,5 +5775,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: ABI-safe error handling",
     "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-010",
+    "short_id": "MEM-010",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Compiler/hardening flags removed to silence warnings or fix build",
+    "cwe": "CWE-693",
+    "detection_method": "CONFIG",
+    "required_evidence": [
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: required hardening preserved",
+    "verification_requirements": "Verify via CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-011",
+    "short_id": "MEM-011",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Zig/C++ allocator mismatch or forgotten cleanup leaks secret-bearing memory",
+    "cwe": "CWE-401",
+    "detection_method": "FUZZ+REVIEW",
+    "required_evidence": [
+      "FUZZ",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: memory lifetime clear",
+    "verification_requirements": "Verify via FUZZ+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-012",
+    "short_id": "MEM-012",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Binary parser trusts declared lengths and integer casts",
+    "cwe": "CWE-20",
+    "detection_method": "FUZZ",
+    "required_evidence": [
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: size and signedness constraints validated",
+    "verification_requirements": "Verify via FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-OPS-001",
+    "short_id": "OPS-001",
+    "rule_version": "1.0",
+    "category_number": 19,
+    "category": "2.19 Errors, observability and incident readiness",
+    "description": "Security exception swallowed with empty catch or `unwrap_or_default()`",
+    "cwe": "CWE-754",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: failure visible and deny-by-default",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-OPS-002",
+    "short_id": "OPS-002",
+    "rule_version": "1.0",
+    "category_number": 19,
+    "category": "2.19 Errors, observability and incident readiness",
+    "description": "Authentication/authorization check returns allow after timeout/error",
+    "cwe": "CWE-754",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: verifier unavailable means deny",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
