@@ -1,7 +1,7 @@
-use std::time::{Duration, Instant};
+use crate::types::Severity;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use crate::types::Severity;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DastCategory {
@@ -51,7 +51,8 @@ impl DastProber {
         let agent = config.new_agent();
 
         // 1. Audit root endpoint
-        let root_resp = agent.get(normalized_url)
+        let root_resp = agent
+            .get(normalized_url)
             .call()
             .map_err(|e| format!("Failed to reach target URL {}: {}", normalized_url, e))?;
 
@@ -63,7 +64,12 @@ impl DastProber {
         let headers: Vec<(String, String)> = root_resp
             .headers()
             .iter()
-            .map(|(k, v)| (k.as_str().to_lowercase(), v.to_str().unwrap_or_default().to_string()))
+            .map(|(k, v)| {
+                (
+                    k.as_str().to_lowercase(),
+                    v.to_str().unwrap_or_default().to_string(),
+                )
+            })
             .collect();
 
         // 2. Audit Security Headers
@@ -176,7 +182,9 @@ impl DastProber {
                 category: DastCategory::InformationDisclosure,
                 target_url: normalized_url.to_string(),
                 evidence: format!("X-Powered-By: {}", xpb),
-                remediation: "Disable or strip X-Powered-By headers in web server or application config.".into(),
+                remediation:
+                    "Disable or strip X-Powered-By headers in web server or application config."
+                        .into(),
             });
         }
 
@@ -235,10 +243,30 @@ impl DastProber {
 
         // 4. Defensive Sensitive Endpoint Exposure Probing (GET without mutation)
         let sensitive_paths = [
-            ("/.env", Severity::Critical, "Environment configuration file exposed containing secrets", "Block access to hidden and dotfiles in web server rules."),
-            ("/.git/HEAD", Severity::Critical, "Git repository metadata exposed to public internet", "Deny access to /.git/ directories in reverse proxy."),
-            ("/actuator/health", Severity::Medium, "Spring Boot actuator endpoint exposed publicly", "Restrict actuator management endpoints to internal network."),
-            ("/swagger.json", Severity::Low, "Swagger API schema exposed without authentication", "Authenticate API documentation endpoints or restrict in production."),
+            (
+                "/.env",
+                Severity::Critical,
+                "Environment configuration file exposed containing secrets",
+                "Block access to hidden and dotfiles in web server rules.",
+            ),
+            (
+                "/.git/HEAD",
+                Severity::Critical,
+                "Git repository metadata exposed to public internet",
+                "Deny access to /.git/ directories in reverse proxy.",
+            ),
+            (
+                "/actuator/health",
+                Severity::Medium,
+                "Spring Boot actuator endpoint exposed publicly",
+                "Restrict actuator management endpoints to internal network.",
+            ),
+            (
+                "/swagger.json",
+                Severity::Low,
+                "Swagger API schema exposed without authentication",
+                "Authenticate API documentation endpoints or restrict in production.",
+            ),
         ];
 
         let mut endpoints_audited = 1;
@@ -267,8 +295,14 @@ impl DastProber {
         }
 
         let duration_ms = start.elapsed().as_millis() as u64;
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
-        let high_count = findings.iter().filter(|f| f.severity == Severity::High).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
+        let high_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::High)
+            .count();
         let is_vulnerable = !findings.is_empty();
 
         Ok(DastReport {

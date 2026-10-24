@@ -6,18 +6,18 @@
 )]
 
 use clap::Parser;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use serde::{Deserialize, Serialize};
 
-use bug_killer_inspector::omni_proto;
 use bug_killer_inspector::agent::{
     AgentModelConfig, AgenticSecuritySupervisor, IncidentContext, ModelProvider,
 };
 use bug_killer_inspector::binary_audit::{BinaryAuditor, DeepBinaryFinding};
-use bug_killer_inspector::mem_audit::{ProcessMemoryAuditor, ProcessMemoryFinding};
 use bug_killer_inspector::ebpf_tracer::EbpfTracer;
+use bug_killer_inspector::mem_audit::{ProcessMemoryAuditor, ProcessMemoryFinding};
+use bug_killer_inspector::omni_proto;
 use omni_proto::omni_binary_inspector_server::{OmniBinaryInspector, OmniBinaryInspectorServer};
 use omni_proto::{
     BinaryInspectionRequest, BinaryInspectionResponse, PacketStreamInspectionRequest,
@@ -27,7 +27,10 @@ use tonic::{Request, Response, Status};
 
 #[derive(Parser, Debug)]
 #[command(name = "bug-killer-inspector")]
-#[command(about = "Bug Killer Deep Binary Inspector & eBPF Runtime Engine", version = "0.1.0")]
+#[command(
+    about = "Bug Killer Deep Binary Inspector & eBPF Runtime Engine",
+    version = "0.1.0"
+)]
 struct Cli {
     /// Start UDS gRPC server listening on socket path
     #[arg(long, default_value = "/tmp/omni_inspector.sock")]
@@ -159,15 +162,18 @@ impl OmniBinaryInspector for OmniBinaryInspectorImpl {
         }))
     }
 
-    type StreamRuntimeEventsStream =
-        std::pin::Pin<Box<dyn tokio_stream::Stream<Item = Result<RuntimeEvent, Status>> + Send + 'static>>;
+    type StreamRuntimeEventsStream = std::pin::Pin<
+        Box<dyn tokio_stream::Stream<Item = Result<RuntimeEvent, Status>> + Send + 'static>,
+    >;
 
     async fn stream_runtime_events(
         &self,
         request: Request<RuntimeEventSubscription>,
     ) -> Result<Response<Self::StreamRuntimeEventsStream>, Status> {
         let sub = request.into_inner();
-        let stream = self.tracer.subscribe(sub.filter_types, sub.target_pid_filter);
+        let stream = self
+            .tracer
+            .subscribe(sub.filter_types, sub.target_pid_filter);
         Ok(Response::new(Box::pin(stream)))
     }
 }
@@ -260,7 +266,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let ledger_data = fs::read_to_string(ledger_path)?;
         let ledger: CoverageLedgerInput = serde_json::from_str(&ledger_data)?;
 
-        println!("[+] Aegis Inspector: Ingested ledger from '{}' (Total Assets: {})", ledger.host_id, ledger.total_assets);
+        println!(
+            "[+] Aegis Inspector: Ingested ledger from '{}' (Total Assets: {})",
+            ledger.host_id, ledger.total_assets
+        );
         let mut binary_findings = Vec::new();
         let mut process_findings = Vec::new();
 
@@ -281,14 +290,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             host_id: ledger.host_id,
             audit_timestamp: chrono::Utc::now().to_rfc3339(),
             total_assets_inspected: binary_findings.len() + process_findings.len(),
-            critical_findings_count: binary_findings.iter().filter(|b| b.severity == "CRITICAL").count(),
-            high_findings_count: binary_findings.iter().filter(|b| b.severity == "HIGH").count(),
+            critical_findings_count: binary_findings
+                .iter()
+                .filter(|b| b.severity == "CRITICAL")
+                .count(),
+            high_findings_count: binary_findings
+                .iter()
+                .filter(|b| b.severity == "HIGH")
+                .count(),
             binary_findings,
             process_findings,
         };
 
         fs::write(&cli.out, serde_json::to_string_pretty(&report)?)?;
-        println!("[✓] Inspector written comprehensive audit report to {:?}", cli.out);
+        println!(
+            "[✓] Inspector written comprehensive audit report to {:?}",
+            cli.out
+        );
         return Ok(());
     }
 
@@ -298,7 +316,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = fs::remove_file(&socket_path);
     }
 
-    println!("[+] Omni-Inspector: Initializing UDS gRPC server at {:?}", socket_path);
+    println!(
+        "[+] Omni-Inspector: Initializing UDS gRPC server at {:?}",
+        socket_path
+    );
     let uds_listener = tokio::net::UnixListener::bind(&socket_path)?;
 
     let tracer = Arc::new(EbpfTracer::new());
@@ -312,7 +333,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    println!("[✓] Omni-Inspector: Listening on UDS socket {:?} (Aya eBPF & Goblin Ready)", socket_path);
+    println!(
+        "[✓] Omni-Inspector: Listening on UDS socket {:?} (Aya eBPF & Goblin Ready)",
+        socket_path
+    );
     tonic::transport::Server::builder()
         .add_service(OmniBinaryInspectorServer::new(service))
         .serve_with_incoming_shutdown(incoming, async {

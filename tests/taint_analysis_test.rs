@@ -1,8 +1,8 @@
+use bug_killer::scanner::FleetScanner;
+use bug_killer::taint::{TaintEngine, TaintSinkKind};
+use bug_killer::types::Severity;
 use std::fs;
 use tempfile::tempdir;
-use bug_killer::taint::{TaintEngine, TaintSinkKind};
-use bug_killer::scanner::FleetScanner;
-use bug_killer::types::Severity;
 
 #[test]
 fn test_taint_analysis_sql_injection_and_sanitization() {
@@ -25,7 +25,11 @@ app.get('/user', async (req, res) => {
     fs::write(&vuln_js, vuln_content).unwrap();
 
     let findings = TaintEngine::scan_source(&vuln_js, vuln_content);
-    assert_eq!(findings.len(), 1, "Should detect 1 SQL injection vulnerability");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should detect 1 SQL injection vulnerability"
+    );
     assert_eq!(findings[0].sink_kind, TaintSinkKind::SqlInjection);
     assert_eq!(findings[0].variable_name, "sql");
     assert_eq!(findings[0].source_line, 6);
@@ -45,7 +49,10 @@ app.get('/user', async (req, res) => {
     fs::write(&safe_js, safe_content).unwrap();
 
     let safe_findings = TaintEngine::scan_source(&safe_js, safe_content);
-    assert!(safe_findings.is_empty(), "Sanitized parseInt should not trigger SQL injection");
+    assert!(
+        safe_findings.is_empty(),
+        "Sanitized parseInt should not trigger SQL injection"
+    );
 }
 
 #[test]
@@ -70,10 +77,19 @@ def ping():
     fs::write(&py_file, py_content).unwrap();
 
     let findings = TaintEngine::scan_source(&py_file, py_content);
-    assert!(findings.iter().any(|f| f.sink_kind == TaintSinkKind::CommandInjection && f.variable_name == "host"));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.sink_kind == TaintSinkKind::CommandInjection && f.variable_name == "host")
+    );
 
     // FleetScanner end-to-end integration with --taint
     let report = FleetScanner::scan_directory_with_rules_and_taint(root, false, &[], true);
     assert!(report.is_vulnerable);
-    assert!(report.findings.iter().any(|f| f.severity == Severity::Critical && f.id.starts_with("taint-cwe-78")));
+    assert!(
+        report
+            .findings
+            .iter()
+            .any(|f| f.severity == Severity::Critical && f.id.starts_with("taint-cwe-78"))
+    );
 }

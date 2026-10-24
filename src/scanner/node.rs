@@ -1,9 +1,9 @@
+use crate::cve_db::CveDatabase;
+use crate::types::*;
+use regex::Regex;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use regex::Regex;
-use crate::cve_db::CveDatabase;
-use crate::types::*;
 
 pub struct NodeScanner;
 
@@ -18,7 +18,9 @@ impl NodeScanner {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let ver_str = stdout.trim().trim_start_matches('v');
         if let Some((major, minor, patch)) = CveDatabase::parse_semver(ver_str) {
-            if let Some((cve, severity, safe_threshold)) = CveDatabase::check_node_version(major, minor, patch) {
+            if let Some((cve, severity, safe_threshold)) =
+                CveDatabase::check_node_version(major, minor, patch)
+            {
                 return Some(Finding {
                     id: format!("NODE-HOST-{}", cve.as_str()),
                     cve: cve.clone(),
@@ -60,7 +62,9 @@ impl NodeScanner {
                 for cap in re.captures_iter(node_val) {
                     let ver_str = &cap[1];
                     if let Some((major, minor, patch)) = CveDatabase::parse_semver(ver_str) {
-                        if let Some((cve, severity, safe_threshold)) = CveDatabase::check_node_version(major, minor, patch) {
+                        if let Some((cve, severity, safe_threshold)) =
+                            CveDatabase::check_node_version(major, minor, patch)
+                        {
                             findings.push(Finding {
                                 id: format!("PACKAGE-JSON-{}", cve.as_str()),
                                 cve,
@@ -84,17 +88,24 @@ impl NodeScanner {
         }
 
         // 2. Check dependencies exposing automatic body decompression (e.g. Express, body-parser, fastify)
-        let check_deps = |deps: Option<&serde_json::Map<String, serde_json::Value>>| -> (bool, bool, bool) {
-            let mut bp = false;
-            let mut exp = false;
-            let mut fst = false;
-            if let Some(d) = deps {
-                if d.contains_key("body-parser") { bp = true; }
-                if d.contains_key("express") { exp = true; }
-                if d.contains_key("fastify") { fst = true; }
-            }
-            (bp, exp, fst)
-        };
+        let check_deps =
+            |deps: Option<&serde_json::Map<String, serde_json::Value>>| -> (bool, bool, bool) {
+                let mut bp = false;
+                let mut exp = false;
+                let mut fst = false;
+                if let Some(d) = deps {
+                    if d.contains_key("body-parser") {
+                        bp = true;
+                    }
+                    if d.contains_key("express") {
+                        exp = true;
+                    }
+                    if d.contains_key("fastify") {
+                        fst = true;
+                    }
+                }
+                (bp, exp, fst)
+            };
 
         let (b1, e1, f1) = check_deps(json.get("dependencies").and_then(|d| d.as_object()));
         let (b2, e2, f2) = check_deps(json.get("devDependencies").and_then(|d| d.as_object()));
@@ -122,7 +133,10 @@ impl NodeScanner {
 
         // Check for unguarded Express / HTTP body parsing
         let has_express_app = content.contains("express()");
-        let has_body_parser = content.contains("bodyParser") || content.contains("body-parser") || content.contains("express.json") || content.contains("express.urlencoded");
+        let has_body_parser = content.contains("bodyParser")
+            || content.contains("body-parser")
+            || content.contains("express.json")
+            || content.contains("express.urlencoded");
         let has_guard = content.contains("[BUG-KILLER-GUARD]") || content.contains("[AEGIS-GUARD]");
 
         if has_express_app && has_body_parser && !has_guard {
@@ -156,7 +170,9 @@ impl NodeScanner {
         // zlib.brotliDecompress()
         // zlib.brotliDecompressSync()
         // createBrotliDecompress()
-        let re_brotli = Regex::new(r"(?i)(createBrotliDecompress|brotliDecompress|brotliDecompressSync)").unwrap();
+        let re_brotli =
+            Regex::new(r"(?i)(createBrotliDecompress|brotliDecompress|brotliDecompressSync)")
+                .unwrap();
 
         for (idx, line) in content.lines().enumerate() {
             if let Some(caps) = re_brotli.captures(line) {
@@ -180,7 +196,10 @@ impl NodeScanner {
 
         // Check for unguarded Express / HTTP body parsing
         let has_express_app = content.contains("express()");
-        let has_body_parser = content.contains("bodyParser") || content.contains("body-parser") || content.contains("express.json") || content.contains("express.urlencoded");
+        let has_body_parser = content.contains("bodyParser")
+            || content.contains("body-parser")
+            || content.contains("express.json")
+            || content.contains("express.urlencoded");
         let has_guard = content.contains("[BUG-KILLER-GUARD]") || content.contains("[AEGIS-GUARD]");
 
         if has_express_app && has_body_parser && !has_guard {
@@ -214,7 +233,9 @@ impl NodeScanner {
             if let Some(caps) = re.captures(line) {
                 let tag = &caps[1];
                 if let Some((major, minor, patch)) = CveDatabase::parse_semver(tag) {
-                    if let Some((cve, severity, safe_threshold)) = CveDatabase::check_node_version(major, minor, patch) {
+                    if let Some((cve, severity, safe_threshold)) =
+                        CveDatabase::check_node_version(major, minor, patch)
+                    {
                         findings.push(Finding {
                             id: format!("DOCKER-NODE-{}", cve.as_str()),
                             cve,

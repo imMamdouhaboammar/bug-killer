@@ -1,9 +1,9 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+use crate::types::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::fs;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use crate::types::*;
 
 pub struct OsvClient {
     pub endpoint: String,
@@ -87,7 +87,11 @@ impl OsvClient {
                     return true;
                 }
                 let name = e.file_name().to_string_lossy();
-                name != ".git" && name != "node_modules" && name != "vendor" && name != "target" && name != ".aegis"
+                name != ".git"
+                    && name != "node_modules"
+                    && name != "vendor"
+                    && name != "target"
+                    && name != ".aegis"
             })
             .filter_map(|e| e.ok())
         {
@@ -312,7 +316,12 @@ impl OsvClient {
                     artifact_id.clear();
                     version.clear();
                 } else if trimmed.contains("</dependency>") {
-                    if in_dep && !group_id.is_empty() && !artifact_id.is_empty() && !version.is_empty() && !version.starts_with("${") {
+                    if in_dep
+                        && !group_id.is_empty()
+                        && !artifact_id.is_empty()
+                        && !version.is_empty()
+                        && !version.starts_with("${")
+                    {
                         let pkg_name = format!("{}:{}", group_id, artifact_id);
                         if let Some(cleaned) = Self::clean_version(&version) {
                             list.push(DiscoveredPackage {
@@ -361,7 +370,9 @@ impl OsvClient {
                         for (_framework, fw_deps) in deps {
                             if let Some(pkgs) = fw_deps.as_object() {
                                 for (pkg_name, details) in pkgs {
-                                    if let Some(ver) = details.get("resolved").and_then(|v| v.as_str()) {
+                                    if let Some(ver) =
+                                        details.get("resolved").and_then(|v| v.as_str())
+                                    {
                                         if let Some(cleaned) = Self::clean_version(ver) {
                                             list.push(DiscoveredPackage {
                                                 file_path: path.to_path_buf(),
@@ -456,11 +467,17 @@ impl OsvClient {
             for line in content.lines() {
                 let trimmed = line.trim();
                 if trimmed.starts_with("name = ") {
-                    let name = trimmed.trim_start_matches("name = ").trim_matches('"').trim_matches('\'');
+                    let name = trimmed
+                        .trim_start_matches("name = ")
+                        .trim_matches('"')
+                        .trim_matches('\'');
                     current_name = Some(name.to_string());
                 } else if trimmed.starts_with("version = ") {
                     if let Some(name) = current_name.take() {
-                        let ver = trimmed.trim_start_matches("version = ").trim_matches('"').trim_matches('\'');
+                        let ver = trimmed
+                            .trim_start_matches("version = ")
+                            .trim_matches('"')
+                            .trim_matches('\'');
                         if let Some(cleaned) = Self::clean_version(ver) {
                             list.push(DiscoveredPackage {
                                 file_path: path.to_path_buf(),
@@ -550,9 +567,18 @@ impl OsvClient {
                 .unwrap_or_else(|| "Check upstream advisory for fixed version".into());
 
             let remediation = if let Some(ref fix) = fixed_version {
-                format!("Upgrade {} from {} to {} in {}", pkg.name, pkg.version, fix, pkg.file_path.display())
+                format!(
+                    "Upgrade {} from {} to {} in {}",
+                    pkg.name,
+                    pkg.version,
+                    fix,
+                    pkg.file_path.display()
+                )
             } else {
-                format!("Inspect advisory {} and update {} to patched release", primary_id, pkg.name)
+                format!(
+                    "Inspect advisory {} and update {} to patched release",
+                    primary_id, pkg.name
+                )
             };
 
             findings.push(Finding {
@@ -565,9 +591,14 @@ impl OsvClient {
                 target_kind: pkg.target_kind.clone(),
                 file_path: Some(pkg.file_path.clone()),
                 line_number: None,
-                detected_version_or_pattern: format!("{} @ {} ({})", pkg.name, pkg.version, pkg.ecosystem),
+                detected_version_or_pattern: format!(
+                    "{} @ {} ({})",
+                    pkg.name, pkg.version, pkg.ecosystem
+                ),
                 safe_threshold,
-                description: vuln.details.unwrap_or_else(|| "No extended advisory details provided.".into()),
+                description: vuln
+                    .details
+                    .unwrap_or_else(|| "No extended advisory details provided.".into()),
                 suggested_remediation: remediation,
             });
         }

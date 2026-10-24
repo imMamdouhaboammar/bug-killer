@@ -2,13 +2,15 @@ use std::path::PathBuf;
 use std::time::Duration;
 use tokio::time::sleep;
 
+use bug_killer_inspector::binary_audit::BinaryAuditor;
+use bug_killer_inspector::ebpf_tracer::EbpfTracer;
 use bug_killer_inspector::omni_proto::omni_binary_inspector_client::OmniBinaryInspectorClient;
-use bug_killer_inspector::omni_proto::omni_binary_inspector_server::{OmniBinaryInspector, OmniBinaryInspectorServer};
+use bug_killer_inspector::omni_proto::omni_binary_inspector_server::{
+    OmniBinaryInspector, OmniBinaryInspectorServer,
+};
 use bug_killer_inspector::omni_proto::{
     BinaryInspectionRequest, PacketStreamInspectionRequest, RuntimeEventSubscription,
 };
-use bug_killer_inspector::binary_audit::BinaryAuditor;
-use bug_killer_inspector::ebpf_tracer::EbpfTracer;
 use hyper_util::rt::tokio::TokioIo;
 use tonic::transport::{Endpoint, Uri};
 use tower::service_fn;
@@ -22,7 +24,10 @@ impl OmniBinaryInspector for TestServer {
     async fn inspect_binary(
         &self,
         request: tonic::Request<BinaryInspectionRequest>,
-    ) -> Result<tonic::Response<bug_killer_inspector::omni_proto::BinaryInspectionResponse>, tonic::Status> {
+    ) -> Result<
+        tonic::Response<bug_killer_inspector::omni_proto::BinaryInspectionResponse>,
+        tonic::Status,
+    > {
         let req = request.into_inner();
         let resp = BinaryAuditor::audit_binary_proto(&req);
         Ok(tonic::Response::new(resp))
@@ -31,29 +36,51 @@ impl OmniBinaryInspector for TestServer {
     async fn inspect_packet_stream(
         &self,
         request: tonic::Request<PacketStreamInspectionRequest>,
-    ) -> Result<tonic::Response<bug_killer_inspector::omni_proto::PacketStreamInspectionResponse>, tonic::Status> {
+    ) -> Result<
+        tonic::Response<bug_killer_inspector::omni_proto::PacketStreamInspectionResponse>,
+        tonic::Status,
+    > {
         let req = request.into_inner();
         let text = String::from_utf8_lossy(&req.raw_payload);
-        let malicious = text.contains("Content-Encoding: br") && text.contains("Transfer-Encoding: chunked");
-        Ok(tonic::Response::new(bug_killer_inspector::omni_proto::PacketStreamInspectionResponse {
-            capture_session_id: req.capture_session_id,
-            malicious_intent_detected: malicious,
-            matched_signature: if malicious { "CVE-2026-109618".into() } else { "".into() },
-            severity: if malicious { 4 } else { 1 },
-            recommended_waf_action: if malicious { "DROP_415".into() } else { "ALLOW".into() },
-            sanitized_payload: Vec::new(),
-        }))
+        let malicious =
+            text.contains("Content-Encoding: br") && text.contains("Transfer-Encoding: chunked");
+        Ok(tonic::Response::new(
+            bug_killer_inspector::omni_proto::PacketStreamInspectionResponse {
+                capture_session_id: req.capture_session_id,
+                malicious_intent_detected: malicious,
+                matched_signature: if malicious {
+                    "CVE-2026-109618".into()
+                } else {
+                    "".into()
+                },
+                severity: if malicious { 4 } else { 1 },
+                recommended_waf_action: if malicious {
+                    "DROP_415".into()
+                } else {
+                    "ALLOW".into()
+                },
+                sanitized_payload: Vec::new(),
+            },
+        ))
     }
 
-    type StreamRuntimeEventsStream =
-        std::pin::Pin<Box<dyn tokio_stream::Stream<Item = Result<bug_killer_inspector::omni_proto::RuntimeEvent, tonic::Status>> + Send + 'static>>;
+    type StreamRuntimeEventsStream = std::pin::Pin<
+        Box<
+            dyn tokio_stream::Stream<
+                    Item = Result<bug_killer_inspector::omni_proto::RuntimeEvent, tonic::Status>,
+                > + Send
+                + 'static,
+        >,
+    >;
 
     async fn stream_runtime_events(
         &self,
         request: tonic::Request<RuntimeEventSubscription>,
     ) -> Result<tonic::Response<Self::StreamRuntimeEventsStream>, tonic::Status> {
         let sub = request.into_inner();
-        let stream = self.tracer.subscribe(sub.filter_types, sub.target_pid_filter);
+        let stream = self
+            .tracer
+            .subscribe(sub.filter_types, sub.target_pid_filter);
         Ok(tonic::Response::new(Box::pin(stream)))
     }
 }
@@ -79,7 +106,9 @@ async fn test_grpc_uds_inspection_roundtrip() {
             }
         };
 
-        let svc = TestServer { tracer: server_tracer };
+        let svc = TestServer {
+            tracer: server_tracer,
+        };
         tonic::transport::Server::builder()
             .add_service(OmniBinaryInspectorServer::new(svc))
             .serve_with_incoming(incoming)
@@ -95,7 +124,11 @@ async fn test_grpc_uds_inspection_roundtrip() {
         .unwrap()
         .connect_with_connector(service_fn(move |_: Uri| {
             let path = socket_for_client.clone();
-            async move { tokio::net::UnixStream::connect(path).await.map(TokioIo::new) }
+            async move {
+                tokio::net::UnixStream::connect(path)
+                    .await
+                    .map(TokioIo::new)
+            }
         }))
         .await
         .expect("Failed to connect client to UDS server");
@@ -119,7 +152,8 @@ async fn test_grpc_uds_inspection_roundtrip() {
     assert!(bin_resp.hardening_flags.is_some());
 
     // 2. Test Packet Stream Inspection
-    let pkt_payload = b"POST /api HTTP/1.1\r\nContent-Encoding: br\r\nTransfer-Encoding: chunked\r\n\r\n";
+    let pkt_payload =
+        b"POST /api HTTP/1.1\r\nContent-Encoding: br\r\nTransfer-Encoding: chunked\r\n\r\n";
     let pkt_req = PacketStreamInspectionRequest {
         capture_session_id: "sess-1".into(),
         network_interface: "lo0".into(),
@@ -130,7 +164,11 @@ async fn test_grpc_uds_inspection_roundtrip() {
         extracted_headers: std::collections::HashMap::new(),
     };
 
-    let pkt_resp = client.inspect_packet_stream(pkt_req).await.unwrap().into_inner();
+    let pkt_resp = client
+        .inspect_packet_stream(pkt_req)
+        .await
+        .unwrap()
+        .into_inner();
     assert!(pkt_resp.malicious_intent_detected);
     assert_eq!(pkt_resp.recommended_waf_action, "DROP_415");
 

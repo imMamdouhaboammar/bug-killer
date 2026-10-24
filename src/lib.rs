@@ -1,15 +1,15 @@
 #![allow(clippy::collapsible_if, clippy::doc_lazy_continuation)]
 
-pub mod types;
-pub mod cve_db;
-pub mod scanner;
-pub mod healer;
-pub mod doctor;
-pub mod watcher;
-pub mod shell;
 pub mod completion;
-pub mod identity;
-pub mod rules;
-pub mod osv;
-pub mod taint;
+pub mod cve_db;
 pub mod dast;
+pub mod doctor;
+pub mod healer;
+pub mod identity;
+pub mod osv;
+pub mod rules;
+pub mod scanner;
+pub mod shell;
+pub mod taint;
+pub mod types;
+pub mod watcher;

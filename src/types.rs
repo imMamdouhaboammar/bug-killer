@@ -22,8 +22,12 @@ impl CveId {
     pub fn title(&self) -> &str {
         match self {
             CveId::Php2ShellOom(_) => "PHP2Shell: RCE via Out-of-Memory (OOM) Heap Corruption",
-            CveId::Php2ShellStale(_) => "PHP2Shell: RCE via Stale Global State / Use-After-Free Across Requests",
-            CveId::Node2ShellBrotli(_) => "Node2Shell: Out-of-Bounds Memory Write in Bundled Google Brotli Decoder",
+            CveId::Php2ShellStale(_) => {
+                "PHP2Shell: RCE via Stale Global State / Use-After-Free Across Requests"
+            }
+            CveId::Node2ShellBrotli(_) => {
+                "Node2Shell: Out-of-Bounds Memory Write in Bundled Google Brotli Decoder"
+            }
             CveId::Custom { title, .. } => title.as_str(),
         }
     }

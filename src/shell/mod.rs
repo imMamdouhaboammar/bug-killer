@@ -1,14 +1,14 @@
-use std::io::{self, BufRead, Write};
-use std::path::PathBuf;
-use rustyline::DefaultEditor;
-use rustyline::error::ReadlineError;
-use crate::types::{ScanReport, PatchAction, Severity};
-use crate::scanner::FleetScanner;
+use crate::doctor::SystemDoctor;
 use crate::healer::AutopilotHealer;
 use crate::healer::backup::BackupManager;
 use crate::healer::rollback::RollbackManager;
-use crate::doctor::SystemDoctor;
+use crate::scanner::FleetScanner;
+use crate::types::{PatchAction, ScanReport, Severity};
 use crate::watcher::WatcherEngine;
+use rustyline::DefaultEditor;
+use rustyline::error::ReadlineError;
+use std::io::{self, BufRead, Write};
+use std::path::PathBuf;
 
 pub struct ShellEngine {
     current_dir: PathBuf,
@@ -50,7 +50,9 @@ impl ShellEngine {
                 None => "idle".to_string(),
             };
 
-            let dir_name = self.current_dir.file_name()
+            let dir_name = self
+                .current_dir
+                .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| "/".into());
 
@@ -123,7 +125,10 @@ impl ShellEngine {
                     let _ = stdout.flush();
                 }
                 _ => {
-                    println!("Unknown command: '{}'. Type 'help' for available commands.", cmd);
+                    println!(
+                        "Unknown command: '{}'. Type 'help' for available commands.",
+                        cmd
+                    );
                 }
             }
         }
@@ -140,12 +145,20 @@ impl ShellEngine {
         println!("  plan                  Generate and preview automated healing actions");
         println!("  diff                  Show code and configuration diffs for planned patches");
         println!("  heal [--dry-run]      Execute atomic healing with pre-mutation backup");
-        println!("  verify                Run post-patch verification pass to confirm zero exposures");
+        println!(
+            "  verify                Run post-patch verification pass to confirm zero exposures"
+        );
         println!("  history               List all backup snapshots recorded in .aegis/backups/");
         println!("  rollback <backup_id>  Revert target directory to exact state of snapshot");
-        println!("  doctor                Check local environment (Node, PHP, Nginx, Docker, permissions)");
-        println!("  cve <cve_id>          Display root cause, mechanics, and remediation for a CVE");
-        println!("  watch [secs]          Enter live surveillance mode monitoring filesystem changes");
+        println!(
+            "  doctor                Check local environment (Node, PHP, Nginx, Docker, permissions)"
+        );
+        println!(
+            "  cve <cve_id>          Display root cause, mechanics, and remediation for a CVE"
+        );
+        println!(
+            "  watch [secs]          Enter live surveillance mode monitoring filesystem changes"
+        );
         println!("  cd <path>             Change active workspace directory");
         println!("  pwd                   Print current active workspace directory");
         println!("  clear                 Clear console screen");
@@ -164,7 +177,11 @@ impl ShellEngine {
         println!(
             "Audit complete. Files: {} | Vulnerable: {} | Critical: {} | High: {}",
             report.total_files_scanned,
-            if report.is_vulnerable { "YES ⚠️" } else { "NO ✅" },
+            if report.is_vulnerable {
+                "YES ⚠️"
+            } else {
+                "NO ✅"
+            },
             report.critical_count,
             report.high_count
         );
@@ -175,7 +192,9 @@ impl ShellEngine {
 
         if let Some(ref r) = self.last_report {
             if r.is_vulnerable {
-                println!("Type 'findings' to inspect issues, or 'heal --dry-run' to preview repairs.");
+                println!(
+                    "Type 'findings' to inspect issues, or 'heal --dry-run' to preview repairs."
+                );
             }
         }
     }
@@ -194,7 +213,10 @@ impl ShellEngine {
             return;
         }
 
-        println!("\nDetected Vulnerabilities ({} total):", report.findings.len());
+        println!(
+            "\nDetected Vulnerabilities ({} total):",
+            report.findings.len()
+        );
         for (idx, f) in report.findings.iter().enumerate() {
             let sev = match f.severity {
                 Severity::Critical => "[CRITICAL]",
@@ -202,7 +224,13 @@ impl ShellEngine {
                 Severity::Medium => "[MEDIUM]",
                 Severity::Low => "[LOW]",
             };
-            println!("{}. {} {} - {}", idx + 1, sev, f.cve.as_str(), f.cve.title());
+            println!(
+                "{}. {} {} - {}",
+                idx + 1,
+                sev,
+                f.cve.as_str(),
+                f.cve.title()
+            );
             if let Some(ref p) = f.file_path {
                 let line_str = f.line_number.map(|l| format!(":{}", l)).unwrap_or_default();
                 println!("   Location:    {}{}", p.display(), line_str);
@@ -252,7 +280,12 @@ impl ShellEngine {
 
         println!("\n--- Proposed Patch Diffs ---");
         for (idx, a) in plan.iter().enumerate() {
-            println!("\n[Patch {}/{}] Target: {}", idx + 1, plan.len(), a.target_file.display());
+            println!(
+                "\n[Patch {}/{}] Target: {}",
+                idx + 1,
+                plan.len(),
+                a.target_file.display()
+            );
             println!("Action: {:?}", a.action_type);
             println!("Details: {}", a.diff_description);
             println!("Pre-mutation Checksum: {}", a.original_checksum);
@@ -301,12 +334,18 @@ impl ShellEngine {
     }
 
     fn execute_verify(&mut self) {
-        println!("Running post-repair verification on {}...", self.current_dir.display());
+        println!(
+            "Running post-repair verification on {}...",
+            self.current_dir.display()
+        );
         let report = FleetScanner::scan_directory(&self.current_dir, false);
         let plan = AutopilotHealer::plan_healing(&report);
 
         if report.is_vulnerable && !plan.is_empty() {
-            println!("⚠️ Verification Warning: {} remaining unmitigated exposures found.", plan.len());
+            println!(
+                "⚠️ Verification Warning: {} remaining unmitigated exposures found.",
+                plan.len()
+            );
         } else {
             println!("✅ System verified! Zero unmitigated exposures remain.");
         }
@@ -323,10 +362,16 @@ impl ShellEngine {
         }
 
         let backup_id = args[0];
-        println!("Rolling back snapshot '{}' with cryptographic trust verification...", backup_id);
+        println!(
+            "Rolling back snapshot '{}' with cryptographic trust verification...",
+            backup_id
+        );
         match RollbackManager::rollback(&self.current_dir, backup_id) {
             Ok(count) => {
-                println!("✅ Successfully restored {} files to pre-mutation state.", count);
+                println!(
+                    "✅ Successfully restored {} files to pre-mutation state.",
+                    count
+                );
                 self.execute_scan(&[]);
             }
             Err(e) => eprintln!("❌ Rollback failed: {}", e),
@@ -350,7 +395,11 @@ impl ShellEngine {
             }
             println!("Files Backed: {}", b.records.len());
             for r in b.records {
-                let hash_prefix = if r.original_sha256.len() >= 12 { &r.original_sha256[..12] } else { &r.original_sha256 };
+                let hash_prefix = if r.original_sha256.len() >= 12 {
+                    &r.original_sha256[..12]
+                } else {
+                    &r.original_sha256
+                };
                 println!("  - {} (SHA256: {})", r.relative_target_path, hash_prefix);
             }
             println!("-------------------------------------------------------");
@@ -364,7 +413,14 @@ impl ShellEngine {
         println!("=======================================================");
         println!("Operating System:  {}", report.os);
         println!("Architecture:      {}", report.arch);
-        println!("Overall Health:    {}\n", if report.overall_healthy { "HEALTHY ✅" } else { "ATTENTION REQUIRED ⚠️" });
+        println!(
+            "Overall Health:    {}\n",
+            if report.overall_healthy {
+                "HEALTHY ✅"
+            } else {
+                "ATTENTION REQUIRED ⚠️"
+            }
+        );
 
         for item in report.items {
             let badge = match item.status {
@@ -391,23 +447,38 @@ impl ShellEngine {
             println!("\n=== CVE-2026-109618: PHP2Shell (Out-of-Memory Heap Corruption) ===");
             println!("CVSS: 9.2 (Critical) | Vector: Remote Code Execution (RCE)");
             println!("Root Cause: PHP runtime uses longjmp() on OOM errors to abort requests.");
-            println!("In persistent worker SAPIs, uninitialized memory cleanups cause reliable RCE.");
+            println!(
+                "In persistent worker SAPIs, uninitialized memory cleanups cause reliable RCE."
+            );
             println!("Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)");
         } else if norm.contains("109619") {
             println!("\n=== CVE-2026-109619: PHP2Shell (Stale Global State / Use-After-Free) ===");
             println!("CVSS: 9.8 (Critical) | Vector: Remote Code Execution (RCE)");
-            println!("Root Cause: Global state variables pointing into request memory fail to reset properly.");
-            println!("Consecutive requests reuse stale heap pointers leading to UAF code execution.");
+            println!(
+                "Root Cause: Global state variables pointing into request memory fail to reset properly."
+            );
+            println!(
+                "Consecutive requests reuse stale heap pointers leading to UAF code execution."
+            );
             println!("Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)");
         } else if norm.contains("111497") {
-            println!("\n=== CVE-2026-111497: Node2Shell (Bundled Brotli Decoder Out-of-Bounds Write) ===");
+            println!(
+                "\n=== CVE-2026-111497: Node2Shell (Bundled Brotli Decoder Out-of-Bounds Write) ==="
+            );
             println!("CVSS: 8.8 (High/Critical) | Vector: Memory Corruption / RCE");
-            println!("Root Cause: Missing bounds check in Google reference Brotli library (v1.0.3 - 1.2.0)");
+            println!(
+                "Root Cause: Missing bounds check in Google reference Brotli library (v1.0.3 - 1.2.0)"
+            );
             println!("statically linked inside Node.js native runtime (node:zlib).");
-            println!("Attack Vector: Malformed Brotli payload sent via HTTP 'Content-Encoding: br' or fetch().");
+            println!(
+                "Attack Vector: Malformed Brotli payload sent via HTTP 'Content-Encoding: br' or fetch()."
+            );
             println!("Fixed Releases: Node.js v22.23.4+, v24.22.1+, v26.12.1+ (Node <= 20 is EOL)");
         } else {
-            println!("Unknown CVE ID: '{}'. Supported: CVE-2026-109618, CVE-2026-109619, CVE-2026-111497", args[0]);
+            println!(
+                "Unknown CVE ID: '{}'. Supported: CVE-2026-109618, CVE-2026-109619, CVE-2026-111497",
+                args[0]
+            );
         }
     }
 

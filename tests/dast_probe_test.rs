@@ -1,8 +1,8 @@
+use bug_killer::dast::DastProber;
+use bug_killer::types::Severity;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::thread;
-use bug_killer::dast::DastProber;
-use bug_killer::types::Severity;
 
 #[test]
 fn test_dast_probe_against_mock_server() {
@@ -19,7 +19,8 @@ fn test_dast_probe_against_mock_server() {
 
                 let req_str = String::from_utf8_lossy(&buffer);
                 if req_str.contains("GET /.env ") {
-                    let response = "HTTP/1.1 200 OK\r\nContent-Length: 20\r\n\r\nSECRET_KEY=123456789\n";
+                    let response =
+                        "HTTP/1.1 200 OK\r\nContent-Length: 20\r\n\r\nSECRET_KEY=123456789\n";
                     let _ = stream.write_all(response.as_bytes());
                 } else if req_str.contains("GET /.git/HEAD ") {
                     let response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
@@ -35,18 +36,41 @@ fn test_dast_probe_against_mock_server() {
 
     let report = DastProber::probe(&url, 5).expect("DAST probe should complete successfully");
 
-    assert!(report.is_vulnerable, "Mock server should be flagged as vulnerable");
+    assert!(
+        report.is_vulnerable,
+        "Mock server should be flagged as vulnerable"
+    );
     assert_eq!(report.status_code, 200);
 
     // Verify missing CSP finding
-    assert!(report.findings.iter().any(|f| f.id == "DAST-HDR-CSP-MISSING" && f.severity == Severity::High));
+    assert!(
+        report
+            .findings
+            .iter()
+            .any(|f| f.id == "DAST-HDR-CSP-MISSING" && f.severity == Severity::High)
+    );
 
     // Verify information disclosure findings
-    assert!(report.findings.iter().any(|f| f.id == "DAST-LEAK-X-POWERED-BY"));
-    assert!(report.findings.iter().any(|f| f.id == "DAST-LEAK-SERVER-VERSION"));
+    assert!(
+        report
+            .findings
+            .iter()
+            .any(|f| f.id == "DAST-LEAK-X-POWERED-BY")
+    );
+    assert!(
+        report
+            .findings
+            .iter()
+            .any(|f| f.id == "DAST-LEAK-SERVER-VERSION")
+    );
 
     // Verify exposed /.env finding
-    assert!(report.findings.iter().any(|f| f.id == "DAST-EXPOSURE-ENV" && f.severity == Severity::Critical));
+    assert!(
+        report
+            .findings
+            .iter()
+            .any(|f| f.id == "DAST-EXPOSURE-ENV" && f.severity == Severity::Critical)
+    );
 
     let _ = server_handle.join();
 }

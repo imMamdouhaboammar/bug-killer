@@ -1,7 +1,7 @@
 use bug_killer_inspector::agent::{
-    AgentModelConfig, AgenticSecuritySupervisor, BinaryAuditArgs, BinaryAuditTool,
-    IncidentContext, ModelProvider, ProcessMemoryArgs, ProcessMemoryAuditTool,
-    VirtualPatchArgs, VirtualPatchAdvisorTool,
+    AgentModelConfig, AgenticSecuritySupervisor, BinaryAuditArgs, BinaryAuditTool, IncidentContext,
+    ModelProvider, ProcessMemoryArgs, ProcessMemoryAuditTool, VirtualPatchAdvisorTool,
+    VirtualPatchArgs,
 };
 use rig::tool::{Tool, ToolContext};
 use serde_json::json;
@@ -15,17 +15,26 @@ async fn test_binary_audit_tool_execution() {
     let ls_path = if std::path::Path::new("/bin/ls").exists() {
         "/bin/ls".to_string()
     } else {
-        std::env::current_exe().unwrap().to_string_lossy().to_string()
+        std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .to_string()
     };
 
     let args = BinaryAuditArgs {
         path: ls_path.clone(),
     };
 
-    let result = tool.call(&mut ctx, args).await.expect("Binary audit call failed");
+    let result = tool
+        .call(&mut ctx, args)
+        .await
+        .expect("Binary audit call failed");
     assert_eq!(result.path, ls_path);
     assert!(!result.format.is_empty());
-    println!("[✓] BinaryAuditTool verified format: {}, risk_score: {}", result.format, result.risk_score);
+    println!(
+        "[✓] BinaryAuditTool verified format: {}, risk_score: {}",
+        result.format, result.risk_score
+    );
 }
 
 #[tokio::test]
@@ -37,10 +46,16 @@ async fn test_process_memory_audit_tool_execution() {
     let current_pid = std::process::id() as i32;
     let args = ProcessMemoryArgs { pid: current_pid };
 
-    let result = tool.call(&mut ctx, args).await.expect("Memory audit call failed");
+    let result = tool
+        .call(&mut ctx, args)
+        .await
+        .expect("Memory audit call failed");
     assert_eq!(result.pid, current_pid);
     assert!(!result.risk_summary.is_empty());
-    println!("[✓] ProcessMemoryAuditTool verified PID: {}, is_exposed: {}", result.pid, result.is_exposed);
+    println!(
+        "[✓] ProcessMemoryAuditTool verified PID: {}, is_exposed: {}",
+        result.pid, result.is_exposed
+    );
 }
 
 #[tokio::test]
@@ -54,10 +69,18 @@ async fn test_virtual_patch_advisor_tool_php2shell() {
         environment: Some("debian".to_string()),
     };
 
-    let result = tool.call(&mut ctx, args).await.expect("Patch advisor call failed");
+    let result = tool
+        .call(&mut ctx, args)
+        .await
+        .expect("Patch advisor call failed");
     assert_eq!(result.target_proxy, "nginx");
     assert!(result.patch_strategy.contains("Brotli"));
-    assert!(result.recommended_directives.iter().any(|d| d.contains("brotli off;")));
+    assert!(
+        result
+            .recommended_directives
+            .iter()
+            .any(|d| d.contains("brotli off;"))
+    );
     assert!(result.package_upgrade_command.contains("apt-get"));
     assert!(result.safe_rollback_procedure.contains("Ed25519"));
     println!("[✓] VirtualPatchAdvisorTool verified PHP2Shell virtual patch");
@@ -74,10 +97,18 @@ async fn test_virtual_patch_advisor_tool_node2shell() {
         environment: Some("ubuntu".to_string()),
     };
 
-    let result = tool.call(&mut ctx, args).await.expect("Patch advisor call failed");
+    let result = tool
+        .call(&mut ctx, args)
+        .await
+        .expect("Patch advisor call failed");
     assert_eq!(result.target_proxy, "haproxy");
     assert!(result.patch_strategy.contains("Node.js"));
-    assert!(result.recommended_directives.iter().any(|d| d.contains("__proto__")));
+    assert!(
+        result
+            .recommended_directives
+            .iter()
+            .any(|d| d.contains("__proto__"))
+    );
     assert!(result.package_upgrade_command.contains("node"));
     println!("[✓] VirtualPatchAdvisorTool verified Node2Shell virtual patch");
 }
@@ -113,15 +144,42 @@ async fn test_supervisor_dispatch_tool_dynamically() {
 #[test]
 fn test_multi_model_provider_resolution() {
     assert_eq!(ModelProvider::from_str_loose("kimi"), ModelProvider::Kimi);
-    assert_eq!(ModelProvider::from_str_loose("moonshot"), ModelProvider::Kimi);
-    assert_eq!(ModelProvider::from_str_loose("deepseek"), ModelProvider::DeepSeek);
-    assert_eq!(ModelProvider::from_str_loose("minimax"), ModelProvider::MiniMax);
-    assert_eq!(ModelProvider::from_str_loose("claude"), ModelProvider::Claude);
-    assert_eq!(ModelProvider::from_str_loose("gemini"), ModelProvider::Gemini);
-    assert_eq!(ModelProvider::from_str_loose("openai"), ModelProvider::OpenAi);
-    assert_eq!(ModelProvider::from_str_loose("ollama"), ModelProvider::Ollama);
-    assert_eq!(ModelProvider::from_str_loose("vllm"), ModelProvider::OpenWeightsCompatible);
-    assert_eq!(ModelProvider::from_str_loose("unknown"), ModelProvider::DeterministicHeuristic);
+    assert_eq!(
+        ModelProvider::from_str_loose("moonshot"),
+        ModelProvider::Kimi
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("deepseek"),
+        ModelProvider::DeepSeek
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("minimax"),
+        ModelProvider::MiniMax
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("claude"),
+        ModelProvider::Claude
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("gemini"),
+        ModelProvider::Gemini
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("openai"),
+        ModelProvider::OpenAi
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("ollama"),
+        ModelProvider::Ollama
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("vllm"),
+        ModelProvider::OpenWeightsCompatible
+    );
+    assert_eq!(
+        ModelProvider::from_str_loose("unknown"),
+        ModelProvider::DeterministicHeuristic
+    );
 }
 
 #[tokio::test]
@@ -138,7 +196,10 @@ async fn test_autonomous_incident_investigation_workflow() {
     let ls_path = if std::path::Path::new("/bin/ls").exists() {
         "/bin/ls".to_string()
     } else {
-        std::env::current_exe().unwrap().to_string_lossy().to_string()
+        std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .to_string()
     };
 
     let incident = IncidentContext {
@@ -146,7 +207,8 @@ async fn test_autonomous_incident_investigation_workflow() {
         alert_source: "Sniffer-GoPacket".to_string(),
         target_binary: Some(ls_path),
         target_pid: Some(std::process::id() as i32),
-        anomaly_description: "Anomalous compressed stream payload matched CVE-2026-109618 pattern".to_string(),
+        anomaly_description: "Anomalous compressed stream payload matched CVE-2026-109618 pattern"
+            .to_string(),
         cve_hint: Some("CVE-2026-109618".to_string()),
     };
 
@@ -162,5 +224,8 @@ async fn test_autonomous_incident_investigation_workflow() {
     assert!(report.synthesized_remediation.contains("IMMEDIATE ACTION"));
     assert_eq!(report.provider_used, "DeterministicHeuristic");
 
-    println!("[✓] Agentic incident investigation report:\n{}", serde_json::to_string_pretty(&report).unwrap());
+    println!(
+        "[✓] Agentic incident investigation report:\n{}",
+        serde_json::to_string_pretty(&report).unwrap()
+    );
 }

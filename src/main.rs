@@ -1,37 +1,40 @@
 #![allow(clippy::collapsible_if, clippy::doc_lazy_continuation)]
 
-mod types;
-mod cve_db;
-mod scanner;
-mod healer;
-mod doctor;
-mod watcher;
-mod shell;
 mod completion;
-mod identity;
-mod rules;
-mod osv;
-mod taint;
+mod cve_db;
 mod dast;
+mod doctor;
+mod healer;
+mod identity;
+mod osv;
+mod rules;
+mod scanner;
+mod shell;
+mod taint;
+mod types;
+mod watcher;
 
 use clap::{CommandFactory, Parser, Subcommand};
-use std::path::PathBuf;
-use types::Severity;
-use scanner::FleetScanner;
+use completion::CompletionGenerator;
+use dast::DastProber;
+use doctor::SystemDoctor;
 use healer::AutopilotHealer;
 use healer::backup::BackupManager;
 use healer::rollback::RollbackManager;
-use doctor::SystemDoctor;
-use watcher::WatcherEngine;
-use shell::ShellEngine;
-use completion::CompletionGenerator;
-use rules::RuleEngine;
 use osv::OsvClient;
-use dast::DastProber;
+use rules::RuleEngine;
+use scanner::FleetScanner;
+use shell::ShellEngine;
+use std::path::PathBuf;
+use types::Severity;
+use watcher::WatcherEngine;
 
 #[derive(Parser, Debug)]
 #[command(name = "bug-killer")]
-#[command(about = "Bug Killer: Let Your AI Find Deep & Ghosty Bugs, Vulnerabilities, and Security Issues and Heal From Them", version = "0.1.0")]
+#[command(
+    about = "Bug Killer: Let Your AI Find Deep & Ghosty Bugs, Vulnerabilities, and Security Issues and Heal From Them",
+    version = "0.1.0"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -144,8 +147,12 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
 
-        /// Automatically apply all safe patches without confirmation
-        #[arg(long, default_value_t = true)]
+        /// Apply planned safe patches to filesystem (Default: false, plan-only mode)
+        #[arg(long, default_value_t = false)]
+        apply: bool,
+
+        /// Automatically apply all safe patches (Alias for --apply, Default: false)
+        #[arg(long, default_value_t = false)]
         auto_apply: bool,
 
         /// Custom path to rules directory or JSON rule file
@@ -203,7 +210,14 @@ fn main() {
             println!("Target Workspace:  {}", path.display());
             println!("Operating System:  {}", report.os);
             println!("Architecture:      {}", report.arch);
-            println!("Overall Health:    {}\n", if report.overall_healthy { "HEALTHY ✅" } else { "ATTENTION REQUIRED ⚠️" });
+            println!(
+                "Overall Health:    {}\n",
+                if report.overall_healthy {
+                    "HEALTHY ✅"
+                } else {
+                    "ATTENTION REQUIRED ⚠️"
+                }
+            );
 
             for item in report.items {
                 let badge = match item.status {
@@ -220,7 +234,12 @@ fn main() {
             println!();
         }
 
-        Commands::Watch { path, interval, auto_heal, rules: _ } => {
+        Commands::Watch {
+            path,
+            interval,
+            auto_heal,
+            rules: _,
+        } => {
             WatcherEngine::watch(&path, interval, auto_heal, None);
         }
 
@@ -232,9 +251,21 @@ fn main() {
             }
         }
 
-        Commands::Scan { path, json, check_runtime, rules, osv, taint } => {
+        Commands::Scan {
+            path,
+            json,
+            check_runtime,
+            rules,
+            osv,
+            taint,
+        } => {
             let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
-            let mut report = FleetScanner::scan_directory_with_rules_and_taint(&path, check_runtime, &active_rules, taint);
+            let mut report = FleetScanner::scan_directory_with_rules_and_taint(
+                &path,
+                check_runtime,
+                &active_rules,
+                taint,
+            );
 
             if osv {
                 let osv_client = OsvClient::new();
@@ -264,9 +295,30 @@ fn main() {
             println!("Timestamp:            {}", report.scan_time);
             println!("Total Files Audited:  {}", report.total_files_scanned);
             println!("Active Dynamic Rules: {}", active_rules.len());
-            println!("OSV.dev Integration:  {}", if osv { "ENABLED (Live Query)" } else { "DISABLED (Use --osv to enable)" });
-            println!("Taint Analysis:       {}", if taint { "ENABLED (AST Dataflow)" } else { "DISABLED (Use --taint to enable)" });
-            println!("Vulnerabilities:      {}", if report.is_vulnerable { "EXPOSED ⚠️" } else { "CLEAN ✅" });
+            println!(
+                "OSV.dev Integration:  {}",
+                if osv {
+                    "ENABLED (Live Query)"
+                } else {
+                    "DISABLED (Use --osv to enable)"
+                }
+            );
+            println!(
+                "Taint Analysis:       {}",
+                if taint {
+                    "ENABLED (AST Dataflow)"
+                } else {
+                    "DISABLED (Use --taint to enable)"
+                }
+            );
+            println!(
+                "Vulnerabilities:      {}",
+                if report.is_vulnerable {
+                    "EXPOSED ⚠️"
+                } else {
+                    "CLEAN ✅"
+                }
+            );
             println!("Critical:             {}", report.critical_count);
             println!("High:                 {}", report.high_count);
             println!("-------------------------------------------------------\n");
@@ -284,9 +336,18 @@ fn main() {
                     Severity::Low => "[LOW]",
                 };
 
-                println!("{}. {} {} - {}", idx + 1, sev_badge, finding.cve.as_str(), finding.cve.title());
+                println!(
+                    "{}. {} {} - {}",
+                    idx + 1,
+                    sev_badge,
+                    finding.cve.as_str(),
+                    finding.cve.title()
+                );
                 if let Some(ref p) = finding.file_path {
-                    let line_str = finding.line_number.map(|l| format!(":{}", l)).unwrap_or_default();
+                    let line_str = finding
+                        .line_number
+                        .map(|l| format!(":{}", l))
+                        .unwrap_or_default();
                     println!("   Location:    {}{}", p.display(), line_str);
                 }
                 println!("   Pattern:     {}", finding.detected_version_or_pattern);
@@ -295,7 +356,11 @@ fn main() {
                 println!("   Remediation: {}\n", finding.suggested_remediation);
             }
 
-            println!("Run 'bug-killer heal {} --dry-run{}' to preview automated remediation.", path.display(), if osv { " --osv" } else { "" });
+            println!(
+                "Run 'bug-killer heal {} --dry-run{}' to preview automated remediation.",
+                path.display(),
+                if osv { " --osv" } else { "" }
+            );
         }
 
         Commands::Osv { path, json } => {
@@ -328,7 +393,13 @@ fn main() {
                     Severity::Low => "[LOW]",
                 };
 
-                println!("{}. {} {} - {}", idx + 1, sev_badge, finding.cve.as_str(), finding.cve.title());
+                println!(
+                    "{}. {} {} - {}",
+                    idx + 1,
+                    sev_badge,
+                    finding.cve.as_str(),
+                    finding.cve.title()
+                );
                 if let Some(ref p) = finding.file_path {
                     println!("   Manifest:    {}", p.display());
                 }
@@ -337,10 +408,20 @@ fn main() {
                 println!("   Remediation: {}\n", finding.suggested_remediation);
             }
 
-            println!("Run 'bug-killer heal {} --osv' to automatically upgrade vulnerable packages.", path.display());
+            println!(
+                "Run 'bug-killer heal {} --osv' to automatically upgrade vulnerable packages.",
+                path.display()
+            );
         }
 
-        Commands::Heal { path, dry_run, auto_apply, rules, osv } => {
+        Commands::Heal {
+            path,
+            dry_run,
+            apply,
+            auto_apply,
+            rules,
+            osv,
+        } => {
             let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
             let mut report = FleetScanner::scan_directory_with_rules(&path, false, &active_rules);
 
@@ -361,10 +442,20 @@ fn main() {
             println!("=======================================================");
             println!("Target:               {}", path.display());
             println!("Active Dynamic Rules: {}", active_rules.len());
-            println!("OSV.dev Integration:  {}", if osv { "ENABLED" } else { "DISABLED" });
+            println!(
+                "OSV.dev Integration:  {}",
+                if osv { "ENABLED" } else { "DISABLED" }
+            );
             println!("Vulnerable Findings:  {}", report.findings.len());
             println!("Planned Patches:      {}", plan.len());
-            println!("Dry-Run Mode:         {}", if dry_run { "ENABLED (No files will be modified)" } else { "DISABLED (Live Execution)" });
+            println!(
+                "Execution Mode:       {}",
+                if dry_run || (!apply && !auto_apply) {
+                    "PLAN-ONLY (Zero filesystem mutations)"
+                } else {
+                    "AUTHORIZED APPLY (Modifying files with cryptographic backup)"
+                }
+            );
             println!("-------------------------------------------------------\n");
 
             if plan.is_empty() {
@@ -379,32 +470,45 @@ fn main() {
                 println!("   SHA256:  {}\n", action.original_checksum);
             }
 
-            if dry_run {
-                println!("To apply these changes, run without --dry-run:");
-                println!("  bug-killer heal {}", path.display());
+            if dry_run || (!apply && !auto_apply) {
+                println!(
+                    "🔒 Plan-Only Default: No filesystem mutations applied without explicit operator flag."
+                );
+                println!("To apply these changes with cryptographic non-repudiation:");
+                println!("  bug-killer heal {} --apply", path.display());
                 return;
             }
 
-            if auto_apply {
-                match AutopilotHealer::execute_healing(&path, &plan) {
-                    Ok((manifest, count)) => {
-                        println!("✅ Successfully applied {} automated healing patches!", count);
-                        println!("📦 Backup Snapshot Created: {}", manifest.backup_id);
-                        println!("   To rollback if needed: bug-killer rollback {}", manifest.backup_id);
-                    }
-                    Err(e) => {
-                        eprintln!("❌ Healing execution failed: {}", e);
-                        std::process::exit(1);
-                    }
+            match AutopilotHealer::execute_healing(&path, &plan) {
+                Ok((manifest, count)) => {
+                    println!(
+                        "✅ Successfully applied {} automated healing patches!",
+                        count
+                    );
+                    println!("📦 Backup Snapshot Created: {}", manifest.backup_id);
+                    println!(
+                        "   To rollback if needed: bug-killer rollback {}",
+                        manifest.backup_id
+                    );
+                }
+                Err(e) => {
+                    eprintln!("❌ Healing execution failed: {}", e);
+                    std::process::exit(1);
                 }
             }
         }
 
         Commands::Rollback { backup_id, path } => {
-            println!("Attempting cryptographic rollback for snapshot '{}'...", backup_id);
+            println!(
+                "Attempting cryptographic rollback for snapshot '{}'...",
+                backup_id
+            );
             match RollbackManager::rollback(&path, &backup_id) {
                 Ok(count) => {
-                    println!("✅ Successfully rolled back {} files from backup snapshot {}.", count, backup_id);
+                    println!(
+                        "✅ Successfully rolled back {} files from backup snapshot {}.",
+                        count, backup_id
+                    );
                 }
                 Err(e) => {
                     eprintln!("❌ Rollback failed: {}", e);
@@ -428,60 +532,77 @@ fn main() {
                 println!("Created At:   {}", b.created_at);
                 println!("Files Backed: {}", b.records.len());
                 for r in b.records {
-                    let hash_prefix = if r.original_sha256.len() >= 12 { &r.original_sha256[..12] } else { &r.original_sha256 };
+                    let hash_prefix = if r.original_sha256.len() >= 12 {
+                        &r.original_sha256[..12]
+                    } else {
+                        &r.original_sha256
+                    };
                     println!("  - {} (SHA256: {})", r.relative_target_path, hash_prefix);
                 }
                 println!("-------------------------------------------------------");
             }
         }
 
-        Commands::Probe { url, json, timeout } => {
-            match DastProber::probe(&url, timeout) {
-                Ok(report) => {
-                    if json {
-                        println!("{}", serde_json::to_string_pretty(&report).unwrap());
-                        return;
-                    }
-
-                    println!("\n=======================================================");
-                    println!("  🛡️  BUG KILLER: DEFENSIVE DAST PROBE REPORT");
-                    println!("=======================================================");
-                    println!("Target URL:           {}", report.target_url);
-                    println!("Timestamp:            {}", report.probe_time);
-                    println!("Status Code:          HTTP {}", report.status_code);
-                    println!("Duration:             {}ms", report.duration_ms);
-                    println!("Headers Audited:      {}", report.headers_checked);
-                    println!("Endpoints Audited:    {}", report.endpoints_audited);
-                    println!("Vulnerabilities:      {}", if report.is_vulnerable { "EXPOSED ⚠️" } else { "HARDENED ✅" });
-                    println!("Critical:             {}", report.critical_count);
-                    println!("High:                 {}", report.high_count);
-                    println!("-------------------------------------------------------\n");
-
-                    if report.findings.is_empty() {
-                        println!("✅ All inspected security headers and defensive endpoints are hardened.");
-                        return;
-                    }
-
-                    for (idx, finding) in report.findings.iter().enumerate() {
-                        let sev_badge = match finding.severity {
-                            Severity::Critical => "[CRITICAL]",
-                            Severity::High => "[HIGH]",
-                            Severity::Medium => "[MEDIUM]",
-                            Severity::Low => "[LOW]",
-                        };
-
-                        println!("{}. {} {} - {}", idx + 1, sev_badge, finding.id, finding.title);
-                        println!("   Target:      {}", finding.target_url);
-                        println!("   Evidence:    {}", finding.evidence);
-                        println!("   Remediation: {}\n", finding.remediation);
-                    }
+        Commands::Probe { url, json, timeout } => match DastProber::probe(&url, timeout) {
+            Ok(report) => {
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                    return;
                 }
-                Err(e) => {
-                    eprintln!("❌ DAST Probe Error: {}", e);
-                    std::process::exit(1);
+
+                println!("\n=======================================================");
+                println!("  🛡️  BUG KILLER: DEFENSIVE DAST PROBE REPORT");
+                println!("=======================================================");
+                println!("Target URL:           {}", report.target_url);
+                println!("Timestamp:            {}", report.probe_time);
+                println!("Status Code:          HTTP {}", report.status_code);
+                println!("Duration:             {}ms", report.duration_ms);
+                println!("Headers Audited:      {}", report.headers_checked);
+                println!("Endpoints Audited:    {}", report.endpoints_audited);
+                println!(
+                    "Vulnerabilities:      {}",
+                    if report.is_vulnerable {
+                        "EXPOSED ⚠️"
+                    } else {
+                        "HARDENED ✅"
+                    }
+                );
+                println!("Critical:             {}", report.critical_count);
+                println!("High:                 {}", report.high_count);
+                println!("-------------------------------------------------------\n");
+
+                if report.findings.is_empty() {
+                    println!(
+                        "✅ All inspected security headers and defensive endpoints are hardened."
+                    );
+                    return;
+                }
+
+                for (idx, finding) in report.findings.iter().enumerate() {
+                    let sev_badge = match finding.severity {
+                        Severity::Critical => "[CRITICAL]",
+                        Severity::High => "[HIGH]",
+                        Severity::Medium => "[MEDIUM]",
+                        Severity::Low => "[LOW]",
+                    };
+
+                    println!(
+                        "{}. {} {} - {}",
+                        idx + 1,
+                        sev_badge,
+                        finding.id,
+                        finding.title
+                    );
+                    println!("   Target:      {}", finding.target_url);
+                    println!("   Evidence:    {}", finding.evidence);
+                    println!("   Remediation: {}\n", finding.remediation);
                 }
             }
-        }
+            Err(e) => {
+                eprintln!("❌ DAST Probe Error: {}", e);
+                std::process::exit(1);
+            }
+        },
 
         Commands::CveInfo { cve_id } => {
             let norm = cve_id.trim().to_uppercase();
@@ -489,25 +610,51 @@ fn main() {
                 println!("\n=== CVE-2026-109618: PHP2Shell (Out-of-Memory Heap Corruption) ===");
                 println!("CVSS: 9.2 (Critical) | Vector: Remote Code Execution (RCE)");
                 println!("Root Cause: PHP runtime uses longjmp() on OOM errors to abort requests.");
-                println!("In certain SAPI contexts, request memory is left uninitialized prior to allocation.");
-                println!("Subsequent cleanups evaluate uninitialized heap structures, yielding reliable RCE.");
-                println!("Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)");
+                println!(
+                    "In certain SAPI contexts, request memory is left uninitialized prior to allocation."
+                );
+                println!(
+                    "Subsequent cleanups evaluate uninitialized heap structures, yielding reliable RCE."
+                );
+                println!(
+                    "Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)"
+                );
             } else if norm.contains("109619") {
-                println!("\n=== CVE-2026-109619: PHP2Shell (Stale Global State / Use-After-Free) ===");
+                println!(
+                    "\n=== CVE-2026-109619: PHP2Shell (Stale Global State / Use-After-Free) ==="
+                );
                 println!("CVSS: 9.8 (Critical) | Vector: Remote Code Execution (RCE)");
-                println!("Root Cause: Global state variables pointing into request memory fail to reset properly");
-                println!("under error-handling conditions. The memory is freed but globals retain stale references.");
-                println!("Consecutive requests reuse stale heap pointers leading to UAF code execution.");
-                println!("Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)");
+                println!(
+                    "Root Cause: Global state variables pointing into request memory fail to reset properly"
+                );
+                println!(
+                    "under error-handling conditions. The memory is freed but globals retain stale references."
+                );
+                println!(
+                    "Consecutive requests reuse stale heap pointers leading to UAF code execution."
+                );
+                println!(
+                    "Fixed Releases: PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ (All <= 8.1 are EOL)"
+                );
             } else if norm.contains("111497") {
-                println!("\n=== CVE-2026-111497: Node2Shell (Bundled Brotli Decoder Out-of-Bounds Write) ===");
+                println!(
+                    "\n=== CVE-2026-111497: Node2Shell (Bundled Brotli Decoder Out-of-Bounds Write) ==="
+                );
                 println!("CVSS: 8.8 (High/Critical) | Vector: Memory Corruption / RCE");
-                println!("Root Cause: Missing bounds check in Google reference Brotli library (v1.0.3 - 1.2.0)");
+                println!(
+                    "Root Cause: Missing bounds check in Google reference Brotli library (v1.0.3 - 1.2.0)"
+                );
                 println!("statically linked inside Node.js native runtime (node:zlib).");
-                println!("Attack Vector: Malformed Brotli payload sent via HTTP 'Content-Encoding: br' or fetch().");
-                println!("Fixed Releases: Node.js v22.23.4+, v24.22.1+, v26.12.1+ (Node <= 20 is EOL)");
+                println!(
+                    "Attack Vector: Malformed Brotli payload sent via HTTP 'Content-Encoding: br' or fetch()."
+                );
+                println!(
+                    "Fixed Releases: Node.js v22.23.4+, v24.22.1+, v26.12.1+ (Node <= 20 is EOL)"
+                );
             } else {
-                println!("Unknown CVE ID. Supported: CVE-2026-109618, CVE-2026-109619, CVE-2026-111497");
+                println!(
+                    "Unknown CVE ID. Supported: CVE-2026-109618, CVE-2026-109619, CVE-2026-111497"
+                );
             }
         }
     }

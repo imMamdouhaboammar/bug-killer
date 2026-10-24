@@ -9,7 +9,7 @@ pub mod omni_proto {
     tonic::include_proto!("omni.messaging.v1");
 }
 
-pub mod binary_audit;
-pub mod mem_audit;
-pub mod ebpf_tracer;
 pub mod agent;
+pub mod binary_audit;
+pub mod ebpf_tracer;
+pub mod mem_audit;

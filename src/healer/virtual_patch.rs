@@ -1,17 +1,20 @@
+use crate::healer::backup::BackupManager;
+use crate::types::*;
 use std::fs;
 use std::path::Path;
-use crate::types::*;
-use crate::healer::backup::BackupManager;
 
 pub struct VirtualPatcher;
 
 impl VirtualPatcher {
-    pub const NGINX_PATCH_HEADER: &'static str = "# --- BEGIN BUG KILLER VIRTUAL PATCH (CVE-2026-111497: Node2Shell Brotli Mitigation) ---";
+    pub const NGINX_PATCH_HEADER: &'static str =
+        "# --- BEGIN BUG KILLER VIRTUAL PATCH (CVE-2026-111497: Node2Shell Brotli Mitigation) ---";
     pub const NGINX_PATCH_FOOTER: &'static str = "# --- END BUG KILLER VIRTUAL PATCH ---";
 
     pub fn plan_nginx_patch(path: &Path) -> Option<PatchAction> {
         let content = fs::read_to_string(path).ok()?;
-        if content.contains(Self::NGINX_PATCH_HEADER) || content.contains("BEGIN AEGIS VIRTUAL PATCH") {
+        if content.contains(Self::NGINX_PATCH_HEADER)
+            || content.contains("BEGIN AEGIS VIRTUAL PATCH")
+        {
             return None; // Already patched (Idempotency)
         }
 
@@ -28,7 +31,9 @@ impl VirtualPatcher {
         let mut injected = false;
 
         for line in content.lines() {
-            if !injected && (line.trim().starts_with("location /") || line.trim().starts_with("proxy_pass")) {
+            if !injected
+                && (line.trim().starts_with("location /") || line.trim().starts_with("proxy_pass"))
+            {
                 modified.push_str(&patch_block);
                 injected = true;
             }
@@ -52,7 +57,8 @@ impl VirtualPatcher {
             action_type: PatchActionType::NginxVirtualPatch,
             target_file: path.to_path_buf(),
             original_checksum: sha256,
-            diff_description: "Inject Nginx HTTP 415 guard against Brotli compressed request bodies".into(),
+            diff_description:
+                "Inject Nginx HTTP 415 guard against Brotli compressed request bodies".into(),
             replacement_content: modified,
         })
     }

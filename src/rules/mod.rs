@@ -1,9 +1,9 @@
-use std::fs;
-use std::path::Path;
+use crate::types::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use crate::types::*;
+use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VulnerabilityRule {
@@ -36,9 +36,7 @@ pub enum DetectionMatcher {
         except_if_contains: Option<String>,
     },
     #[serde(rename = "missing_pattern")]
-    MissingPattern {
-        required_pattern: String,
-    },
+    MissingPattern { required_pattern: String },
     #[serde(rename = "semver_dependency")]
     SemVerDependency {
         package_name: String,
@@ -115,7 +113,9 @@ impl RuleEngine {
             if let Ok(entries) = fs::read_dir(path) {
                 for entry in entries.flatten() {
                     let entry_path = entry.path();
-                    if entry_path.is_file() && entry_path.extension().and_then(|s| s.to_str()) == Some("json") {
+                    if entry_path.is_file()
+                        && entry_path.extension().and_then(|s| s.to_str()) == Some("json")
+                    {
                         if let Some(loaded) = Self::parse_rule_file(&entry_path) {
                             rules.extend(loaded);
                         }
@@ -176,7 +176,10 @@ impl RuleEngine {
         }
 
         match &rule.detection {
-            DetectionMatcher::RegexMatch { pattern, not_matching } => {
+            DetectionMatcher::RegexMatch {
+                pattern,
+                not_matching,
+            } => {
                 let re = Regex::new(pattern).ok()?;
                 if let Some(mat) = re.find(content) {
                     // Check exclusion filter if present
@@ -209,10 +212,18 @@ impl RuleEngine {
                             .remediation
                             .as_ref()
                             .map(|r| match r {
-                                RemediationStrategy::StringReplace { description, .. } => description.clone(),
-                                RemediationStrategy::RegexReplace { description, .. } => description.clone(),
-                                RemediationStrategy::AppendBlock { description, .. } => description.clone(),
-                                RemediationStrategy::BumpDependency { description, .. } => description.clone(),
+                                RemediationStrategy::StringReplace { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::RegexReplace { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::AppendBlock { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::BumpDependency { description, .. } => {
+                                    description.clone()
+                                }
                             })
                             .unwrap_or_else(|| "Manual inspection required".into()),
                     })
@@ -220,7 +231,10 @@ impl RuleEngine {
                     None
                 }
             }
-            DetectionMatcher::StringContains { search, except_if_contains } => {
+            DetectionMatcher::StringContains {
+                search,
+                except_if_contains,
+            } => {
                 if let Some(pos) = content.find(search) {
                     if let Some(except) = except_if_contains {
                         if content.contains(except) {
@@ -246,10 +260,18 @@ impl RuleEngine {
                             .remediation
                             .as_ref()
                             .map(|r| match r {
-                                RemediationStrategy::StringReplace { description, .. } => description.clone(),
-                                RemediationStrategy::RegexReplace { description, .. } => description.clone(),
-                                RemediationStrategy::AppendBlock { description, .. } => description.clone(),
-                                RemediationStrategy::BumpDependency { description, .. } => description.clone(),
+                                RemediationStrategy::StringReplace { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::RegexReplace { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::AppendBlock { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::BumpDependency { description, .. } => {
+                                    description.clone()
+                                }
                             })
                             .unwrap_or_else(|| "Manual inspection required".into()),
                     })
@@ -269,17 +291,31 @@ impl RuleEngine {
                         target_kind: rule.target_kind.clone(),
                         file_path: Some(path.to_path_buf()),
                         line_number: Some(1),
-                        detected_version_or_pattern: format!("Missing required configuration: '{}'", required_pattern),
-                        safe_threshold: format!("Configuration must include: '{}'", required_pattern),
+                        detected_version_or_pattern: format!(
+                            "Missing required configuration: '{}'",
+                            required_pattern
+                        ),
+                        safe_threshold: format!(
+                            "Configuration must include: '{}'",
+                            required_pattern
+                        ),
                         description: rule.description.clone(),
                         suggested_remediation: rule
                             .remediation
                             .as_ref()
                             .map(|r| match r {
-                                RemediationStrategy::StringReplace { description, .. } => description.clone(),
-                                RemediationStrategy::RegexReplace { description, .. } => description.clone(),
-                                RemediationStrategy::AppendBlock { description, .. } => description.clone(),
-                                RemediationStrategy::BumpDependency { description, .. } => description.clone(),
+                                RemediationStrategy::StringReplace { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::RegexReplace { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::AppendBlock { description, .. } => {
+                                    description.clone()
+                                }
+                                RemediationStrategy::BumpDependency { description, .. } => {
+                                    description.clone()
+                                }
                             })
                             .unwrap_or_else(|| "Manual configuration required".into()),
                     })
@@ -287,7 +323,10 @@ impl RuleEngine {
                     None
                 }
             }
-            DetectionMatcher::SemVerDependency { package_name, vulnerable_range } => {
+            DetectionMatcher::SemVerDependency {
+                package_name,
+                vulnerable_range,
+            } => {
                 // Parse package.json or composer.json
                 if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(content) {
                     let mut found_ver = None;
@@ -297,7 +336,9 @@ impl RuleEngine {
                         }
                     }
                     if found_ver.is_none() {
-                        if let Some(dev_deps) = parsed.get("devDependencies").and_then(|d| d.as_object()) {
+                        if let Some(dev_deps) =
+                            parsed.get("devDependencies").and_then(|d| d.as_object())
+                        {
                             if let Some(v) = dev_deps.get(package_name).and_then(|v| v.as_str()) {
                                 found_ver = Some(v);
                             }
@@ -305,7 +346,10 @@ impl RuleEngine {
                     }
 
                     if let Some(ver_str) = found_ver {
-                        let clean_ver = ver_str.trim_start_matches('^').trim_start_matches('~').trim();
+                        let clean_ver = ver_str
+                            .trim_start_matches('^')
+                            .trim_start_matches('~')
+                            .trim();
                         if let Ok(req) = semver::VersionReq::parse(vulnerable_range) {
                             if let Ok(sem) = semver::Version::parse(clean_ver) {
                                 if req.matches(&sem) {
@@ -319,10 +363,19 @@ impl RuleEngine {
                                         target_kind: rule.target_kind.clone(),
                                         file_path: Some(path.to_path_buf()),
                                         line_number: None,
-                                        detected_version_or_pattern: format!("{} @ {}", package_name, ver_str),
-                                        safe_threshold: format!("Must not match {}", vulnerable_range),
+                                        detected_version_or_pattern: format!(
+                                            "{} @ {}",
+                                            package_name, ver_str
+                                        ),
+                                        safe_threshold: format!(
+                                            "Must not match {}",
+                                            vulnerable_range
+                                        ),
                                         description: rule.description.clone(),
-                                        suggested_remediation: format!("Upgrade {} out of vulnerable range {}", package_name, vulnerable_range),
+                                        suggested_remediation: format!(
+                                            "Upgrade {} out of vulnerable range {}",
+                                            package_name, vulnerable_range
+                                        ),
                                     });
                                 }
                             }
@@ -344,7 +397,11 @@ impl RuleEngine {
         };
 
         match remediation {
-            RemediationStrategy::StringReplace { search, replace, description } => {
+            RemediationStrategy::StringReplace {
+                search,
+                replace,
+                description,
+            } => {
                 if !content.contains(search) {
                     return None;
                 }
@@ -357,7 +414,11 @@ impl RuleEngine {
                     replacement_content,
                 })
             }
-            RemediationStrategy::RegexReplace { search, replace, description } => {
+            RemediationStrategy::RegexReplace {
+                search,
+                replace,
+                description,
+            } => {
                 let re = Regex::new(search).ok()?;
                 if !re.is_match(content) {
                     return None;
@@ -371,7 +432,10 @@ impl RuleEngine {
                     replacement_content,
                 })
             }
-            RemediationStrategy::AppendBlock { snippet, description } => {
+            RemediationStrategy::AppendBlock {
+                snippet,
+                description,
+            } => {
                 if content.contains(snippet.trim()) {
                     return None;
                 }
@@ -391,17 +455,27 @@ impl RuleEngine {
                     replacement_content,
                 })
             }
-            RemediationStrategy::BumpDependency { package_name, safe_version, description } => {
+            RemediationStrategy::BumpDependency {
+                package_name,
+                safe_version,
+                description,
+            } => {
                 if let Ok(mut parsed) = serde_json::from_str::<serde_json::Value>(content) {
                     let mut modified = false;
-                    if let Some(deps) = parsed.get_mut("dependencies").and_then(|d| d.as_object_mut()) {
+                    if let Some(deps) = parsed
+                        .get_mut("dependencies")
+                        .and_then(|d| d.as_object_mut())
+                    {
                         if let Some(val) = deps.get_mut(package_name) {
                             *val = serde_json::Value::String(safe_version.clone());
                             modified = true;
                         }
                     }
                     if !modified {
-                        if let Some(dev_deps) = parsed.get_mut("devDependencies").and_then(|d| d.as_object_mut()) {
+                        if let Some(dev_deps) = parsed
+                            .get_mut("devDependencies")
+                            .and_then(|d| d.as_object_mut())
+                        {
                             if let Some(val) = dev_deps.get_mut(package_name) {
                                 *val = serde_json::Value::String(safe_version.clone());
                                 modified = true;

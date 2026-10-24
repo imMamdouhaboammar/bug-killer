@@ -1,9 +1,9 @@
+use crate::cve_db::CveDatabase;
+use crate::types::*;
+use regex::Regex;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use regex::Regex;
-use crate::cve_db::CveDatabase;
-use crate::types::*;
 
 pub struct PhpScanner;
 
@@ -20,7 +20,9 @@ impl PhpScanner {
         if let Some(caps) = re.captures(&stdout) {
             let ver_str = &caps[1];
             if let Some((major, minor, patch)) = CveDatabase::parse_semver(ver_str) {
-                if let Some((cve, severity, safe_threshold)) = CveDatabase::check_php_version(major, minor, patch) {
+                if let Some((cve, severity, safe_threshold)) =
+                    CveDatabase::check_php_version(major, minor, patch)
+                {
                     return Some(Finding {
                         id: format!("PHP-HOST-{}", cve.as_str()),
                         cve: cve.clone(),
@@ -35,7 +37,10 @@ impl PhpScanner {
                             cve.as_str(),
                             cve.title()
                         ),
-                        suggested_remediation: format!("Update system PHP package to {}", safe_threshold),
+                        suggested_remediation: format!(
+                            "Update system PHP package to {}",
+                            safe_threshold
+                        ),
                     });
                 }
             }
@@ -63,7 +68,9 @@ impl PhpScanner {
                 for cap in re.captures_iter(php_val) {
                     let ver_str = &cap[1];
                     if let Some((major, minor, patch)) = CveDatabase::parse_semver(ver_str) {
-                        if let Some((cve, severity, safe_threshold)) = CveDatabase::check_php_version(major, minor, patch) {
+                        if let Some((cve, severity, safe_threshold)) =
+                            CveDatabase::check_php_version(major, minor, patch)
+                        {
                             findings.push(Finding {
                                 id: format!("COMPOSER-{}", cve.as_str()),
                                 cve,
@@ -105,7 +112,9 @@ impl PhpScanner {
             if let Some(caps) = re.captures(line) {
                 let tag = &caps[1];
                 if let Some((major, minor, patch)) = CveDatabase::parse_semver(tag) {
-                    if let Some((cve, severity, safe_threshold)) = CveDatabase::check_php_version(major, minor, patch) {
+                    if let Some((cve, severity, safe_threshold)) =
+                        CveDatabase::check_php_version(major, minor, patch)
+                    {
                         findings.push(Finding {
                             id: format!("DOCKER-PHP-{}", cve.as_str()),
                             cve,
@@ -148,7 +157,9 @@ impl PhpScanner {
                 continue;
             }
 
-            if trimmed.contains("memory_limit") && (trimmed.contains("-1") || trimmed.contains("= -1")) {
+            if trimmed.contains("memory_limit")
+                && (trimmed.contains("-1") || trimmed.contains("= -1"))
+            {
                 findings.push(Finding {
                     id: "PHP-INI-UNLIMITED-MEMORY".to_string(),
                     cve: CveId::Php2ShellOom("CVE-2026-109618".into()),

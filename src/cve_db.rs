@@ -12,7 +12,11 @@ impl CveDatabase {
     /// - 8.5 >= 8.5.12
     ///
     /// Any version <= 8.1 is completely EOL and unpatched.
-    pub fn check_php_version(major: u32, minor: u32, patch: u32) -> Option<(CveId, Severity, &'static str)> {
+    pub fn check_php_version(
+        major: u32,
+        minor: u32,
+        patch: u32,
+    ) -> Option<(CveId, Severity, &'static str)> {
         match (major, minor) {
             (8, 5) => {
                 if patch < 12 {
@@ -76,7 +80,11 @@ impl CveDatabase {
     /// - 26.x >= 26.12.1
     ///
     /// Any version <= 20.x is EOL and receives no official Brotli patch.
-    pub fn check_node_version(major: u32, minor: u32, patch: u32) -> Option<(CveId, Severity, &'static str)> {
+    pub fn check_node_version(
+        major: u32,
+        minor: u32,
+        patch: u32,
+    ) -> Option<(CveId, Severity, &'static str)> {
         match major {
             26 => {
                 if minor < 12 || (minor == 12 && patch < 1) {
@@ -123,19 +131,29 @@ impl CveDatabase {
 
     /// Parses a semantic version string like "8.2.14", "v22.11.0", "8.3.1-fpm", etc.
     pub fn parse_semver(raw: &str) -> Option<(u32, u32, u32)> {
-        let clean = raw.trim().trim_start_matches('v').trim_start_matches('^').trim_start_matches('~');
+        let clean = raw
+            .trim()
+            .trim_start_matches('v')
+            .trim_start_matches('^')
+            .trim_start_matches('~');
         let parts: Vec<&str> = clean.split('.').collect();
         if parts.len() < 2 {
             return None;
         }
 
         let major: u32 = parts[0].parse().ok()?;
-        let minor_clean: String = parts[1].chars().take_while(|c| c.is_ascii_digit()).collect();
+        let minor_clean: String = parts[1]
+            .chars()
+            .take_while(|c| c.is_ascii_digit())
+            .collect();
         let minor: u32 = minor_clean.parse().ok()?;
 
         // Handle patch with suffixes like "14-fpm", "3-alpine", "0"
         let patch_part = parts.get(2).unwrap_or(&"0");
-        let patch_clean: String = patch_part.chars().take_while(|c| c.is_ascii_digit()).collect();
+        let patch_clean: String = patch_part
+            .chars()
+            .take_while(|c| c.is_ascii_digit())
+            .collect();
         let patch: u32 = if patch_clean.is_empty() {
             0
         } else {

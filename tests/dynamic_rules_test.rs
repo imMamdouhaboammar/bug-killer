@@ -1,10 +1,10 @@
-use std::fs;
-use tempfile::tempdir;
-use bug_killer::types::*;
-use bug_killer::scanner::FleetScanner;
 use bug_killer::healer::AutopilotHealer;
 use bug_killer::healer::rollback::RollbackManager;
-use bug_killer::rules::{RuleEngine, VulnerabilityRule, DetectionMatcher, RemediationStrategy};
+use bug_killer::rules::{DetectionMatcher, RemediationStrategy, RuleEngine, VulnerabilityRule};
+use bug_killer::scanner::FleetScanner;
+use bug_killer::types::*;
+use std::fs;
+use tempfile::tempdir;
 
 #[test]
 fn test_dynamic_rules_scan_heal_and_rollback() {
@@ -55,21 +55,33 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
 
     // Verify rules are loaded automatically
     let loaded_rules = RuleEngine::load_rules(None, root);
-    assert_eq!(loaded_rules.len(), 2, "Expected 2 custom rules loaded from rules/ directory");
+    assert_eq!(
+        loaded_rules.len(),
+        2,
+        "Expected 2 custom rules loaded from rules/ directory"
+    );
 
     // 2. Create vulnerable target files
     let py_file = root.join("inference.py");
     fs::write(&py_file, "import torch\nmodel = torch.load('weights.pt')\n").unwrap();
 
     let nginx_file = root.join("nginx.conf");
-    fs::write(&nginx_file, "events {}\nhttp {\n    server {\n        listen 443 ssl http2;\n    }\n}\n").unwrap();
+    fs::write(
+        &nginx_file,
+        "events {}\nhttp {\n    server {\n        listen 443 ssl http2;\n    }\n}\n",
+    )
+    .unwrap();
 
     // 3. Scan directory
     let report = FleetScanner::scan_directory(root, false);
     assert!(report.is_vulnerable);
     assert_eq!(report.findings.len(), 2);
 
-    let cve_ids: Vec<String> = report.findings.iter().map(|f| f.cve.as_str().to_string()).collect();
+    let cve_ids: Vec<String> = report
+        .findings
+        .iter()
+        .map(|f| f.cve.as_str().to_string())
+        .collect();
     assert!(cve_ids.contains(&"CVE-2024-5480".to_string()));
     assert!(cve_ids.contains(&"CVE-2023-44487".to_string()));
 
@@ -77,7 +89,8 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
     let plan = AutopilotHealer::plan_healing(&report);
     assert_eq!(plan.len(), 2);
 
-    let (manifest, applied_count) = AutopilotHealer::execute_healing(root, &plan).expect("Healing should succeed");
+    let (manifest, applied_count) =
+        AutopilotHealer::execute_healing(root, &plan).expect("Healing should succeed");
     assert_eq!(applied_count, 2);
 
     // Verify file content after healing
@@ -89,16 +102,26 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
 
     // 5. Re-scan must be clean
     let re_report = FleetScanner::scan_directory(root, false);
-    assert!(!re_report.is_vulnerable, "Project should be completely clean after healing");
+    assert!(
+        !re_report.is_vulnerable,
+        "Project should be completely clean after healing"
+    );
     assert_eq!(re_report.findings.len(), 0);
 
     // 6. Test cryptographic rollback
-    let restored_count = RollbackManager::rollback(root, &manifest.backup_id).expect("Rollback should succeed");
+    let restored_count =
+        RollbackManager::rollback(root, &manifest.backup_id).expect("Rollback should succeed");
     assert_eq!(restored_count, 2);
 
     let restored_py = fs::read_to_string(&py_file).unwrap();
-    assert_eq!(restored_py, "import torch\nmodel = torch.load('weights.pt')\n");
+    assert_eq!(
+        restored_py,
+        "import torch\nmodel = torch.load('weights.pt')\n"
+    );
 
     let restored_nginx = fs::read_to_string(&nginx_file).unwrap();
-    assert_eq!(restored_nginx, "events {}\nhttp {\n    server {\n        listen 443 ssl http2;\n    }\n}\n");
+    assert_eq!(
+        restored_nginx,
+        "events {}\nhttp {\n    server {\n        listen 443 ssl http2;\n    }\n}\n"
+    );
 }

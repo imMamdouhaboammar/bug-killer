@@ -1,7 +1,7 @@
-use std::fs;
-use tempfile::tempdir;
 use bug_killer::osv::OsvClient;
 use bug_killer::types::*;
+use std::fs;
+use tempfile::tempdir;
 
 #[test]
 fn test_multilang_package_discovery() {
@@ -63,10 +63,31 @@ description = "Python HTTP for Humans."
     // Discover packages across all 5 manifests
     let packages = OsvClient::discover_packages(root);
 
-    assert!(packages.iter().any(|p| p.name == "golang.org/x/crypto" && p.version == "v0.14.0" && p.ecosystem == "Go" && p.target_kind == TargetKind::GoModManifest));
-    assert!(packages.iter().any(|p| p.name == "github.com/gin-gonic/gin" && p.version == "v1.9.1" && p.ecosystem == "Go"));
-    assert!(packages.iter().any(|p| p.name == "org.apache.logging.log4j:log4j-core" && p.version == "2.14.1" && p.ecosystem == "Maven" && p.target_kind == TargetKind::JavaPomManifest));
-    assert!(packages.iter().any(|p| p.name == "Newtonsoft.Json" && p.version == "12.0.1" && p.ecosystem == "NuGet" && p.target_kind == TargetKind::DotnetCsprojManifest));
-    assert!(packages.iter().any(|p| p.name == "actionpack" && p.version == "5.2.0" && p.ecosystem == "RubyGems" && p.target_kind == TargetKind::RubyGemfileManifest));
-    assert!(packages.iter().any(|p| p.name == "requests" && p.version == "2.20.0" && p.ecosystem == "PyPI" && p.target_kind == TargetKind::PythonPoetryManifest));
+    assert!(packages.iter().any(|p| p.name == "golang.org/x/crypto"
+        && p.version == "v0.14.0"
+        && p.ecosystem == "Go"
+        && p.target_kind == TargetKind::GoModManifest));
+    assert!(packages.iter().any(|p| p.name == "github.com/gin-gonic/gin"
+        && p.version == "v1.9.1"
+        && p.ecosystem == "Go"));
+    assert!(
+        packages
+            .iter()
+            .any(|p| p.name == "org.apache.logging.log4j:log4j-core"
+                && p.version == "2.14.1"
+                && p.ecosystem == "Maven"
+                && p.target_kind == TargetKind::JavaPomManifest)
+    );
+    assert!(packages.iter().any(|p| p.name == "Newtonsoft.Json"
+        && p.version == "12.0.1"
+        && p.ecosystem == "NuGet"
+        && p.target_kind == TargetKind::DotnetCsprojManifest));
+    assert!(packages.iter().any(|p| p.name == "actionpack"
+        && p.version == "5.2.0"
+        && p.ecosystem == "RubyGems"
+        && p.target_kind == TargetKind::RubyGemfileManifest));
+    assert!(packages.iter().any(|p| p.name == "requests"
+        && p.version == "2.20.0"
+        && p.ecosystem == "PyPI"
+        && p.target_kind == TargetKind::PythonPoetryManifest));
 }

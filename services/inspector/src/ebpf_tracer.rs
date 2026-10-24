@@ -1,6 +1,6 @@
 use tokio::sync::broadcast;
-use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::omni_proto::{RuntimeEvent, RuntimeEventType};
 
@@ -30,7 +30,8 @@ impl EbpfTracer {
         &self,
         filter_types: Vec<i32>,
         target_pid_filter: i32,
-    ) -> impl tokio_stream::Stream<Item = Result<RuntimeEvent, tonic::Status>> + Send + 'static {
+    ) -> impl tokio_stream::Stream<Item = Result<RuntimeEvent, tonic::Status>> + Send + 'static
+    {
         let rx = self.tx.subscribe();
         let broadcast_stream = BroadcastStream::new(rx);
 
@@ -76,7 +77,10 @@ impl EbpfTracer {
                 loop {
                     interval.tick().await;
                     let _ = tx.send(RuntimeEvent {
-                        event_id: format!("evt-{}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)),
+                        event_id: format!(
+                            "evt-{}",
+                            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)
+                        ),
                         timestamp_unix_ns: chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
                         process_id: std::process::id() as i32,
                         parent_process_id: 1,

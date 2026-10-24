@@ -1,9 +1,9 @@
+use crate::types::BackupManifest;
+use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use rand::rngs::OsRng;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
-use ed25519_dalek::{SigningKey, VerifyingKey, Signer, Verifier, Signature};
-use rand::rngs::OsRng;
-use sha2::{Sha256, Digest};
-use crate::types::BackupManifest;
 
 pub struct AgentIdentity {
     signing_key: SigningKey,
@@ -38,7 +38,10 @@ impl AgentIdentity {
                 key_bytes.copy_from_slice(&bytes);
                 let signing_key = SigningKey::from_bytes(&key_bytes);
                 let verifying_key = signing_key.verifying_key();
-                return Ok(Self { signing_key, verifying_key });
+                return Ok(Self {
+                    signing_key,
+                    verifying_key,
+                });
             }
         }
 
@@ -57,7 +60,10 @@ impl AgentIdentity {
             let _ = fs::set_permissions(&key_path, fs::Permissions::from_mode(0o600));
         }
 
-        Ok(Self { signing_key, verifying_key })
+        Ok(Self {
+            signing_key,
+            verifying_key,
+        })
     }
 
     pub fn public_key_hex(&self) -> String {
@@ -87,7 +93,51 @@ impl AgentIdentity {
         manifest.signature = Some(to_hex(&sig.to_bytes()));
     }
 
-    /// Verifies the cryptographic integrity and authenticity of a backup manifest.
+    /// Verifies the cryptographic integrity and authenticity of a backup manifest against the trusted local agent identity.
+    pub fn verify_manifest_with_root(root: &Path, manifest: &BackupManifest) -> Result<(), String> {
+        let identity = Self::get_or_create(root)
+            .map_err(|e| format!("Failed to access local agent identity trust root: {}", e))?;
+
+        let (pub_hex, sig_hex) = match (&manifest.signer_public_key, &manifest.signature) {
+            (Some(p), Some(s)) => (p, s),
+            _ => {
+                return Err(
+                    "Manifest lacks cryptographic signature (fail-closed untrusted)".into(),
+                );
+            }
+        };
+
+        if pub_hex != &identity.public_key_hex() {
+            return Err(format!(
+                "Untrusted signer: manifest signed by '{}' does not match local agent identity trust root '{}'",
+                pub_hex,
+                identity.public_key_hex()
+            ));
+        }
+
+        let sig_bytes =
+            from_hex(sig_hex).map_err(|e| format!("Invalid signature encoding: {}", e))?;
+        if sig_bytes.len() != 64 {
+            return Err("Invalid signature length".into());
+        }
+        let mut sig_array = [0u8; 64];
+        sig_array.copy_from_slice(&sig_bytes);
+        let signature = Signature::from_bytes(&sig_array);
+
+        let digest = Self::compute_manifest_digest(manifest);
+        identity
+            .verifying_key
+            .verify(&digest, &signature)
+            .map_err(|_| {
+                "Cryptographic signature verification failed: manifest has been tampered with"
+                    .to_string()
+            })?;
+
+        Ok(())
+    }
+
+    /// Verifies the cryptographic integrity and authenticity of a backup manifest (structural check).
+    #[allow(dead_code)]
     pub fn verify_manifest(manifest: &BackupManifest) -> Result<(), &'static str> {
         let (pub_hex, sig_hex) = match (&manifest.signer_public_key, &manifest.signature) {
             (Some(p), Some(s)) => (p, s),
@@ -101,8 +151,8 @@ impl AgentIdentity {
         let mut pk_array = [0u8; 32];
         pk_array.copy_from_slice(&pub_bytes);
 
-        let verifying_key = VerifyingKey::from_bytes(&pk_array)
-            .map_err(|_| "Malformed Ed25519 public key")?;
+        let verifying_key =
+            VerifyingKey::from_bytes(&pk_array).map_err(|_| "Malformed Ed25519 public key")?;
 
         let sig_bytes = from_hex(sig_hex).map_err(|_| "Invalid signature encoding")?;
         if sig_bytes.len() != 64 {
@@ -113,8 +163,9 @@ impl AgentIdentity {
         let signature = Signature::from_bytes(&sig_array);
 
         let digest = Self::compute_manifest_digest(manifest);
-        verifying_key.verify(&digest, &signature)
-            .map_err(|_| "Cryptographic signature verification failed: manifest has been tampered with")?;
+        verifying_key.verify(&digest, &signature).map_err(
+            |_| "Cryptographic signature verification failed: manifest has been tampered with",
+        )?;
 
         Ok(())
     }

@@ -1,6 +1,6 @@
+use crate::types::*;
 use std::fs;
 use std::path::Path;
-use crate::types::*;
 
 pub struct WebServerScanner;
 
@@ -13,8 +13,10 @@ impl WebServerScanner {
             Err(_) => return findings,
         };
 
-        let has_virtual_patch = content.contains("BUG KILLER VIRTUAL PATCH (CVE-2026-111497") || content.contains("AEGIS VIRTUAL PATCH (CVE-2026-111497");
-        let has_brotli_filter = content.contains("$http_content_encoding") && content.contains("br");
+        let has_virtual_patch = content.contains("BUG KILLER VIRTUAL PATCH (CVE-2026-111497")
+            || content.contains("AEGIS VIRTUAL PATCH (CVE-2026-111497");
+        let has_brotli_filter =
+            content.contains("$http_content_encoding") && content.contains("br");
         let proxies_to_node_or_upstream = content.contains("proxy_pass");
         let proxies_to_php = content.contains("fastcgi_pass") || content.contains("php");
 

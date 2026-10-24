@@ -1,15 +1,15 @@
-pub mod php;
 pub mod node;
+pub mod php;
 pub mod webserver;
 
+use self::node::NodeScanner;
+use self::php::PhpScanner;
+use self::webserver::WebServerScanner;
+use crate::rules::{RuleEngine, VulnerabilityRule};
+use crate::types::*;
+use chrono::Utc;
 use std::path::Path;
 use walkdir::WalkDir;
-use chrono::Utc;
-use crate::types::*;
-use crate::rules::{RuleEngine, VulnerabilityRule};
-use self::php::PhpScanner;
-use self::node::NodeScanner;
-use self::webserver::WebServerScanner;
 
 pub struct FleetScanner;
 
@@ -21,7 +21,11 @@ impl FleetScanner {
     }
 
     /// Recursively scans a filesystem root directory using an explicit set of vulnerability rules.
-    pub fn scan_directory_with_rules(root: &Path, check_host_runtimes: bool, rules: &[VulnerabilityRule]) -> ScanReport {
+    pub fn scan_directory_with_rules(
+        root: &Path,
+        check_host_runtimes: bool,
+        rules: &[VulnerabilityRule],
+    ) -> ScanReport {
         Self::scan_directory_with_rules_and_taint(root, check_host_runtimes, rules, false)
     }
 
@@ -54,7 +58,11 @@ impl FleetScanner {
                 }
                 let name = e.file_name().to_string_lossy();
                 // Skip version control and heavy build directories
-                name != ".git" && name != "node_modules" && name != "vendor" && name != "target" && name != ".aegis"
+                name != ".git"
+                    && name != "node_modules"
+                    && name != "vendor"
+                    && name != "target"
+                    && name != ".aegis"
             })
             .filter_map(|e| e.ok())
         {
@@ -88,10 +96,13 @@ impl FleetScanner {
             }
 
             // Web server configs
-            if file_name == "nginx.conf" || path.to_string_lossy().contains("nginx") && file_name.ends_with(".conf") {
+            if file_name == "nginx.conf"
+                || path.to_string_lossy().contains("nginx") && file_name.ends_with(".conf")
+            {
                 findings.extend(WebServerScanner::scan_nginx_config(path));
             }
-            if file_name == "httpd.conf" || file_name == "apache2.conf" || file_name == ".htaccess" {
+            if file_name == "httpd.conf" || file_name == "apache2.conf" || file_name == ".htaccess"
+            {
                 findings.extend(WebServerScanner::scan_apache_config(path));
             }
 
@@ -105,7 +116,11 @@ impl FleetScanner {
             }
 
             // 3. Dynamic vulnerability rules evaluation
-            if !rules.is_empty() && rules.iter().any(|r| RuleEngine::matches_file_pattern(path, &r.file_patterns)) {
+            if !rules.is_empty()
+                && rules
+                    .iter()
+                    .any(|r| RuleEngine::matches_file_pattern(path, &r.file_patterns))
+            {
                 if let Ok(content) = std::fs::read_to_string(path) {
                     for rule in rules {
                         if let Some(finding) = RuleEngine::scan_file(path, &content, rule) {
@@ -134,8 +149,14 @@ impl FleetScanner {
         }
 
         let is_vulnerable = !findings.is_empty();
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
-        let high_count = findings.iter().filter(|f| f.severity == Severity::High).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
+        let high_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::High)
+            .count();
 
         ScanReport {
             target_dir: root.to_path_buf(),

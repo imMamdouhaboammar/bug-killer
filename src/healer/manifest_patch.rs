@@ -1,8 +1,8 @@
+use crate::healer::backup::BackupManager;
+use crate::types::*;
+use regex::Regex;
 use std::fs;
 use std::path::Path;
-use regex::Regex;
-use crate::types::*;
-use crate::healer::backup::BackupManager;
 
 pub struct ManifestPatcher;
 
@@ -22,11 +22,17 @@ impl ManifestPatcher {
                         return None;
                     }
                 }
-                engines.insert("node".to_string(), serde_json::Value::String(">=22.23.4".to_string()));
+                engines.insert(
+                    "node".to_string(),
+                    serde_json::Value::String(">=22.23.4".to_string()),
+                );
                 changed = true;
             } else {
                 let mut engines = serde_json::Map::new();
-                engines.insert("node".to_string(), serde_json::Value::String(">=22.23.4".to_string()));
+                engines.insert(
+                    "node".to_string(),
+                    serde_json::Value::String(">=22.23.4".to_string()),
+                );
                 obj.insert("engines".to_string(), serde_json::Value::Object(engines));
                 changed = true;
             }
@@ -62,7 +68,10 @@ impl ManifestPatcher {
                         return None;
                     }
                 }
-                require.insert("php".to_string(), serde_json::Value::String(">=8.2.35".to_string()));
+                require.insert(
+                    "php".to_string(),
+                    serde_json::Value::String(">=8.2.35".to_string()),
+                );
                 changed = true;
             }
         }
@@ -93,7 +102,8 @@ impl ManifestPatcher {
         // PHP replacements
         let re_php = Regex::new(r"(?i)^FROM\s+php:(8\.[2-5])(?:\.\d+)?(-[a-z0-9\-]+)?").unwrap();
         // Node replacements
-        let re_node = Regex::new(r"(?i)^FROM\s+node:(22|24|26)(?:\.\d+)?(?:\.\d+)?(-[a-z0-9\-]+)?").unwrap();
+        let re_node =
+            Regex::new(r"(?i)^FROM\s+node:(22|24|26)(?:\.\d+)?(?:\.\d+)?(-[a-z0-9\-]+)?").unwrap();
 
         for line in content.lines() {
             if let Some(caps) = re_php.captures(line) {
@@ -149,7 +159,11 @@ impl ManifestPatcher {
     }
 
     /// Bumps an arbitrary package dependency in `package.json` to a safe version.
-    pub fn plan_generic_npm_dependency_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+    pub fn plan_generic_npm_dependency_bump(
+        path: &Path,
+        package_name: &str,
+        safe_version: &str,
+    ) -> Option<PatchAction> {
         let content = fs::read_to_string(path).ok()?;
         let mut json: serde_json::Value = serde_json::from_str(&content).ok()?;
         let sha256 = BackupManager::compute_sha256(path).ok()?;
@@ -161,11 +175,15 @@ impl ManifestPatcher {
             for sec in sections {
                 if let Some(deps) = obj.get_mut(sec).and_then(|d| d.as_object_mut()) {
                     if let Some(curr) = deps.get(package_name).and_then(|v| v.as_str()) {
-                        let clean_curr = curr.trim_start_matches('^').trim_start_matches('~').trim();
+                        let clean_curr =
+                            curr.trim_start_matches('^').trim_start_matches('~').trim();
                         if clean_curr == safe_version {
                             return None;
                         }
-                        deps.insert(package_name.to_string(), serde_json::Value::String(format!("^{}", safe_version)));
+                        deps.insert(
+                            package_name.to_string(),
+                            serde_json::Value::String(format!("^{}", safe_version)),
+                        );
                         changed = true;
                     }
                 }
@@ -181,13 +199,20 @@ impl ManifestPatcher {
             action_type: PatchActionType::PackageManifestVersionBump,
             target_file: path.to_path_buf(),
             original_checksum: sha256,
-            diff_description: format!("Upgrade {} to safe release ^{} in package.json", package_name, safe_version),
+            diff_description: format!(
+                "Upgrade {} to safe release ^{} in package.json",
+                package_name, safe_version
+            ),
             replacement_content: new_content,
         })
     }
 
     /// Bumps an arbitrary package dependency in `requirements.txt` to a safe version.
-    pub fn plan_generic_python_requirements_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+    pub fn plan_generic_python_requirements_bump(
+        path: &Path,
+        package_name: &str,
+        safe_version: &str,
+    ) -> Option<PatchAction> {
         let content = fs::read_to_string(path).ok()?;
         let sha256 = BackupManager::compute_sha256(path).ok()?;
 
@@ -215,28 +240,48 @@ impl ManifestPatcher {
             action_type: PatchActionType::GenericReplace,
             target_file: path.to_path_buf(),
             original_checksum: sha256,
-            diff_description: format!("Upgrade {} to safe release =={} in requirements.txt", package_name, safe_version),
+            diff_description: format!(
+                "Upgrade {} to safe release =={} in requirements.txt",
+                package_name, safe_version
+            ),
             replacement_content: new_content,
         })
     }
 
     /// Bumps a Go module dependency in `go.mod` to a safe version.
-    pub fn plan_generic_go_mod_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+    pub fn plan_generic_go_mod_bump(
+        path: &Path,
+        package_name: &str,
+        safe_version: &str,
+    ) -> Option<PatchAction> {
         let content = fs::read_to_string(path).ok()?;
         let sha256 = BackupManager::compute_sha256(path).ok()?;
 
         let mut lines = Vec::new();
         let mut changed = false;
-        let formatted_ver = if safe_version.starts_with('v') { safe_version.to_string() } else { format!("v{}", safe_version) };
+        let formatted_ver = if safe_version.starts_with('v') {
+            safe_version.to_string()
+        } else {
+            format!("v{}", safe_version)
+        };
 
         for line in content.lines() {
             let trimmed = line.trim();
             if trimmed.contains(package_name) {
                 let parts: Vec<&str> = trimmed.split_whitespace().collect();
-                if parts.len() >= 2 && (parts[0] == package_name || (parts[0] == "require" && parts.len() >= 3 && parts[1] == package_name)) {
-                    let indent = line.chars().take_while(|c| c.is_whitespace()).collect::<String>();
+                if parts.len() >= 2
+                    && (parts[0] == package_name
+                        || (parts[0] == "require" && parts.len() >= 3 && parts[1] == package_name))
+                {
+                    let indent = line
+                        .chars()
+                        .take_while(|c| c.is_whitespace())
+                        .collect::<String>();
                     if parts[0] == "require" {
-                        lines.push(format!("{}require {} {}", indent, package_name, formatted_ver));
+                        lines.push(format!(
+                            "{}require {} {}",
+                            indent, package_name, formatted_ver
+                        ));
                     } else {
                         lines.push(format!("{}{} {}", indent, package_name, formatted_ver));
                     }
@@ -256,20 +301,31 @@ impl ManifestPatcher {
             action_type: PatchActionType::GenericReplace,
             target_file: path.to_path_buf(),
             original_checksum: sha256,
-            diff_description: format!("Upgrade {} to safe release {} in go.mod", package_name, formatted_ver),
+            diff_description: format!(
+                "Upgrade {} to safe release {} in go.mod",
+                package_name, formatted_ver
+            ),
             replacement_content: new_content,
         })
     }
 
     /// Bumps a NuGet PackageReference in `.csproj` to a safe version.
-    pub fn plan_generic_dotnet_csproj_bump(path: &Path, package_name: &str, safe_version: &str) -> Option<PatchAction> {
+    pub fn plan_generic_dotnet_csproj_bump(
+        path: &Path,
+        package_name: &str,
+        safe_version: &str,
+    ) -> Option<PatchAction> {
         let content = fs::read_to_string(path).ok()?;
         let sha256 = BackupManager::compute_sha256(path).ok()?;
 
         let mut lines = Vec::new();
         let mut changed = false;
 
-        let re = Regex::new(&format!(r#"(?i)(<PackageReference\s+Include="{}"\s+Version=")([^"]+)(")"#, regex::escape(package_name))).ok()?;
+        let re = Regex::new(&format!(
+            r#"(?i)(<PackageReference\s+Include="{}"\s+Version=")([^"]+)(")"#,
+            regex::escape(package_name)
+        ))
+        .ok()?;
 
         for line in content.lines() {
             if re.is_match(line) {
@@ -290,7 +346,10 @@ impl ManifestPatcher {
             action_type: PatchActionType::GenericReplace,
             target_file: path.to_path_buf(),
             original_checksum: sha256,
-            diff_description: format!("Upgrade {} to safe release {} in .csproj", package_name, safe_version),
+            diff_description: format!(
+                "Upgrade {} to safe release {} in .csproj",
+                package_name, safe_version
+            ),
             replacement_content: new_content,
         })
     }

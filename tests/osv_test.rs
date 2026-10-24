@@ -1,9 +1,9 @@
-use std::fs;
-use tempfile::tempdir;
-use bug_killer::osv::OsvClient;
-use bug_killer::types::*;
 use bug_killer::healer::AutopilotHealer;
 use bug_killer::healer::rollback::RollbackManager;
+use bug_killer::osv::OsvClient;
+use bug_killer::types::*;
+use std::fs;
+use tempfile::tempdir;
 
 #[test]
 fn test_osv_package_discovery_and_live_query() {
@@ -31,8 +31,13 @@ fn test_osv_package_discovery_and_live_query() {
 
     // 3. Query OSV.dev
     let client = OsvClient::new();
-    let findings = client.query_package(&discovered[0]).expect("OSV query should succeed");
-    assert!(!findings.is_empty(), "Minimist 1.2.5 should return confirmed CVEs from OSV.dev");
+    let findings = client
+        .query_package(&discovered[0])
+        .expect("OSV query should succeed");
+    assert!(
+        !findings.is_empty(),
+        "Minimist 1.2.5 should return confirmed CVEs from OSV.dev"
+    );
 
     let first = &findings[0];
     assert!(first.id.starts_with("osv-"));
@@ -50,20 +55,31 @@ fn test_osv_package_discovery_and_live_query() {
     };
 
     let plan = AutopilotHealer::plan_healing(&report);
-    assert!(!plan.is_empty(), "Should plan version bump for vulnerable package");
+    assert!(
+        !plan.is_empty(),
+        "Should plan version bump for vulnerable package"
+    );
 
-    let (manifest, applied) = AutopilotHealer::execute_healing(root, &plan).expect("Healing should execute");
+    let (manifest, applied) =
+        AutopilotHealer::execute_healing(root, &plan).expect("Healing should execute");
     assert_eq!(applied, 1);
 
     // Verify package.json updated
     let healed_content = fs::read_to_string(&package_json).unwrap();
     assert!(healed_content.contains("minimist"));
-    assert!(!healed_content.contains("\"1.2.5\""), "Version 1.2.5 should be upgraded");
+    assert!(
+        !healed_content.contains("\"1.2.5\""),
+        "Version 1.2.5 should be upgraded"
+    );
 
     // 5. Test Cryptographic Rollback
-    let restored = RollbackManager::rollback(root, &manifest.backup_id).expect("Rollback should succeed");
+    let restored =
+        RollbackManager::rollback(root, &manifest.backup_id).expect("Rollback should succeed");
     assert_eq!(restored, 1);
 
     let restored_content = fs::read_to_string(&package_json).unwrap();
-    assert_eq!(restored_content, content, "Package.json should be restored byte-for-byte");
+    assert_eq!(
+        restored_content, content,
+        "Package.json should be restored byte-for-byte"
+    );
 }

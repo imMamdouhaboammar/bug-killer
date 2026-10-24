@@ -1,7 +1,7 @@
+use crate::healer::backup::BackupManager;
+use crate::types::*;
 use std::fs;
 use std::path::Path;
-use crate::types::*;
-use crate::healer::backup::BackupManager;
 
 pub struct RollbackManager;
 
@@ -10,7 +10,10 @@ impl RollbackManager {
     pub fn rollback(root: &Path, backup_id: &str) -> Result<usize, String> {
         let backup_dir = root.join(".aegis").join("backups").join(backup_id);
         if !backup_dir.exists() {
-            return Err(format!("Backup ID '{}' not found at {:?}", backup_id, backup_dir));
+            return Err(format!(
+                "Backup ID '{}' not found at {:?}",
+                backup_id, backup_dir
+            ));
         }
 
         let manifest_path = backup_dir.join("manifest.json");
@@ -20,11 +23,9 @@ impl RollbackManager {
         let manifest: BackupManifest = serde_json::from_str(&content)
             .map_err(|e| format!("Invalid backup manifest JSON: {}", e))?;
 
-        // Cryptographic identity trust verification (fail-closed if tampered)
-        if manifest.signature.is_some() {
-            crate::identity::AgentIdentity::verify_manifest(&manifest)
-                .map_err(|e| format!("Cryptographic trust verification failed: {}", e))?;
-        }
+        // Cryptographic identity trust verification (mandatory, fail-closed against local agent trust root)
+        crate::identity::AgentIdentity::verify_manifest_with_root(root, &manifest)
+            .map_err(|e| format!("Cryptographic trust verification failed: {}", e))?;
 
         let mut restored_count = 0;
 
@@ -45,14 +46,42 @@ impl RollbackManager {
                 ));
             }
 
-            let target_file = root.join(&record.relative_target_path);
-            if let Some(parent) = target_file.parent() {
-                let _ = fs::create_dir_all(parent);
+            // Security: Path traversal & boundary containment guard
+            let rel_path = Path::new(&record.relative_target_path);
+            if rel_path.is_absolute()
+                || rel_path.components().any(|c| {
+                    matches!(
+                        c,
+                        std::path::Component::ParentDir
+                            | std::path::Component::RootDir
+                            | std::path::Component::Prefix(_)
+                    )
+                })
+            {
+                return Err(format!(
+                    "Path traversal attempt rejected in backup record: '{}'",
+                    record.relative_target_path
+                ));
             }
 
-            // Restore original file
-            fs::copy(&backup_file, &target_file)
-                .map_err(|e| format!("Failed to restore {:?}: {}", target_file, e))?;
+            let target_file = root.join(rel_path);
+
+            let parent = target_file.parent().unwrap_or(root);
+            let _ = fs::create_dir_all(parent);
+
+            // Atomically restore original file via tempfile + atomic rename to prevent partial restores
+            let backup_content = fs::read(&backup_file)
+                .map_err(|e| format!("Failed to read backup payload {:?}: {}", backup_file, e))?;
+
+            let mut temp = tempfile::NamedTempFile::new_in(parent)
+                .map_err(|e| format!("Failed to create temporary file in {:?}: {}", parent, e))?;
+
+            use std::io::Write;
+            temp.write_all(&backup_content)
+                .map_err(|e| format!("Failed to write restoration payload: {}", e))?;
+
+            temp.persist(&target_file)
+                .map_err(|e| format!("Failed to atomically restore {:?}: {}", target_file, e))?;
 
             restored_count += 1;
         }

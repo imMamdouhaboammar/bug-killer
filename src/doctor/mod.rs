@@ -1,7 +1,7 @@
+use crate::cve_db::CveDatabase;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::process::Command;
-use serde::{Deserialize, Serialize};
-use crate::cve_db::CveDatabase;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CheckStatus {
@@ -60,9 +60,14 @@ impl SystemDoctor {
     fn check_node() -> DoctorItem {
         match Command::new("node").arg("-v").output() {
             Ok(out) if out.status.success() => {
-                let ver_str = String::from_utf8_lossy(&out.stdout).trim().trim_start_matches('v').to_string();
+                let ver_str = String::from_utf8_lossy(&out.stdout)
+                    .trim()
+                    .trim_start_matches('v')
+                    .to_string();
                 if let Some((major, minor, patch)) = CveDatabase::parse_semver(&ver_str) {
-                    if let Some((cve, _, safe_threshold)) = CveDatabase::check_node_version(major, minor, patch) {
+                    if let Some((cve, _, safe_threshold)) =
+                        CveDatabase::check_node_version(major, minor, patch)
+                    {
                         DoctorItem {
                             name: "Node.js Runtime".into(),
                             status: CheckStatus::Failure,
@@ -104,12 +109,17 @@ impl SystemDoctor {
                 if let Some(caps) = re.captures(first_line) {
                     let ver_str = caps.get(1).unwrap().as_str();
                     if let Some((major, minor, patch)) = CveDatabase::parse_semver(ver_str) {
-                        if let Some((cve, _, safe_threshold)) = CveDatabase::check_php_version(major, minor, patch) {
+                        if let Some((cve, _, safe_threshold)) =
+                            CveDatabase::check_php_version(major, minor, patch)
+                        {
                             DoctorItem {
                                 name: "PHP Runtime".into(),
                                 status: CheckStatus::Failure,
                                 detected: format!("v{} (Vulnerable to {})", ver_str, cve.as_str()),
-                                recommendation: format!("Upgrade immediately to {}", safe_threshold),
+                                recommendation: format!(
+                                    "Upgrade immediately to {}",
+                                    safe_threshold
+                                ),
                             }
                         } else {
                             DoctorItem {
@@ -165,7 +175,8 @@ impl SystemDoctor {
                 name: "Nginx Reverse Proxy".into(),
                 status: CheckStatus::NotInstalled,
                 detected: "Not found on PATH".into(),
-                recommendation: "Optional: install if using Nginx as frontend reverse proxy.".into(),
+                recommendation: "Optional: install if using Nginx as frontend reverse proxy."
+                    .into(),
             },
         }
     }
@@ -186,7 +197,8 @@ impl SystemDoctor {
                 name: "HAProxy".into(),
                 status: CheckStatus::NotInstalled,
                 detected: "Not found on PATH".into(),
-                recommendation: "Optional: install if using HAProxy as frontend load balancer.".into(),
+                recommendation: "Optional: install if using HAProxy as frontend load balancer."
+                    .into(),
             },
         }
     }
@@ -199,13 +211,16 @@ impl SystemDoctor {
                     name: "Docker Socket (/var/run/docker.sock)".into(),
                     status: CheckStatus::Ok,
                     detected: "Present and accessible".into(),
-                    recommendation: "Microservices orchestrator can inventory active containers.".into(),
+                    recommendation: "Microservices orchestrator can inventory active containers."
+                        .into(),
                 },
                 Err(e) => DoctorItem {
                     name: "Docker Socket (/var/run/docker.sock)".into(),
                     status: CheckStatus::Warning,
                     detected: format!("Permission error: {}", e),
-                    recommendation: "Add user to 'docker' group or run orchestrator with elevated permissions.".into(),
+                    recommendation:
+                        "Add user to 'docker' group or run orchestrator with elevated permissions."
+                            .into(),
                 },
             }
         } else {
@@ -213,7 +228,8 @@ impl SystemDoctor {
                 name: "Docker Socket (/var/run/docker.sock)".into(),
                 status: CheckStatus::NotInstalled,
                 detected: "Socket file does not exist".into(),
-                recommendation: "Docker not running locally; container auditing will be skipped.".into(),
+                recommendation: "Docker not running locally; container auditing will be skipped."
+                    .into(),
             }
         }
     }
@@ -227,14 +243,16 @@ impl SystemDoctor {
                     name: "Workspace Write Permissions".into(),
                     status: CheckStatus::Ok,
                     detected: format!("Write access verified on {}", target.display()),
-                    recommendation: "Autopilot healer can execute atomic patches and create backups.".into(),
+                    recommendation:
+                        "Autopilot healer can execute atomic patches and create backups.".into(),
                 }
             }
             Err(e) => DoctorItem {
                 name: "Workspace Write Permissions".into(),
                 status: CheckStatus::Failure,
                 detected: format!("Read-only or access denied on {}: {}", target.display(), e),
-                recommendation: "Ensure write permissions for automated healing and backup snapshots.".into(),
+                recommendation:
+                    "Ensure write permissions for automated healing and backup snapshots.".into(),
             },
         }
     }
@@ -260,7 +278,8 @@ impl SystemDoctor {
                 name: "Process Introspection".into(),
                 status: CheckStatus::Warning,
                 detected: "Unavailable or restricted".into(),
-                recommendation: "Running in sandboxed environment; static filesystem audit will be used.".into(),
+                recommendation:
+                    "Running in sandboxed environment; static filesystem audit will be used.".into(),
             }
         }
     }
