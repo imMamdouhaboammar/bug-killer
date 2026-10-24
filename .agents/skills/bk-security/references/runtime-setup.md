@@ -1,0 +1,68 @@
+# Bug Killer Runtime Setup & Pre-Flight Check
+
+This reference defines the pre-flight environment checks and runtime invariants required before executing Bug Killer (`bk`) tools in any production or development environment.
+
+---
+
+## 1. Pre-Flight Checklist
+
+Before executing any `bk` command or invoking MCP security tools, the agent must verify the following items:
+
+| Component | Target Check | Pass Condition | Fallback / Remediation |
+|---|---|---|---|
+| **Binary** | `which bk` or `which bug-killer` | Returns executable path | Check `target/release/bug-killer` or `target/debug/bug-killer`. If unbuilt, compile via `cargo build --release`. |
+| **Cargo / Rust** | `cargo --version` | Rust 1.80+ (Edition 2024 compatible) | Install or update via `rustup default stable`. |
+| **Agent Identity** | `~/.bug-killer/identity/agent.key` | Ed25519 keypair exists and permissions are `0600` | Auto-generated on first `bk init` or `bk heal`; verify via `bk doctor`. |
+| **Project Config** | `.bugkiller/config.json` | Valid JSON with scan profile and policy | Initialize project baseline via `bk init .`. |
+| **Go Services (Optional)** | `which go` | Go 1.22+ for UDS orchestrator/healer | Required only when running deep kernel/traffic interception daemons. |
+
+---
+
+## 2. Binary Discovery & Execution Wrapper
+
+If `bk` is not in the system `$PATH`, determine the local execution handle:
+
+```bash
+# 1. Check system PATH
+if command -v bk >/dev/null 2>&1; then
+    BK_BIN="bk"
+elif command -v bug-killer >/dev/null 2>&1; then
+    BK_BIN="bug-killer"
+elif [ -f "./target/release/bug-killer" ]; then
+    BK_BIN="./target/release/bug-killer"
+elif [ -f "./target/debug/bug-killer" ]; then
+    BK_BIN="./target/debug/bug-killer"
+else
+    # Compile release binary if repository root contains Cargo.toml
+    cargo build --release
+    BK_BIN="./target/release/bug-killer"
+fi
+
+export BK_BIN
+```
+
+---
+
+## 3. Environment Variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `BK_LOG` | `info` | Logging verbosity (`error`, `warn`, `info`, `debug`, `trace`). |
+| `BK_IDENTITY_PATH` | `~/.bug-killer/identity/agent.key` | Path to Ed25519 private key used for backup manifest signing. |
+| `BK_CACHE_DIR` | `.bugkiller/cache` | Local AST and taint analysis cache directory. |
+| `BK_OSV_OFFLINE` | `0` | If set to `1`, disables external OSV.dev network lookups and enforces offline database only. |
+
+---
+
+## 4. Diagnostics & Sanity Verification
+
+Run diagnostic health check before production inspection:
+
+```bash
+$BK_BIN doctor .
+```
+
+Verify that:
+1. Workspace root is writable for `.bugkiller/` metadata.
+2. No corrupted lockfiles exist.
+3. Cryptographic signing key is initialized.
