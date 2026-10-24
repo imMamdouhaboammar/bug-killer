@@ -3771,5 +3771,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: bounded parsing",
     "verification_requirements": "Verify via FUZZ+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-008",
+    "short_id": "PAR-008",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "MIME/content-type confusion processes HTML/script as safe media",
+    "cwe": "CWE-436",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: actual bytes checked and served safely",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-009",
+    "short_id": "PAR-009",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "CSV/spreadsheet export allows formula injection into operator's client",
+    "cwe": "CWE-1236",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: spreadsheet-dangerous cells neutralized",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-010",
+    "short_id": "PAR-010",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Untrusted Markdown/HTML conversion allows script or remote resource loading",
+    "cwe": "CWE-79",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: safe render and URL policy",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-011",
+    "short_id": "PAR-011",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Decoder normalizes/decodes twice after validation, changing meaning",
+    "cwe": "CWE-174",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: validate final normalized bytes",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-012",
+    "short_id": "PAR-012",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Files parsed through native plugins/codecs without memory/CPU containment",
+    "cwe": "CWE-400",
+    "detection_method": "FUZZ+REVIEW",
+    "required_evidence": [
+      "FUZZ",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: isolated worker with limits",
+    "verification_requirements": "Verify via FUZZ+REVIEW evidence and regression test"
   }
 ]
