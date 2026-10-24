@@ -3261,5 +3261,133 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: consent/contract/data boundary defined",
     "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-012",
+    "short_id": "SEC-012",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Reports and AI-agent tool replies contain raw secrets/exploit payload material",
+    "cwe": "CWE-532",
+    "detection_method": "TEST+AGENT",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: redaction with bounded evidence preview",
+    "verification_requirements": "Verify via TEST+AGENT evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-001",
+    "short_id": "DAT-001",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Database connection uses superuser/owner credentials for normal app operations",
+    "cwe": "CWE-250",
+    "detection_method": "CONFIG+REVIEW",
+    "required_evidence": [
+      "CONFIG",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: least-privilege roles",
+    "verification_requirements": "Verify via CONFIG+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-002",
+    "short_id": "DAT-002",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Database row-level security configured but bypassed by service role",
+    "cwe": "CWE-863",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: server roles and every query path scoped",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-003",
+    "short_id": "DAT-003",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Query returns all rows and filters tenant in application memory",
+    "cwe": "CWE-200",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: tenant filter enforced before access",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-004",
+    "short_id": "DAT-004",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "DB schema/seed inserts default admin credentials",
+    "cwe": "CWE-798",
+    "detection_method": "AST+SECRET",
+    "required_evidence": [
+      "AST",
+      "SECRET"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: credentials cannot ship in deployment",
+    "verification_requirements": "Verify via AST+SECRET evidence and regression test"
   }
 ]
