@@ -24,6 +24,7 @@ use completion::CompletionGenerator;
 use dast::DastProber;
 use doctor::SystemDoctor;
 use healer::AutopilotHealer;
+use healer::approval::ApprovalManager;
 use healer::backup::BackupManager;
 use healer::rollback::RollbackManager;
 use mcp::{HostConfigGenerator, McpServer};
@@ -223,6 +224,42 @@ enum Commands {
         /// Output results as JSON
         #[arg(long)]
         json: bool,
+    },
+
+    /// Issue an operator approval receipt for a planned remediation
+    Approve {
+        /// Finding ID or plan identifier to approve
+        plan_id: String,
+
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Operator email or identity key
+        #[arg(long, default_value = "operator@bug-killer.local")]
+        approver: String,
+
+        /// Validity duration in minutes (default: 60)
+        #[arg(long, default_value_t = 60)]
+        validity_mins: i64,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Apply an approved prospective remediation plan with operator approval verification
+    Apply {
+        /// Finding ID or plan identifier to apply
+        plan_id: String,
+
+        /// Explicit path to operator approval receipt file
+        #[arg(long)]
+        approval_file: Option<PathBuf>,
+
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
     },
 
     /// Model Context Protocol (MCP) server and integration commands
@@ -1059,6 +1096,137 @@ fn main() {
             } else {
                 eprintln!("Finding '{}' not found in workspace scan.", finding_id);
                 std::process::exit(1);
+            }
+        }
+
+        Commands::Approve {
+            plan_id,
+            path,
+            approver,
+            validity_mins,
+            json,
+        } => {
+            let scan_report = FleetScanner::scan_directory(&path, true);
+            let target_finding = scan_report
+                .findings
+                .iter()
+                .find(|f| f.id == plan_id || f.dedupe_fingerprint.starts_with(&plan_id));
+
+            let plan = if let Some(f) = target_finding {
+                let single_report = types::ScanReport {
+                    findings: vec![f.clone()],
+                    ..scan_report
+                };
+                AutopilotHealer::plan_healing(&single_report)
+            } else {
+                AutopilotHealer::plan_healing(&scan_report)
+            };
+
+            if plan.is_empty() {
+                eprintln!(
+                    "No prospective patch actions available to approve for plan '{}'",
+                    plan_id
+                );
+                std::process::exit(1);
+            }
+
+            let plan_checksum = ApprovalManager::compute_plan_checksum(&plan);
+            match ApprovalManager::create_approval_receipt(
+                &path,
+                &plan_id,
+                &plan_checksum,
+                &approver,
+                validity_mins,
+            ) {
+                Ok(receipt) => {
+                    let receipt_file = ApprovalManager::save_receipt(&path, &receipt)
+                        .unwrap_or_else(|e| {
+                            eprintln!("Warning: Failed to persist receipt to disk: {}", e);
+                            path.join(format!("{}.receipt.json", plan_id))
+                        });
+
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&receipt).unwrap());
+                        return;
+                    }
+
+                    println!("\n=======================================================");
+                    println!("  ✍️  OPERATOR APPROVAL RECEIPT ISSUED");
+                    println!("=======================================================");
+                    println!("Plan ID:          {}", receipt.plan_id);
+                    println!("Plan Checksum:    {}", receipt.plan_checksum);
+                    println!("Approver:         {}", receipt.approver);
+                    println!("Valid Until:      {}", receipt.valid_until);
+                    println!("Signature:        {}...\n", &receipt.signature[..24]);
+                    println!("Receipt saved to: {}", receipt_file.display());
+                    println!("To apply this plan:");
+                    println!(
+                        "  bug-killer apply {} --approval-file {}",
+                        plan_id,
+                        receipt_file.display()
+                    );
+                }
+                Err(e) => {
+                    eprintln!("Failed to issue approval receipt: {}", e);
+                    std::process::exit(4);
+                }
+            }
+        }
+
+        Commands::Apply {
+            plan_id,
+            approval_file,
+            path,
+        } => {
+            let receipt_path = approval_file.unwrap_or_else(|| {
+                path.join(".bug-killer")
+                    .join("approvals")
+                    .join(format!("{}.receipt.json", plan_id))
+            });
+
+            let receipt = match ApprovalManager::load_receipt(&receipt_path) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!(
+                        "Operator approval verification failed: {}. Cannot apply mutations without valid approval receipt.",
+                        e
+                    );
+                    std::process::exit(4);
+                }
+            };
+
+            let scan_report = FleetScanner::scan_directory(&path, true);
+            let target_finding = scan_report
+                .findings
+                .iter()
+                .find(|f| f.id == plan_id || f.dedupe_fingerprint.starts_with(&plan_id));
+
+            let plan = if let Some(f) = target_finding {
+                let single_report = types::ScanReport {
+                    findings: vec![f.clone()],
+                    ..scan_report
+                };
+                AutopilotHealer::plan_healing(&single_report)
+            } else {
+                AutopilotHealer::plan_healing(&scan_report)
+            };
+
+            match ApprovalManager::execute_supervised_healing(&path, &receipt, &plan) {
+                Ok((manifest, count)) => {
+                    println!(
+                        "\n✅ Successfully applied {} supervised patches under operator approval!",
+                        count
+                    );
+                    println!("📦 Backup Snapshot Created: {}", manifest.backup_id);
+                    println!(
+                        "   To rollback if needed: bug-killer rollback {}\n",
+                        manifest.backup_id
+                    );
+                }
+                Err(e) => {
+                    eprintln!("❌ Supervised execution failed: {}", e);
+                    std::process::exit(4);
+                }
             }
         }
 

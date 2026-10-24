@@ -1,8 +1,12 @@
+pub mod approval;
 pub mod backup;
 pub mod manifest_patch;
 pub mod rollback;
 pub mod source_patch;
 pub mod virtual_patch;
+
+#[allow(unused_imports)]
+pub use approval::{ApprovalManager, ApprovalReceipt};
 
 use self::backup::BackupManager;
 use self::manifest_patch::ManifestPatcher;

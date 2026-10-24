@@ -76,6 +76,26 @@ impl AgentIdentity {
         to_hex(&self.verifying_key.to_bytes())
     }
 
+    /// Cryptographically signs arbitrary byte slice with agent's Ed25519 private key.
+    pub fn sign_bytes(&self, data: &[u8]) -> String {
+        let sig: Signature = self.signing_key.sign(data);
+        to_hex(&sig.to_bytes())
+    }
+
+    /// Verifies Ed25519 signature in hex format against agent's public key.
+    pub fn verify_bytes(&self, data: &[u8], sig_hex: &str) -> Result<(), String> {
+        let sig_bytes = from_hex(sig_hex).map_err(|e| format!("Invalid hex signature: {}", e))?;
+        if sig_bytes.len() != 64 {
+            return Err("Invalid Ed25519 signature length (expected 64 bytes)".into());
+        }
+        let mut fixed_sig = [0u8; 64];
+        fixed_sig.copy_from_slice(&sig_bytes);
+        let sig = Signature::from_bytes(&fixed_sig);
+        self.verifying_key
+            .verify(data, &sig)
+            .map_err(|e| format!("Signature verification failed: {}", e))
+    }
+
     /// Computes the deterministic canonical digest of a backup manifest.
     pub fn compute_manifest_digest(manifest: &BackupManifest) -> Vec<u8> {
         let mut hasher = Sha256::new();
