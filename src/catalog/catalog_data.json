@@ -3012,5 +3012,130 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: redact values; report location and credential class",
     "verification_requirements": "Verify via SECRET evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-002",
+    "short_id": "SEC-002",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Secret present in `.env.example`, test fixtures, notebooks or screenshots",
+    "cwe": "CWE-200",
+    "detection_method": "SECRET",
+    "required_evidence": [
+      "SECRET"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: fingerprint only, no raw echo",
+    "verification_requirements": "Verify via SECRET evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-003",
+    "short_id": "SEC-003",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Secret already committed to Git history but removed from HEAD",
+    "cwe": "CWE-200",
+    "detection_method": "SECRET+REVIEW",
+    "required_evidence": [
+      "SECRET",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: historical exposure evaluated, rotation required if genuine",
+    "verification_requirements": "Verify via SECRET+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-004",
+    "short_id": "SEC-004",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "`.env`, config, keys, dump, backup or private source shipped under public web root",
+    "cwe": "CWE-552",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no public artifact exposure",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-005",
+    "short_id": "SEC-005",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Environment variables, request/response payload or stack trace dumped verbatim",
+    "cwe": "CWE-532",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: logging redaction by boundary",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-006",
+    "short_id": "SEC-006",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Sensitive PII in metrics tags, trace spans, queue attributes or analytics",
+    "cwe": "CWE-200",
+    "detection_method": "FLOW+REVIEW",
+    "required_evidence": [
+      "FLOW",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: telemetry data minimized",
+    "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
   }
 ]
