@@ -5521,5 +5521,133 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: cleanup cannot remove active/foreign resource",
     "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-010",
+    "short_id": "RAC-010",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Concurrent agents act on same target without serialization/ownership",
+    "cwe": "CWE-362",
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: conflict detection and exclusive action scope",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-001",
+    "short_id": "MEM-001",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Out-of-bounds read/write in C/C++/Zig/unsafe Rust or FFI",
+    "cwe": "CWE-125 / CWE-787",
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: bounds-safe access under harness",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-002",
+    "short_id": "MEM-002",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Use-after-free, double-free or invalid lifetime across callbacks",
+    "cwe": "CWE-416 / CWE-415",
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: lifetime/ownership invariant",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-003",
+    "short_id": "MEM-003",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Integer overflow/wraparound corrupts length/offset/allocation",
+    "cwe": "CWE-190",
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: checked arithmetic at size boundaries",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-MEM-004",
+    "short_id": "MEM-004",
+    "rule_version": "1.0",
+    "category_number": 18,
+    "category": "2.18 Native code, FFI and memory safety",
+    "description": "Null/dangling pointer dereference reachable from malformed input",
+    "cwe": "CWE-476",
+    "detection_method": "AST+FUZZ",
+    "required_evidence": [
+      "AST",
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: non-null/valid handle proof",
+    "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
   }
 ]
