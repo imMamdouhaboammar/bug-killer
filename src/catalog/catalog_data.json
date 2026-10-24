@@ -5399,5 +5399,127 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: race-free under concurrent harness",
     "verification_requirements": "Verify via AST+FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-005",
+    "short_id": "RAC-005",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Queue message acknowledged before durable and authorized transaction",
+    "cwe": "CWE-662",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: failure cannot lose or duplicate protected action",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-006",
+    "short_id": "RAC-006",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Stale cache permission survives user removal/role downgrade",
+    "cwe": "CWE-613",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: invalidation on revoke",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-007",
+    "short_id": "RAC-007",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Optimistic update race bypasses inventory/limit/policy check",
+    "cwe": "CWE-362",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: atomic constraint enforced",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-008",
+    "short_id": "RAC-008",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Distributed lease/lock expires during privileged operation",
+    "cwe": "CWE-362",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: stale worker cannot commit",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-RAC-009",
+    "short_id": "RAC-009",
+    "rule_version": "1.0",
+    "category_number": 17,
+    "category": "2.17 Concurrency, workflow state and race conditions",
+    "description": "Background cleanup races with file upload or healing transaction",
+    "cwe": "CWE-367",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: cleanup cannot remove active/foreign resource",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
