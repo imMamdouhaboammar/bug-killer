@@ -5153,5 +5153,127 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: maximum memory/resource envelope",
     "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DOS-007",
+    "short_id": "DOS-007",
+    "rule_version": "1.0",
+    "category_number": 16,
+    "category": "2.16 Availability, denial of service and resource budgets",
+    "description": "Database N+1 query or expensive predicate on attacker-controlled input",
+    "cwe": "CWE-400",
+    "detection_method": "TEST+REVIEW",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: bounded query cost",
+    "verification_requirements": "Verify via TEST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DOS-008",
+    "short_id": "DOS-008",
+    "rule_version": "1.0",
+    "category_number": 16,
+    "category": "2.16 Availability, denial of service and resource budgets",
+    "description": "Regex catastrophic backtracking on user input",
+    "cwe": "CWE-1333",
+    "detection_method": "FUZZ",
+    "required_evidence": [
+      "FUZZ"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: worst-case execution cap",
+    "verification_requirements": "Verify via FUZZ evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DOS-009",
+    "short_id": "DOS-009",
+    "rule_version": "1.0",
+    "category_number": 16,
+    "category": "2.16 Availability, denial of service and resource budgets",
+    "description": "AI/RAG generation lacks token, document, tool-call or spend quota",
+    "cwe": "CWE-400",
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: token/cost limits and cancellation",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DOS-010",
+    "short_id": "DOS-010",
+    "rule_version": "1.0",
+    "category_number": 16,
+    "category": "2.16 Availability, denial of service and resource budgets",
+    "description": "Circuit breaker/queue backpressure absent for overloaded downstream",
+    "cwe": "CWE-400",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: controlled degradation under fault",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DOS-011",
+    "short_id": "DOS-011",
+    "rule_version": "1.0",
+    "category_number": 16,
+    "category": "2.16 Availability, denial of service and resource budgets",
+    "description": "Unbounded file watching, process discovery or filesystem crawl by scanner",
+    "cwe": "CWE-400",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: path count/time/memory limits",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
