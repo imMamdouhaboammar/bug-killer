@@ -3389,5 +3389,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: credentials cannot ship in deployment",
     "verification_requirements": "Verify via AST+SECRET evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-005",
+    "short_id": "DAT-005",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Database backup/snapshot stored publicly or without access restrictions",
+    "cwe": "CWE-552",
+    "detection_method": "CONFIG",
+    "required_evidence": [
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: protection and retention audited",
+    "verification_requirements": "Verify via CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-006",
+    "short_id": "DAT-006",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Concurrent balance/state mutation without transaction/lock invariant",
+    "cwe": "CWE-362",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: atomic financial/ownership updates",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-007",
+    "short_id": "DAT-007",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Search index, embedding retrieval or cache bypasses permissions",
+    "cwe": "CWE-863",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: read path enforces tenant and document ACL",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-008",
+    "short_id": "DAT-008",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "ORM raw query escaping assumed but interpolated fragments remain",
+    "cwe": "CWE-89",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: raw fragments controlled",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-009",
+    "short_id": "DAT-009",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Migration drops constraints, audit trigger or uniqueness required for security",
+    "cwe": "CWE-284",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: invariants retained",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
