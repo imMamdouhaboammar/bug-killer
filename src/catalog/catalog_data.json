@@ -2511,5 +2511,130 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: every redirect hop reauthorized",
     "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-NET-004",
+    "short_id": "NET-004",
+    "rule_version": "1.0",
+    "category_number": 8,
+    "category": "2.8 SSRF, outbound HTTP and network trust",
+    "description": "DNS rebinding changes resolved address between check and connection",
+    "cwe": "CWE-918",
+    "detection_method": "TEST+REVIEW",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: connected peer constrained",
+    "verification_requirements": "Verify via TEST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-NET-005",
+    "short_id": "NET-005",
+    "rule_version": "1.0",
+    "category_number": 8,
+    "category": "2.8 SSRF, outbound HTTP and network trust",
+    "description": "Non-HTTP URL scheme or local file scheme accepted by fetcher",
+    "cwe": "CWE-918",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: strict supported scheme list",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-NET-006",
+    "short_id": "NET-006",
+    "rule_version": "1.0",
+    "category_number": 8,
+    "category": "2.8 SSRF, outbound HTTP and network trust",
+    "description": "Proxy settings or environment bypass network egress policy",
+    "cwe": "CWE-918",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: proxy route respects scope",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-NET-007",
+    "short_id": "NET-007",
+    "rule_version": "1.0",
+    "category_number": 8,
+    "category": "2.8 SSRF, outbound HTTP and network trust",
+    "description": "TLS certificate verification disabled, including in debug fallback",
+    "cwe": "CWE-295",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: certificate/hostname verification required",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-NET-008",
+    "short_id": "NET-008",
+    "rule_version": "1.0",
+    "category_number": 8,
+    "category": "2.8 SSRF, outbound HTTP and network trust",
+    "description": "TLS trust pinned incorrectly, stale CA handling or hardcoded accept-all certificate callback",
+    "cwe": "CWE-295",
+    "detection_method": "AST+REVIEW",
+    "required_evidence": [
+      "AST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: identity and certificate policy sound",
+    "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
   }
 ]
