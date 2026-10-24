@@ -1,7 +1,15 @@
+pub mod ai_agent;
+pub mod binary;
+pub mod container;
+pub mod host;
 pub mod node;
 pub mod php;
 pub mod webserver;
 
+use self::ai_agent::AgentSecurityScanner;
+use self::binary::BinaryScanner;
+use self::container::ContainerScanner;
+use self::host::HostProcessScanner;
 use self::node::NodeScanner;
 use self::php::PhpScanner;
 use self::webserver::WebServerScanner;
@@ -85,8 +93,12 @@ impl FleetScanner {
             // Verify readability for candidate targets
             let is_candidate = file_name == "composer.json"
                 || file_name == "package.json"
+                || file_name == "package-lock.json"
+                || file_name == "composer.lock"
                 || file_name == "Dockerfile"
                 || file_name.starts_with("Dockerfile.")
+                || file_name == "Containerfile"
+                || file_name.starts_with("Containerfile.")
                 || file_name == "php.ini"
                 || file_name.ends_with(".ini")
                 || file_name == "www.conf"
@@ -94,6 +106,16 @@ impl FleetScanner {
                 || file_name == "httpd.conf"
                 || file_name == "apache2.conf"
                 || file_name == ".htaccess"
+                || file_name == ".mcp.json"
+                || file_name == "claude_desktop_config.json"
+                || file_name == "gemini.json"
+                || file_name == "SKILL.md"
+                || file_name.ends_with(".skill")
+                || file_name == "bom.json"
+                || file_name == "cyclonedx.json"
+                || file_name.ends_with(".cdx.json")
+                || file_name == "spdx.json"
+                || file_name.ends_with(".spdx.json")
                 || file_name.ends_with(".js")
                 || file_name.ends_with(".ts")
                 || file_name.ends_with(".mjs")
@@ -103,12 +125,28 @@ impl FleetScanner {
                 || file_name.ends_with(".go");
 
             if is_candidate {
-                if let Err(e) = std::fs::read_to_string(path) {
-                    parser_failures.push(ParserFailure {
-                        path: path.to_path_buf(),
-                        reason: format!("I/O or UTF-8 read failure: {}", e),
-                    });
-                    continue;
+                match std::fs::read_to_string(path) {
+                    Err(e) => {
+                        parser_failures.push(ParserFailure {
+                            path: path.to_path_buf(),
+                            reason: format!("I/O or UTF-8 read failure: {}", e),
+                        });
+                        continue;
+                    }
+                    Ok(content) => {
+                        if file_name.ends_with(".json")
+                            || file_name.ends_with(".cdx.json")
+                            || file_name.ends_with(".spdx.json")
+                        {
+                            if let Err(e) = serde_json::from_str::<serde_json::Value>(&content) {
+                                parser_failures.push(ParserFailure {
+                                    path: path.to_path_buf(),
+                                    reason: format!("JSON parse failure: {}", e),
+                                });
+                                continue;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -122,10 +160,37 @@ impl FleetScanner {
                 raw_findings.extend(NodeScanner::scan_package_json(path));
             }
 
-            // Dockerfiles
-            if file_name == "Dockerfile" || file_name.starts_with("Dockerfile.") {
+            // Dockerfiles and Containerfiles
+            if file_name == "Dockerfile"
+                || file_name.starts_with("Dockerfile.")
+                || file_name == "Containerfile"
+                || file_name.starts_with("Containerfile.")
+            {
                 raw_findings.extend(PhpScanner::scan_dockerfile(path));
                 raw_findings.extend(NodeScanner::scan_dockerfile(path));
+                raw_findings.extend(ContainerScanner::scan_dockerfile(path));
+            }
+
+            // AI agent and MCP configurations
+            if file_name == ".mcp.json"
+                || file_name == "claude_desktop_config.json"
+                || file_name == "gemini.json"
+            {
+                raw_findings.extend(AgentSecurityScanner::scan_mcp_config(path));
+            }
+            if file_name == "SKILL.md" || file_name.ends_with(".skill") {
+                raw_findings.extend(AgentSecurityScanner::scan_agent_skill(path));
+            }
+
+            // Binary executable inspection
+            if BinaryScanner::is_binary_executable(path) {
+                match BinaryScanner::scan_binary(path) {
+                    Ok(findings) => raw_findings.extend(findings),
+                    Err(reason) => parser_failures.push(ParserFailure {
+                        path: path.to_path_buf(),
+                        reason,
+                    }),
+                }
             }
 
             // PHP configs
@@ -184,6 +249,12 @@ impl FleetScanner {
                     }
                 }
             }
+        }
+
+        // Correlate live runtime process identities when host inspection is enabled
+        if check_host_runtimes {
+            let procs = HostProcessScanner::discover_running_processes();
+            HostProcessScanner::correlate_findings_with_runtime(&mut raw_findings, &procs);
         }
 
         // Deduplication using cryptographic dedupe fingerprints

@@ -64,6 +64,12 @@ pub enum TargetKind {
     RubyGemfileManifest,
     PythonPoetryManifest,
     CargoLockManifest,
+    ComposerLockfile,
+    CycloneDxSbom,
+    SpdxSbom,
+    BinaryExecutable,
+    AgentSkillManifest,
+    McpServerConfig,
 }
 
 /// Affectedness status modeled separately from reachability, severity, and remediation readiness.
