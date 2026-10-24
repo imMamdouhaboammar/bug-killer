@@ -1,4 +1,4 @@
-.PHONY: all build test clean lint install docker-build
+.PHONY: all build test clean lint install docker-build completions test-rust test-go
 
 TARGET_DIR := ./target
 PREFIX ?= /usr/local/bin
@@ -35,6 +35,8 @@ test: test-rust test-go
 test-rust:
 	@echo "==> Running Rust Test Suites..."
 	cargo test --workspace
+	@echo "==> Running Inspector Test Suites..."
+	cd services/inspector && cargo test
 
 test-go:
 	@echo "==> Running Go Test Suites..."

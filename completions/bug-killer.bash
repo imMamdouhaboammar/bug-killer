@@ -16,6 +16,15 @@ _bug__killer() {
             ",$1")
                 cmd="bug__killer"
                 ;;
+            bug__killer,agent)
+                cmd="bug__killer__subcmd__agent"
+                ;;
+            bug__killer,apply)
+                cmd="bug__killer__subcmd__apply"
+                ;;
+            bug__killer,approve)
+                cmd="bug__killer__subcmd__approve"
+                ;;
             bug__killer,completion)
                 cmd="bug__killer__subcmd__completion"
                 ;;
@@ -25,6 +34,9 @@ _bug__killer() {
             bug__killer,doctor)
                 cmd="bug__killer__subcmd__doctor"
                 ;;
+            bug__killer,evidence)
+                cmd="bug__killer__subcmd__evidence"
+                ;;
             bug__killer,heal)
                 cmd="bug__killer__subcmd__heal"
                 ;;
@@ -33,6 +45,18 @@ _bug__killer() {
                 ;;
             bug__killer,history)
                 cmd="bug__killer__subcmd__history"
+                ;;
+            bug__killer,mcp)
+                cmd="bug__killer__subcmd__mcp"
+                ;;
+            bug__killer,osv)
+                cmd="bug__killer__subcmd__osv"
+                ;;
+            bug__killer,plan)
+                cmd="bug__killer__subcmd__plan"
+                ;;
+            bug__killer,probe)
+                cmd="bug__killer__subcmd__probe"
                 ;;
             bug__killer,rollback)
                 cmd="bug__killer__subcmd__rollback"
@@ -46,6 +70,33 @@ _bug__killer() {
             bug__killer,watch)
                 cmd="bug__killer__subcmd__watch"
                 ;;
+            bug__killer__subcmd__agent,doctor)
+                cmd="bug__killer__subcmd__agent__subcmd__doctor"
+                ;;
+            bug__killer__subcmd__agent,help)
+                cmd="bug__killer__subcmd__agent__subcmd__help"
+                ;;
+            bug__killer__subcmd__agent,investigate)
+                cmd="bug__killer__subcmd__agent__subcmd__investigate"
+                ;;
+            bug__killer__subcmd__agent__subcmd__help,doctor)
+                cmd="bug__killer__subcmd__agent__subcmd__help__subcmd__doctor"
+                ;;
+            bug__killer__subcmd__agent__subcmd__help,help)
+                cmd="bug__killer__subcmd__agent__subcmd__help__subcmd__help"
+                ;;
+            bug__killer__subcmd__agent__subcmd__help,investigate)
+                cmd="bug__killer__subcmd__agent__subcmd__help__subcmd__investigate"
+                ;;
+            bug__killer__subcmd__help,agent)
+                cmd="bug__killer__subcmd__help__subcmd__agent"
+                ;;
+            bug__killer__subcmd__help,apply)
+                cmd="bug__killer__subcmd__help__subcmd__apply"
+                ;;
+            bug__killer__subcmd__help,approve)
+                cmd="bug__killer__subcmd__help__subcmd__approve"
+                ;;
             bug__killer__subcmd__help,completion)
                 cmd="bug__killer__subcmd__help__subcmd__completion"
                 ;;
@@ -55,6 +106,9 @@ _bug__killer() {
             bug__killer__subcmd__help,doctor)
                 cmd="bug__killer__subcmd__help__subcmd__doctor"
                 ;;
+            bug__killer__subcmd__help,evidence)
+                cmd="bug__killer__subcmd__help__subcmd__evidence"
+                ;;
             bug__killer__subcmd__help,heal)
                 cmd="bug__killer__subcmd__help__subcmd__heal"
                 ;;
@@ -63,6 +117,18 @@ _bug__killer() {
                 ;;
             bug__killer__subcmd__help,history)
                 cmd="bug__killer__subcmd__help__subcmd__history"
+                ;;
+            bug__killer__subcmd__help,mcp)
+                cmd="bug__killer__subcmd__help__subcmd__mcp"
+                ;;
+            bug__killer__subcmd__help,osv)
+                cmd="bug__killer__subcmd__help__subcmd__osv"
+                ;;
+            bug__killer__subcmd__help,plan)
+                cmd="bug__killer__subcmd__help__subcmd__plan"
+                ;;
+            bug__killer__subcmd__help,probe)
+                cmd="bug__killer__subcmd__help__subcmd__probe"
                 ;;
             bug__killer__subcmd__help,rollback)
                 cmd="bug__killer__subcmd__help__subcmd__rollback"
@@ -76,6 +142,36 @@ _bug__killer() {
             bug__killer__subcmd__help,watch)
                 cmd="bug__killer__subcmd__help__subcmd__watch"
                 ;;
+            bug__killer__subcmd__help__subcmd__agent,doctor)
+                cmd="bug__killer__subcmd__help__subcmd__agent__subcmd__doctor"
+                ;;
+            bug__killer__subcmd__help__subcmd__agent,investigate)
+                cmd="bug__killer__subcmd__help__subcmd__agent__subcmd__investigate"
+                ;;
+            bug__killer__subcmd__help__subcmd__mcp,config)
+                cmd="bug__killer__subcmd__help__subcmd__mcp__subcmd__config"
+                ;;
+            bug__killer__subcmd__help__subcmd__mcp,serve)
+                cmd="bug__killer__subcmd__help__subcmd__mcp__subcmd__serve"
+                ;;
+            bug__killer__subcmd__mcp,config)
+                cmd="bug__killer__subcmd__mcp__subcmd__config"
+                ;;
+            bug__killer__subcmd__mcp,help)
+                cmd="bug__killer__subcmd__mcp__subcmd__help"
+                ;;
+            bug__killer__subcmd__mcp,serve)
+                cmd="bug__killer__subcmd__mcp__subcmd__serve"
+                ;;
+            bug__killer__subcmd__mcp__subcmd__help,config)
+                cmd="bug__killer__subcmd__mcp__subcmd__help__subcmd__config"
+                ;;
+            bug__killer__subcmd__mcp__subcmd__help,help)
+                cmd="bug__killer__subcmd__mcp__subcmd__help__subcmd__help"
+                ;;
+            bug__killer__subcmd__mcp__subcmd__help,serve)
+                cmd="bug__killer__subcmd__mcp__subcmd__help__subcmd__serve"
+                ;;
             *)
                 ;;
         esac
@@ -83,12 +179,174 @@ _bug__killer() {
 
     case "${cmd}" in
         bug__killer)
-            opts="-h -V --help --version shell doctor watch completion scan heal rollback history cve-info help"
+            opts="-h -V --help --version shell doctor watch completion scan probe osv heal rollback history cve-info agent evidence plan approve apply mcp help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__agent)
+            opts="-h --help doctor investigate help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__agent__subcmd__doctor)
+            opts="-h --provider --json --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --provider)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__agent__subcmd__help)
+            opts="doctor investigate help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__agent__subcmd__help__subcmd__doctor)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__agent__subcmd__help__subcmd__help)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__agent__subcmd__help__subcmd__investigate)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__agent__subcmd__investigate)
+            opts="-h --provider --model --mode --max-steps --export-profile --json --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --provider)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --model)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --mode)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --max-steps)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --export-profile)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__apply)
+            opts="-h --approval-file --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --approval-file)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__approve)
+            opts="-h --approver --validity-mins --json --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --approver)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --validity-mins)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -138,8 +396,8 @@ _bug__killer() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        bug__subcmd__killer__subcmd__heal)
-            opts="-h --dry-run --auto-apply --help"
+        bug__subcmd__killer__subcmd__evidence)
+            opts="-h --json --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -152,9 +410,97 @@ _bug__killer() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        bug__subcmd__killer__subcmd__help)
-            opts="shell doctor watch completion scan heal rollback history cve-info help"
+        bug__subcmd__killer__subcmd__heal)
+            opts="-h --dry-run --apply --auto-apply --rules --osv --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --rules)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help)
+            opts="shell doctor watch completion scan probe osv heal rollback history cve-info agent evidence plan approve apply mcp help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__agent)
+            opts="doctor investigate"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__agent__subcmd__doctor)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__agent__subcmd__investigate)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__apply)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__approve)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
@@ -208,6 +554,20 @@ _bug__killer() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        bug__subcmd__killer__subcmd__help__subcmd__evidence)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         bug__subcmd__killer__subcmd__help__subcmd__heal)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
@@ -237,6 +597,90 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__help__subcmd__history)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__mcp)
+            opts="serve config"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__mcp__subcmd__config)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__mcp__subcmd__serve)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__osv)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__plan)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__probe)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -320,6 +764,166 @@ _bug__killer() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        bug__subcmd__killer__subcmd__mcp)
+            opts="-h --help serve config help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__mcp__subcmd__config)
+            opts="-h --host --binary --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --host)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --binary)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__mcp__subcmd__help)
+            opts="serve config help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__mcp__subcmd__help__subcmd__config)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__mcp__subcmd__help__subcmd__help)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__mcp__subcmd__help__subcmd__serve)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__mcp__subcmd__serve)
+            opts="-h --transport --read-only --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --transport)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__osv)
+            opts="-h --json --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__plan)
+            opts="-h --json --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__probe)
+            opts="-t -h --json --timeout --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --timeout)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -t)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         bug__subcmd__killer__subcmd__rollback)
             opts="-h --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -335,12 +939,16 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__scan)
-            opts="-h --json --check-runtime --help"
+            opts="-h --json --check-runtime --rules --osv --taint --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
+                --rules)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -363,7 +971,7 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__watch)
-            opts="-i -h --interval --auto-heal --help"
+            opts="-i -h --interval --auto-heal --rules --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -374,6 +982,10 @@ _bug__killer() {
                     return 0
                     ;;
                 -i)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --rules)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
