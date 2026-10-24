@@ -3895,5 +3895,132 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: isolated worker with limits",
     "verification_requirements": "Verify via FUZZ+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SCA-001",
+    "short_id": "SCA-001",
+    "rule_version": "1.0",
+    "category_number": 13,
+    "category": "2.13 Packages, dependency resolution and software supply chain",
+    "description": "Resolved package version affected by known advisory",
+    "cwe": "CWE-1104",
+    "detection_method": "SCA",
+    "required_evidence": [
+      "SCA"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: exact name/ecosystem/version + source/advisory applicability",
+    "verification_requirements": "Verify via SCA evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SCA-002",
+    "short_id": "SCA-002",
+    "rule_version": "1.0",
+    "category_number": 13,
+    "category": "2.13 Packages, dependency resolution and software supply chain",
+    "description": "Semver range (`^`, `~`, `>=`) misrepresented as actual installed version",
+    "cwe": null,
+    "detection_method": "SCA+TEST",
+    "required_evidence": [
+      "SCA",
+      "TEST"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: declare unresolved instead of fabricating match",
+    "verification_requirements": "Verify via SCA+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SCA-003",
+    "short_id": "SCA-003",
+    "rule_version": "1.0",
+    "category_number": 13,
+    "category": "2.13 Packages, dependency resolution and software supply chain",
+    "description": "Package name hallucinated by AI, nonexistent or typo-squatted",
+    "cwe": "CWE-829",
+    "detection_method": "SCA+REVIEW",
+    "required_evidence": [
+      "SCA",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows",
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: registry, provenance and maintainer identity verified",
+    "verification_requirements": "Verify via SCA+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SCA-004",
+    "short_id": "SCA-004",
+    "rule_version": "1.0",
+    "category_number": 13,
+    "category": "2.13 Packages, dependency resolution and software supply chain",
+    "description": "Dependency confusion via ambiguous public/private package source",
+    "cwe": "CWE-427",
+    "detection_method": "SCA+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "SCA"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: registry mapping and namespace trust verified",
+    "verification_requirements": "Verify via SCA+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SCA-005",
+    "short_id": "SCA-005",
+    "rule_version": "1.0",
+    "category_number": 13,
+    "category": "2.13 Packages, dependency resolution and software supply chain",
+    "description": "Newly added package unnecessarily invokes privileged install/postinstall scripts",
+    "cwe": "CWE-829",
+    "detection_method": "SCA+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "SCA"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "Package Manifests"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: script permissions and package origin reviewed",
+    "verification_requirements": "Verify via SCA+CONFIG evidence and regression test"
   }
 ]
