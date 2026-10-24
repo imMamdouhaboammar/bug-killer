@@ -44,7 +44,8 @@ flowchart TD
 | **`PORT`** (Cross-host adaptation) | `skill-portability-compiler` | `host-workspace-operator`, `skill-evaluator` | `references/host-profiles.md`, `references/cross-host-evaluation.md` |
 | **`PACKAGE`** (Bundle .skill / plugin) | `skill-conductor` | `sandbox-python-executor` | `references/runtime-setup.md`, `references/schemas.md` |
 | **`DISTRIBUTE`** (GitHub repo, manifests, Skills.sh) | `repo-craft-and-distribute` | `skill-conductor` | `references/multi-agent-manifests.md`, `references/readme-standards.md`, `references/github-workflow-and-metadata.md` |
-| **`SECURITY_AUDIT` / `HEAL`** (Vulnerability scan & auto-patching, PHP2Shell, Node2Shell) | `aegis-healer` | `host-workspace-operator`, `skill-evaluator` | `aegis-healer/SKILL.md` |
+| **`SECURITY_AUDIT`** (Production vulnerability scan, SCA, SAST, DAST, Secrets, Containers) | `bk-security` / `bk-scanner` | `host-workspace-operator`, `skill-evaluator` | `bk-security/SKILL.md`, `bk-scanner/SKILL.md` |
+| **`SECURITY_HEAL` / `ROLLBACK`** (Supervised virtual patching, Ed25519 signing, rollback) | `bk-healer` | `host-workspace-operator`, `bk-security` | `bk-healer/SKILL.md` |
 
 ---
 
