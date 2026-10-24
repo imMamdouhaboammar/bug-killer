@@ -2014,5 +2014,128 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: cache key/scope and `Cache-Control` correct",
     "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-012",
+    "short_id": "API-012",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "Remote service errors returned with sensitive traces, connection strings or headers",
+    "cwe": "CWE-209",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: caller sees bounded error details",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-013",
+    "short_id": "API-013",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "Server-to-server trust relies only on obscurity/private network",
+    "cwe": "CWE-306",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: explicit service authentication/authorization",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-014",
+    "short_id": "API-014",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "Subscription/event stream can consume other principals' updates",
+    "cwe": "CWE-200",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: per-topic/channel permission enforced",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-FIL-001",
+    "short_id": "FIL-001",
+    "rule_version": "1.0",
+    "category_number": 7,
+    "category": "2.7 Filesystem, uploads, archives and path traversal",
+    "description": "User-controlled path escapes permitted root after normalization",
+    "cwe": "CWE-22",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: canonical containment checked",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-FIL-002",
+    "short_id": "FIL-002",
+    "rule_version": "1.0",
+    "category_number": 7,
+    "category": "2.7 Filesystem, uploads, archives and path traversal",
+    "description": "Symlink or hardlink bypasses path restriction",
+    "cwe": "CWE-59",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "SUPPORTED_STATIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no traversal after link resolution",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
