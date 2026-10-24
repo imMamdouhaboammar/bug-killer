@@ -1004,5 +1004,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: deny-by-default policy",
     "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-013",
+    "short_id": "AZ-013",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "Check-then-act privilege check races with ownership/role changes",
+    "cwe": "CWE-367",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: atomic or revalidated authorization",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-014",
+    "short_id": "AZ-014",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "Search, cache, vector index or metrics layer leaks cross-tenant objects",
+    "cwe": "CWE-200",
+    "detection_method": "TEST+REVIEW",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: tenant scope bound to every read path",
+    "verification_requirements": "Verify via TEST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-001",
+    "short_id": "SES-001",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Session ID predictable or generated with non-cryptographic randomness",
+    "cwe": "CWE-330",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "SUPPORTED_DYNAMIC",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: CSPRNG and entropy policy verified",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-002",
+    "short_id": "SES-002",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Session not rotated after authentication or privilege change",
+    "cwe": "CWE-384",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: fixation state invalidated",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-003",
+    "short_id": "SES-003",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Logout/password reset fails to invalidate server-side session/refresh token",
+    "cwe": "CWE-613",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: old token rejected after revocation",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
