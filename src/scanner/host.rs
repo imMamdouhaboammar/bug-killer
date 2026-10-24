@@ -1,7 +1,8 @@
 use crate::types::*;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunningProcess {
     pub pid: u32,
     pub name: String,

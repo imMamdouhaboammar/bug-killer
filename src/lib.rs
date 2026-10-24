@@ -7,6 +7,7 @@ pub mod dast;
 pub mod doctor;
 pub mod healer;
 pub mod identity;
+pub mod mcp;
 pub mod osv;
 pub mod rules;
 pub mod scanner;

@@ -17,7 +17,7 @@ impl Default for OsvClient {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredPackage {
     pub file_path: PathBuf,
     pub name: String,

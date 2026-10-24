@@ -7,6 +7,7 @@ mod dast;
 mod doctor;
 mod healer;
 mod identity;
+mod mcp;
 mod osv;
 mod rules;
 mod scanner;
@@ -25,6 +26,7 @@ use doctor::SystemDoctor;
 use healer::AutopilotHealer;
 use healer::backup::BackupManager;
 use healer::rollback::RollbackManager;
+use mcp::{HostConfigGenerator, McpServer};
 use osv::OsvClient;
 use rules::RuleEngine;
 use scanner::FleetScanner;
@@ -222,6 +224,39 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+
+    /// Model Context Protocol (MCP) server and integration commands
+    #[command(subcommand)]
+    Mcp(McpCommands),
+}
+
+#[derive(Subcommand, Debug)]
+enum McpCommands {
+    /// Run the stdio MCP server for external agent integration
+    Serve {
+        /// Transport protocol (stdio)
+        #[arg(long, default_value = "stdio")]
+        transport: String,
+
+        /// Run in strictly read-only mode prohibiting state mutations (default: true)
+        #[arg(long, default_value_t = true)]
+        read_only: bool,
+
+        /// Root workspace directory (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
+
+    /// Generate copy-pasteable MCP server configuration snippets for external coding agents
+    Config {
+        /// Target host agent (claude, codex, gemini, all)
+        #[arg(long, default_value = "all")]
+        host: String,
+
+        /// Custom path to bug-killer binary
+        #[arg(long)]
+        binary: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -267,6 +302,28 @@ enum AgentCommands {
         #[arg(long)]
         json: bool,
     },
+}
+
+fn compute_scan_exit_code(report: &types::ScanReport) -> i32 {
+    if report
+        .findings
+        .iter()
+        .any(|f| f.affectedness == types::Affectedness::ConfirmedAffected)
+    {
+        1
+    } else if report
+        .findings
+        .iter()
+        .any(|f| f.affectedness == types::Affectedness::PotentiallyAffected)
+    {
+        2
+    } else if !report.coverage.parser_failures.is_empty()
+        || report.coverage.coverage_status != types::CoverageStatus::Complete
+    {
+        3
+    } else {
+        0
+    }
 }
 
 fn main() {
@@ -366,6 +423,10 @@ fn main() {
 
             if json {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                let code = compute_scan_exit_code(&report);
+                if code != 0 {
+                    std::process::exit(code);
+                }
                 return;
             }
 
@@ -436,6 +497,10 @@ fn main() {
                         "⚠️ Zero exposures detected in audited files, but scan coverage was PARTIAL / INCOMPLETE."
                     );
                 }
+                let code = compute_scan_exit_code(&report);
+                if code != 0 {
+                    std::process::exit(code);
+                }
                 return;
             }
 
@@ -484,6 +549,11 @@ fn main() {
                 path.display(),
                 if osv { " --osv" } else { "" }
             );
+
+            let code = compute_scan_exit_code(&report);
+            if code != 0 {
+                std::process::exit(code);
+            }
         }
 
         Commands::Osv { path, json } => {
@@ -991,5 +1061,67 @@ fn main() {
                 std::process::exit(1);
             }
         }
+
+        Commands::Mcp(mcp_cmd) => match mcp_cmd {
+            McpCommands::Serve {
+                transport,
+                read_only,
+                path,
+            } => {
+                if transport != "stdio" {
+                    eprintln!(
+                        "Unsupported transport: '{}'. Only 'stdio' is currently supported.",
+                        transport
+                    );
+                    std::process::exit(5);
+                }
+                let mut server = McpServer::new(path, read_only);
+                if let Err(e) = server.run_stdio() {
+                    eprintln!("MCP server error: {}", e);
+                    std::process::exit(5);
+                }
+            }
+            McpCommands::Config { host, binary } => {
+                let bin_ref = binary.as_deref();
+                match host.to_lowercase().as_str() {
+                    "claude" | "claude-code" => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&HostConfigGenerator::claude_code_config(
+                                bin_ref
+                            ))
+                            .unwrap()
+                        );
+                    }
+                    "codex" => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&HostConfigGenerator::codex_config(
+                                bin_ref
+                            ))
+                            .unwrap()
+                        );
+                    }
+                    "gemini" | "gemini-cli" => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&HostConfigGenerator::gemini_cli_config(
+                                bin_ref
+                            ))
+                            .unwrap()
+                        );
+                    }
+                    _ => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&HostConfigGenerator::generate_all(
+                                bin_ref
+                            ))
+                            .unwrap()
+                        );
+                    }
+                }
+            }
+        },
     }
 }

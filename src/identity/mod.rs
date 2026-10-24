@@ -25,6 +25,12 @@ fn from_hex(s: &str) -> Result<Vec<u8>, &'static str> {
 }
 
 impl AgentIdentity {
+    /// Loads the agent identity from the user's home directory (~/.aegis or ~/.bug-killer).
+    pub fn load_default() -> Result<Self, std::io::Error> {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+        Self::get_or_create(Path::new(&home))
+    }
+
     /// Loads the agent's persistent Ed25519 identity key, or generates a fresh one if missing.
     pub fn get_or_create(root: &Path) -> Result<Self, std::io::Error> {
         let identity_dir = root.join(".aegis");
