@@ -3513,5 +3513,134 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: invariants retained",
     "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-010",
+    "short_id": "DAT-010",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Unsafe dynamic table/collection chosen from caller input",
+    "cwe": "CWE-89",
+    "detection_method": "FLOW+REVIEW",
+    "required_evidence": [
+      "FLOW",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: finite allowed target set",
+    "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-011",
+    "short_id": "DAT-011",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Storage object ACL/public bucket used for private content",
+    "cwe": "CWE-732",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: object-level rights enforced",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-DAT-012",
+    "short_id": "DAT-012",
+    "rule_version": "1.0",
+    "category_number": 11,
+    "category": "2.11 Database, storage, search and persistence",
+    "description": "Sensitive records survive deletion/revocation through materialized views/caches",
+    "cwe": "CWE-212",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: lifecycle/cascade proof",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-001",
+    "short_id": "PAR-001",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "Python pickle or other executable object deserialization from untrusted bytes",
+    "cwe": "CWE-502",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "python",
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: safe data-only decoder used",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-PAR-002",
+    "short_id": "PAR-002",
+    "rule_version": "1.0",
+    "category_number": 12,
+    "category": "2.12 Parsers, serialization and content handling",
+    "description": "YAML unsafe loader constructs arbitrary objects",
+    "cwe": "CWE-502",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows",
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: safe loader and allowed types",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
