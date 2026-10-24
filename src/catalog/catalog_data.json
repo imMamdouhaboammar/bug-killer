@@ -3137,5 +3137,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: telemetry data minimized",
     "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-007",
+    "short_id": "SEC-007",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Unnecessary collection/storage/retention of sensitive user data",
+    "cwe": "CWE-359",
+    "detection_method": "REVIEW",
+    "required_evidence": [
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: data inventory, purpose, retention policy",
+    "verification_requirements": "Verify via REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-008",
+    "short_id": "SEC-008",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Data export/deletion workflows omit authorized ownership verification",
+    "cwe": "CWE-639",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: principal and object rights proven",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-009",
+    "short_id": "SEC-009",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Encryption-at-rest missing for required regulated/sensitive datasets",
+    "cwe": "CWE-311",
+    "detection_method": "CONFIG+REVIEW",
+    "required_evidence": [
+      "CONFIG",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: data classification determines control",
+    "verification_requirements": "Verify via CONFIG+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-010",
+    "short_id": "SEC-010",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Secret appears in client bundle, image layer, IaC state or build cache",
+    "cwe": "CWE-200",
+    "detection_method": "SECRET+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "SECRET"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: final artifacts and history checked",
+    "verification_requirements": "Verify via SECRET+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SEC-011",
+    "short_id": "SEC-011",
+    "rule_version": "1.0",
+    "category_number": 10,
+    "category": "2.10 Secrets, privacy, PII and data exposure",
+    "description": "Third-party analytics or AI provider receives confidential data without policy",
+    "cwe": "CWE-201",
+    "detection_method": "FLOW+REVIEW",
+    "required_evidence": [
+      "FLOW",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: consent/contract/data boundary defined",
+    "verification_requirements": "Verify via FLOW+REVIEW evidence and regression test"
   }
 ]
