@@ -97,6 +97,10 @@ pub struct BackupManifest {
     pub created_at: String,
     pub root_dir: String,
     pub records: Vec<BackupRecord>,
+    #[serde(default)]
+    pub signer_public_key: Option<String>,
+    #[serde(default)]
+    pub signature: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

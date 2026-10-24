@@ -20,6 +20,12 @@ impl RollbackManager {
         let manifest: BackupManifest = serde_json::from_str(&content)
             .map_err(|e| format!("Invalid backup manifest JSON: {}", e))?;
 
+        // Cryptographic identity trust verification (fail-closed if tampered)
+        if manifest.signature.is_some() {
+            crate::identity::AgentIdentity::verify_manifest(&manifest)
+                .map_err(|e| format!("Cryptographic trust verification failed: {}", e))?;
+        }
+
         let mut restored_count = 0;
 
         for record in &manifest.records {

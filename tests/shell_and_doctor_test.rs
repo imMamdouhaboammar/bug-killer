@@ -46,3 +46,39 @@ fn test_completion_generation() {
     let invalid_res = CompletionGenerator::generate_completion("invalid_shell", &mut cmd);
     assert!(invalid_res.is_err());
 }
+
+#[test]
+fn test_agent_identity_signature_and_tamper_detection() {
+    let dir = tempdir().unwrap();
+    let root = dir.path();
+
+    let identity = bug_killer::identity::AgentIdentity::get_or_create(root).unwrap();
+    assert_eq!(identity.public_key_hex().len(), 64);
+
+    let mut manifest = bug_killer::types::BackupManifest {
+        backup_id: "20261024_000000".into(),
+        created_at: "2026-10-24T00:00:00Z".into(),
+        root_dir: root.to_string_lossy().to_string(),
+        records: vec![
+            bug_killer::types::BackupRecord {
+                relative_target_path: "server.js".into(),
+                original_sha256: "abcdef123456".into(),
+                backup_file_name: "0_server.js".into(),
+            }
+        ],
+        signer_public_key: None,
+        signature: None,
+    };
+
+    // Sign manifest
+    identity.sign_manifest(&mut manifest);
+    assert!(manifest.signature.is_some());
+    assert!(manifest.signer_public_key.is_some());
+
+    // Verify legitimate manifest
+    assert!(bug_killer::identity::AgentIdentity::verify_manifest(&manifest).is_ok());
+
+    // Tamper with records: verification MUST fail closed
+    manifest.records[0].original_sha256 = "corrupted_hash_9999".into();
+    assert!(bug_killer::identity::AgentIdentity::verify_manifest(&manifest).is_err());
+}

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/aegis/orchestrator/ledger"
+	"github.com/spf13/afero"
 )
 
 type CrawlerConfig struct {
@@ -14,10 +15,12 @@ type CrawlerConfig struct {
 	MaxWorkers    int
 	ExcludeDirs   []string
 	CollectBinary bool
+	Fs            afero.Fs
 }
 
 type FileCrawler struct {
 	config  CrawlerConfig
+	fs      afero.Fs
 	workers chan struct{}
 	results chan ledger.RuntimeAsset
 }
@@ -29,8 +32,13 @@ func NewFileCrawler(cfg CrawlerConfig) *FileCrawler {
 	if len(cfg.ExcludeDirs) == 0 {
 		cfg.ExcludeDirs = []string{".git", "node_modules", "vendor", "cache", "proc", "sys", "dev"}
 	}
+	fileSystem := cfg.Fs
+	if fileSystem == nil {
+		fileSystem = afero.NewOsFs()
+	}
 	return &FileCrawler{
 		config:  cfg,
+		fs:      fileSystem,
 		workers: make(chan struct{}, cfg.MaxWorkers),
 		results: make(chan ledger.RuntimeAsset, 1024),
 	}
@@ -64,7 +72,7 @@ func (fc *FileCrawler) Crawl() []ledger.RuntimeAsset {
 }
 
 func (fc *FileCrawler) walkRoot(root string, wg *sync.WaitGroup) {
-	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	_ = afero.Walk(fc.fs, root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}

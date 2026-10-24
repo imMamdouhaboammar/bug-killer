@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestFileCrawlerDiscovery(t *testing.T) {
@@ -51,5 +53,24 @@ func TestFileCrawlerDiscovery(t *testing.T) {
 	if !foundPackageJson || !foundComposerJson || !foundNginx || !foundDockerfile {
 		t.Errorf("Discovery incomplete: pkg=%v, comp=%v, nginx=%v, docker=%v",
 			foundPackageJson, foundComposerJson, foundNginx, foundDockerfile)
+	}
+}
+
+func TestFileCrawlerAferoMemoryFs(t *testing.T) {
+	memFs := afero.NewMemMapFs()
+	_ = memFs.MkdirAll("/isolated/app", 0755)
+	_ = afero.WriteFile(memFs, "/isolated/app/package.json", []byte(`{"name":"sandbox"}`), 0644)
+	_ = afero.WriteFile(memFs, "/isolated/app/Dockerfile", []byte(`FROM node:20`), 0644)
+
+	fc := NewFileCrawler(CrawlerConfig{
+		RootPaths:     []string{"/isolated/app"},
+		MaxWorkers:    2,
+		CollectBinary: false,
+		Fs:            memFs,
+	})
+
+	assets := fc.Crawl()
+	if len(assets) != 2 {
+		t.Fatalf("Expected 2 assets from memory fs, got %d", len(assets))
 	}
 }

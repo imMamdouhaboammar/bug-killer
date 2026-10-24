@@ -8,6 +8,7 @@ mod doctor;
 mod watcher;
 mod shell;
 mod completion;
+mod identity;
 
 use clap::{CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;

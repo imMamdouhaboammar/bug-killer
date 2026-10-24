@@ -47,12 +47,19 @@ impl BackupManager {
             });
         }
 
-        let manifest = BackupManifest {
+        let mut manifest = BackupManifest {
             backup_id,
             created_at: Utc::now().to_rfc3339(),
             root_dir: root.to_string_lossy().to_string(),
             records,
+            signer_public_key: None,
+            signature: None,
         };
+
+        // Cryptographically sign the manifest via AgentIdentity
+        if let Ok(identity) = crate::identity::AgentIdentity::get_or_create(root) {
+            identity.sign_manifest(&mut manifest);
+        }
 
         let manifest_path = backup_dir.join("manifest.json");
         let manifest_json = serde_json::to_string_pretty(&manifest)?;

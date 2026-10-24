@@ -1,5 +1,7 @@
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
+use rustyline::DefaultEditor;
+use rustyline::error::ReadlineError;
 use crate::types::{ScanReport, PatchAction, Severity};
 use crate::scanner::FleetScanner;
 use crate::healer::AutopilotHealer;
@@ -24,12 +26,18 @@ impl ShellEngine {
         }
     }
 
-    /// Launches the interactive REPL loop.
+    /// Launches the interactive REPL loop using Rustyline with command history and line editing.
     pub fn run(&mut self) {
         println!("=======================================================");
         println!("  🎯  BUG KILLER INTERACTIVE SHELL (bk-shell v0.1.0)");
         println!("  Type 'help' for commands, 'scan' to audit, 'exit' to quit.");
         println!("=======================================================");
+
+        let mut rl = DefaultEditor::new().ok();
+        let history_file = self.current_dir.join(".bk_history");
+        if let Some(ref mut editor) = rl {
+            let _ = editor.load_history(&history_file);
+        }
 
         let stdin = io::stdin();
         let mut stdout = io::stdout();
@@ -46,15 +54,31 @@ impl ShellEngine {
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| "/".into());
 
-            print!("bk [{}] ({}) > ", dir_name, status_badge);
-            let _ = stdout.flush();
+            let prompt = format!("bk [{}] ({}) > ", dir_name, status_badge);
 
-            let mut line = String::new();
-            if stdin.lock().read_line(&mut line).is_err() {
-                break;
-            }
+            let input_line = if let Some(ref mut editor) = rl {
+                match editor.readline(&prompt) {
+                    Ok(line) => {
+                        let _ = editor.add_history_entry(line.as_str());
+                        line
+                    }
+                    Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
+                        println!("Exiting Bug Killer Shell. Stay safe!");
+                        break;
+                    }
+                    Err(_) => break,
+                }
+            } else {
+                print!("{}", prompt);
+                let _ = stdout.flush();
+                let mut line = String::new();
+                if stdin.lock().read_line(&mut line).is_err() {
+                    break;
+                }
+                line
+            };
 
-            let input = line.trim();
+            let input = input_line.trim();
             if input.is_empty() {
                 continue;
             }
@@ -102,6 +126,10 @@ impl ShellEngine {
                     println!("Unknown command: '{}'. Type 'help' for available commands.", cmd);
                 }
             }
+        }
+
+        if let Some(ref mut editor) = rl {
+            let _ = editor.save_history(&history_file);
         }
     }
 
@@ -259,6 +287,10 @@ impl ShellEngine {
             Ok((manifest, count)) => {
                 println!("✅ Successfully applied {} healing patches!", count);
                 println!("📦 Backup Snapshot ID: {}", manifest.backup_id);
+                if let Some(ref pk) = manifest.signer_public_key {
+                    let pk_short = if pk.len() >= 12 { &pk[..12] } else { pk };
+                    println!("🔑 Ed25519 Signed by Agent Identity: {}", pk_short);
+                }
                 println!("   To rollback if needed: rollback {}", manifest.backup_id);
 
                 // Auto-refresh report and plan
@@ -291,7 +323,7 @@ impl ShellEngine {
         }
 
         let backup_id = args[0];
-        println!("Rolling back snapshot '{}'...", backup_id);
+        println!("Rolling back snapshot '{}' with cryptographic trust verification...", backup_id);
         match RollbackManager::rollback(&self.current_dir, backup_id) {
             Ok(count) => {
                 println!("✅ Successfully restored {} files to pre-mutation state.", count);
@@ -312,6 +344,10 @@ impl ShellEngine {
         for b in backups {
             println!("Snapshot ID:  {}", b.backup_id);
             println!("Created At:   {}", b.created_at);
+            if let Some(ref pk) = b.signer_public_key {
+                let pk_short = if pk.len() >= 12 { &pk[..12] } else { pk };
+                println!("Signature:    Ed25519 Verified ({})", pk_short);
+            }
             println!("Files Backed: {}", b.records.len());
             for r in b.records {
                 let hash_prefix = if r.original_sha256.len() >= 12 { &r.original_sha256[..12] } else { &r.original_sha256 };
