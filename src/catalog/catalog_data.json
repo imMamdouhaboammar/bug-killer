@@ -8955,5 +8955,134 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: gate blocks claim and merge",
     "verification_requirements": "Verify via AGENT+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BKH-013",
+    "short_id": "BKH-013",
+    "rule_version": "1.0",
+    "category_number": 26,
+    "category": "2.26 Bug Killer-specific scanner, reporter and healer safety",
+    "description": "Exclusion/suppression never expires or hides entire directory silently",
+    "cwe": null,
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: expiry, owner, reason and coverage effect",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BKH-014",
+    "short_id": "BKH-014",
+    "rule_version": "1.0",
+    "category_number": 26,
+    "category": "2.26 Bug Killer-specific scanner, reporter and healer safety",
+    "description": "Scanner's source-to-sink claim is only a regex keyword hit",
+    "cwe": null,
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: downgraded to unconfirmed indicator",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BKH-015",
+    "short_id": "BKH-015",
+    "rule_version": "1.0",
+    "category_number": 26,
+    "category": "2.26 Bug Killer-specific scanner, reporter and healer safety",
+    "description": "CI checks Rust crate but skips Go services, nested Cargo workspace or installer",
+    "cwe": null,
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "go",
+      "rust",
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows",
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: target/component matrix complete",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BKH-016",
+    "short_id": "BKH-016",
+    "rule_version": "1.0",
+    "category_number": 26,
+    "category": "2.26 Bug Killer-specific scanner, reporter and healer safety",
+    "description": "Remote target scan begins without asset authorization and rate/egress budgets",
+    "cwe": "CWE-284",
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: denied by default for live unknown target",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-BKH-017",
+    "short_id": "BKH-017",
+    "rule_version": "1.0",
+    "category_number": 26,
+    "category": "2.26 Bug Killer-specific scanner, reporter and healer safety",
+    "description": "Parallel healers race on same manifest/config, overwriting each other's changes",
+    "cwe": "CWE-362",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: lock/precondition and conflict abort",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
