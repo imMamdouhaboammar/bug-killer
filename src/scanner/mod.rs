@@ -1,17 +1,21 @@
 pub mod ai_agent;
 pub mod binary;
+pub mod cicd;
 pub mod container;
 pub mod host;
 pub mod node;
 pub mod php;
+pub mod secret;
 pub mod webserver;
 
 use self::ai_agent::AgentSecurityScanner;
 use self::binary::BinaryScanner;
+use self::cicd::CicdScanner;
 use self::container::ContainerScanner;
 use self::host::HostProcessScanner;
 use self::node::NodeScanner;
 use self::php::PhpScanner;
+use self::secret::SecretScanner;
 use self::webserver::WebServerScanner;
 use crate::rules::{RuleEngine, VulnerabilityRule};
 use crate::types::*;
@@ -123,7 +127,12 @@ impl FleetScanner {
                 || file_name.ends_with(".cjs")
                 || file_name.ends_with(".py")
                 || file_name.ends_with(".php")
-                || file_name.ends_with(".go");
+                || file_name.ends_with(".go")
+                || file_name.ends_with(".yml")
+                || file_name.ends_with(".yaml")
+                || file_name.starts_with(".env")
+                || file_name.ends_with(".key")
+                || file_name.ends_with(".pem");
 
             if is_candidate {
                 match std::fs::read_to_string(path) {
@@ -217,6 +226,36 @@ impl FleetScanner {
                 || file_name.ends_with(".cjs")
             {
                 raw_findings.extend(NodeScanner::scan_source_file(path));
+            }
+
+            // CI/CD workflow security (.github/workflows/*.yml, .gitlab-ci.yml)
+            if (path.to_string_lossy().contains(".github")
+                && (file_name.ends_with(".yml") || file_name.ends_with(".yaml")))
+                || file_name == ".gitlab-ci.yml"
+            {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    raw_findings.extend(CicdScanner::scan_workflow(path, &content));
+                }
+            }
+
+            // Secret detection across source code, config files, keys, and environment files
+            if file_name.ends_with(".js")
+                || file_name.ends_with(".ts")
+                || file_name.ends_with(".mjs")
+                || file_name.ends_with(".cjs")
+                || file_name.ends_with(".py")
+                || file_name.ends_with(".php")
+                || file_name.ends_with(".go")
+                || file_name.ends_with(".rs")
+                || file_name.starts_with(".env")
+                || file_name.ends_with(".key")
+                || file_name.ends_with(".pem")
+                || file_name == "Dockerfile"
+                || file_name.starts_with("Dockerfile.")
+            {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    raw_findings.extend(SecretScanner::scan_file(path, &content));
+                }
             }
 
             // 3. Dynamic vulnerability rules evaluation
