@@ -752,5 +752,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: tenant scope derived from trusted identity",
     "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-003",
+    "short_id": "AZ-003",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "User can edit server-owned fields (`role`, `owner`, `isAdmin`, `price`) via mass assignment",
+    "cwe": "CWE-915",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: writable field allowlist enforced",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-004",
+    "short_id": "AZ-004",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "Backend function/admin route lacks role/capability enforcement",
+    "cwe": "CWE-862",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: lower roles denied every privileged operation",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-005",
+    "short_id": "AZ-005",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "Authorization checked only in UI, gateway or frontend cache",
+    "cwe": "CWE-602",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: enforcement exists at sensitive side effect",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-006",
+    "short_id": "AZ-006",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "GraphQL nested resolver bypasses parent object/field-level policy",
+    "cwe": "CWE-863",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: nested fields respect caller scope",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AZ-007",
+    "short_id": "AZ-007",
+    "rule_version": "1.0",
+    "category_number": 3,
+    "category": "2.3 Authorization, tenant isolation and privilege",
+    "description": "Batch APIs authorize first object but not each element",
+    "cwe": "CWE-863",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: unauthorized list members denied or redacted",
+    "verification_requirements": "Verify via TEST evidence and regression test"
   }
 ]
