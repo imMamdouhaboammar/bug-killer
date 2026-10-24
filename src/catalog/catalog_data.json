@@ -9205,5 +9205,127 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: explicitly supported runtime matrix",
     "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-005",
+    "short_id": "QAT-005",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "A clean test run covers only one role, principal or tenant",
+    "cwe": null,
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: matrix of unauthenticated, regular, elevated, foreign tenant",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-006",
+    "short_id": "QAT-006",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "Static scanner ignores indirect imports, aliases, callback/async entrypoints without disclosure",
+    "cwe": null,
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: limitations emitted in report",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-007",
+    "short_id": "QAT-007",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "Security finding severity inferred from `CWE` alone rather than actual reachability and impact",
+    "cwe": null,
+    "detection_method": "REVIEW",
+    "required_evidence": [
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: asset, exposure, prerequisite, effect recorded",
+    "verification_requirements": "Verify via REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-008",
+    "short_id": "QAT-008",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "\"Mitigated\" classification accepted without a test of the real guard",
+    "cwe": null,
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: confirmed guard prevents effect",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-QAT-009",
+    "short_id": "QAT-009",
+    "rule_version": "1.0",
+    "category_number": 27,
+    "category": "2.27 Security-test integrity, human review and quality controls",
+    "description": "Security test silently calls live external system or mutates production during CI",
+    "cwe": null,
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: local fixtures and network containment",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
   }
 ]
