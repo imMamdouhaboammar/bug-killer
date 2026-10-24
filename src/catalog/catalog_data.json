@@ -1128,5 +1128,133 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: old token rejected after revocation",
     "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-004",
+    "short_id": "SES-004",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Cookie carrying session lacks `Secure` where HTTPS is required",
+    "cwe": "CWE-614",
+    "detection_method": "CONFIG+DAST",
+    "required_evidence": [
+      "AST",
+      "CONFIG",
+      "DAST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: observed attributes correct",
+    "verification_requirements": "Verify via CONFIG+DAST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-005",
+    "short_id": "SES-005",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Cookie carrying session lacks `HttpOnly` without justified JS access",
+    "cwe": "CWE-1004",
+    "detection_method": "CONFIG+DAST",
+    "required_evidence": [
+      "AST",
+      "CONFIG",
+      "DAST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: observed attributes correct",
+    "verification_requirements": "Verify via CONFIG+DAST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-006",
+    "short_id": "SES-006",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "`SameSite`/CSRF defense missing on relevant browser-driven state changes",
+    "cwe": "CWE-352",
+    "detection_method": "CONFIG+TEST",
+    "required_evidence": [
+      "CONFIG",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: cross-site request rejected",
+    "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-007",
+    "short_id": "SES-007",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Token lifetime too long or unlimited reusable refresh token",
+    "cwe": "CWE-613",
+    "detection_method": "AST+REVIEW",
+    "required_evidence": [
+      "AST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: expiry/rotation/replay properties defined",
+    "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-008",
+    "short_id": "SES-008",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "JWT algorithm confusion, `none`, or attacker-controlled key locator",
+    "cwe": "CWE-347",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "go"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: accepted algorithms/keys pinned",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
