@@ -1256,5 +1256,129 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: accepted algorithms/keys pinned",
     "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-009",
+    "short_id": "SES-009",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Token logged, embedded in URL/query, analytics, referrer or browser history",
+    "cwe": "CWE-598",
+    "detection_method": "FLOW+SECRET",
+    "required_evidence": [
+      "FLOW",
+      "SECRET"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: credentials do not enter exposed channels",
+    "verification_requirements": "Verify via FLOW+SECRET evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-010",
+    "short_id": "SES-010",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "LocalStorage/sessionStorage holds long-lived sensitive credentials without threat review",
+    "cwe": "CWE-922",
+    "detection_method": "AST+REVIEW",
+    "required_evidence": [
+      "AST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: browser compromise model and storage choice reviewed",
+    "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-011",
+    "short_id": "SES-011",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Session not scoped by environment, domain, audience or device policy",
+    "cwe": "CWE-284",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: session scope enforced",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-SES-012",
+    "short_id": "SES-012",
+    "rule_version": "1.0",
+    "category_number": 4,
+    "category": "2.4 Sessions, tokens, cookies and browser login",
+    "description": "Concurrent refresh calls permit token reuse/race or stale session resurrection",
+    "cwe": "CWE-362",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: replay and concurrent transition safe",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-001",
+    "short_id": "WEB-001",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "DOM XSS through `innerHTML`, `dangerouslySetInnerHTML` or equivalent",
+    "cwe": "CWE-79",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: untrusted text cannot become markup/code",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
   }
 ]
