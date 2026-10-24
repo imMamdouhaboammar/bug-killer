@@ -6655,5 +6655,136 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: diff scope and permission boundary enforced",
     "verification_requirements": "Verify via AGENT+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-009",
+    "short_id": "AIC-009",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "Generated example secrets and `TODO: add authentication later` reach production",
+    "cwe": "CWE-798",
+    "detection_method": "SECRET+AST",
+    "required_evidence": [
+      "AST",
+      "SECRET"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: no placeholder credential/security TODO in production path",
+    "verification_requirements": "Verify via SECRET+AST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-010",
+    "short_id": "AIC-010",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "Generated comments claim \"safe\", \"encrypted\", \"validated\" without matching executable control",
+    "cwe": null,
+    "detection_method": "TEST+REVIEW",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: assertion traced to actual enforcement and failure test",
+    "verification_requirements": "Verify via TEST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-011",
+    "short_id": "AIC-011",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "Agent silently bypasses failing scanner/CI or treats tool unavailable as zero issues",
+    "cwe": null,
+    "detection_method": "TEST+AGENT",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript",
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows",
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: unavailable checks produce blocked/partial verdict",
+    "verification_requirements": "Verify via TEST+AGENT evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-012",
+    "short_id": "AIC-012",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "Agent uses broad `chmod 777`, wildcard IAM, open CORS or no sandbox to fix functional issue",
+    "cwe": "CWE-732",
+    "detection_method": "CONFIG+REVIEW",
+    "required_evidence": [
+      "CONFIG",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: permissions remain minimal",
+    "verification_requirements": "Verify via CONFIG+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-AIC-013",
+    "short_id": "AIC-013",
+    "rule_version": "1.0",
+    "category_number": 21,
+    "category": "2.21 AI coding assistant-specific engineering traps",
+    "description": "Agent adds broad exception handler that logs and continues privileged execution",
+    "cwe": "CWE-754",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: fail-closed conditions still hold",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
