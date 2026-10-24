@@ -2761,5 +2761,131 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: vetted primitives/protocol",
     "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-004",
+    "short_id": "CRY-004",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "ECB or unauthenticated encryption used where authenticity is required",
+    "cwe": "CWE-327",
+    "detection_method": "AST+REVIEW",
+    "required_evidence": [
+      "AST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "yaml"
+    ],
+    "supported_targets": [
+      "CI/CD Workflows"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: AEAD or approved authenticated construction",
+    "verification_requirements": "Verify via AST+REVIEW evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-005",
+    "short_id": "CRY-005",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "Static/duplicated nonce, IV misuse or key+nonce reuse",
+    "cwe": "CWE-329",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: nonce uniqueness enforced",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-006",
+    "short_id": "CRY-006",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "Hard-coded private key, salt-as-secret or symmetric key",
+    "cwe": "CWE-321",
+    "detection_method": "SECRET+CONFIG",
+    "required_evidence": [
+      "CONFIG",
+      "SECRET"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: managed secret storage and rotation",
+    "verification_requirements": "Verify via SECRET+CONFIG evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-007",
+    "short_id": "CRY-007",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "Key/certificate expiration, rotation, revocation not handled",
+    "cwe": "CWE-324",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: lifecycle proof",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-CRY-008",
+    "short_id": "CRY-008",
+    "rule_version": "1.0",
+    "category_number": 9,
+    "category": "2.9 Cryptography, randomness and key management",
+    "description": "Insecure deterministic equality/hash used to sign/authorize requests",
+    "cwe": "CWE-347",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: authenticated signature/MAC with correct key",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
