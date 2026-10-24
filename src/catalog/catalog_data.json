@@ -1637,5 +1637,130 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: allowlist and credential semantics verified",
     "verification_requirements": "Verify via CONFIG+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-012",
+    "short_id": "WEB-012",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "Credentials/tokens passed through client telemetry and error tracking",
+    "cwe": "CWE-532",
+    "detection_method": "FLOW+SECRET",
+    "required_evidence": [
+      "FLOW",
+      "SECRET"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: redaction at event source",
+    "verification_requirements": "Verify via FLOW+SECRET evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-013",
+    "short_id": "WEB-013",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "File download URL/object link exposes private content without authz",
+    "cwe": "CWE-200",
+    "detection_method": "TEST",
+    "required_evidence": [
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: access to download resource independently checked",
+    "verification_requirements": "Verify via TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-014",
+    "short_id": "WEB-014",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "Service worker/cache stores private responses accessible across accounts",
+    "cwe": "CWE-525",
+    "detection_method": "REVIEW+TEST",
+    "required_evidence": [
+      "TEST",
+      "REVIEW"
+    ],
+    "status": "REVIEW_REQUIRED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: user/logout and cache partitions safe",
+    "verification_requirements": "Verify via REVIEW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-WEB-015",
+    "short_id": "WEB-015",
+    "rule_version": "1.0",
+    "category_number": 5,
+    "category": "2.5 Browser, UI and frontend code",
+    "description": "SSR/hydration payload serializes PII or privileged server state",
+    "cwe": "CWE-200",
+    "detection_method": "FLOW+TEST",
+    "required_evidence": [
+      "FLOW",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: public page content redacted",
+    "verification_requirements": "Verify via FLOW+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-API-001",
+    "short_id": "API-001",
+    "rule_version": "1.0",
+    "category_number": 6,
+    "category": "2.6 HTTP APIs, GraphQL, gRPC and realtime",
+    "description": "Request body/field validation only occurs in UI",
+    "cwe": "CWE-20",
+    "detection_method": "AST+TEST",
+    "required_evidence": [
+      "AST",
+      "TEST"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "Generic Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: server enforces type, length, shape, enum",
+    "verification_requirements": "Verify via AST+TEST evidence and regression test"
   }
 ]
