@@ -7296,5 +7296,134 @@
     "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
     "remediation_guidance": "Restore invariant: bounded work and cancellation",
     "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LLM-018",
+    "short_id": "LLM-018",
+    "rule_version": "1.0",
+    "category_number": 22,
+    "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+    "description": "Multi-agent messages lack trusted sender identity, authenticated channel or action scope",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "rust"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: signed/verified agent identity and scope",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LLM-019",
+    "short_id": "LLM-019",
+    "rule_version": "1.0",
+    "category_number": 22,
+    "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+    "description": "Agent chain allows one agent's unchecked proposal to become another agent's privileged command",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: reauthorization at each handoff",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LLM-020",
+    "short_id": "LLM-020",
+    "rule_version": "1.0",
+    "category_number": 22,
+    "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+    "description": "Human approval prompt omits actual target, diff, impact or command being approved",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files",
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: action-bound informed approval",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LLM-021",
+    "short_id": "LLM-021",
+    "rule_version": "1.0",
+    "category_number": 22,
+    "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+    "description": "Agent continues acting after revocation, stop request, timeout or ownership change",
+    "cwe": null,
+    "detection_method": "AGENT+TEST",
+    "required_evidence": [
+      "TEST",
+      "AGENT"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "generic"
+    ],
+    "supported_targets": [
+      "AI Agent Configs / Skills"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: immediate cancellation/revocation enforced",
+    "verification_requirements": "Verify via AGENT+TEST evidence and regression test"
+  },
+  {
+    "rule_id": "BK-AI-LLM-022",
+    "short_id": "LLM-022",
+    "rule_version": "1.0",
+    "category_number": 22,
+    "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+    "description": "Model/tool endpoint sends proprietary code, secrets or PII to unapproved external provider",
+    "cwe": null,
+    "detection_method": "FLOW+CONFIG",
+    "required_evidence": [
+      "FLOW",
+      "CONFIG"
+    ],
+    "status": "CATALOGED",
+    "applicable_languages": [
+      "javascript",
+      "typescript"
+    ],
+    "supported_targets": [
+      "Source Files"
+    ],
+    "known_limitations": "Static AST/flow checks require explicit syntactic reachability; dynamic indirections may require runtime verification.",
+    "false_positive_considerations": "Safe local constant contexts or validated preconditions may appear suspicious to surface heuristics.",
+    "remediation_guidance": "Restore invariant: outbound data policy and minimization",
+    "verification_requirements": "Verify via FLOW+CONFIG evidence and regression test"
   }
 ]
