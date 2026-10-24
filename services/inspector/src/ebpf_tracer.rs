@@ -2,7 +2,7 @@ use tokio::sync::broadcast;
 use tokio_stream::StreamExt;
 use tokio_stream::wrappers::BroadcastStream;
 
-use crate::omni_proto::{RuntimeEvent, RuntimeEventType};
+use crate::omni_proto::RuntimeEvent;
 
 pub struct EbpfTracer {
     tx: broadcast::Sender<RuntimeEvent>,
@@ -57,7 +57,7 @@ impl EbpfTracer {
         {
             // Linux eBPF tracepoint driver:
             // Hooks tracepoint:syscalls:sys_enter_execve and signal delivery
-            let tx = self.tx.clone();
+            let _tx = self.tx.clone();
             tokio::spawn(async move {
                 eprintln!("[+] Aya eBPF: Linux kernel tracepoint engine initialized");
                 let mut interval = tokio::time::interval(std::time::Duration::from_millis(500));
@@ -70,7 +70,7 @@ impl EbpfTracer {
 
         #[cfg(not(target_os = "linux"))]
         {
-            let tx = self.tx.clone();
+            let _tx = self.tx.clone();
             tokio::spawn(async move {
                 // Non-Linux development heartbeat telemetry
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
