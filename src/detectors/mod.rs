@@ -1835,6 +1835,142 @@ impl SecurityDetector for NativeDesktopDetector {
     }
 }
 
+pub struct BkhSafetyDetector;
+
+impl SecurityDetector for BkhSafetyDetector {
+    fn id(&self) -> &'static str {
+        "bkh-safety"
+    }
+
+    fn name(&self) -> &'static str {
+        "Bug Killer Healer & Scanner Safety Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-BKH-001",
+            "BK-AI-BKH-002",
+            "BK-AI-BKH-003",
+            "BK-AI-BKH-004",
+            "BK-AI-BKH-005",
+            "BK-AI-BKH-006",
+            "BK-AI-BKH-007",
+            "BK-AI-BKH-008",
+            "BK-AI-BKH-009",
+            "BK-AI-BKH-010",
+            "BK-AI-BKH-011",
+            "BK-AI-BKH-012",
+            "BK-AI-BKH-013",
+            "BK-AI-BKH-014",
+            "BK-AI-BKH-015",
+            "BK-AI-BKH-016",
+            "BK-AI-BKH-017",
+            "BK-AI-BKH-018",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "rust", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::GenericConfigFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "bkh-safety")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct MemTempDetector;
+
+impl SecurityDetector for MemTempDetector {
+    fn id(&self) -> &'static str {
+        "mem-temp"
+    }
+
+    fn name(&self) -> &'static str {
+        "Memory Safety & Insecure Temp File Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-MEM-001",
+            "BK-AI-MEM-002",
+            "BK-AI-MEM-003",
+            "BK-AI-FIL-008",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["c", "cpp", "rust", "zig", "javascript", "typescript", "python", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "mem-temp")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
 // ---------------- Detector Registry ----------------
 
 pub struct DetectorRegistry {
@@ -1870,6 +2006,7 @@ impl Default for DetectorRegistry {
         reg.register(Arc::new(LanguagePitfallsDetector));
         reg.register(Arc::new(OpsQaDetector));
         reg.register(Arc::new(NativeDesktopDetector));
+        reg.register(Arc::new(MemTempDetector));
         reg
     }
 }

@@ -5,6 +5,7 @@ pub mod auth;
 pub mod authz;
 pub mod binary;
 pub mod biz_concurrency;
+pub mod bkh_safety;
 pub mod cicd;
 pub mod container;
 pub mod crypto;
@@ -14,6 +15,7 @@ pub mod host;
 pub mod iac;
 pub mod injection;
 pub mod language_pitfalls;
+pub mod mem_temp;
 pub mod native_desktop;
 pub mod network_dos;
 pub mod node;
@@ -322,6 +324,8 @@ impl FleetScanner {
                     raw_findings.extend(self::language_pitfalls::LanguagePitfallsScanner::scan_source(path, &content));
                     raw_findings.extend(self::native_desktop::NativeDesktopScanner::scan_source(path, &content));
                     raw_findings.extend(self::ops_qa::OpsQaScanner::scan_source(path, &content));
+                    raw_findings.extend(self::bkh_safety::BkhSafetyScanner::scan_source(path, &content));
+                    raw_findings.extend(self::mem_temp::MemTempScanner::scan_source(path, &content));
                 }
             }
 
