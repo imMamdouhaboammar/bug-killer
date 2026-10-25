@@ -1,11 +1,53 @@
 package waf
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func newTestWafInjector(t *testing.T) *WafInjector {
+	t.Helper()
+	injector := NewWafInjector()
+	injector.ExternalValidator = func(kind, path string) error {
+		if kind != "nginx" && kind != "haproxy" && kind != "apache" {
+			t.Errorf("unexpected config type %q", kind)
+		}
+		if _, err := os.ReadFile(path); err != nil {
+			return err
+		}
+		return nil
+	}
+	return injector
+}
+
+func TestWafInjectorRejectsFailedExternalValidationBeforeReplace(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nginx.conf")
+	original := []byte("server { listen 80; }\n")
+	if err := os.WriteFile(path, original, 0600); err != nil {
+		t.Fatal(err)
+	}
+	injector := NewWafInjector()
+	called := false
+	injector.ExternalValidator = func(kind, staged string) error {
+		called = true
+		if kind != "nginx" || staged == path {
+			t.Fatalf("expected nginx validation against staged config, got %q %q", kind, staged)
+		}
+		return errors.New("synthetic syntax rejection")
+	}
+	if changed, err := injector.InjectNginx(path); err == nil || changed {
+		t.Fatalf("invalid staged config must never be installed: changed=%v err=%v", changed, err)
+	}
+	if !called {
+		t.Fatal("external validator must be called before publishing")
+	}
+	if current, err := os.ReadFile(path); err != nil || string(current) != string(original) {
+		t.Fatalf("failed validation must preserve original: %v", err)
+	}
+}
 
 func TestWafInjectorNginxIdempotency(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "aegis-waf-test")
@@ -23,7 +65,7 @@ func TestWafInjectorNginxIdempotency(t *testing.T) {
 }`
 	_ = os.WriteFile(confPath, []byte(initialContent), 0644)
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 
 	// First injection
 	applied, err := injector.InjectNginx(confPath)
@@ -66,7 +108,7 @@ func TestWafInjectorHAProxy(t *testing.T) {
     default_backend servers`
 	_ = os.WriteFile(confPath, []byte(initialContent), 0644)
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 	applied, err := injector.InjectHAProxy(confPath)
 	if err != nil || !applied {
 		t.Fatalf("HAProxy injection failed: %v", err)
@@ -92,7 +134,7 @@ func TestWafInjectionPreservesPrivatePermissionsAndSymlink(t *testing.T) {
 	if err := os.Link(actual, hardLinkedAlias); err != nil {
 		t.Skipf("Hard links unavailable in test environment: %v", err)
 	}
-	applied, err := NewWafInjector().InjectNginx(linked)
+	applied, err := newTestWafInjector(t).InjectNginx(linked)
 	if err != nil || !applied {
 		t.Fatalf("Failed to inject through approved symlink: %v", err)
 	}
@@ -130,7 +172,7 @@ server {
 		t.Fatal(err)
 	}
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 	applied, err := injector.InjectNginx(confPath)
 	if err != nil || !applied {
 		t.Fatalf("InjectNginx failed: %v", err)
@@ -188,7 +230,7 @@ frontend active_frontend
 		t.Fatal(err)
 	}
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 	applied, err := injector.InjectHAProxy(confPath)
 	if err != nil || !applied {
 		t.Fatalf("InjectHAProxy failed: %v", err)
@@ -218,7 +260,7 @@ func TestWafInjectorNginxSyntaxErrorRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 	applied, err := injector.InjectNginx(confPath)
 	if err == nil {
 		t.Fatalf("expected syntax error on broken config, but got err=nil, applied=%v", applied)
@@ -246,7 +288,7 @@ func TestWafInjectorApacheAnchoringAndRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 	applied, err := injector.InjectApache(confPath)
 	if err != nil || !applied {
 		t.Fatalf("InjectApache failed: %v", err)
@@ -283,7 +325,7 @@ func TestWafInjectorApacheSyntaxErrorRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 	applied, err := injector.InjectApache(confPath)
 	if err == nil {
 		t.Fatalf("expected syntax error on unclosed Apache tag, got applied=%v", applied)
@@ -313,7 +355,7 @@ server {
 		t.Fatal(err)
 	}
 
-	injector := NewWafInjector()
+	injector := newTestWafInjector(t)
 	applied, err := injector.InjectNginx(confPath)
 	if err != nil || !applied {
 		t.Fatalf("InjectNginx failed: %v", err)
@@ -337,5 +379,3 @@ server {
 		t.Fatalf("Rollback failed to remove marker: %s", string(cleanBytes))
 	}
 }
-
-

@@ -178,7 +178,10 @@ func (fc *FileCrawler) walkRoot(ctx context.Context, root string, wg *sync.WaitG
 
 		// 2. Limit check
 		if fc.fileLimitHit.Load() {
-			return filepath.SkipDir
+			if info != nil && info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 
 		// 3. Strict error checking: capture errors instead of silently swallowing them
@@ -198,10 +201,12 @@ func (fc *FileCrawler) walkRoot(ctx context.Context, root string, wg *sync.WaitG
 		// 4. Directory filtering and depth limits
 		if info.IsDir() {
 			name := info.Name()
-			for _, excl := range fc.config.ExcludeDirs {
-				if name == excl {
-					fc.recordSkippedDir(path)
-					return filepath.SkipDir
+			if filepath.Clean(path) != cleanRoot {
+				for _, excl := range fc.config.ExcludeDirs {
+					if name == excl {
+						fc.recordSkippedDir(path)
+						return filepath.SkipDir
+					}
 				}
 			}
 
@@ -236,7 +241,7 @@ func (fc *FileCrawler) walkRoot(ctx context.Context, root string, wg *sync.WaitG
 			count := atomic.AddInt64(&fc.fileCount, 1)
 			if count > int64(fc.config.MaxFiles) {
 				fc.fileLimitHit.Store(true)
-				return filepath.SkipDir
+				return nil
 			}
 		}
 

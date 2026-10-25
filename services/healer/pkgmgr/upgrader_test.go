@@ -134,3 +134,25 @@ func TestPackageUpgraderValidPackageNames(t *testing.T) {
 		}
 	}
 }
+
+func TestPackageUpgraderNpmRejectsNonRegistrySpecs(t *testing.T) {
+	pu := NewPackageUpgraderWithManager("npm")
+	for _, spec := range []string{"user/repo@latest", "./local-package", "../parent", "owner/repo", "@scope/../file"} {
+		if _, err := pu.GenerateUpgradeCommands(spec); err == nil {
+			t.Errorf("npm must reject non-registry spec %q", spec)
+		}
+	}
+}
+
+func TestPackageUpgraderPreservesPinnedNpmVersion(t *testing.T) {
+	pu := NewPackageUpgraderWithManager("npm")
+	for _, input := range []string{"react@18.2.0", "@types/node@20.0.0"} {
+		cmds, err := pu.GenerateUpgradeCommands(input)
+		if err != nil {
+			t.Fatalf("valid pinned package %q rejected: %v", input, err)
+		}
+		if got := cmds[0][len(cmds[0])-1]; got != input {
+			t.Errorf("expected pinned package %q unchanged, got %q", input, got)
+		}
+	}
+}

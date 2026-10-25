@@ -7,7 +7,9 @@ import (
 	"strings"
 )
 
-var validPackageNameRegex = regexp.MustCompile(`^[a-zA-Z0-9@][a-zA-Z0-9@/._+-]*$`)
+// Registry names may contain a slash only between an npm scope and its package.
+// This rejects GitHub shorthands and local paths that npm would install as code.
+var validPackageNameRegex = regexp.MustCompile(`^(@[a-zA-Z0-9][a-zA-Z0-9._-]*/)?[a-zA-Z0-9][a-zA-Z0-9._+-]*(@[a-zA-Z0-9][a-zA-Z0-9._+-]*)?$`)
 
 // ValidatePackageName ensures the given package name or runtime type does not
 // contain command flag injection attempts (e.g. leading '-') or dangerous shell metacharacters.
@@ -106,7 +108,11 @@ func (pu *PackageUpgrader) GenerateUpgradeCommands(runtimeType string) ([][]stri
 		if runtimeType == "audit" || runtimeType == "fix" {
 			return [][]string{{"npm", "audit", "fix"}}, nil
 		}
-		return [][]string{{"npm", "install", "-g", fmt.Sprintf("%s@latest", runtimeType)}}, nil
+		packageSpec := runtimeType
+		if !strings.Contains(runtimeType[1:], "@") {
+			packageSpec += "@latest"
+		}
+		return [][]string{{"npm", "install", "-g", packageSpec}}, nil
 	default:
 		return [][]string{{"echo", fmt.Sprintf("No supported package manager detected for %s upgrade", runtimeType)}}, nil
 	}

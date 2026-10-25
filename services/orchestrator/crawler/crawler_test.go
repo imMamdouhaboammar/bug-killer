@@ -65,6 +65,22 @@ func TestFileCrawlerDiscovery(t *testing.T) {
 	}
 }
 
+func TestFileCrawlerDoesNotExcludeItsOwnRoot(t *testing.T) {
+	base := t.TempDir()
+	root := filepath.Join(base, "vendor")
+	if err := os.MkdirAll(root, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "package.json"), []byte(`{"name":"scan-root"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	fc := NewFileCrawler(CrawlerConfig{RootPaths: []string{root}, ExcludeDirs: []string{"vendor"}})
+	result := fc.Crawl()
+	if len(result.Assets) != 1 || result.Status != CrawlStatusComplete {
+		t.Fatalf("explicit root vendor must be scanned, got status %s and %d assets", result.Status, len(result.Assets))
+	}
+}
+
 func TestFileCrawlerAferoMemoryFs(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	_ = memFs.MkdirAll("/isolated/app", 0755)
@@ -123,6 +139,9 @@ func TestFileCrawlerCapturesTraversalErrorOnUnreadableSubdir(t *testing.T) {
 		t.Skipf("cannot chmod 0000 on this platform: %v", err)
 	}
 	defer os.Chmod(unreadableDir, 0755) // restore for cleanup
+	if _, err := os.ReadDir(unreadableDir); err == nil {
+		t.Skip("test runner can still read chmod 0000 directory; traversal failure cannot be simulated")
+	}
 
 	fc := NewFileCrawler(CrawlerConfig{
 		RootPaths: []string{tempDir},

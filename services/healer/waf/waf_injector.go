@@ -1,12 +1,14 @@
 package waf
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/spf13/afero"
 )
@@ -60,7 +62,7 @@ func (w *WafInjector) readConfig(configPath string) (string, []byte, error) {
 	return canonical, data, err
 }
 
-func (w *WafInjector) writeConfigAtomically(canonical string, content []byte) error {
+func (w *WafInjector) writeConfigAtomically(canonical string, content []byte, configType string) error {
 	info, err := w.fs.Stat(canonical)
 	if err != nil {
 		return err
@@ -98,6 +100,9 @@ func (w *WafInjector) writeConfigAtomically(canonical string, content []byte) er
 
 	if err := temp.Close(); err != nil {
 		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+	if err := w.runExternalCheck(configType, tempName); err != nil {
+		return fmt.Errorf("staged WAF configuration rejected before publication: %w", err)
 	}
 
 	if err := w.fs.Rename(tempName, canonical); err != nil {
@@ -272,33 +277,27 @@ func (w *WafInjector) runExternalCheck(configType, tempPath string) error {
 		return w.ExternalValidator(configType, tempPath)
 	}
 
+	var executable string
+	var args []string
 	switch configType {
 	case "nginx":
-		if path, err := exec.LookPath("nginx"); err == nil {
-			// Only run if nginx binary is functional and can validate standalone config
-			cmd := exec.Command(path, "-t", "-c", tempPath)
-			out, err := cmd.CombinedOutput()
-			// If error is about missing events directive (snippet config), ignore
-			if err != nil && !strings.Contains(string(out), "events") {
-				return fmt.Errorf("nginx -t verification failed: %s (%w)", string(out), err)
-			}
-		}
+		executable, args = "nginx", []string{"-t", "-c", tempPath}
 	case "haproxy":
-		if path, err := exec.LookPath("haproxy"); err == nil {
-			cmd := exec.Command(path, "-c", "-f", tempPath)
-			if out, err := cmd.CombinedOutput(); err != nil {
-				return fmt.Errorf("haproxy -c verification failed: %s (%w)", string(out), err)
-			}
-		}
+		executable, args = "haproxy", []string{"-c", "-f", tempPath}
 	case "apache":
-		if path, err := exec.LookPath("apachectl"); err == nil {
-			cmd := exec.Command(path, "-t", "-f", tempPath)
-			out, err := cmd.CombinedOutput()
-			// If error is about MPM not loaded (standard test snippet), ignore
-			if err != nil && !strings.Contains(string(out), "AH00534") {
-				return fmt.Errorf("apachectl -t verification failed: %s (%w)", string(out), err)
-			}
-		}
+		executable, args = "apachectl", []string{"-t", "-f", tempPath}
+	default:
+		return fmt.Errorf("no syntax validator configured for %q", configType)
+	}
+	path, err := exec.LookPath(executable)
+	if err != nil {
+		return fmt.Errorf("%s validator unavailable: %w", configType, err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, path, args...).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s syntax check failed: %s (%w)", configType, string(out), err)
 	}
 	return nil
 }
@@ -425,7 +424,7 @@ func (w *WafInjector) InjectNginx(configPath string) (bool, error) {
 	}
 
 	// Atomic write with rollback on error
-	if err := w.writeConfigAtomically(canonical, []byte(modified)); err != nil {
+	if err := w.writeConfigAtomically(canonical, []byte(modified), "nginx"); err != nil {
 		return false, err
 	}
 
@@ -488,7 +487,7 @@ func (w *WafInjector) InjectHAProxy(configPath string) (bool, error) {
 		return false, fmt.Errorf("injected haproxy configuration failed syntax validation: %w", err)
 	}
 
-	if err := w.writeConfigAtomically(canonical, []byte(modified)); err != nil {
+	if err := w.writeConfigAtomically(canonical, []byte(modified), "haproxy"); err != nil {
 		return false, err
 	}
 
@@ -554,7 +553,7 @@ func (w *WafInjector) InjectApache(configPath string) (bool, error) {
 		return false, fmt.Errorf("injected apache configuration failed syntax validation: %w", err)
 	}
 
-	if err := w.writeConfigAtomically(canonical, []byte(modified)); err != nil {
+	if err := w.writeConfigAtomically(canonical, []byte(modified), "apache"); err != nil {
 		return false, err
 	}
 
@@ -603,7 +602,16 @@ func (w *WafInjector) Rollback(configPath string) (bool, error) {
 		return false, nil
 	}
 
-	if err := w.writeConfigAtomically(canonical, []byte(modified)); err != nil {
+	configType := ""
+	switch {
+	case strings.Contains(content, NginxMarkerStart):
+		configType = "nginx"
+	case strings.Contains(content, HAProxyMarkerStart):
+		configType = "haproxy"
+	case strings.Contains(content, ApacheMarkerStart):
+		configType = "apache"
+	}
+	if err := w.writeConfigAtomically(canonical, []byte(modified), configType); err != nil {
 		return false, err
 	}
 
