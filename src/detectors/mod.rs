@@ -2092,6 +2092,7 @@ impl SecurityDetector for MemTempDetector {
 
 // ---------------- Detector Registry ----------------
 
+#[derive(Clone)]
 pub struct DetectorRegistry {
     detectors: Vec<Arc<dyn SecurityDetector>>,
 }

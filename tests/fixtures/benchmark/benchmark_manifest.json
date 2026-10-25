@@ -1,0 +1,313 @@
+{
+  "version": "1.0.0",
+  "description": "Representative synthetic security benchmark dataset covering OWASP/SARD vulnerability patterns across key CWEs",
+  "created_at": "2026-10-25T17:00:00Z",
+  "cases": [
+    {
+      "case_id": "BK-CWE-89-POS-0001",
+      "language": "python",
+      "weakness": "CWE-89",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-INJ-001"],
+      "source_file": "cwe_89_sql/cwe_89_positive_concat.py",
+      "source_sha256": "2113a2354c925411a946ffd1be75a773c9290f9205cc3308a6ba700c0883a4df",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_89_sql"
+      }
+    },
+    {
+      "case_id": "BK-CWE-89-NEG-0001",
+      "language": "python",
+      "weakness": "CWE-89",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_89_sql/cwe_89_negative_parameterized.py",
+      "source_sha256": "ee1c5758433cd6e3f58c6fe0dff0c8c5d3ef939ee6a4fa60734d03ad221e611a",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_89_sql"
+      }
+    },
+    {
+      "case_id": "BK-CWE-89-EVA-0001",
+      "language": "python",
+      "weakness": "CWE-89",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-INJ-001"],
+      "source_file": "cwe_89_sql/cwe_89_evasion_multiline_format.py",
+      "source_sha256": "c66961f9edad343408d874957a6a3fc65cdddac35250c3c852dc6e0d22e469da",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_89_sql"
+      }
+    },
+    {
+      "case_id": "BK-CWE-78-POS-0001",
+      "language": "python",
+      "weakness": "CWE-78",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-INJ-006"],
+      "source_file": "cwe_78_cmd/cwe_78_positive_shell_exec.py",
+      "source_sha256": "f0e57d32ece8cfc3bcc8b0ba5147aa61ae33861ef6f860df24292fbb8d41d472",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_78_cmd"
+      }
+    },
+    {
+      "case_id": "BK-CWE-78-NEG-0001",
+      "language": "python",
+      "weakness": "CWE-78",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_78_cmd/cwe_78_negative_safe_arglist.py",
+      "source_sha256": "546789366014daa90345cc3349a3e270751888eac4a110a68ab8ede0c7a3652a",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_78_cmd"
+      }
+    },
+    {
+      "case_id": "BK-CWE-918-POS-0001",
+      "language": "python",
+      "weakness": "CWE-918",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-NET-001"],
+      "source_file": "cwe_918_ssrf/cwe_918_positive_user_url.py",
+      "source_sha256": "df68b4eb54418568429e393d7d17c1bcdade79de2f66458c69bc87a99078411c",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_918_ssrf"
+      }
+    },
+    {
+      "case_id": "BK-CWE-918-NEG-0001",
+      "language": "python",
+      "weakness": "CWE-918",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_918_ssrf/cwe_918_negative_allowlist_check.py",
+      "source_sha256": "abeb99c7efd9c2e8034483a02776bd3ebb107a82230c7d63f0f19a5b247f2771",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_918_ssrf"
+      }
+    },
+    {
+      "case_id": "BK-CWE-22-POS-0001",
+      "language": "python",
+      "weakness": "CWE-22",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-FIL-001"],
+      "source_file": "cwe_22_traversal/cwe_22_positive_path_join.py",
+      "source_sha256": "a9cbb3b2deb3236dcd79886177ccf0193396d757efe2605672d1f83c9bce7357",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_22_traversal"
+      }
+    },
+    {
+      "case_id": "BK-CWE-22-NEG-0001",
+      "language": "python",
+      "weakness": "CWE-22",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_22_traversal/cwe_22_negative_containment_check.py",
+      "source_sha256": "276303d09b223849c604b16e65ded52e3af1b204c9c026f4feb017e52f53b07a",
+      "scenario": {
+        "type": "source-to-sink",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_22_traversal"
+      }
+    },
+    {
+      "case_id": "BK-CWE-502-POS-0001",
+      "language": "python",
+      "weakness": "CWE-502",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-DES-001"],
+      "source_file": "cwe_502_deserialization/cwe_502_positive_pickle_loads.py",
+      "source_sha256": "688e6f964f3698bd63e6e82a1837690b5e1440cd44224c20e6fe3281e231bf49",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_502_deserialization"
+      }
+    },
+    {
+      "case_id": "BK-CWE-502-NEG-0001",
+      "language": "python",
+      "weakness": "CWE-502",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_502_deserialization/cwe_502_negative_safe_json.py",
+      "source_sha256": "393efd76404db04fe9080dd1e63211bdffd1c15b6f31fde8ab1bf39db59762cb",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_502_deserialization"
+      }
+    },
+    {
+      "case_id": "BK-CWE-798-POS-0001",
+      "language": "python",
+      "weakness": "CWE-798",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "CONFIRMED",
+      "expected_rule_ids": ["BK-AI-SEC-001"],
+      "source_file": "cwe_798_secrets/cwe_798_positive_hardcoded_token.py",
+      "source_sha256": "6dbd92f3770a884df8d46386be0c800705e55470a1b35983b929641e7e2087c4",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_798_secrets"
+      }
+    },
+    {
+      "case_id": "BK-CWE-798-NEG-0001",
+      "language": "python",
+      "weakness": "CWE-798",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "CONFIRMED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_798_secrets/cwe_798_negative_env_lookup.py",
+      "source_sha256": "25eab5da1e10d64ccb5bd75f99acac32d354fe95503cf31ba36ad99e263046d1",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_798_secrets"
+      }
+    },
+    {
+      "case_id": "BK-CWE-1333-POS-0001",
+      "language": "javascript",
+      "weakness": "CWE-1333",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-REDOS-001"],
+      "source_file": "cwe_1333_redos/cwe_1333_positive_nested_quantifier.js",
+      "source_sha256": "d4f669583f08314a73d3cab1e721df587182699f667fc7ab8cf6ff6d76e9703f",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_1333_redos"
+      }
+    },
+    {
+      "case_id": "BK-CWE-1333-NEG-0001",
+      "language": "javascript",
+      "weakness": "CWE-1333",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_1333_redos/cwe_1333_negative_linear_regex.js",
+      "source_sha256": "66bd8a81b0f8a9dd6f3adad2487f03d70e28d9ed5e6fe25e2441b8c10713401d",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_1333_redos"
+      }
+    },
+    {
+      "case_id": "BK-CWE-287-POS-0001",
+      "language": "python",
+      "weakness": "CWE-287",
+      "expected_vulnerable": true,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": ["BK-AI-AUTH-001"],
+      "source_file": "cwe_287_auth/cwe_287_positive_insecure_compare.py",
+      "source_sha256": "269fc0b8b989ef284be2598f56e6df21fcc953c4dc0dc4906747ac1fa4f35923",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_287_auth"
+      }
+    },
+    {
+      "case_id": "BK-CWE-287-NEG-0001",
+      "language": "python",
+      "weakness": "CWE-287",
+      "expected_vulnerable": false,
+      "expected_certainty_cap": "STRONGLY_SUPPORTED",
+      "expected_rule_ids": [],
+      "source_file": "cwe_287_auth/cwe_287_negative_constant_time.py",
+      "source_sha256": "58eb7bc8321a79eb5a2ec56c04251887662a708cb45adac7cad9118c0fc66b8e",
+      "scenario": {
+        "type": "pattern-match",
+        "execution": "offline"
+      },
+      "provenance": {
+        "class": "synthetic",
+        "source": "tests/fixtures/benchmark/cwe_287_auth"
+      }
+    }
+  ]
+}
