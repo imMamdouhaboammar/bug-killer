@@ -331,6 +331,7 @@ pub enum ProofMethod {
     AuthoritativeRange,
     StaticInvariant,
     RuntimeTrace,
+    ReproductionArtifact,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

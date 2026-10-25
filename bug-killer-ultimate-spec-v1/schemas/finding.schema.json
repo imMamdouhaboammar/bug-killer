@@ -117,7 +117,7 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["ISOLATED_TEST", "AUTHORITATIVE_RANGE", "STATIC_INVARIANT", "RUNTIME_TRACE"]
+              "enum": ["ISOLATED_TEST", "AUTHORITATIVE_RANGE", "STATIC_INVARIANT", "RUNTIME_TRACE", "REPRODUCTION_ARTIFACT"]
             },
             "artifact_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
             "reproduced_on_snapshot": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
