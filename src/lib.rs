@@ -1,5 +1,6 @@
 #![allow(clippy::collapsible_if, clippy::doc_lazy_continuation)]
 
+pub mod advisory;
 pub mod agent;
 pub mod benchmark;
 pub mod catalog;
