@@ -103,7 +103,7 @@ impl ContainerScanner {
                                 format!("container-secret-exposure-{}-L{}", &file_digest[..8], line_num),
                                 CveId::Custom {
                                     id: "BK-CONTAINER-003".to_string(),
-                                    title: "Hardcoded Secret / Credential Exposure in Container Layer".to_string(),
+                                    title: "Secrets Embedded in Dockerfile Layer or Container Arguments".to_string(),
                                 },
                                 Severity::Critical,
                                 TargetKind::Dockerfile,
@@ -116,6 +116,7 @@ impl ContainerScanner {
                             );
                             finding.detector_id = "container-scanner".to_string();
                             finding.category = "credential-leakage".to_string();
+                            finding.advisory_ids.push("BK-AI-INF-007".to_string());
                             finding.affectedness = Affectedness::ConfirmedAffected;
                             finding.reachability = Reachability::ConfirmedReachable;
                             finding.confidence = Confidence::High;
@@ -127,6 +128,39 @@ impl ContainerScanner {
                         }
                     }
                 }
+            }
+
+            // 4. Insecure 0.0.0.0 binding exposure (BK-AI-INF-001)
+            if trimmed.contains("0.0.0.0")
+                && (trimmed.starts_with("EXPOSE ")
+                    || trimmed.starts_with("CMD ")
+                    || trimmed.starts_with("ENTRYPOINT ")
+                    || trimmed.contains("--bind")
+                    || trimmed.contains("--host"))
+            {
+                let mut finding = Finding::new(
+                    format!("container-bind-all-{}-L{}", &file_digest[..8], line_num),
+                    CveId::Custom {
+                        id: "BK-AI-INF-001".to_string(),
+                        title: "Service Exposed on 0.0.0.0 (Public Interface Binding)".to_string(),
+                    },
+                    Severity::Medium,
+                    TargetKind::Dockerfile,
+                    Some(path.to_path_buf()),
+                    Some(line_num),
+                    trimmed.to_string(),
+                    "Bind internal services to loopback 127.0.0.1 or rely on container overlay networking".to_string(),
+                    "Binding directly to 0.0.0.0 exposes administrative, debugging, or internal application endpoints to all available network interfaces without firewall isolation.".to_string(),
+                    "Change service binding from 0.0.0.0 to 127.0.0.1 for local services, or enforce ingress security policies.".to_string(),
+                );
+                finding.detector_id = "container-scanner".to_string();
+                finding.category = "container-hardening".to_string();
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::PotentiallyReachable;
+                finding.confidence = Confidence::High;
+                finding.supported_checks = vec!["dockerfile_bind_all_check".to_string()];
+                finding.compute_dedupe_fingerprint();
+                findings.push(finding);
             }
 
             // 4. Docker daemon socket exposure or dangerous mounts

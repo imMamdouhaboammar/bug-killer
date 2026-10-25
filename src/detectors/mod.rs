@@ -127,7 +127,13 @@ impl SecurityDetector for SecretDetector {
     }
 
     fn supported_rule_ids(&self) -> &[&'static str] {
-        &["BK-AI-SEC-001", "BK-AI-SEC-002", "BK-AI-SEC-004"]
+        &[
+            "BK-AI-SEC-001",
+            "BK-AI-SEC-002",
+            "BK-AI-SEC-003",
+            "BK-AI-SEC-004",
+            "BK-AI-SEC-010",
+        ]
     }
 
     fn supported_languages(&self) -> &[&'static str] {
@@ -187,7 +193,12 @@ impl SecurityDetector for CicdSecurityDetector {
     }
 
     fn supported_rule_ids(&self) -> &[&'static str] {
-        &["BK-AI-CIC-001", "BK-AI-CIC-002"]
+        &[
+            "BK-AI-CIC-001",
+            "BK-AI-CIC-002",
+            "BK-AI-CIC-003",
+            "BK-AI-CIC-004",
+        ]
     }
 
     fn supported_languages(&self) -> &[&'static str] {
@@ -242,7 +253,12 @@ impl SecurityDetector for ContainerIacDetector {
     }
 
     fn supported_rule_ids(&self) -> &[&'static str] {
-        &["BK-AI-INF-003", "BK-AI-INF-004"]
+        &[
+            "BK-AI-INF-001",
+            "BK-AI-INF-003",
+            "BK-AI-INF-004",
+            "BK-AI-INF-007",
+        ]
     }
 
     fn supported_languages(&self) -> &[&'static str] {
@@ -297,7 +313,12 @@ impl SecurityDetector for AgentSkillDetector {
     }
 
     fn supported_rule_ids(&self) -> &[&'static str] {
-        &["BK-AI-LLM-001", "BK-AI-LLM-008", "BK-AI-LLM-014"]
+        &[
+            "BK-AI-LLM-001",
+            "BK-AI-LLM-003",
+            "BK-AI-LLM-008",
+            "BK-AI-LLM-014",
+        ]
     }
 
     fn supported_languages(&self) -> &[&'static str] {
@@ -422,6 +443,73 @@ impl SecurityDetector for OsvScaDetector {
     }
 }
 
+pub struct DynamicRulesDetector;
+
+impl SecurityDetector for DynamicRulesDetector {
+    fn id(&self) -> &'static str {
+        "dynamic-rules"
+    }
+
+    fn name(&self) -> &'static str {
+        "Pluggable Dynamic Vulnerability Rules Engine"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "CVE-2024-5480",
+            "CVE-2023-44487",
+            "SEC-001-EXPOSED-ENV-SECRETS",
+            "SEC-002-PYTHON-UNSAFE-EVAL",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["generic", "python", "nginx", "javascript", "typescript", "go", "php"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NginxConfig]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let rules = crate::rules::RuleEngine::load_rules(None, &ctx.root);
+        let mut rules_run: Vec<String> = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        for r in &rules {
+            if !rules_run.contains(&r.id) {
+                rules_run.push(r.id.clone());
+            }
+        }
+
+        let report = FleetScanner::scan_directory_with_rules(&ctx.root, false, &rules);
+        let dynamic_findings: Vec<Finding> = report
+            .findings
+            .into_iter()
+            .filter(|f| f.detector_id == "dynamic-rules")
+            .collect();
+
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: dynamic_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
 // ---------------- Detector Registry ----------------
 
 pub struct DetectorRegistry {
@@ -439,6 +527,7 @@ impl Default for DetectorRegistry {
         reg.register(Arc::new(ContainerIacDetector));
         reg.register(Arc::new(AgentSkillDetector));
         reg.register(Arc::new(OsvScaDetector));
+        reg.register(Arc::new(DynamicRulesDetector));
         reg
     }
 }

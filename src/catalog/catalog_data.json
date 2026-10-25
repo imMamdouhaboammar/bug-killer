@@ -3051,7 +3051,7 @@
       "SECRET",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3225,7 +3225,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4312,7 +4312,7 @@
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -4337,7 +4337,7 @@
       "FLOW",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -4666,7 +4666,7 @@
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "dockerfile"
     ],
@@ -4765,7 +4765,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -6929,7 +6929,7 @@
       "FLOW",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],

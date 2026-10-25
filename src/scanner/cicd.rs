@@ -108,6 +108,50 @@ impl CicdScanner {
                 in_run_block = false;
             }
 
+            // 4. Unpinned third-party actions check (BK-AI-CIC-003)
+            let uses_target = if let Some(u) = trimmed.strip_prefix("- uses:") {
+                Some(u.trim())
+            } else {
+                trimmed.strip_prefix("uses:").map(|u| u.trim())
+            };
+
+            if let Some(action_ref) = uses_target {
+                let clean_ref = action_ref.trim_matches(|c| c == '\'' || c == '"');
+                if !clean_ref.starts_with("./") && !clean_ref.starts_with("docker://") {
+                    if let Some((action_name, version_tag)) = clean_ref.split_once('@') {
+                        let is_pinned_sha = version_tag.len() == 40
+                            && version_tag.chars().all(|c| c.is_ascii_hexdigit());
+                        if !is_pinned_sha {
+                            let mut finding = Finding::new(
+                                format!("CIC-UNPINNED-{}-{}", path.display(), line_num),
+                                CveId::Custom {
+                                    id: "BK-AI-CIC-003".to_string(),
+                                    title: "Unpinned Third-Party CI Action (Mutable Tag)".to_string(),
+                                },
+                                Severity::Medium,
+                                TargetKind::GenericConfigFile,
+                                Some(path.to_path_buf()),
+                                Some(line_num),
+                                format!("uses: {}", clean_ref),
+                                "Pin third-party GitHub Action to an immutable full-length commit SHA".to_string(),
+                                format!(
+                                    "Third-party action '{}' uses mutable ref '{}' instead of immutable commit SHA",
+                                    action_name, version_tag
+                                ),
+                                "Pin to full 40-character commit SHA (e.g. 'actions/checkout@8e5e7e5...') with inline comment for version tag".to_string(),
+                            );
+                            finding.detector_id = "cicd-security".to_string();
+                            finding.category = "2.14 CI/CD, build pipelines and repository automation".to_string();
+                            finding.affectedness = Affectedness::ConfirmedAffected;
+                            finding.reachability = Reachability::ConfirmedReachable;
+                            finding.confidence = Confidence::Confirmed;
+                            finding.evidence_certainty = EvidenceCertainty::Confirmed;
+                            findings.push(finding);
+                        }
+                    }
+                }
+            }
+
             if in_run_block || is_run_start {
                 let is_untrusted_title_or_body = RE_UNTRUSTED_EXPR.is_match(line);
                 let is_head_ref = RE_HEAD_REF.is_match(line);
@@ -141,6 +185,7 @@ impl CicdScanner {
                     finding.detector_id = "cicd-security".to_string();
                     finding.category =
                         "2.14 CI/CD, build pipelines and repository automation".to_string();
+                    finding.advisory_ids.push("BK-AI-CIC-004".to_string());
                     finding.affectedness = Affectedness::ConfirmedAffected;
                     finding.reachability = Reachability::ConfirmedReachable;
                     finding.confidence = Confidence::Confirmed;
