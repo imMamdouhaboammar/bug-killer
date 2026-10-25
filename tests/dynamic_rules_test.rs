@@ -1,6 +1,8 @@
 use bug_killer::healer::AutopilotHealer;
 use bug_killer::healer::rollback::RollbackManager;
-use bug_killer::rules::{DetectionMatcher, RemediationStrategy, RuleEngine, VulnerabilityRule};
+use bug_killer::rules::{
+    DetectionMatcher, RemediationStrategy, RuleEngine, RuleProvenance, VulnerabilityRule,
+};
 use bug_killer::scanner::FleetScanner;
 use bug_killer::types::*;
 use std::fs;
@@ -31,6 +33,8 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
             replace: "torch.load($1, weights_only=True)".into(),
             description: "Enforce weights_only=True in torch.load calls".into(),
         }),
+        provenance: RuleProvenance::OperatorApproved,
+        trusted: true,
     };
 
     let rule_nginx = VulnerabilityRule {
@@ -47,11 +51,22 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
             snippet: "limit_req_zone $binary_remote_addr zone=bk_ratelimit:10m rate=100r/s;\nlimit_req zone=bk_ratelimit burst=150 nodelay;".into(),
             description: "Inject HTTP/2 rate limit directives".into(),
         }),
+        provenance: RuleProvenance::OperatorApproved,
+        trusted: true,
     };
 
     let rules_file = rules_dir.join("community_rules.json");
     let rules_json = serde_json::to_string_pretty(&vec![rule_pytorch, rule_nginx]).unwrap();
     fs::write(&rules_file, rules_json).unwrap();
+
+    // Pin rules as operator-approved in workspace configuration
+    let dot_bk = root.join(".bug-killer");
+    fs::create_dir_all(&dot_bk).unwrap();
+    fs::write(
+        dot_bk.join("trusted_rules.json"),
+        r#"["CVE-2024-5480", "CVE-2023-44487"]"#,
+    )
+    .unwrap();
 
     // Verify rules are loaded automatically
     let loaded_rules = RuleEngine::load_rules(None, root);

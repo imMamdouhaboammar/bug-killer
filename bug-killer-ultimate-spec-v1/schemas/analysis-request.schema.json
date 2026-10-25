@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "analysis-request.schema.json",
+  "title": "Bug Killer Analysis Request v1 (PROPOSED)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "engine_id",
+    "snapshot_ref",
+    "snapshot_sha256",
+    "profile",
+    "check_ids",
+    "target_ids",
+    "budgets",
+    "permissions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "engine_id": { "type": "string", "minLength": 1 },
+    "snapshot_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque host-authorized read-only snapshot handle, not an arbitrary filesystem URL."
+    },
+    "snapshot_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "profile": { "type": "string", "enum": ["QUICK", "PROJECT", "CI", "DEEP", "RESEARCH"] },
+    "check_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "target_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeout_seconds", "memory_mb", "max_output_bytes"],
+      "properties": {
+        "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+        "memory_mb": { "type": "integer", "minimum": 64 },
+        "max_output_bytes": { "type": "integer", "minimum": 1024 }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow_network", "allow_mutation"],
+      "properties": {
+        "allow_network": { "type": "boolean" },
+        "allow_mutation": { "type": "boolean" },
+        "authorization_ref": { "type": ["string", "null"] },
+        "allowed_destinations": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "rule_pack_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "extensions": { "type": "object" }
+  },
+  "description": "The host must enforce snapshot isolation, permissions, budgets and output limits independent of adapter self-report."
+}

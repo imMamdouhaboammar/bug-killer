@@ -9,6 +9,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/aegis/orchestrator/crawler"
+	"github.com/aegis/orchestrator/ledger"
 )
 
 func TestEndToEndUDSOrchestratorInspectorIPC(t *testing.T) {
@@ -97,4 +100,44 @@ func TestEndToEndUDSOrchestratorInspectorIPC(t *testing.T) {
 
 	t.Logf("[✓] UDS Intercept Result: Detected=%v, Action=%s, Severity=%v",
 		pktResp.MaliciousIntentDetected, pktResp.RecommendedWafAction, pktResp.Severity)
+
+	// 6. Test Crawler Discovery, Structured CrawlResult, and Coverage Ledger Integration
+	testScanDir := t.TempDir()
+	_ = os.WriteFile(filepath.Join(testScanDir, "package.json"), []byte(`{"name":"e2e-service"}`), 0644)
+	_ = os.WriteFile(filepath.Join(testScanDir, "nginx.conf"), []byte(`server { listen 80; }`), 0644)
+	_ = os.Mkdir(filepath.Join(testScanDir, "node_modules"), 0755)
+	_ = os.WriteFile(filepath.Join(testScanDir, "node_modules", "package.json"), []byte(`{}`), 0644)
+
+	fc := crawler.NewFileCrawler(crawler.CrawlerConfig{
+		RootPaths:     []string{testScanDir},
+		ExcludeDirs:   []string{"node_modules"},
+		CollectBinary: false,
+	})
+
+	crawlRes := fc.Crawl()
+	if crawlRes.Status != crawler.CrawlStatusComplete {
+		t.Fatalf("expected CrawlStatusComplete, got %s (errors: %v)", crawlRes.Status, crawlRes.TraversalErrors)
+	}
+	if len(crawlRes.Assets) != 2 {
+		t.Fatalf("expected 2 discovered assets (excluding node_modules), got %d", len(crawlRes.Assets))
+	}
+	if len(crawlRes.SkippedDirs) == 0 {
+		t.Errorf("expected node_modules in SkippedDirs, got: %v", crawlRes.SkippedDirs)
+	}
+
+	covLedger := ledger.NewCoverageLedger("e2e-orchestrator-host")
+	for _, a := range crawlRes.Assets {
+		covLedger.AddAsset(a)
+	}
+	covLedger.RecordCrawlSummary(crawlRes.Status, crawlRes.SkippedDirs, crawlRes.TraversalErrors)
+	if covLedger.TotalAssets != 2 {
+		t.Errorf("expected 2 total assets in CoverageLedger, got %d", covLedger.TotalAssets)
+	}
+
+	ledgerFile := filepath.Join(testScanDir, "coverage-ledger.json")
+	if err := covLedger.WriteToFile(ledgerFile); err != nil {
+		t.Fatalf("failed to write coverage ledger file: %v", err)
+	}
+	t.Logf("[✓] E2E Crawler & Coverage Ledger verified: TotalAssets=%d, Status=%s, SkippedDirs=%v",
+		covLedger.TotalAssets, covLedger.CrawlStatus, covLedger.SkippedDirs)
 }

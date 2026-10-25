@@ -82,11 +82,14 @@ var scanCmd = &cobra.Command{
 			CollectBinary: scanBinaries,
 		})
 
-		fsAssets := fc.Crawl()
-		fmt.Printf("[+] Filesystem Crawler: Discovered %d runtime/config assets\n", len(fsAssets))
+		crawlRes := fc.Crawl()
+		fsAssets := crawlRes.Assets
+		fmt.Printf("[+] Filesystem Crawler: Discovered %d runtime/config assets (Status: %s, Skipped: %d, Errors: %d)\n",
+			len(fsAssets), crawlRes.Status, len(crawlRes.SkippedDirs), len(crawlRes.TraversalErrors))
 		for _, a := range fsAssets {
 			covLedger.AddAsset(a)
 		}
+		covLedger.RecordCrawlSummary(crawlRes.Status, crawlRes.SkippedDirs, crawlRes.TraversalErrors)
 
 		// 2. Active Process Map
 		if scanProcs {

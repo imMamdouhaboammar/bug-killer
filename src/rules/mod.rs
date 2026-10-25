@@ -5,6 +5,26 @@ use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RuleProvenance {
+    BuiltIn,
+    OperatorApproved,
+    UntrustedWorkspace,
+}
+
+fn default_rule_provenance() -> RuleProvenance {
+    RuleProvenance::UntrustedWorkspace
+}
+
+impl RuleProvenance {
+    pub fn is_trusted(&self) -> bool {
+        matches!(
+            self,
+            RuleProvenance::BuiltIn | RuleProvenance::OperatorApproved
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VulnerabilityRule {
     pub id: String,
@@ -18,6 +38,16 @@ pub struct VulnerabilityRule {
     pub detection: DetectionMatcher,
     #[serde(default)]
     pub remediation: Option<RemediationStrategy>,
+    #[serde(default = "default_rule_provenance")]
+    pub provenance: RuleProvenance,
+    #[serde(default)]
+    pub trusted: bool,
+}
+
+impl VulnerabilityRule {
+    pub fn is_trusted(&self) -> bool {
+        self.trusted || self.provenance.is_trusted()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,26 +105,82 @@ pub enum RemediationStrategy {
 pub struct RuleEngine;
 
 impl RuleEngine {
+    fn load_pinned_trusted_rules(root: &Path) -> std::collections::HashSet<String> {
+        let mut pinned = std::collections::HashSet::new();
+        for candidate in &[
+            root.join(".bug-killer").join("trusted_rules.json"),
+            root.join(".aegis").join("trusted_rules.json"),
+        ] {
+            if candidate.exists() {
+                if let Ok(content) = fs::read_to_string(candidate) {
+                    if let Ok(ids) = serde_json::from_str::<Vec<String>>(&content) {
+                        pinned.extend(ids);
+                    }
+                }
+            }
+        }
+        pinned
+    }
+
     /// Loads vulnerability rules from an optional explicit directory or file,
     /// as well as scanning `root/rules/` and `~/.bug-killer/rules/`.
+    /// Workspace rules default to UntrustedWorkspace unless pinned in trusted_rules.json.
     pub fn load_rules(custom_path: Option<&Path>, root: &Path) -> Vec<VulnerabilityRule> {
-        let mut rules = Vec::new();
+        Self::load_rules_with_options(custom_path, root, false)
+    }
 
-        // 1. If explicit path specified
+    /// Loads vulnerability rules with option to trust workspace rules.
+    pub fn load_rules_with_options(
+        custom_path: Option<&Path>,
+        root: &Path,
+        trust_all_workspace_rules: bool,
+    ) -> Vec<VulnerabilityRule> {
+        let mut rules = Vec::new();
+        let pinned_trusted = Self::load_pinned_trusted_rules(root);
+
+        // 1. If explicit path specified by operator
         if let Some(path) = custom_path {
-            Self::collect_rules_from_path(path, &mut rules);
+            let mut custom_rules = Vec::new();
+            Self::collect_rules_from_path(path, &mut custom_rules);
+            for mut r in custom_rules {
+                r.provenance = RuleProvenance::OperatorApproved;
+                r.trusted = true;
+                rules.push(r);
+            }
         }
 
         // 2. Discover in workspace root `rules/`
         let local_rules = root.join("rules");
         if local_rules.exists() {
-            Self::collect_rules_from_path(&local_rules, &mut rules);
+            let mut ws_rules = Vec::new();
+            Self::collect_rules_from_path(&local_rules, &mut ws_rules);
+            for mut r in ws_rules {
+                if trust_all_workspace_rules || pinned_trusted.contains(&r.id) {
+                    r.provenance = RuleProvenance::OperatorApproved;
+                    r.trusted = true;
+                } else {
+                    r.provenance = RuleProvenance::UntrustedWorkspace;
+                    r.trusted = false;
+                }
+                rules.push(r);
+            }
         }
 
         // 3. Discover in `.bug-killer/rules/`
         let dot_rules = root.join(".bug-killer").join("rules");
         if dot_rules.exists() {
-            Self::collect_rules_from_path(&dot_rules, &mut rules);
+            let mut dot_ws_rules = Vec::new();
+            Self::collect_rules_from_path(&dot_rules, &mut dot_ws_rules);
+            for mut r in dot_ws_rules {
+                if trust_all_workspace_rules || pinned_trusted.contains(&r.id) {
+                    r.provenance = RuleProvenance::OperatorApproved;
+                    r.trusted = true;
+                } else {
+                    r.provenance = RuleProvenance::UntrustedWorkspace;
+                    r.trusted = false;
+                }
+                rules.push(r);
+            }
         }
 
         // Deduplicate rules by ID

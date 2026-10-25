@@ -186,6 +186,10 @@ enum Commands {
         /// Include OSV open vulnerability database findings in healing
         #[arg(long, default_value_t = false)]
         osv: bool,
+
+        /// Allow untrusted workspace dynamic rules to be planned and auto-applied
+        #[arg(long, default_value_t = false)]
+        allow_untrusted_rules: bool,
     },
 
     /// Roll back an applied healing session using a backup ID
@@ -847,6 +851,7 @@ fn main() {
             auto_apply,
             rules,
             osv,
+            allow_untrusted_rules,
         } => {
             let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
             let mut report = FleetScanner::scan_directory_with_rules(&path, false, &active_rules);
@@ -861,7 +866,11 @@ fn main() {
                 }
             }
 
-            let plan = AutopilotHealer::plan_healing_with_rules(&report, &active_rules);
+            let plan = AutopilotHealer::plan_healing_with_rules_and_approval(
+                &report,
+                &active_rules,
+                allow_untrusted_rules,
+            );
 
             println!("\n=======================================================");
             println!("  🎯  BUG KILLER: AUTOPILOT HEALER");

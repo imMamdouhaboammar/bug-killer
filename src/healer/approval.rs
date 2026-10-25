@@ -1,6 +1,6 @@
 use crate::healer::AutopilotHealer;
 use crate::healer::rollback::RollbackManager;
-use crate::identity::AgentIdentity;
+use crate::identity::{AgentIdentity, OperatorIdentity};
 use crate::scanner::FleetScanner;
 use crate::types::*;
 use chrono::{Duration, Utc};
@@ -13,9 +13,17 @@ use std::path::{Path, PathBuf};
 pub struct ApprovalReceipt {
     pub plan_id: String,
     pub plan_checksum: String,
+    #[serde(default)]
+    pub canonical_root: String,
     pub approver: String,
+    #[serde(default)]
+    pub action_risk: String,
     pub timestamp: String,
     pub valid_until: String,
+    #[serde(default)]
+    pub nonce: String,
+    #[serde(default)]
+    pub operator_public_key: Option<String>,
     pub signature: String,
 }
 
@@ -33,7 +41,76 @@ impl ApprovalManager {
         format!("{:x}", hasher.finalize())
     }
 
-    /// Issues an operator approval receipt cryptographically signed with the root identity key.
+    /// Computes canonical workspace root path string.
+    pub fn canonical_root(root: &Path) -> String {
+        root.canonicalize()
+            .unwrap_or_else(|_| root.to_path_buf())
+            .to_string_lossy()
+            .to_string()
+    }
+
+    /// Generates a cryptographically secure 16-byte random hex nonce.
+    pub fn generate_nonce() -> String {
+        use rand::RngCore;
+        let mut bytes = [0u8; 16];
+        rand::rngs::OsRng.fill_bytes(&mut bytes);
+        bytes.iter().map(|b| format!("{:02x}", b)).collect()
+    }
+
+    /// Formats canonical signature payload binding plan, workspace root, action risk, expiry, and nonce.
+    pub fn compute_receipt_payload(
+        plan_id: &str,
+        plan_checksum: &str,
+        canonical_root: &str,
+        approver: &str,
+        action_risk: &str,
+        valid_until: &str,
+        nonce: &str,
+    ) -> String {
+        format!(
+            "{}:{}:{}:{}:{}:{}:{}",
+            plan_id, plan_checksum, canonical_root, approver, action_risk, valid_until, nonce
+        )
+    }
+
+    fn used_nonces_path(root: &Path) -> PathBuf {
+        root.join(".bug-killer")
+            .join("approvals")
+            .join("used_nonces.json")
+    }
+
+    /// Checks if a nonce has already been consumed in this workspace.
+    pub fn is_nonce_used(root: &Path, nonce: &str) -> bool {
+        let path = Self::used_nonces_path(root);
+        if let Ok(content) = fs::read_to_string(path) {
+            if let Ok(nonces) = serde_json::from_str::<std::collections::HashSet<String>>(&content)
+            {
+                return nonces.contains(nonce);
+            }
+        }
+        false
+    }
+
+    /// Records a consumed nonce to prevent replay attacks.
+    pub fn record_used_nonce(root: &Path, nonce: &str) -> Result<(), String> {
+        let path = Self::used_nonces_path(root);
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        let mut nonces: std::collections::HashSet<String> =
+            if let Ok(content) = fs::read_to_string(&path) {
+                serde_json::from_str(&content).unwrap_or_default()
+            } else {
+                std::collections::HashSet::new()
+            };
+        nonces.insert(nonce.to_string());
+        let serialized = serde_json::to_string_pretty(&nonces)
+            .map_err(|e| format!("Failed to serialize used nonces: {}", e))?;
+        fs::write(&path, serialized).map_err(|e| format!("Failed to write used nonces: {}", e))?;
+        Ok(())
+    }
+
+    /// Issues an operator approval receipt cryptographically signed with distinct operator authority.
     pub fn create_approval_receipt(
         root: &Path,
         plan_id: &str,
@@ -41,28 +118,62 @@ impl ApprovalManager {
         approver: &str,
         validity_mins: i64,
     ) -> Result<ApprovalReceipt, String> {
-        let identity = AgentIdentity::get_or_create(root)
-            .map_err(|e| format!("Failed to access agent identity key: {}", e))?;
+        let operator = OperatorIdentity::get_or_create(root)
+            .map_err(|e| format!("Failed to access operator identity key: {}", e))?;
+        Self::create_approval_receipt_with_operator(
+            &operator,
+            root,
+            plan_id,
+            plan_checksum,
+            approver,
+            validity_mins,
+            "PrivilegedRemediation",
+        )
+    }
 
+    /// Issues an operator approval receipt using explicit OperatorIdentity.
+    pub fn create_approval_receipt_with_operator(
+        operator: &OperatorIdentity,
+        root: &Path,
+        plan_id: &str,
+        plan_checksum: &str,
+        approver: &str,
+        validity_mins: i64,
+        action_risk: &str,
+    ) -> Result<ApprovalReceipt, String> {
         let now = Utc::now();
         let expiry = now + Duration::minutes(validity_mins);
         let timestamp = now.to_rfc3339();
         let valid_until = expiry.to_rfc3339();
+        let canonical_root = Self::canonical_root(root);
+        let nonce = Self::generate_nonce();
 
-        let payload = format!("{}:{}:{}:{}", plan_id, plan_checksum, approver, valid_until);
-        let signature = identity.sign_bytes(payload.as_bytes());
+        let payload = Self::compute_receipt_payload(
+            plan_id,
+            plan_checksum,
+            &canonical_root,
+            approver,
+            action_risk,
+            &valid_until,
+            &nonce,
+        );
+        let signature = operator.sign_bytes(payload.as_bytes());
 
         Ok(ApprovalReceipt {
             plan_id: plan_id.to_string(),
             plan_checksum: plan_checksum.to_string(),
+            canonical_root,
             approver: approver.to_string(),
+            action_risk: action_risk.to_string(),
             timestamp,
             valid_until,
+            nonce,
+            operator_public_key: Some(operator.public_key_hex()),
             signature,
         })
     }
 
-    /// Verifies that an approval receipt is structurally and cryptographically valid.
+    /// Verifies that an approval receipt is structurally and cryptographically valid under operator authority.
     pub fn verify_approval_receipt(
         root: &Path,
         receipt: &ApprovalReceipt,
@@ -87,18 +198,62 @@ impl ApprovalManager {
             ));
         }
 
-        // 3. Cryptographically verify signature using agent identity
-        let identity = AgentIdentity::get_or_create(root)
-            .map_err(|e| format!("Failed to access agent identity key: {}", e))?;
+        // 3. Workspace root binding check
+        let expected_canonical_root = Self::canonical_root(root);
+        if !receipt.canonical_root.is_empty() && receipt.canonical_root != expected_canonical_root {
+            return Err(format!(
+                "Workspace Root Mismatch: Receipt bound to root '{}', but verifying in '{}'",
+                receipt.canonical_root, expected_canonical_root
+            ));
+        }
 
-        let payload = format!(
-            "{}:{}:{}:{}",
-            receipt.plan_id, receipt.plan_checksum, receipt.approver, receipt.valid_until
+        // 4. Replay prevention check
+        if !receipt.nonce.is_empty() && Self::is_nonce_used(root, &receipt.nonce) {
+            return Err(format!(
+                "Receipt Replay Detected: nonce '{}' has already been used",
+                receipt.nonce
+            ));
+        }
+
+        // 5. Reject privilege escalation: signature minted by scanner agent identity without operator authority
+        if let Ok(agent_id) = AgentIdentity::get_or_create(root) {
+            if let Some(ref op_pub) = receipt.operator_public_key {
+                if op_pub == &agent_id.public_key_hex() {
+                    return Err(
+                        "Privilege Escalation Rejected: Approval receipt was signed with scanner agent identity, not operator authority".to_string()
+                    );
+                }
+            }
+        }
+
+        // 6. Cryptographically verify signature using operator authority
+        let operator = OperatorIdentity::get_or_create(root)
+            .map_err(|e| format!("Failed to access operator identity key: {}", e))?;
+
+        let bound_payload = Self::compute_receipt_payload(
+            &receipt.plan_id,
+            &receipt.plan_checksum,
+            &receipt.canonical_root,
+            &receipt.approver,
+            &receipt.action_risk,
+            &receipt.valid_until,
+            &receipt.nonce,
         );
 
-        identity
-            .verify_bytes(payload.as_bytes(), &receipt.signature)
-            .map_err(|e| format!("Cryptographic Verification Failed: {}", e))?;
+        let verify_result = operator.verify_bytes(bound_payload.as_bytes(), &receipt.signature);
+        if let Err(err) = verify_result {
+            // Check legacy 4-tuple format for backwards compatibility if operator signed it
+            let legacy_payload = format!(
+                "{}:{}:{}:{}",
+                receipt.plan_id, receipt.plan_checksum, receipt.approver, receipt.valid_until
+            );
+            if operator
+                .verify_bytes(legacy_payload.as_bytes(), &receipt.signature)
+                .is_err()
+            {
+                return Err(format!("Cryptographic Verification Failed: {}", err));
+            }
+        }
 
         Ok(())
     }
@@ -111,6 +266,11 @@ impl ApprovalManager {
     ) -> Result<(BackupManifest, usize), String> {
         let current_checksum = Self::compute_plan_checksum(actions);
         Self::verify_approval_receipt(root, receipt, &current_checksum)?;
+
+        // Record nonce to prevent replay
+        if !receipt.nonce.is_empty() {
+            let _ = Self::record_used_nonce(root, &receipt.nonce);
+        }
 
         // 1. Execute atomic multi-file healing
         let (manifest, applied_count) = AutopilotHealer::execute_healing(root, actions)?;

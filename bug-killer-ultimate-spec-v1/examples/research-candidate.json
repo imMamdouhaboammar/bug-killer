@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "run_id": "demo-run-001",
+  "finding_id": "candidate-001",
+  "fingerprint": "sandboxed-parser-violation-v1",
+  "kind": "RESEARCH_CANDIDATE",
+  "status": "SUSPECTED",
+  "title": "Possible parser invariant violation in synthetic fixture",
+  "summary": "Synthetic, non-exploitable example for validating candidate lifecycle.",
+  "severity": "UNKNOWN",
+  "evidence_certainty": "SUSPECTED",
+  "rule_id": null,
+  "weakness_ids": [],
+  "advisory_ids": [],
+  "engine": {
+    "id": "bugkiller-research-prototype",
+    "version": "0.0-test",
+    "rule_pack_sha256": null
+  },
+  "target": {
+    "target_id": "fixture-parser-1",
+    "kind": "FILE",
+    "path": "fixtures/parser_synthetic.rs",
+    "span": {
+      "start_line": 4,
+      "end_line": 8
+    }
+  },
+  "source_snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "evidence": [
+    {
+      "kind": "SOURCE_SPAN",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "description": "A local synthetic property check suggested anomalous parser behavior.",
+      "reference": "local-evidence:sample-1",
+      "limitations": ["Not reproduced independently", "Not a real vulnerability report"]
+    }
+  ],
+  "proof": null,
+  "coverage_receipt_ids": ["receipt-demo-1"],
+  "uncertainty_reasons": ["Security impact unproven", "Fresh isolated reproduction not yet completed"],
+  "remediation_plan_id": null,
+  "created_at": "2026-10-25T00:00:00Z",
+  "updated_at": null,
+  "extensions": {}
+}

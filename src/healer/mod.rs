@@ -26,9 +26,19 @@ impl AutopilotHealer {
     }
 
     /// Generates healing plan using an explicit set of rules.
+    /// Skips untrusted workspace dynamic rules unless verified or approved.
     pub fn plan_healing_with_rules(
         report: &ScanReport,
         rules: &[VulnerabilityRule],
+    ) -> Vec<PatchAction> {
+        Self::plan_healing_with_rules_and_approval(report, rules, false)
+    }
+
+    /// Generates healing plan using an explicit set of rules, with optional operator consent for untrusted rules.
+    pub fn plan_healing_with_rules_and_approval(
+        report: &ScanReport,
+        rules: &[VulnerabilityRule],
+        allow_untrusted_rules: bool,
     ) -> Vec<PatchAction> {
         let mut plan = Vec::new();
 
@@ -44,6 +54,12 @@ impl AutopilotHealer {
             } = finding.cve
             {
                 if let Some(rule) = rules.iter().find(|r| &r.id == rule_id) {
+                    // Issue #23: Project-bundled rules must be treated as untrusted data by default:
+                    // they may generate scan findings, but MUST NOT be auto-applied without
+                    // explicit provenance verification or operator consent.
+                    if !rule.is_trusted() && !allow_untrusted_rules {
+                        continue;
+                    }
                     if let Ok(content) = std::fs::read_to_string(path) {
                         if let Some(action) = RuleEngine::plan_patch(path, &content, rule) {
                             if !plan
@@ -164,7 +180,151 @@ impl AutopilotHealer {
         plan
     }
 
-    /// Executes the healing plan atomically: creates backup, replaces file contents, and verifies write.
+    /// Performs preflight validation of the entire plan before touching a single byte on disk:
+    /// a) Canonicalize `root`.
+    /// b) Verify all target paths are strictly within `canonical_root` (reject path traversal `..`, symlinks in target file, symlinks in parent directories, absolute paths escaping root).
+    /// c) Verify all target files are regular files that exist.
+    /// d) Verify that for each action, the current file's SHA-256 hash matches `action.original_checksum`.
+    /// e) Reject duplicate targets in the same plan.
+    pub fn preflight_plan(root: &Path, actions: &[PatchAction]) -> Result<Vec<PathBuf>, String> {
+        if actions.is_empty() {
+            return Err("Healing plan is empty".to_string());
+        }
+
+        // a) Canonicalize root
+        let canonical_root = root
+            .canonicalize()
+            .map_err(|e| format!("Failed to canonicalize workspace root {:?}: {}", root, e))?;
+
+        let mut seen_targets = std::collections::HashSet::new();
+        let mut canonical_targets = Vec::with_capacity(actions.len());
+
+        for action in actions {
+            // b) Reject path traversal components
+            if action
+                .target_file
+                .components()
+                .any(|c| matches!(c, std::path::Component::ParentDir))
+            {
+                return Err(format!(
+                    "Path traversal attempt rejected in target: {:?}",
+                    action.target_file
+                ));
+            }
+
+            // Determine path relative to root
+            let rel_path = if let Ok(rel) = action.target_file.strip_prefix(&canonical_root) {
+                rel.to_path_buf()
+            } else if let Ok(rel) = action.target_file.strip_prefix(root) {
+                rel.to_path_buf()
+            } else if action.target_file.is_relative() {
+                action.target_file.clone()
+            } else {
+                return Err(format!(
+                    "Target file escapes workspace root: {:?}",
+                    action.target_file
+                ));
+            };
+
+            if rel_path.is_absolute()
+                || rel_path.components().any(|c| {
+                    matches!(
+                        c,
+                        std::path::Component::ParentDir
+                            | std::path::Component::RootDir
+                            | std::path::Component::Prefix(_)
+                    )
+                })
+            {
+                return Err(format!(
+                    "Path traversal attempt rejected in relative target: {:?}",
+                    rel_path
+                ));
+            }
+
+            let components: Vec<_> = rel_path.components().collect();
+            if components.is_empty() {
+                return Err("Target file path cannot be empty or root".to_string());
+            }
+
+            // Verify no symlinks in parent directories or in the target file
+            let mut curr = canonical_root.clone();
+            for (i, comp) in components.iter().enumerate() {
+                match comp {
+                    std::path::Component::Normal(part) => {
+                        curr.push(part);
+                        let meta = match std::fs::symlink_metadata(&curr) {
+                            Ok(m) => m,
+                            Err(e) => {
+                                return Err(format!(
+                                    "Target file does not exist or cannot be inspected {:?}: {}",
+                                    curr, e
+                                ));
+                            }
+                        };
+
+                        if meta.file_type().is_symlink() {
+                            if i + 1 == components.len() {
+                                return Err(format!("Target file is a symlink: {:?}", curr));
+                            } else {
+                                return Err(format!("Parent directory is a symlink: {:?}", curr));
+                            }
+                        }
+
+                        if i + 1 == components.len() {
+                            // c) Verify target file is a regular file that exists
+                            if !meta.file_type().is_file() {
+                                return Err(format!("Target is not a regular file: {:?}", curr));
+                            }
+                        } else if !meta.file_type().is_dir() {
+                            return Err(format!("Parent component is not a directory: {:?}", curr));
+                        }
+                    }
+                    _ => {
+                        return Err(format!("Invalid path component in target: {:?}", comp));
+                    }
+                }
+            }
+
+            let canonical_target = curr
+                .canonicalize()
+                .map_err(|e| format!("Failed to canonicalize target {:?}: {}", curr, e))?;
+
+            if !canonical_target.starts_with(&canonical_root) {
+                return Err(format!("Target escapes workspace: {:?}", canonical_target));
+            }
+
+            // e) Reject duplicate targets in the same plan
+            if !seen_targets.insert(canonical_target.clone()) {
+                return Err(format!(
+                    "Duplicate target file in healing plan: {:?}",
+                    canonical_target
+                ));
+            }
+
+            // d) Verify actual file's SHA-256 hash matches action.original_checksum
+            let actual_checksum =
+                BackupManager::compute_sha256(&canonical_target).map_err(|e| {
+                    format!(
+                        "Failed to compute checksum for {:?}: {}",
+                        canonical_target, e
+                    )
+                })?;
+
+            if actual_checksum != action.original_checksum {
+                return Err(format!(
+                    "Preimage verification failed for {:?}: expected checksum {}, got actual {}",
+                    canonical_target, action.original_checksum, actual_checksum
+                ));
+            }
+
+            canonical_targets.push(canonical_target);
+        }
+
+        Ok(canonical_targets)
+    }
+
+    /// Executes the healing plan atomically: validates plan preflight, creates backup, replaces file contents, and verifies write.
     pub fn execute_healing(
         root: &Path,
         actions: &[PatchAction],
@@ -173,16 +333,19 @@ impl AutopilotHealer {
             return Err("No healing actions to execute".into());
         }
 
-        let target_files: Vec<PathBuf> = actions.iter().map(|a| a.target_file.clone()).collect();
-        let manifest = BackupManager::create_backup(root, &target_files)
+        // 1. Strict preflight validation before touching a single byte on disk
+        let canonical_targets = Self::preflight_plan(root, actions)?;
+
+        // 2. Collision-proof backup with atomic staging
+        let manifest = BackupManager::create_backup_for_actions(root, actions)
             .map_err(|e| format!("Failed to create safety backup: {}", e))?;
 
         let mut applied_count = 0;
         let mut apply_error = None;
 
-        for action in actions {
+        for (action, target_path) in actions.iter().zip(canonical_targets.iter()) {
             // Write atomically via tempfile
-            let parent_dir = action.target_file.parent().unwrap_or(root);
+            let parent_dir = target_path.parent().unwrap_or(root);
             let write_res = (|| -> Result<(), String> {
                 let mut temp = tempfile::NamedTempFile::new_in(parent_dir)
                     .map_err(|e| format!("Failed to create temporary file: {}", e))?;
@@ -191,11 +354,15 @@ impl AutopilotHealer {
                 temp.write_all(action.replacement_content.as_bytes())
                     .map_err(|e| format!("Failed to write replacement content: {}", e))?;
 
-                temp.persist(&action.target_file).map_err(|e| {
-                    format!(
-                        "Failed to atomically persist {:?}: {}",
-                        action.target_file, e
-                    )
+                #[cfg(unix)]
+                {
+                    if let Ok(meta) = std::fs::metadata(target_path) {
+                        let _ = temp.as_file_mut().set_permissions(meta.permissions());
+                    }
+                }
+
+                temp.persist(target_path).map_err(|e| {
+                    format!("Failed to atomically persist {:?}: {}", target_path, e)
                 })?;
                 Ok(())
             })();

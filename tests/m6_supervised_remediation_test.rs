@@ -182,10 +182,11 @@ fn test_m6_fault_injection_post_verification_triggers_automatic_rollback() {
     fs::write(&pkg_path, original_content).unwrap();
 
     // Fabricate a flawed patch action that writes another vulnerable version instead of fixing
+    let pkg_sha256 = bug_killer::healer::backup::BackupManager::compute_sha256(&pkg_path).unwrap();
     let flawed_action = PatchAction {
         action_type: PatchActionType::PackageManifestVersionBump,
         target_file: pkg_path.clone(),
-        original_checksum: "original-checksum".into(),
+        original_checksum: pkg_sha256,
         replacement_content: r#"{
   "name": "fault-injection-app",
   "version": "1.0.0",

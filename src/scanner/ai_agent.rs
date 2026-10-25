@@ -88,8 +88,9 @@ impl AgentSecurityScanner {
                         );
                         finding.detector_id = "agent-mcp-scanner".to_string();
                         finding.category = "ai-agent-security".to_string();
-                        finding.affectedness = Affectedness::ConfirmedAffected;
-                        finding.reachability = Reachability::ConfirmedReachable;
+                        finding.affectedness = Affectedness::PotentiallyAffected;
+                        finding.reachability = Reachability::Suspected;
+                        finding.evidence_certainty = EvidenceCertainty::PatternIndicator;
                         finding.confidence = Confidence::High;
                         finding.supported_checks = vec!["mcp_command_allowlist_check".to_string()];
                         finding.compute_dedupe_fingerprint();
@@ -131,8 +132,10 @@ impl AgentSecurityScanner {
                                     );
                                     finding.detector_id = "agent-mcp-scanner".to_string();
                                     finding.category = "credential-leakage".to_string();
-                                    finding.affectedness = Affectedness::ConfirmedAffected;
-                                    finding.reachability = Reachability::ConfirmedReachable;
+                                    finding.affectedness = Affectedness::PotentiallyAffected;
+                                    finding.reachability = Reachability::Suspected;
+                                    finding.evidence_certainty =
+                                        EvidenceCertainty::PatternIndicator;
                                     finding.confidence = Confidence::High;
                                     finding.supported_checks =
                                         vec!["mcp_env_secret_check".to_string()];
@@ -187,8 +190,9 @@ impl AgentSecurityScanner {
                 );
                 finding.detector_id = "agent-skill-scanner".to_string();
                 finding.category = "prompt-injection-risk".to_string();
-                finding.affectedness = Affectedness::LikelyAffected;
-                finding.reachability = Reachability::PotentiallyReachable;
+                finding.affectedness = Affectedness::PotentiallyAffected;
+                finding.reachability = Reachability::Suspected;
+                finding.evidence_certainty = EvidenceCertainty::PatternIndicator;
                 finding.confidence = Confidence::Medium;
                 finding.supported_checks = vec!["skill_prompt_injection_regex_check".to_string()];
                 finding.compute_dedupe_fingerprint();
@@ -215,8 +219,9 @@ impl AgentSecurityScanner {
                 );
                 finding.detector_id = "agent-skill-scanner".to_string();
                 finding.category = "data-exfiltration-risk".to_string();
-                finding.affectedness = Affectedness::ConfirmedAffected;
-                finding.reachability = Reachability::ConfirmedReachable;
+                finding.affectedness = Affectedness::PotentiallyAffected;
+                finding.reachability = Reachability::Suspected;
+                finding.evidence_certainty = EvidenceCertainty::PatternIndicator;
                 finding.confidence = Confidence::High;
                 finding.supported_checks = vec!["skill_exfiltration_regex_check".to_string()];
                 finding.compute_dedupe_fingerprint();

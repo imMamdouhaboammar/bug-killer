@@ -104,6 +104,7 @@ pub enum Reachability {
     UnreachableWithEvidence,
     Unknown,
     NotApplicable,
+    Suspected,
 }
 
 impl Reachability {
@@ -114,6 +115,7 @@ impl Reachability {
             Reachability::UnreachableWithEvidence => "UNREACHABLE_WITH_EVIDENCE",
             Reachability::Unknown => "UNKNOWN",
             Reachability::NotApplicable => "NOT_APPLICABLE",
+            Reachability::Suspected => "SUSPECTED",
         }
     }
 }
@@ -433,11 +435,32 @@ pub struct PatchAction {
     pub replacement_content: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BackupRecord {
     pub relative_target_path: String,
     pub original_sha256: String,
     pub backup_file_name: String,
+    #[serde(default)]
+    pub mode: Option<u32>,
+    #[serde(default)]
+    pub post_heal_sha256: Option<String>,
+}
+
+impl BackupRecord {
+    #[allow(dead_code)]
+    pub fn new(
+        relative_target_path: impl Into<String>,
+        original_sha256: impl Into<String>,
+        backup_file_name: impl Into<String>,
+    ) -> Self {
+        Self {
+            relative_target_path: relative_target_path.into(),
+            original_sha256: original_sha256.into(),
+            backup_file_name: backup_file_name.into(),
+            mode: None,
+            post_heal_sha256: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -642,6 +665,29 @@ impl ScanProfile {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum RuleCoverageStatus {
+    SupportedAndEvaluated,
+    NotApplicable,
+    Unsupported,
+    NotRun,
+    Error,
+}
+
+impl RuleCoverageStatus {
+    #[allow(dead_code)]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RuleCoverageStatus::SupportedAndEvaluated => "SUPPORTED_AND_EVALUATED",
+            RuleCoverageStatus::NotApplicable => "NOT_APPLICABLE",
+            RuleCoverageStatus::Unsupported => "UNSUPPORTED",
+            RuleCoverageStatus::NotRun => "NOT_RUN",
+            RuleCoverageStatus::Error => "ERROR",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityGuardReport {
     pub workspace_root: PathBuf,
@@ -657,6 +703,8 @@ pub struct SecurityGuardReport {
     pub coverage: ScanCoverage,
     pub receipts: Vec<CoverageReceipt>,
     pub unexamined_reasons: Vec<String>,
+    #[serde(default)]
+    pub rule_coverage: std::collections::BTreeMap<String, RuleCoverageStatus>,
 }
 
 #[allow(dead_code)]

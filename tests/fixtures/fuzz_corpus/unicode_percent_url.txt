@@ -1,0 +1,3 @@
+http://[::ffff:169.254.169.254]:8080/%2e%2e/%2e%2e/metadata?foo=%FF%FE%FD
+http://evil.com%00.internal/
+http://%E2%80%AEreversed.com/

@@ -163,9 +163,13 @@ require('child_process').exec(cmd);
             &ApprovalReceipt {
                 plan_id: "forged-plan".into(),
                 plan_checksum: plan_checksum.clone(),
+                canonical_root: root.to_string_lossy().to_string(),
                 approver: "attacker@untrusted.org".into(),
+                action_risk: "HIGH".into(),
                 timestamp: "2026-10-24T00:00:00Z".into(),
                 valid_until: "2026-10-24T01:00:00Z".into(),
+                nonce: "forged-nonce".into(),
+                operator_public_key: None,
                 signature: "forged-sig".into(),
             },
             &plan_checksum,

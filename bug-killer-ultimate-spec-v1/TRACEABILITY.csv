@@ -1,0 +1,15 @@
+requirement,primary_document,work_package,acceptance_anchor,priority
+R-001,02-ARCHITECTURE-AND-ADRS.md,M2.1,"Offline Quick works without JVM Node Python or network",P0
+R-002,06-EVIDENCE-AND-VERIFICATION.md,M0.2,"Finding provenance and evidence certainty",P0
+R-003,06-EVIDENCE-AND-VERIFICATION.md,M0.2,"Incomplete mandatory scan cannot pass",P0
+R-004,07-REMEDIATION-AND-TRUST.md,M0.1,"Agent key cannot approve privileged action",P0
+R-005,07-REMEDIATION-AND-TRUST.md,M0.1,"Preimage and rollback negative tests",P0
+R-006,04-STATIC-ANALYSIS-AND-CATALOG.md,M2.2,"Per-rule target test and execution receipt",P1
+R-007,03-KNOWN-VULNERABILITY-INTELLIGENCE.md,M3.1,"Exact affectedness and source freshness",P1
+R-008,04-STATIC-ANALYSIS-AND-CATALOG.md,M2.1,"AST parser integration and cache parity",P1
+R-009,04-STATIC-ANALYSIS-AND-CATALOG.md,M4.1,"Cross-file flow with uncertainty controls",P1
+R-010,05-NOVEL-VULNERABILITY-HUNTER.md,M5.1,"Bounded sandboxed verified hypothesis",P2
+R-011,12-DISCLOSURE-AND-GOVERNANCE.md,M6.1,"Private draft no send without approval",P2
+R-012,11-TESTING-BENCHMARKS-AND-RELEASE.md,M1.2,"Labelled precision recall and FPR metrics",P1
+R-013,08-CLI-MCP-AND-UX.md,M1.1,"Backward-compatible versioned JSON MCP",P0
+R-014,07-REMEDIATION-AND-TRUST.md,M3.2,"Approved repair and independent recheck",P0
