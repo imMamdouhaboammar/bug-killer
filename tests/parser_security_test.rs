@@ -403,7 +403,7 @@ fn test_cry_006_hardcoded_cryptographic_keys() {
         "PRIVATE KEY-----MIIEowIBAAKCAQEA..."
     );
     let path = Path::new("src/config/secrets.js");
-    let findings = ParserSecurityScanner::scan_source(path, vuln_code);
+    let findings = ParserSecurityScanner::scan_source(path, &vuln_code);
 
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-CRY-006"));

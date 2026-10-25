@@ -1,20 +1,24 @@
 pub mod ai_agent;
+pub mod ai_agent_ext;
 pub mod api;
 pub mod auth;
 pub mod authz;
 pub mod binary;
+pub mod biz_concurrency;
 pub mod cicd;
 pub mod container;
 pub mod crypto;
 pub mod data_privacy;
 pub mod filesystem_ext;
 pub mod host;
+pub mod iac;
 pub mod injection;
 pub mod network_dos;
 pub mod node;
 pub mod parser_security;
 pub mod php;
 pub mod secret;
+pub mod supply_chain;
 pub mod web;
 pub mod webserver;
 
@@ -308,6 +312,28 @@ impl FleetScanner {
                     raw_findings.extend(self::data_privacy::DataPrivacyScanner::scan_source(path, &content));
                     raw_findings.extend(self::parser_security::ParserSecurityScanner::scan_source(path, &content));
                     raw_findings.extend(self::network_dos::NetworkDosScanner::scan_source(path, &content));
+                    raw_findings.extend(self::iac::IacScanner::scan_source(path, &content));
+                    raw_findings.extend(self::supply_chain::SupplyChainScanner::scan_source(path, &content));
+                    raw_findings.extend(self::biz_concurrency::BizConcurrencyScanner::scan_source(path, &content));
+                    raw_findings.extend(self::ai_agent_ext::AiAgentExtScanner::scan_source(path, &content));
+                }
+            }
+
+            let is_iac_or_manifest = file_name.ends_with(".tf")
+                || file_name.ends_with(".toml")
+                || file_name == "package.json"
+                || file_name == "requirements.txt"
+                || file_name == "Pipfile"
+                || file_name == "go.mod"
+                || file_name == "Dockerfile"
+                || file_name.starts_with("Dockerfile.")
+                || file_name == "Containerfile"
+                || file_name.starts_with("Containerfile.");
+
+            if is_iac_or_manifest && !is_test_file {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    raw_findings.extend(self::iac::IacScanner::scan_source(path, &content));
+                    raw_findings.extend(self::supply_chain::SupplyChainScanner::scan_source(path, &content));
                 }
             }
 

@@ -1269,6 +1269,329 @@ impl SecurityDetector for NetworkDosDetector {
     }
 }
 
+pub struct IacSecurityDetector;
+
+impl SecurityDetector for IacSecurityDetector {
+    fn id(&self) -> &'static str {
+        "iac-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "Infrastructure, Cloud & CI/CD Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-INF-002",
+            "BK-AI-INF-005",
+            "BK-AI-INF-006",
+            "BK-AI-INF-009",
+            "BK-AI-INF-011",
+            "BK-AI-INF-012",
+            "BK-AI-INF-013",
+            "BK-AI-INF-014",
+            "BK-AI-INF-015",
+            "BK-AI-INF-016",
+            "BK-AI-CIC-005",
+            "BK-AI-CIC-007",
+            "BK-AI-CIC-008",
+            "BK-AI-CIC-009",
+            "BK-AI-CIC-010",
+            "BK-AI-CIC-011",
+            "BK-AI-CIC-012",
+            "BK-AI-CIC-013",
+            "BK-AI-CIC-014",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["yaml", "dockerfile", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::Dockerfile, TargetKind::GenericConfigFile, TargetKind::GenericSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let iac_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "iac-security")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: iac_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct SupplyChainDetector;
+
+impl SecurityDetector for SupplyChainDetector {
+    fn id(&self) -> &'static str {
+        "supply-chain-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "Supply Chain, Dependency Resolution & Agent Supply Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-SCA-003",
+            "BK-AI-SCA-004",
+            "BK-AI-SCA-006",
+            "BK-AI-SCA-007",
+            "BK-AI-SCA-008",
+            "BK-AI-SCA-009",
+            "BK-AI-SCA-010",
+            "BK-AI-SCA-011",
+            "BK-AI-SCA-012",
+            "BK-AI-SCA-013",
+            "BK-AI-SCA-014",
+            "BK-AI-AGS-001",
+            "BK-AI-AGS-002",
+            "BK-AI-AGS-003",
+            "BK-AI-AGS-004",
+            "BK-AI-AGS-005",
+            "BK-AI-AGS-006",
+            "BK-AI-AGS-007",
+            "BK-AI-AGS-008",
+            "BK-AI-AGS-009",
+            "BK-AI-AGS-010",
+            "BK-AI-AGS-011",
+            "BK-AI-AGS-012",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "rust", "go", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::NodePackageManifest, TargetKind::GenericConfigFile, TargetKind::GenericSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let sca_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "supply-chain-security")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: sca_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct BizConcurrencyDetector;
+
+impl SecurityDetector for BizConcurrencyDetector {
+    fn id(&self) -> &'static str {
+        "biz-concurrency"
+    }
+
+    fn name(&self) -> &'static str {
+        "Concurrency, Workflow State & Business Logic Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-RAC-001",
+            "BK-AI-RAC-002",
+            "BK-AI-RAC-003",
+            "BK-AI-RAC-004",
+            "BK-AI-RAC-005",
+            "BK-AI-RAC-006",
+            "BK-AI-RAC-007",
+            "BK-AI-RAC-008",
+            "BK-AI-RAC-009",
+            "BK-AI-RAC-010",
+            "BK-AI-BIZ-001",
+            "BK-AI-BIZ-002",
+            "BK-AI-BIZ-003",
+            "BK-AI-BIZ-004",
+            "BK-AI-BIZ-005",
+            "BK-AI-BIZ-006",
+            "BK-AI-BIZ-007",
+            "BK-AI-BIZ-008",
+            "BK-AI-BIZ-009",
+            "BK-AI-BIZ-010",
+            "BK-AI-BIZ-011",
+            "BK-AI-BIZ-012",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "rust", "php", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let biz_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "biz-concurrency")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: biz_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct AiAgentExtDetector;
+
+impl SecurityDetector for AiAgentExtDetector {
+    fn id(&self) -> &'static str {
+        "ai-agent-ext"
+    }
+
+    fn name(&self) -> &'static str {
+        "LLM, Autonomous Agent & AI Assistant Flaws Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-LLM-002",
+            "BK-AI-LLM-005",
+            "BK-AI-LLM-006",
+            "BK-AI-LLM-007",
+            "BK-AI-LLM-008",
+            "BK-AI-LLM-009",
+            "BK-AI-LLM-010",
+            "BK-AI-LLM-011",
+            "BK-AI-LLM-012",
+            "BK-AI-LLM-013",
+            "BK-AI-LLM-014",
+            "BK-AI-LLM-015",
+            "BK-AI-LLM-016",
+            "BK-AI-LLM-018",
+            "BK-AI-LLM-020",
+            "BK-AI-LLM-022",
+            "BK-AI-AIC-001",
+            "BK-AI-AIC-002",
+            "BK-AI-AIC-003",
+            "BK-AI-AIC-005",
+            "BK-AI-AIC-006",
+            "BK-AI-AIC-007",
+            "BK-AI-AIC-008",
+            "BK-AI-AIC-009",
+            "BK-AI-AIC-010",
+            "BK-AI-AIC-011",
+            "BK-AI-AIC-012",
+            "BK-AI-AIC-013",
+            "BK-AI-AIC-014",
+            "BK-AI-AIC-015",
+            "BK-AI-AIC-016",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "rust", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::AgentSkillManifest]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let agent_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "ai-agent-ext")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: agent_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
 // ---------------- Detector Registry ----------------
 
 pub struct DetectorRegistry {
@@ -1297,6 +1620,10 @@ impl Default for DetectorRegistry {
         reg.register(Arc::new(DataPrivacyDetector));
         reg.register(Arc::new(ParserSecurityDetector));
         reg.register(Arc::new(NetworkDosDetector));
+        reg.register(Arc::new(IacSecurityDetector));
+        reg.register(Arc::new(SupplyChainDetector));
+        reg.register(Arc::new(BizConcurrencyDetector));
+        reg.register(Arc::new(AiAgentExtDetector));
         reg
     }
 }
