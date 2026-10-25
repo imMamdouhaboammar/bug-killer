@@ -52,6 +52,9 @@ _bug__killer() {
             bug__killer,mcp)
                 cmd="bug__killer__subcmd__mcp"
                 ;;
+            bug__killer,operator-public-key)
+                cmd="bug__killer__subcmd__operator__subcmd__public__subcmd__key"
+                ;;
             bug__killer,osv)
                 cmd="bug__killer__subcmd__osv"
                 ;;
@@ -129,6 +132,9 @@ _bug__killer() {
                 ;;
             bug__killer__subcmd__help,mcp)
                 cmd="bug__killer__subcmd__help__subcmd__mcp"
+                ;;
+            bug__killer__subcmd__help,operator-public-key)
+                cmd="bug__killer__subcmd__help__subcmd__operator__subcmd__public__subcmd__key"
                 ;;
             bug__killer__subcmd__help,osv)
                 cmd="bug__killer__subcmd__help__subcmd__osv"
@@ -260,7 +266,7 @@ _bug__killer() {
 
     case "${cmd}" in
         bug__killer)
-            opts="-h -V --help --version shell doctor watch completion scan probe osv heal rollback history cve-info agent evidence plan approve apply mcp init security help"
+            opts="-h -V --help --version shell doctor watch completion scan probe osv heal rollback history cve-info agent evidence plan approve operator-public-key apply mcp init security help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -492,7 +498,7 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__heal)
-            opts="-h --dry-run --apply --auto-apply --rules --osv --help"
+            opts="-h --dry-run --apply --auto-apply --rules --osv --allow-untrusted-rules --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -510,7 +516,7 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__help)
-            opts="shell doctor watch completion scan probe osv heal rollback history cve-info agent evidence plan approve apply mcp init security help"
+            opts="shell doctor watch completion scan probe osv heal rollback history cve-info agent evidence plan approve operator-public-key apply mcp init security help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -736,6 +742,20 @@ _bug__killer() {
         bug__subcmd__killer__subcmd__help__subcmd__mcp__subcmd__serve)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        bug__subcmd__killer__subcmd__help__subcmd__operator__subcmd__public__subcmd__key)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
@@ -1099,6 +1119,20 @@ _bug__killer() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        bug__subcmd__killer__subcmd__operator__subcmd__public__subcmd__key)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         bug__subcmd__killer__subcmd__osv)
             opts="-h --json --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -1128,7 +1162,7 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__probe)
-            opts="-t -h --json --timeout --sensitive-paths --help"
+            opts="-t -h --json --timeout --sensitive-paths --authorized --allow-private-targets --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -1394,7 +1428,7 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__security__subcmd__scan)
-            opts="-h --profile --changed-only --fail-on --osv --json --help"
+            opts="-h --profile --changed-only --staged --fail-on --osv --json --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
