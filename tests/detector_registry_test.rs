@@ -141,6 +141,11 @@ COPY package*.json ./
     let registry = DetectorRegistry::default();
     let report = registry.execute_guard_scan(root, ScanProfile::Quick, None, false);
 
+    println!("FINDINGS COUNT: {}", report.findings.len());
+    for f in &report.findings {
+        println!("FINDING: id={} cve={} desc={}", f.id, f.cve.as_str(), f.description);
+    }
+
     assert_eq!(report.status, ScanStatus::Completed);
     assert_eq!(
         report.result_classification,
@@ -186,6 +191,11 @@ module.exports = { add };
 
     let registry = DetectorRegistry::default();
     let report = registry.execute_guard_scan(root, ScanProfile::Quick, None, false);
+
+    println!("FINDINGS COUNT: {}", report.findings.len());
+    for f in &report.findings {
+        println!("FINDING: id={} cve={} desc={}", f.id, f.cve.as_str(), f.description);
+    }
 
     assert_eq!(report.status, ScanStatus::Completed);
     assert_eq!(

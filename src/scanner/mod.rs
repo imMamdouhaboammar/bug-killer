@@ -1,13 +1,21 @@
 pub mod ai_agent;
+pub mod api;
+pub mod auth;
+pub mod authz;
 pub mod binary;
 pub mod cicd;
 pub mod container;
 pub mod crypto;
+pub mod data_privacy;
+pub mod filesystem_ext;
 pub mod host;
 pub mod injection;
+pub mod network_dos;
 pub mod node;
+pub mod parser_security;
 pub mod php;
 pub mod secret;
+pub mod web;
 pub mod webserver;
 
 use self::ai_agent::AgentSecurityScanner;
@@ -292,6 +300,20 @@ impl FleetScanner {
                     raw_findings.extend(AgentSecurityScanner::scan_model_output_execution(
                         path, &content,
                     ));
+                    raw_findings.extend(self::web::WebSecurityScanner::scan_source(path, &content));
+                    raw_findings.extend(self::api::ApiSecurityScanner::scan_source(path, &content));
+                    raw_findings.extend(self::auth::AuthSecurityScanner::scan_source(path, &content));
+                    raw_findings.extend(self::authz::AuthzSecurityScanner::scan_source(path, &content));
+                    raw_findings.extend(self::filesystem_ext::FilesystemExtScanner::scan_source(path, &content));
+                    raw_findings.extend(self::data_privacy::DataPrivacyScanner::scan_source(path, &content));
+                    raw_findings.extend(self::parser_security::ParserSecurityScanner::scan_source(path, &content));
+                    raw_findings.extend(self::network_dos::NetworkDosScanner::scan_source(path, &content));
+                }
+            }
+
+            if (file_name.ends_with(".html") || file_name.ends_with(".htm")) && !is_test_file {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    raw_findings.extend(self::web::WebSecurityScanner::scan_source(path, &content));
                 }
             }
 

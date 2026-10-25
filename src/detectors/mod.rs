@@ -10,12 +10,23 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// Context provided to a detector during execution.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ScanContext {
     pub root: PathBuf,
     pub profile: ScanProfile,
     pub changed_files: Option<Vec<PathBuf>>,
     pub enable_network_osv: bool,
+    pub cached_report: Option<Arc<ScanReport>>,
+}
+
+impl ScanContext {
+    pub fn get_report(&self) -> Arc<ScanReport> {
+        if let Some(ref r) = self.cached_report {
+            r.clone()
+        } else {
+            Arc::new(FleetScanner::scan_directory(&self.root, false))
+        }
+    }
 }
 
 /// Output result produced by an individual detector execution.
@@ -85,7 +96,7 @@ impl SecurityDetector for TaintSastDetector {
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
-        let report = FleetScanner::scan_directory_with_rules_and_taint(&ctx.root, false, &[], true);
+        let report = ctx.get_report();
         let mut rules_run = Vec::new();
         for id in self.supported_rule_ids() {
             rules_run.push(id.to_string());
@@ -108,7 +119,7 @@ impl SecurityDetector for TaintSastDetector {
         };
 
         DetectorResult {
-            findings: report.findings,
+            findings: report.findings.clone(),
             receipt,
             rules_run,
         }
@@ -150,11 +161,12 @@ impl SecurityDetector for SecretDetector {
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
-        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let report = ctx.get_report();
         let secret_findings: Vec<Finding> = report
             .findings
-            .into_iter()
+            .iter()
             .filter(|f| f.detector_id == "secret-detector")
+            .cloned()
             .collect();
 
         let rules_run = self
@@ -211,11 +223,12 @@ impl SecurityDetector for CicdSecurityDetector {
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
-        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let report = ctx.get_report();
         let cicd_findings: Vec<Finding> = report
             .findings
-            .into_iter()
+            .iter()
             .filter(|f| f.detector_id == "cicd-security")
+            .cloned()
             .collect();
 
         let rules_run = self
@@ -273,11 +286,12 @@ impl SecurityDetector for ContainerIacDetector {
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
-        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let report = ctx.get_report();
         let container_findings: Vec<Finding> = report
             .findings
-            .into_iter()
+            .iter()
             .filter(|f| f.target_kind == TargetKind::Dockerfile)
+            .cloned()
             .collect();
 
         let rules_run = self
@@ -341,10 +355,10 @@ impl SecurityDetector for AgentSkillDetector {
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
-        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let report = ctx.get_report();
         let agent_findings: Vec<Finding> = report
             .findings
-            .into_iter()
+            .iter()
             .filter(|f| {
                 f.detector_id == "agent-security-scanner"
                     || f.detector_id == "agent-skill-scanner"
@@ -352,6 +366,7 @@ impl SecurityDetector for AgentSkillDetector {
                     || f.target_kind == TargetKind::AgentSkillManifest
                     || f.target_kind == TargetKind::McpServerConfig
             })
+            .cloned()
             .collect();
 
         let rules_run = self
@@ -560,11 +575,12 @@ impl SecurityDetector for InjectionSecurityDetector {
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
-        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let report = ctx.get_report();
         let injection_findings: Vec<Finding> = report
             .findings
-            .into_iter()
+            .iter()
             .filter(|f| f.detector_id == "injection-security")
+            .cloned()
             .collect();
 
         let rules_run = self
@@ -615,11 +631,12 @@ impl SecurityDetector for CryptoWeaknessDetector {
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
-        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let report = ctx.get_report();
         let crypto_findings: Vec<Finding> = report
             .findings
-            .into_iter()
+            .iter()
             .filter(|f| f.detector_id == "crypto-weakness")
+            .cloned()
             .collect();
 
         let rules_run = self
@@ -646,6 +663,612 @@ impl SecurityDetector for CryptoWeaknessDetector {
     }
 }
 
+pub struct WebSecurityDetector;
+
+impl SecurityDetector for WebSecurityDetector {
+    fn id(&self) -> &'static str {
+        "web-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "Web & Frontend Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-WEB-001",
+            "BK-AI-WEB-002",
+            "BK-AI-WEB-003",
+            "BK-AI-WEB-004",
+            "BK-AI-WEB-005",
+            "BK-AI-WEB-006",
+            "BK-AI-WEB-007",
+            "BK-AI-WEB-008",
+            "BK-AI-WEB-009",
+            "BK-AI-WEB-010",
+            "BK-AI-WEB-011",
+            "BK-AI-WEB-012",
+            "BK-AI-WEB-013",
+            "BK-AI-WEB-014",
+            "BK-AI-WEB-015",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "html", "python", "php"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let web_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "web-security")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: web_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct ApiSecurityDetector;
+
+impl SecurityDetector for ApiSecurityDetector {
+    fn id(&self) -> &'static str {
+        "api-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "HTTP API, GraphQL & Realtime Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-API-001",
+            "BK-AI-API-002",
+            "BK-AI-API-003",
+            "BK-AI-API-004",
+            "BK-AI-API-005",
+            "BK-AI-API-006",
+            "BK-AI-API-007",
+            "BK-AI-API-008",
+            "BK-AI-API-009",
+            "BK-AI-API-010",
+            "BK-AI-API-011",
+            "BK-AI-API-012",
+            "BK-AI-API-013",
+            "BK-AI-API-014",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let api_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "api-security")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: api_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct AuthSecurityDetector;
+
+impl SecurityDetector for AuthSecurityDetector {
+    fn id(&self) -> &'static str {
+        "auth-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "Authentication & Session Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-AUT-001",
+            "BK-AI-AUT-002",
+            "BK-AI-AUT-003",
+            "BK-AI-AUT-004",
+            "BK-AI-AUT-005",
+            "BK-AI-AUT-006",
+            "BK-AI-AUT-007",
+            "BK-AI-AUT-008",
+            "BK-AI-AUT-009",
+            "BK-AI-AUT-010",
+            "BK-AI-AUT-011",
+            "BK-AI-AUT-012",
+            "BK-AI-SES-001",
+            "BK-AI-SES-002",
+            "BK-AI-SES-003",
+            "BK-AI-SES-004",
+            "BK-AI-SES-005",
+            "BK-AI-SES-006",
+            "BK-AI-SES-007",
+            "BK-AI-SES-008",
+            "BK-AI-SES-009",
+            "BK-AI-SES-010",
+            "BK-AI-SES-011",
+            "BK-AI-SES-012",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "php", "go"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let auth_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "auth-security")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: auth_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct AuthzSecurityDetector;
+
+impl SecurityDetector for AuthzSecurityDetector {
+    fn id(&self) -> &'static str {
+        "authz-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "Authorization & Tenant Isolation Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-AZ-001",
+            "BK-AI-AZ-002",
+            "BK-AI-AZ-003",
+            "BK-AI-AZ-004",
+            "BK-AI-AZ-005",
+            "BK-AI-AZ-006",
+            "BK-AI-AZ-007",
+            "BK-AI-AZ-008",
+            "BK-AI-AZ-009",
+            "BK-AI-AZ-010",
+            "BK-AI-AZ-011",
+            "BK-AI-AZ-012",
+            "BK-AI-AZ-013",
+            "BK-AI-AZ-014",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "php", "go"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let authz_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "authz-security")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: authz_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct FilesystemExtDetector;
+
+impl SecurityDetector for FilesystemExtDetector {
+    fn id(&self) -> &'static str {
+        "filesystem-ext"
+    }
+
+    fn name(&self) -> &'static str {
+        "Filesystem, Archive & Injection Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-FIL-003",
+            "BK-AI-FIL-004",
+            "BK-AI-FIL-005",
+            "BK-AI-FIL-006",
+            "BK-AI-FIL-007",
+            "BK-AI-FIL-009",
+            "BK-AI-FIL-010",
+            "BK-AI-FIL-011",
+            "BK-AI-FIL-012",
+            "BK-AI-FIL-013",
+            "BK-AI-FIL-014",
+            "BK-AI-INJ-002",
+            "BK-AI-INJ-004",
+            "BK-AI-INJ-005",
+            "BK-AI-INJ-008",
+            "BK-AI-INJ-009",
+            "BK-AI-INJ-010",
+            "BK-AI-INJ-011",
+            "BK-AI-INJ-012",
+            "BK-AI-INJ-013",
+            "BK-AI-INJ-016",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "php", "go", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let fs_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "filesystem-ext")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: fs_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct DataPrivacyDetector;
+
+impl SecurityDetector for DataPrivacyDetector {
+    fn id(&self) -> &'static str {
+        "data-privacy"
+    }
+
+    fn name(&self) -> &'static str {
+        "Data Privacy, Storage & Database Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-SEC-005",
+            "BK-AI-SEC-006",
+            "BK-AI-SEC-007",
+            "BK-AI-SEC-008",
+            "BK-AI-SEC-009",
+            "BK-AI-SEC-011",
+            "BK-AI-SEC-012",
+            "BK-AI-DAT-001",
+            "BK-AI-DAT-002",
+            "BK-AI-DAT-003",
+            "BK-AI-DAT-004",
+            "BK-AI-DAT-005",
+            "BK-AI-DAT-006",
+            "BK-AI-DAT-007",
+            "BK-AI-DAT-008",
+            "BK-AI-DAT-009",
+            "BK-AI-DAT-010",
+            "BK-AI-DAT-011",
+            "BK-AI-DAT-012",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let privacy_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "data-privacy")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: privacy_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct ParserSecurityDetector;
+
+impl SecurityDetector for ParserSecurityDetector {
+    fn id(&self) -> &'static str {
+        "parser-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "Parsers, Deserialization & Cryptography Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-PAR-001",
+            "BK-AI-PAR-002",
+            "BK-AI-PAR-003",
+            "BK-AI-PAR-004",
+            "BK-AI-PAR-005",
+            "BK-AI-PAR-006",
+            "BK-AI-PAR-007",
+            "BK-AI-PAR-008",
+            "BK-AI-PAR-009",
+            "BK-AI-PAR-010",
+            "BK-AI-PAR-011",
+            "BK-AI-PAR-012",
+            "BK-AI-CRY-004",
+            "BK-AI-CRY-005",
+            "BK-AI-CRY-006",
+            "BK-AI-CRY-007",
+            "BK-AI-CRY-008",
+            "BK-AI-CRY-009",
+            "BK-AI-CRY-010",
+            "BK-AI-CRY-011",
+            "BK-AI-CRY-012",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "php", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let parser_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "parser-security")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: parser_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct NetworkDosDetector;
+
+impl SecurityDetector for NetworkDosDetector {
+    fn id(&self) -> &'static str {
+        "network-dos"
+    }
+
+    fn name(&self) -> &'static str {
+        "Network, SSRF & Denial of Service Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-NET-001",
+            "BK-AI-NET-002",
+            "BK-AI-NET-003",
+            "BK-AI-NET-004",
+            "BK-AI-NET-005",
+            "BK-AI-NET-006",
+            "BK-AI-NET-007",
+            "BK-AI-NET-008",
+            "BK-AI-NET-009",
+            "BK-AI-NET-010",
+            "BK-AI-DOS-001",
+            "BK-AI-DOS-002",
+            "BK-AI-DOS-003",
+            "BK-AI-DOS-004",
+            "BK-AI-DOS-005",
+            "BK-AI-DOS-006",
+            "BK-AI-DOS-007",
+            "BK-AI-DOS-008",
+            "BK-AI-DOS-009",
+            "BK-AI-DOS-010",
+            "BK-AI-DOS-011",
+            "BK-AI-DOS-012",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let net_findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "network-dos")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: net_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
 // ---------------- Detector Registry ----------------
 
 pub struct DetectorRegistry {
@@ -666,6 +1289,14 @@ impl Default for DetectorRegistry {
         reg.register(Arc::new(DynamicRulesDetector));
         reg.register(Arc::new(InjectionSecurityDetector));
         reg.register(Arc::new(CryptoWeaknessDetector));
+        reg.register(Arc::new(WebSecurityDetector));
+        reg.register(Arc::new(ApiSecurityDetector));
+        reg.register(Arc::new(AuthSecurityDetector));
+        reg.register(Arc::new(AuthzSecurityDetector));
+        reg.register(Arc::new(FilesystemExtDetector));
+        reg.register(Arc::new(DataPrivacyDetector));
+        reg.register(Arc::new(ParserSecurityDetector));
+        reg.register(Arc::new(NetworkDosDetector));
         reg
     }
 }
@@ -789,11 +1420,14 @@ impl DetectorRegistry {
         }
 
         // 2. Execute detectors
+        let base_report =
+            Arc::new(FleetScanner::scan_directory_with_rules_and_taint(root, false, &[], true));
         let ctx = ScanContext {
             root: root.to_path_buf(),
             profile,
             changed_files,
             enable_network_osv,
+            cached_report: Some(base_report.clone()),
         };
 
         let mut all_findings = Vec::new();
@@ -801,8 +1435,7 @@ impl DetectorRegistry {
         let mut receipts = Vec::new();
         let mut unexamined_reasons = Vec::new();
 
-        let base_report = FleetScanner::scan_directory_with_rules_and_taint(root, false, &[], true);
-        all_findings.extend(base_report.findings);
+        all_findings.extend(base_report.findings.clone());
 
         for detector in &self.detectors {
             let result = detector.run(&ctx);
@@ -894,7 +1527,7 @@ impl DetectorRegistry {
             rules_evaluated: rules_eval_vec,
             applicable_rules,
             unsupported_rules,
-            coverage: base_report.coverage,
+            coverage: base_report.coverage.clone(),
             receipts,
             unexamined_reasons,
         }
