@@ -17,6 +17,7 @@ pub mod rules;
 pub mod scanner;
 pub mod security_guard;
 pub mod shell;
+pub mod structural;
 pub mod taint;
 pub mod types;
 pub mod watcher;
