@@ -2100,6 +2100,7 @@ impl Default for DetectorRegistry {
         reg.register(Arc::new(LanguagePitfallsDetector));
         reg.register(Arc::new(OpsQaDetector));
         reg.register(Arc::new(NativeDesktopDetector));
+        reg.register(Arc::new(BkhSafetyDetector));
         reg.register(Arc::new(MemTempDetector));
         reg
     }

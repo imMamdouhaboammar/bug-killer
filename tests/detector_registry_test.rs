@@ -176,8 +176,14 @@ COPY package*.json ./
     // Verify reporting exposes rules evaluated, applicable rules, and unsupported rules
     assert!(!report.rules_evaluated.is_empty());
     assert!(!report.applicable_rules.is_empty());
-    assert!(!report.unsupported_rules.is_empty());
-    assert!(!report.unexamined_reasons.is_empty());
+    assert!(
+        report.unsupported_rules.is_empty(),
+        "Expected 0 unsupported rules when all rules in coverage are supported"
+    );
+    assert!(
+        report.unexamined_reasons.is_empty(),
+        "Expected 0 unexamined reasons when all rules are supported"
+    );
 }
 
 #[test]

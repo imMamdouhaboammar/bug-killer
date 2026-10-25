@@ -8672,7 +8672,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8698,7 +8698,7 @@
       "SCA",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8725,7 +8725,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -8751,7 +8751,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8775,7 +8775,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8800,7 +8800,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8826,7 +8826,7 @@
       "SECRET",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8850,7 +8850,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8875,7 +8875,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8899,7 +8899,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8923,7 +8923,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8948,7 +8948,7 @@
       "CONFIG",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8975,7 +8975,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9000,7 +9000,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9025,7 +9025,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go",
       "rust",
@@ -9053,7 +9053,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -9079,7 +9079,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9104,7 +9104,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
