@@ -13,8 +13,11 @@ pub mod filesystem_ext;
 pub mod host;
 pub mod iac;
 pub mod injection;
+pub mod language_pitfalls;
+pub mod native_desktop;
 pub mod network_dos;
 pub mod node;
+pub mod ops_qa;
 pub mod parser_security;
 pub mod php;
 pub mod secret;
@@ -316,6 +319,9 @@ impl FleetScanner {
                     raw_findings.extend(self::supply_chain::SupplyChainScanner::scan_source(path, &content));
                     raw_findings.extend(self::biz_concurrency::BizConcurrencyScanner::scan_source(path, &content));
                     raw_findings.extend(self::ai_agent_ext::AiAgentExtScanner::scan_source(path, &content));
+                    raw_findings.extend(self::language_pitfalls::LanguagePitfallsScanner::scan_source(path, &content));
+                    raw_findings.extend(self::native_desktop::NativeDesktopScanner::scan_source(path, &content));
+                    raw_findings.extend(self::ops_qa::OpsQaScanner::scan_source(path, &content));
                 }
             }
 

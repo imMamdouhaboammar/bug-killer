@@ -1592,6 +1592,249 @@ impl SecurityDetector for AiAgentExtDetector {
     }
 }
 
+pub struct LanguagePitfallsDetector;
+
+impl SecurityDetector for LanguagePitfallsDetector {
+    fn id(&self) -> &'static str {
+        "language-pitfalls"
+    }
+
+    fn name(&self) -> &'static str {
+        "Language & Runtime Specific Red Flags Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-LNG-001",
+            "BK-AI-LNG-002",
+            "BK-AI-LNG-003",
+            "BK-AI-LNG-004",
+            "BK-AI-LNG-005",
+            "BK-AI-LNG-006",
+            "BK-AI-LNG-007",
+            "BK-AI-LNG-008",
+            "BK-AI-LNG-009",
+            "BK-AI-LNG-010",
+            "BK-AI-LNG-011",
+            "BK-AI-LNG-012",
+            "BK-AI-LNG-013",
+            "BK-AI-LNG-014",
+            "BK-AI-LNG-015",
+            "BK-AI-LNG-016",
+            "BK-AI-LNG-017",
+            "BK-AI-LNG-018",
+            "BK-AI-LNG-019",
+            "BK-AI-LNG-020",
+            "BK-AI-LNG-021",
+            "BK-AI-LNG-022",
+            "BK-AI-LNG-023",
+            "BK-AI-LNG-024",
+            "BK-AI-LNG-025",
+            "BK-AI-LNG-026",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "rust", "php", "java", "c", "cpp", "ruby", "dotnet", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "language-pitfalls")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct OpsQaDetector;
+
+impl SecurityDetector for OpsQaDetector {
+    fn id(&self) -> &'static str {
+        "ops-qa"
+    }
+
+    fn name(&self) -> &'static str {
+        "Errors, Observability & Test Integrity Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-OPS-001",
+            "BK-AI-OPS-002",
+            "BK-AI-OPS-003",
+            "BK-AI-OPS-004",
+            "BK-AI-OPS-005",
+            "BK-AI-OPS-006",
+            "BK-AI-OPS-007",
+            "BK-AI-OPS-008",
+            "BK-AI-OPS-009",
+            "BK-AI-OPS-010",
+            "BK-AI-OPS-011",
+            "BK-AI-OPS-012",
+            "BK-AI-QAT-001",
+            "BK-AI-QAT-002",
+            "BK-AI-QAT-003",
+            "BK-AI-QAT-004",
+            "BK-AI-QAT-005",
+            "BK-AI-QAT-006",
+            "BK-AI-QAT-007",
+            "BK-AI-QAT-008",
+            "BK-AI-QAT-009",
+            "BK-AI-QAT-010",
+            "BK-AI-QAT-011",
+            "BK-AI-QAT-012",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "rust", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::GenericConfigFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "ops-qa")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct NativeDesktopDetector;
+
+impl SecurityDetector for NativeDesktopDetector {
+    fn id(&self) -> &'static str {
+        "native-desktop"
+    }
+
+    fn name(&self) -> &'static str {
+        "Native Memory Safety & Mobile/Desktop Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &[
+            "BK-AI-MEM-004",
+            "BK-AI-MEM-005",
+            "BK-AI-MEM-006",
+            "BK-AI-MEM-007",
+            "BK-AI-MEM-008",
+            "BK-AI-MEM-009",
+            "BK-AI-MEM-010",
+            "BK-AI-MEM-011",
+            "BK-AI-MEM-012",
+            "BK-AI-MOB-001",
+            "BK-AI-MOB-002",
+            "BK-AI-MOB-003",
+            "BK-AI-MOB-004",
+            "BK-AI-MOB-005",
+            "BK-AI-MOB-006",
+            "BK-AI-MOB-007",
+            "BK-AI-MOB-008",
+            "BK-AI-MOB-009",
+            "BK-AI-MOB-010",
+            "BK-AI-AIC-004",
+            "BK-AI-LLM-019",
+            "BK-AI-LLM-021",
+        ]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["c", "cpp", "rust", "zig", "swift", "kotlin", "java", "javascript", "typescript", "python", "generic"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::GenericConfigFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = ctx.get_report();
+        let findings: Vec<Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.detector_id == "native-desktop")
+            .cloned()
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
 // ---------------- Detector Registry ----------------
 
 pub struct DetectorRegistry {
@@ -1624,6 +1867,9 @@ impl Default for DetectorRegistry {
         reg.register(Arc::new(SupplyChainDetector));
         reg.register(Arc::new(BizConcurrencyDetector));
         reg.register(Arc::new(AiAgentExtDetector));
+        reg.register(Arc::new(LanguagePitfallsDetector));
+        reg.register(Arc::new(OpsQaDetector));
+        reg.register(Arc::new(NativeDesktopDetector));
         reg
     }
 }
