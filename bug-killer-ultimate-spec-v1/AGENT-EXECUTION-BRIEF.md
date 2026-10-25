@@ -5,15 +5,17 @@ You are implementing the architecture in this ZIP against `https://github.com/im
 ## Non-negotiable instructions
 
 1. Read every document in this ZIP, the repository's current AGENTS.md, README, Cargo/Go manifests, test fixtures, open issues and current main source before writing code. Pin the baseline master SHA and issue snapshot timestamp before implementation. The specification was drafted on 2026-10-25; any discrepancy between that date's assumptions and pinned source must be documented, not hidden. Later upstream changes form a new baseline and require revalidation.
-2. Follow `10-IMPLEMENTATION-PLAN.md` milestone dependency graph. First revalidate and finish the existing safety and coverage issues in [tracker #22](https://github.com/imMamdouhaboammar/bug-killer/issues/22); do not jump to autonomous research/privileged healing.
+2. Follow `10-IMPLEMENTATION-PLAN.md` milestone dependency graph and **the product-level orchestration decision in Section 14**. First revalidate and finish the existing safety and coverage issues in [tracker #22](https://github.com/imMamdouhaboammar/bug-killer/issues/22); do not jump to autonomous research/privileged healing.
 3. Use small scoped PRs with meaningful atomic commits. One coherent behavior contract per PR. Do not create artificial commit counts. Do not directly push to main; do not merge without required checks and review.
 4. TDD for each behavior: demonstrate a failing regression on the old path, make it pass, add negative controls, run integration checks and show exact commands/results. Fix scanner and schema errors instead of suppressing errors or relaxing tests.
-5. Use established engines according to ADRs. Avoid custom parser, crypto primitive, license bypass or broad framework rebuild. Keep optional engines optional and offline Quick usable.
+5. **Think like a builder of a security operations room, not a vendor of ten new scanners.** Reuse mature, separately evaluated analyzers, dependency tools, fuzzers and repairers through typed adapters. Before proposing native detection algorithms, prove which existing engine cannot meet the exact requirement. Avoid custom parser, crypto primitive, license bypass or broad framework rebuild. Keep optional engines optional and offline Quick usable.
 6. Enforce strict defensive scope. No public exploit tools, real victim tests, remote unauthorized scanning, live secrets, arbitrary advisory scripts or unapproved external disclosure.
 7. Keep operator approval distinct from agent identity; modifications restricted to exact authorized root, preimages and operation class. Fail closed and make rollback truthfully report failure.
 8. Never label a detector's registered ID as an executed rule without rule-target receipt. Never call a candidate "zero-day", "confirmed", or "repaired" without corresponding reproducible proof.
 9. Preserve legacy CLI/MCP behavior unless a versioned migration with compatibility tests is accepted.
 10. Each PR must include a short implementation summary, risk analysis, regression evidence, measured performance where relevant, user-visible behavior, backward compatibility and rollback plan.
+11. Implement capability discovery, installation/health/licensing preflight, agentic task plan, per-tool execution receipts, correlation and disagreement handling **before** claiming a multi-engine security-room workflow. A clean engine exit does not mean complete coverage or independent proof.
+12. Never assume OSS-Fuzz is local, Big Sleep provides a general API, or a commercial tool/AIxCC research prototype grants automatic integration or redistribution rights. Confirm interfaces and terms at actual implementation time.
 
 ## First agent task
 
@@ -50,6 +52,7 @@ Merge readiness:
 
 M0: no unapproved privileged write; true partial scan classification.  
 M1: versioned adapters and benchmark reproducibility.  
+M1 extension: actual mature-tool coordination, missing/forbidden engine transparency, planner/ledger tests and independent evidence correlation.
 M2: AST precision proven on representative migrated rules, Quick latency measured.  
 M3: exact advisory correlation and tested repairs, no blind upgrades.  
 M4: optional dataflow trace with uncertainty and sidecar isolation.  

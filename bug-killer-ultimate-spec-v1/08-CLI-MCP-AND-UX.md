@@ -19,9 +19,16 @@ bk hunter candidate <id> --evidence
 bk hunter verify <id> --offline --json
 bk disclose draft <finding-id> --private --output ./report.md
 bk engine doctor --json
+bk engine list --capabilities --availability --json
+bk engine explain --goal known|prevention|research --target . --json
+bk room plan . --goal known|prevention|research --profile project --json
+bk room status <run-id> --receipts --json
+bk room evidence <run-id> --include-gaps --json
 ```
 
 Avoid using `bk hunt` synonymously with live network probing; `hunter` operates on local/sandbox targets unless a separate target-specific authorization exists.
+
+`room` commands are **PROPOSED** unified orchestration-room interactions, not existing CLI features. `room plan` is read-only, shows chosen/skipped engines and resource/cost estimates; `room run` (if later added) must request authorization for any privileged action. Never imply a command's existence before implementation or invent an external engine's flags.
 
 ### User persona: vibe coder
 
@@ -48,6 +55,8 @@ Do not rename existing tools. Add names only after auditing current MCP server:
 | `bugkiller_inventory` | Local read only | Assets, SBOM refs, inventory receipts |
 | `bugkiller_scan_v2` | Local read, optional approved feed refresh | Findings and coverage envelopes |
 | `bugkiller_engine_capabilities` | Read only | Installed/pinned engines and limitations |
+| `bugkiller_room_plan` | Read only | Planned tasks, tool selection reasons, cost/permission requirements and gaps |
+| `bugkiller_room_status` | Read only | Run state, per-tool execution receipts, partial coverage and budget consumption |
 | `bugkiller_research_plan` | Read only | Hypotheses, sandbox budgets and consent requirements |
 | `bugkiller_research_execute` | Sandbox-only bounded execution | Reproduction status, artifacts and receipts |
 | `bugkiller_research_verify` | Isolated deterministic test | Independent verification and uncertainty |
@@ -70,6 +79,8 @@ Each issue card contains:
 - **Result:** fixed, blocked, partial, failed or independently verified.
 
 Research candidates are visually separate from confirmed vulnerabilities to avoid pressure to publish unsupported reports.
+
+The agentic room view also presents a **tool availability board**, an explicit **chosen/not-run/blocked** plan, bounded run timeline and cross-tool evidence trail. Human consent is a separate host/operator action, not an agent-generated MCP token. A vendor's clean status cannot suppress a mandatory-check gap.
 
 ## JSON and exit contracts
 

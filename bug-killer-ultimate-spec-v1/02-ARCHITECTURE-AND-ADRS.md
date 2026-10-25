@@ -2,12 +2,14 @@
 
 ## Topology
 
+The following are **logical desks**, not instructions to implement a new analyzer per desk. See [Section 14](14-AGENTIC-SECURITY-OPERATIONS-ROOM.md) for the orchestrator-first plan, execution broker and mature-tool roster.
+
 ```mermaid
 flowchart TD
     A["Project, lockfiles, binaries, authorized targets"] --> B["Rust Core Orchestrator"]
-    B --> C["Known Advisory Engine"]
-    B --> D["Catalog + AST Engine"]
-    B --> E["Research Engine"]
+    B --> C["Advisory / SCA tool adapters"]
+    B --> D["SAST / AST tool adapters"]
+    B --> E["Fuzz / research tool adapters"]
     C --> F["Evidence Normalizer & Coverage Ledger"]
     D --> F
     E --> F
@@ -22,6 +24,8 @@ flowchart TD
 
 Stable entry point for CLI, MCP, CI and agent integrations. Owns target resolution, work quotas, task scheduling, cancellation, scanned artifact hashes, normalized result production, and aggregation. Default read-only. System-access work is delegated only under a constrained authorization token.
 
+**Primary implementation rule:** orchestrate already proven external engines when available, eligible and measured. Native Rust is the trust/control plane. Any proposed native detector beyond existing code requires a documented gap and comparative benchmark; registry membership alone does not make an external engine approved or usable.
+
 ### Workspace Inventory / SBOM
 
 Provides canonical project roots, Git snapshot ID, resolved package identities (PURL, ecosystem, normalized versions), transitive dependencies, lockfile provenance, selected runtime packages and coverage exclusions. Inventory errors are emitted as typed incomplete records, not empty success.
@@ -29,6 +33,8 @@ Provides canonical project roots, Git snapshot ID, resolved package identities (
 ### Analysis Adapter Registry
 
 Each engine advertises immutable metadata: engine ID/version, capabilities, languages, supported evidence level, local dependencies, required permission classes, deterministic or experimental flags, and output schema. Engine runs receive read-only snapshot inputs or scoped sandbox mounts and output normalized evidence. Dynamic engine-provided text is untrusted.
+
+The **Capability Broker** verifies the actual installed engine, digest, health, platform, entitlement, license and data-sharing requirements before scheduling. A **Planner** chooses complementary tools by check/target applicability, benchmarked independence, cost and coverage. An **Execution Supervisor** owns timeout, isolation and cancellation. Each attempt, including `NOT_RUN` or `BLOCKED`, produces a host-authored `ToolExecutionReceipt v1`. See `schemas/tool-capability.schema.json` and `schemas/tool-execution-receipt.schema.json`. See Section 14 for required fields and mandatory-vs-optional tool fallback semantics.
 
 ### Fast Structural Analysis
 
@@ -57,6 +63,8 @@ Consumes normalized findings, actual rule-target coverage receipts and test arti
 - `RepairPlan v1`: `schemas/repair-plan.schema.json`, with exact preimage digests and authorizations.
 - `AnalysisRequest/AnalysisResult v1`: `schemas/analysis-request.schema.json` and `schemas/analysis-response.schema.json`, stable sidecar adapter boundary.
 - `ResearchCandidate` example: `examples/research-candidate.json`.
+- `ToolCapability v1`: `schemas/tool-capability.schema.json`, discoverable but not a claim of execution.
+- `ToolExecutionReceipt v1`: `schemas/tool-execution-receipt.schema.json`, one per attempted/skipped invocation, separate from per-rule-target `CoverageReceipt`.
 - All records carry `schema_version`, `run_id`, source snapshot hash, engine ID/version and UTC timestamps. Prefer canonical JSON serialization for signed receipts; ignore presentation order for semantic comparisons.
 - Use bounded queues and cancellation; a timed-out engine reports `PARTIAL` or `ERROR`, never "clean".
 
@@ -90,6 +98,10 @@ The adapter transport is an internal implementation detail; no external plugin i
 | ADR-010 | ACCEPTED | No automatic public novelty disclosure | Responsible coordination and false-positive protection |
 | ADR-011 | PROPOSED | Versioned JSON/SARIF import/export | Backward compatibility and integration; confirm target SARIF version in spike |
 | ADR-012 | PROPOSED | Source hash and engine version keyed caching | Incremental performance, invalidation required |
+| ADR-013 | ACCEPTED | **Orchestration-first security operations room** | Connect measurable mature engines; build narrowly scoped adapters/controls before inventing detection algorithms; Section 14 |
+| ADR-014 | PROPOSED | Tool capability, health and license preflight | Installed, suitable, licensed and available are distinct states; block missing mandatory capability |
+| ADR-015 | PROPOSED | Host-issued per-tool execution receipt and correlated evidence | Tool output is untrusted; preserve raw provenance, independence and conflicting outcomes |
+| ADR-016 | PROPOSED | Immutable security task plans and resource/cost budgets | Agent proposes, operator approves privileged scope, supervisor enforces execution |
 
 ## Deployment profiles
 
@@ -110,6 +122,8 @@ The adapter transport is an internal implementation detail; no external plugin i
 4. Redirect/DNS target validation is repeated at the actual connection boundary.
 5. Local import of upstream dependencies does not imply authorization to probe their external services.
 6. A successful optional engine may add evidence; a failed mandatory one cannot be ignored when computing overall assurance.
+7. No engine is auto-downloaded, given vendor credentials, allowed to upload private code or treated as an approved repairer from a repository-supplied manifest.
+8. Plan, receipt and engine-output provenance are independently generated or verified by the host; an external tool cannot assert its own eligibility or operator permission.
 
 ## Compatibility migration
 

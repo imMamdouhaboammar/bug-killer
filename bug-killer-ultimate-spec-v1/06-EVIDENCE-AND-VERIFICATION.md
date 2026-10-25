@@ -19,6 +19,7 @@ Every normalized result contains:
 - Evidence certainty with explicit reason and counterevidence.
 - Associated coverage receipts, scan status, policy decision and remediation/verification references.
 - Redaction metadata: no secrets, tokens, private vulnerability content or raw sensitive HTTP responses in standard logs.
+- Correlation metadata: per-engine raw IDs, shared rule/feed lineage, disagreements, evidence independence classification and linked actual `ToolExecutionReceipt` IDs.
 
 See `schemas/finding.schema.json`.
 
@@ -52,6 +53,8 @@ with counts and reasons. This proposed schema differs from legacy `COMPLETE/PART
 | Not applicable | explicit `NOT_APPLICABLE`, never counted as assessed |
 
 Receipts are append-only per run and reference input snapshot hash; a resumed task creates new receipt IDs and links to its predecessor. Counts must reconcile: discovered = assessed + excluded + skipped/error as appropriate without double counting. The aggregate status is the worst required status under policy, not the most favorable engine result.
+
+**Three distinct claims:** `ToolCapability` says an engine *could* be applicable; `ToolExecutionReceipt` says it *was attempted or skipped* under recorded policy; `CoverageReceipt` says a particular check/target *was actually evaluated* or why it was not. Only the third counts towards checked coverage. A completed tool process without rule-target evidence is not completed assessment. An unlicensed/absent required tool stays a coverage blocker.
 
 See `schemas/coverage-receipt.schema.json`.
 

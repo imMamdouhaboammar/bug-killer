@@ -4,6 +4,8 @@
 
 Repair detected issues automatically **only within the authority actually granted by the operator**, while preserving data integrity and the ability to prove that modifications were effective. Maximal capability with explicit consent is not equivalent to unchecked agent privilege.
 
+The repair desk may **delegate the actual proposed change** to trusted, compatible package managers or separately evaluated repair tools. The Bug Killer supervisor must still own policy, preimage checks, narrowly scoped execution, audit receipts, fresh-snapshot verification and rollback. An external repairer's `success` exit code does not authorize a mutation or prove a security issue resolved. See [Section 14](14-AGENTIC-SECURITY-OPERATIONS-ROOM.md).
+
 ## Trust and authority model
 
 Entities:

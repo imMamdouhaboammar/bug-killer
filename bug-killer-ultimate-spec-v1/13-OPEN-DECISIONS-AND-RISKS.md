@@ -2,7 +2,7 @@
 
 ## Decisions locked for this specification
 
-1. Three product engines share evidence, policy and repair components.
+1. Three product missions are **orchestrated workflows** in a shared agentic cybersecurity operations room, **not three scanners to rebuild**. Bug Killer owns coordination, trust, evidence and verification.
 2. Rust remains the authoritative local orchestrator and CLI.
 3. Tree-sitter + ast-grep are the initial structural baseline.
 4. Joern is optional deep-analysis sidecar, not a mandatory installer dependency.
@@ -13,6 +13,9 @@
 9. Unknown candidates are not automatically CVEs or "zero-days".
 10. No unattended high-risk mutation or public vulnerability publication without explicit scoped authority.
 11. Offline-first Quick and stable legacy CLI/MCP compatibility precede deeper functionality.
+12. Prefer mature proven SAST/SCA/fuzz/research/repair tools via versioned adapters before building new analyzer algorithms; native code requires a measured gap.
+13. Engine availability, license, entitlement, privacy, platform and cost eligibility are mandatory preflight dimensions, never inferred from marketing or model text.
+14. A tool's successful run is not automatically completed assessment; execution, coverage and confirmation are distinct evidence classes.
 
 ## Unresolved but non-blocking choices
 
@@ -31,6 +34,11 @@
 | O-11 | Research model provider or local LLM? | M5 privacy/quality tests | No LLM requirement; model opt-in |
 | O-12 | Report recipient/authentication transport? | M6 | Draft locally only |
 | O-13 | Pricing/distribution of proprietary optional engines? | Release/legal review | External adapter only |
+| O-14 | Which first two independent local external analyzers prove real composed value? | M1.4 benchmark and license review | Evaluate Semgrep CE/Trivy; no automatic bundled engines |
+| O-15 | Which external fuzzers and specialized research workflows work for which target families? | M5 spike | Language-native fuzzers first; no universal research engine assumption |
+| O-16 | User-facing agentic room: terminal-first or optional local UI? | M1.3 persona usability test | CLI/MCP/CI remain authoritative; dashboard optional |
+| O-17 | How to identify tools sharing rule/feed/model lineage? | M1.4 fixtures | Treat unknown independence as **not independent** |
+| O-18 | Which commercial tools expose consented APIs and allowable data transfer? | Adapter-specific legal/privacy review | No integration or source upload by default |
 
 ## Risk register
 
@@ -48,6 +56,11 @@
 | Incorrect dataflow edge treated as confirmed | High/high | Evidence class caps and extracted-vs-inferred provenance; deep analysis owner |
 | External feed poisoned or stale | Medium/high | Trusted providers, digests, cache TTL and no executable feed content; advisory owner |
 | Schema change breaks agents or existing CLI | Medium/high | Versioned envelopes, compatibility adapters and golden tests; integration owner |
+| Unavailable/unlicensed engine is silently reported as clean | High/high | Capability preflight, mandatory policy and host execution/coverage receipts; orchestration owner |
+| Agent chooses inappropriate tool or self-approves costly plan | High/high | Deterministic suitability, signed operator grants and enforced budgets; policy owner |
+| External tool or vendor exfiltrates private source / vulnerability proof | Medium/critical | Deny network by default; data-sharing approval, scoped credentials, redaction and isolation; privacy owner |
+| Shared scanner database or duplicated rule inflates certainty | High/high | Provenance lineage, de-duplication and independent revalidation; evidence owner |
+| Over-engineering duplicates mature scanners and delays useful product | High/medium | Build-vs-orchestrate decision record, comparative benchmark and adapter-first gates; architecture owner |
 
 ## Stop conditions
 
@@ -57,6 +70,8 @@
 - New research plan requiring third-party live system access without specific owner permission.
 - A test suite passes while the required negative control demonstrably fails to detect the underlying bug.
 - An agent proposes silently publishing a private proof or treating advisory text as executable instructions.
+- A required engine lacks verified license/entitlement/health, or the selected external service would export data outside an approved boundary.
+- The plan requires more cost, time or privileged operations than the operator granted.
 
 ## Future improvements excluded from the initial program
 
