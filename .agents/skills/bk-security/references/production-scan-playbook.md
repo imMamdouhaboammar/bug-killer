@@ -95,7 +95,7 @@ When embedding `bk` in a CI/CD pipeline or deployment check:
 
 ```bash
 # Fail only on Confirmed High or Critical vulnerabilities
-bk security scan . --profile ci --fail-on high --json > scan-report.json
+bk security scan . --profile ci --fail-on high --json > /tmp/bugkiller-scan-report.json
 SCAN_EXIT=$?
 
 if [ $SCAN_EXIT -ne 0 ]; then

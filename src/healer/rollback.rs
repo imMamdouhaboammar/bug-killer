@@ -1,5 +1,5 @@
-use crate::healer::backup::BackupManager;
 use crate::types::*;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
 
@@ -27,17 +27,30 @@ impl RollbackManager {
         crate::identity::AgentIdentity::verify_manifest_with_root(root, &manifest)
             .map_err(|e| format!("Cryptographic trust verification failed: {}", e))?;
 
-        let mut restored_count = 0;
+        let canonical_root = root
+            .canonicalize()
+            .map_err(|e| format!("Failed to resolve workspace root: {e}"))?;
+        let mut verified_records = Vec::with_capacity(manifest.records.len());
 
+        // Preflight every signed record before mutating any target.
         for record in &manifest.records {
+            let backup_name = Path::new(&record.backup_file_name);
+            if backup_name.components().count() != 1
+                || !matches!(
+                    backup_name.components().next(),
+                    Some(std::path::Component::Normal(_))
+                )
+            {
+                return Err("Invalid backup archive filename".to_string());
+            }
             let backup_file = backup_dir.join(&record.backup_file_name);
             if !backup_file.exists() {
                 return Err(format!("Backup archive file {:?} is missing", backup_file));
             }
 
-            // Verify checksum of backup copy
-            let backup_sha256 = BackupManager::compute_sha256(&backup_file)
-                .map_err(|e| format!("Failed to compute backup checksum: {}", e))?;
+            let backup_content = fs::read(&backup_file)
+                .map_err(|e| format!("Failed to read backup payload {:?}: {}", backup_file, e))?;
+            let backup_sha256 = format!("{:x}", Sha256::digest(&backup_content));
 
             if backup_sha256 != record.original_sha256 {
                 return Err(format!(
@@ -65,14 +78,25 @@ impl RollbackManager {
             }
 
             let target_file = root.join(rel_path);
-
             let parent = target_file.parent().unwrap_or(root);
-            let _ = fs::create_dir_all(parent);
+            let canonical_parent = parent
+                .canonicalize()
+                .map_err(|e| format!("Restore target parent is unavailable: {e}"))?;
+            if !canonical_parent.starts_with(&canonical_root)
+                || fs::symlink_metadata(&target_file)
+                    .is_ok_and(|metadata| metadata.file_type().is_symlink())
+            {
+                return Err(format!(
+                    "Restore target escapes workspace or is a symlink: {:?}",
+                    target_file
+                ));
+            }
+            verified_records.push((target_file, backup_content));
+        }
 
-            // Atomically restore original file via tempfile + atomic rename to prevent partial restores
-            let backup_content = fs::read(&backup_file)
-                .map_err(|e| format!("Failed to read backup payload {:?}: {}", backup_file, e))?;
-
+        let mut restored_count = 0;
+        for (target_file, backup_content) in verified_records {
+            let parent = target_file.parent().unwrap_or(root);
             let mut temp = tempfile::NamedTempFile::new_in(parent)
                 .map_err(|e| format!("Failed to create temporary file in {:?}: {}", parent, e))?;
 

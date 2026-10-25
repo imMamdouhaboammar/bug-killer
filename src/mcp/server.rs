@@ -1,6 +1,5 @@
 use crate::catalog::SecurityCatalog;
 use crate::healer::AutopilotHealer;
-use crate::identity::AgentIdentity;
 use crate::mcp::protocol::*;
 use crate::osv::OsvClient;
 use crate::scanner::FleetScanner;
@@ -403,7 +402,10 @@ impl McpServer {
 
     fn execute_tool(&mut self, tool_name: &str, args: &Value) -> CallToolResult {
         let path_str = args.get("path").and_then(Value::as_str).unwrap_or(".");
-        let target_path = self.resolve_path(path_str);
+        let target_path = match self.resolve_path(path_str) {
+            Ok(path) => path,
+            Err(error) => return CallToolResult::error_text(error),
+        };
 
         match tool_name {
             "bk.asset_inventory" => {
@@ -617,14 +619,13 @@ impl McpServer {
             }
 
             "bk.status" => {
-                let identity = AgentIdentity::load_default();
                 let status = json!({
                     "service": "bug-killer",
                     "version": env!("CARGO_PKG_VERSION"),
                     "read_only_mode": self.read_only,
                     "workspace_root": self.workspace_root.display().to_string(),
-                    "agent_identity_configured": identity.is_ok(),
-                    "trust_anchor": "Ed25519 Root Key (~/.bug-killer/identity/agent.key)",
+                    "agent_identity_configured": self.workspace_root.join(".aegis/agent_identity.key").is_file(),
+                    "trust_anchor": "Ed25519 Project Key (.aegis/agent_identity.key)",
                     "transport": "stdio",
                 });
                 CallToolResult::ok_json(&status)
@@ -720,6 +721,9 @@ impl McpServer {
 
             "bugkiller_explain_finding" => {
                 let finding_id = args.get("finding_id").and_then(Value::as_str).unwrap_or("");
+                if finding_id.is_empty() {
+                    return CallToolResult::error_text("finding_id is required".to_string());
+                }
                 match SecurityGuard::explain(finding_id, &target_path) {
                     Some(explanation) => CallToolResult::ok_json(&explanation)
                         .unwrap_or_else(|e| CallToolResult::error_text(e.to_string())),
@@ -744,6 +748,9 @@ impl McpServer {
 
             "bugkiller_propose_fix" => {
                 let finding_id = args.get("finding_id").and_then(Value::as_str).unwrap_or("");
+                if finding_id.is_empty() {
+                    return CallToolResult::error_text("finding_id is required".to_string());
+                }
                 match SecurityGuard::plan_fix(finding_id, &target_path) {
                     Ok(plan) => CallToolResult::ok_json(&plan)
                         .unwrap_or_else(|e| CallToolResult::error_text(e.to_string())),
@@ -795,13 +802,26 @@ impl McpServer {
         }
     }
 
-    fn resolve_path(&self, raw: &str) -> PathBuf {
+    fn resolve_path(&self, raw: &str) -> Result<PathBuf, String> {
+        let root = self
+            .workspace_root
+            .canonicalize()
+            .map_err(|e| format!("Workspace root is unavailable: {e}"))?;
         let p = Path::new(raw);
-        if p.is_absolute() {
+        let candidate = if p.is_absolute() {
             p.to_path_buf()
         } else {
-            self.workspace_root.join(p)
+            root.join(p)
+        };
+        let path = candidate
+            .canonicalize()
+            .map_err(|e| format!("Scan path is unavailable: {e}"))?;
+        if !path.starts_with(&root) {
+            return Err(
+                "Security Boundary Violation: requested path escapes MCP workspace".to_string(),
+            );
         }
+        Ok(path)
     }
 
     /// Runs the MCP server reading from standard input and writing to standard output.

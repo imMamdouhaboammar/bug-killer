@@ -1,4 +1,5 @@
 use bug_killer::detectors::DetectorRegistry;
+use bug_killer::scanner::cicd::CicdScanner;
 use bug_killer::types::*;
 use std::fs;
 use tempfile::tempdir;
@@ -26,8 +27,79 @@ fn test_detector_registry_metadata() {
         "Must support CI/CD injection rule"
     );
     assert!(
-        supported_rules.contains("BK-AI-INF-001"),
+        supported_rules.contains("BK-AI-INF-003"),
         "Must support Docker root user rule"
+    );
+}
+
+#[test]
+fn distinct_paths_with_equal_finding_ids_are_preserved() {
+    let dir = tempdir().unwrap();
+    let root = dir.path();
+    fs::write(root.join("Dockerfile"), "FROM alpine:3.18\nUSER root\n").unwrap();
+    fs::create_dir(root.join("nested")).unwrap();
+    fs::write(
+        root.join("nested/Dockerfile"),
+        "FROM alpine:3.18\nUSER root\n",
+    )
+    .unwrap();
+    let registry = DetectorRegistry::default();
+    let report = registry.execute_guard_scan(root, ScanProfile::Quick, None, false);
+    let container_findings: Vec<_> = report
+        .findings
+        .iter()
+        .filter(|finding| finding.cve.as_str() == "BK-AI-INF-003")
+        .collect();
+    assert_eq!(container_findings.len(), 2);
+
+    let changed_report = registry.execute_guard_scan(
+        root,
+        ScanProfile::Quick,
+        Some(vec![root.join("nested/Dockerfile")]),
+        false,
+    );
+    assert_eq!(
+        changed_report
+            .findings
+            .iter()
+            .filter(|finding| finding.cve.as_str() == "BK-AI-INF-003")
+            .count(),
+        1
+    );
+    assert_eq!(
+        changed_report
+            .findings
+            .iter()
+            .find(|finding| finding.cve.as_str() == "BK-AI-INF-003")
+            .unwrap()
+            .file_path
+            .as_deref(),
+        Some(root.join("nested/Dockerfile").as_path())
+    );
+}
+
+#[test]
+fn offline_osv_receipt_is_not_marked_complete() {
+    let dir = tempdir().unwrap();
+    let report =
+        DetectorRegistry::default().execute_guard_scan(dir.path(), ScanProfile::Quick, None, false);
+    let osv = report
+        .receipts
+        .iter()
+        .find(|receipt| receipt.scanner_id == "osv-sca")
+        .unwrap();
+    assert_eq!(osv.status, CoverageStatus::NotRun);
+}
+
+#[test]
+fn github_actions_env_sibling_is_not_mistaken_for_run_script() {
+    let workflow = "jobs:\n  test:\n    steps:\n      - run: echo safe\n        env:\n          COMMENT_BODY: ${{ github.event.comment.body }}\n";
+    let findings =
+        CicdScanner::scan_workflow(std::path::Path::new(".github/workflows/test.yml"), workflow);
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| finding.cve.as_str() == "BK-AI-CIC-001")
     );
 }
 

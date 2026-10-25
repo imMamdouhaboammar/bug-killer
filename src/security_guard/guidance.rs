@@ -28,16 +28,19 @@ impl GuidanceEngine {
     pub fn generate_guidance(task_query: &str, language: &str) -> TaskSecurityGuidance {
         let catalog = SecurityCatalog::global();
         let query_lower = task_query.to_lowercase();
+        let query_words: Vec<&str> = query_lower
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|word| !word.is_empty())
+            .collect();
         let mut selected_rules = Vec::new();
         let mut safe_patterns = Vec::new();
         let mut anti_patterns = Vec::new();
         let mut required_tests = Vec::new();
 
         // 1. SQL / Database
-        if query_lower.contains("sql")
-            || query_lower.contains("query")
-            || query_lower.contains("database")
-            || query_lower.contains("orm")
+        if query_words
+            .iter()
+            .any(|word| matches!(*word, "sql" | "query" | "database" | "orm"))
         {
             if let Some(r) = catalog.get_rule("BK-AI-INJ-001") {
                 selected_rules.push(SecurityRuleSummary {

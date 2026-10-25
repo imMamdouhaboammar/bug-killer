@@ -54,7 +54,7 @@ fn test_mcp_security_guard_tools_workflow() {
     // 1. Initialize project via SecurityGuard
     SecurityGuard::init(root, false).unwrap();
 
-    // Create a vulnerable Dockerfile (BK-AI-INF-001)
+    // The Alpine image has no guaranteed `node` user, so its fix is advisory.
     let dockerfile_path = root.join("Dockerfile");
     fs::write(
         &dockerfile_path,
@@ -198,12 +198,8 @@ fn test_mcp_security_guard_tools_workflow() {
     assert_eq!(resp["result"]["isError"], false);
     let proposal_val: Value =
         serde_json::from_str(resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    assert!(
-        proposal_val["replacement_content"]
-            .as_str()
-            .unwrap()
-            .contains("USER node")
-    );
+    assert_eq!(proposal_val["required_level"], "PROPOSE");
+    assert_eq!(proposal_val["replacement_content"], "");
 
     // 8. Test bugkiller_verify_fix
     let verify_req = json!({
@@ -302,4 +298,32 @@ fn test_mcp_read_only_mode_blocks_mutating_actions() {
             .contains("read-only mode"),
         "Mutating call must fail with read-only error"
     );
+}
+
+#[test]
+fn mcp_rejects_path_escape_and_read_only_status_does_not_create_identity() {
+    let root_dir = tempdir().unwrap();
+    let sibling_dir = tempdir().unwrap();
+    fs::write(sibling_dir.path().join("outside.js"), "const x = 1;\n").unwrap();
+    let mut server = McpServer::new(root_dir.path().to_path_buf(), true);
+    let request = json!({
+        "jsonrpc": "2.0", "id": 41, "method": "tools/call",
+        "params": {"name": "bugkiller_scan_project", "arguments": {"path": sibling_dir.path()}}
+    });
+    let response: Value =
+        serde_json::from_str(&server.handle_json_rpc_line(&request.to_string()).unwrap()).unwrap();
+    assert_eq!(response["result"]["isError"], true);
+
+    let status_request = json!({
+        "jsonrpc": "2.0", "id": 42, "method": "tools/call",
+        "params": {"name": "bugkiller_security_status", "arguments": {"path": "."}}
+    });
+    let response: Value = serde_json::from_str(
+        &server
+            .handle_json_rpc_line(&status_request.to_string())
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(response["result"]["isError"], false);
+    assert!(!root_dir.path().join(".aegis/agent_identity.key").exists());
 }

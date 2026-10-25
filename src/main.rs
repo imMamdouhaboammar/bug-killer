@@ -282,7 +282,7 @@ enum Commands {
         path: PathBuf,
 
         /// Install Git pre-commit security hook (default: true)
-        #[arg(long, default_value_t = true)]
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         hooks: bool,
 
         /// Output results as JSON
@@ -380,12 +380,16 @@ enum SecurityAction {
         path: PathBuf,
 
         /// Scan profile (quick, project, ci, deep; default: quick)
-        #[arg(long, default_value = "quick")]
+        #[arg(long, default_value = "quick", value_parser = ["quick", "project", "ci", "deep"])]
         profile: String,
 
         /// Scan only git-changed / staged files
         #[arg(long, default_value_t = false)]
         changed_only: bool,
+
+        /// Exit with code 1 for findings at or above this severity
+        #[arg(long, value_parser = ["critical", "high", "medium", "low"])]
+        fail_on: Option<String>,
 
         /// Also query free open vulnerability database (OSV.dev)
         #[arg(long, default_value_t = false)]
@@ -431,7 +435,7 @@ enum SecurityAction {
         path: PathBuf,
 
         /// Generate repair proposal and diff preview without modifying files
-        #[arg(long, default_value_t = false)]
+        #[arg(long, default_value_t = false, conflicts_with = "apply")]
         plan: bool,
 
         /// Apply authorized repair with atomic Ed25519 backup and verification
@@ -1485,10 +1489,12 @@ fn main() {
         },
 
         Commands::Init { path, hooks, json } => {
-            println!(
-                "🚀 Initializing Bug Killer Security Guard in {}...",
-                path.display()
-            );
+            if !json {
+                println!(
+                    "🚀 Initializing Bug Killer Security Guard in {}...",
+                    path.display()
+                );
+            }
             match SecurityGuard::init(&path, hooks) {
                 Ok(receipt) => {
                     if json {
@@ -1541,6 +1547,7 @@ fn main() {
                 path,
                 profile,
                 changed_only,
+                fail_on,
                 osv,
                 json,
             } => {
@@ -1580,14 +1587,23 @@ fn main() {
                     }
                     if report.is_clean() {
                         println!("✅ Workspace is verified clean within evaluated coverage.");
-                    } else if report
-                        .findings
-                        .iter()
-                        .any(|f| f.severity == Severity::Critical)
-                    {
-                        println!("❌ Critical findings detected! Remediate before deployment.");
-                        std::process::exit(1);
                     }
+                }
+                let threshold = match fail_on.as_deref() {
+                    Some("high") => Severity::High,
+                    Some("medium") => Severity::Medium,
+                    Some("low") => Severity::Low,
+                    _ => Severity::Critical,
+                };
+                if report
+                    .findings
+                    .iter()
+                    .any(|finding| finding.severity <= threshold)
+                {
+                    if !json {
+                        eprintln!("❌ Security findings meet the configured severity threshold.");
+                    }
+                    std::process::exit(1);
                 }
             }
 
@@ -1747,8 +1763,10 @@ fn main() {
                         println!(
                             "❌ Verification failed: Security properties violated or coverage incomplete."
                         );
-                        std::process::exit(1);
                     }
+                }
+                if !is_clean {
+                    std::process::exit(1);
                 }
             }
 

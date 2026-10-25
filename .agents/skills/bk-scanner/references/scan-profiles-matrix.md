@@ -19,13 +19,13 @@ This reference documents the runtime profile characteristics, analysis depth, an
 
 ```bash
 # Rapid check on current directory
-bk scan . --profile quick
+bk security scan . --profile quick
 
 # Strict CI evaluation failing on High or Critical findings
-bk security scan . --profile ci --fail-on high --json > scan-report.json
+bk security scan . --profile ci --fail-on high --json > /tmp/bugkiller-scan-report.json
 
 # Deep multi-surface audit with process inspection
-bk scan . --profile deep --check-runtime --json
+bk scan . --check-runtime --taint --json
 ```
 
 ---

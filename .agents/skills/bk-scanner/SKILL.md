@@ -57,10 +57,10 @@ Run the scan command across workspace targets:
 
 ```bash
 # General multi-surface scan with JSON output
-bk scan . --profile deep --json > scan-report.json
+bk security scan . --profile deep --json
 
 # Scan only changed git files during rapid code edits
-bk security scan . --profile quick
+bk security scan . --profile quick --changed-only
 
 # Defensive live endpoint probe (SSRF-protected)
 bk probe https://preview.example.com --json

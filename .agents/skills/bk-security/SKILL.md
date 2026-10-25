@@ -34,7 +34,7 @@ Autonomous multi-surface security auditor, virtual patcher, and cryptographic ro
 
 Before executing any commands, verify that the environment meets the pre-flight conditions:
 - **Bug Killer executable**: Available via `bk`, `bug-killer`, or locally in `./target/release/bug-killer`.
-- **Ed25519 keypair**: Present at `~/.bug-killer/identity/agent.key` for signed mutations.
+- **Ed25519 keypair**: Present at `<project>/.aegis/agent_identity.key` for signed mutations.
 - **Detailed setup & fallback instructions** -> **`references/runtime-setup.md`**.
 
 If the binary is missing, compile locally via `cargo build --release` or use the cargo runner:
@@ -61,13 +61,13 @@ Select the scan profile based on operational budget (see **`references/productio
 bk security scan . --profile quick
 
 # 2. Comprehensive repository audit with JSON report (SCA, SAST, Secrets, Docker, MCP)
-bk scan . --profile deep --json > scan-report.json
+bk security scan . --profile deep --json
 
 # 3. Defensive DAST probe against staging endpoint (denies localhost/cloud metadata)
 bk probe https://staging.example.com --json
 
 # 4. Direct OSV vulnerability check on a third-party dependency
-bk osv npm express 4.17.1
+bk osv . --json
 ```
 
 ### Phase 3: Finding Triage & Decision Matrix
@@ -84,20 +84,20 @@ Never mutate production code directly without cryptographic tracking. Execute th
 
 1. **Plan Non-Mutating Diff**:
    ```bash
-   bk plan . <FINDING_ID>
+   bk plan <FINDING_ID> .
    ```
    *Inspect output unified diff and verify diff hash.*
 
 2. **Operator Sign-Off**:
    ```bash
-   bk approve . <RECEIPT_ID>
+   bk approve <FINDING_ID> .
    ```
 
 3. **Apply with Cryptographic Snapshot**:
    ```bash
-   bk apply . <RECEIPT_ID>
+   bk apply <FINDING_ID> .
    ```
-   *Creates snapshot in `.bugkiller/backups/<backup_id>` signed with Ed25519.*
+   *Creates snapshot in `.aegis/backups/<backup_id>` signed with Ed25519.*
 
 4. **Verify Fix**:
    ```bash

@@ -39,7 +39,7 @@ Use this skill when:
 
 3. **Safety & Zero-Loss Rollback:**
    - Pre-computation of SHA-256 hashes for all modified targets.
-   - Snapshot archived in `.bugkiller/backups/<backup_id>/` (or legacy `.aegis/backups/<backup_id>/`).
+   - Snapshot archived in `.aegis/backups/<backup_id>/`.
    - Instant cryptographic rollback restoring files bit-for-bit: `bk rollback <backup_id>`.
 
 ## CLI Usage

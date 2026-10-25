@@ -1,6 +1,6 @@
 # Supervised Remediation & Cryptographic Rollback Protocol
 
-This reference defines how Bug Killer (`bk`) executes safe, graduated virtual patching, atomic file transactions, cryptographic backup manifests, and bit-for-bit rollbacks without risking production stability.
+This reference describes approval-gated remediation, project-scoped signed backups, and rollback validation. Changes can still affect runtime behavior; test applications independently.
 
 ---
 
@@ -21,13 +21,13 @@ sequenceDiagram
     BK-->>Operator: Cryptographic Approval Token
     
     Agent->>BK: 3. bk apply <receipt_id>
-    BK->>FS: Snapshot targets to .bugkiller/backups/<backup_id>
+    BK->>FS: Snapshot targets to .aegis/backups/<backup_id>
     BK->>FS: Sign manifest with Ed25519 identity key
-    BK->>FS: Apply unified diff atomically
+    BK->>FS: Apply approved patch
     BK-->>Agent: Application Confirmation + Backup ID
     
-    Agent->>BK: 4. bk verify .
-    BK-->>Agent: Vulnerability Eliminated (Pass) OR Regression Detected (Fail)
+    Agent->>BK: 4. bk security verify .
+    BK-->>Agent: Scan result (not a runtime smoke test)
     
     opt Regression Detected
         Agent->>BK: bk rollback <backup_id>
@@ -52,12 +52,12 @@ sequenceDiagram
 
 Whenever `bk apply` or `bk heal` mutates a file:
 
-1. **Snapshot Creation**: The original target file is copied bit-for-bit into `.bugkiller/backups/<backup_id>/`.
+1. **Snapshot Creation**: The original target file is copied bit-for-bit into `.aegis/backups/<backup_id>/`.
 2. **Digest Computation**: SHA-256 hashes are calculated for every original file.
-3. **Ed25519 Non-Repudiation**: The manifest containing file paths, timestamps, and SHA-256 hashes is signed using the autonomous agent identity key located at `~/.bug-killer/identity/agent.key`.
+3. **Ed25519 Manifest Signature**: The manifest containing file paths, timestamps, and SHA-256 hashes is signed using the project identity key `.aegis/agent_identity.key`.
 4. **Failure-Closed Rollback Policy**:
    - Before executing `bk rollback <backup_id>`, `bk` verifies the Ed25519 signature against the agent public key.
-   - If any backup file was modified, tampered with, or the signature does not match, rollback aborts immediately with Exit Code `4` (`Signature / Integrity violation`).
+   - If any backup file was modified, tampered with, or the signature does not match, rollback aborts before restoring files.
 
 ---
 

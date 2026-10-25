@@ -115,7 +115,8 @@ complete -c bug-killer -n "__fish_bug_killer_using_subcommand mcp; and __fish_se
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand mcp; and __fish_seen_subcommand_from help" -f -a "serve" -d 'Run the stdio MCP server for external agent integration'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand mcp; and __fish_seen_subcommand_from help" -f -a "config" -d 'Generate copy-pasteable MCP server configuration snippets for external coding agents'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand mcp; and __fish_seen_subcommand_from help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
-complete -c bug-killer -n "__fish_bug_killer_using_subcommand init" -l hooks -d 'Install Git pre-commit security hook (default: true)'
+complete -c bug-killer -n "__fish_bug_killer_using_subcommand init" -l hooks -d 'Install Git pre-commit security hook (default: true)' -r -f -a "true\t''
+false\t''"
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand init" -l json -d 'Output results as JSON'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand init" -s h -l help -d 'Print help'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and not __fish_seen_subcommand_from scan status explain fix verify guidance catalog help" -s h -l help -d 'Print help'
@@ -127,7 +128,14 @@ complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and not 
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and not __fish_seen_subcommand_from scan status explain fix verify guidance catalog help" -f -a "guidance" -d 'Generate pre-generation security guidance for a coding task'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and not __fish_seen_subcommand_from scan status explain fix verify guidance catalog help" -f -a "catalog" -d 'Query or browse the 373-rule AI-Generated Code Security Issues Catalog'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and not __fish_seen_subcommand_from scan status explain fix verify guidance catalog help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
-complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and __fish_seen_subcommand_from scan" -l profile -d 'Scan profile (quick, project, ci, deep; default: quick)' -r
+complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and __fish_seen_subcommand_from scan" -l profile -d 'Scan profile (quick, project, ci, deep; default: quick)' -r -f -a "quick\t''
+project\t''
+ci\t''
+deep\t''"
+complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and __fish_seen_subcommand_from scan" -l fail-on -d 'Exit with code 1 for findings at or above this severity' -r -f -a "critical\t''
+high\t''
+medium\t''
+low\t''"
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and __fish_seen_subcommand_from scan" -l changed-only -d 'Scan only git-changed / staged files'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and __fish_seen_subcommand_from scan" -l osv -d 'Also query free open vulnerability database (OSV.dev)'
 complete -c bug-killer -n "__fish_bug_killer_using_subcommand security; and __fish_seen_subcommand_from scan" -l json -d 'Output results as JSON'

@@ -95,7 +95,11 @@ impl CicdScanner {
             let is_run_start = trimmed.starts_with("run:") || trimmed.starts_with("- run:");
             if is_run_start {
                 in_run_block = true;
-                run_indent = current_indent;
+                run_indent = if trimmed.starts_with("- run:") {
+                    current_indent + 2
+                } else {
+                    current_indent
+                };
             } else if in_run_block
                 && current_indent <= run_indent
                 && !trimmed.is_empty()

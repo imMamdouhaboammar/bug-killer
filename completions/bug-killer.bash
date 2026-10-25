@@ -978,6 +978,10 @@ _bug__killer() {
                 return 0
             fi
             case "${prev}" in
+                --hooks)
+                    COMPREPLY=($(compgen -W "true false" -- "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -1390,14 +1394,18 @@ _bug__killer() {
             return 0
             ;;
         bug__subcmd__killer__subcmd__security__subcmd__scan)
-            opts="-h --profile --changed-only --osv --json --help"
+            opts="-h --profile --changed-only --fail-on --osv --json --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 --profile)
-                    COMPREPLY=($(compgen -f "${cur}"))
+                    COMPREPLY=($(compgen -W "quick project ci deep" -- "${cur}"))
+                    return 0
+                    ;;
+                --fail-on)
+                    COMPREPLY=($(compgen -W "critical high medium low" -- "${cur}"))
                     return 0
                     ;;
                 *)

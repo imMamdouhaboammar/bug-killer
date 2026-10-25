@@ -242,7 +242,7 @@ impl SecurityDetector for ContainerIacDetector {
     }
 
     fn supported_rule_ids(&self) -> &[&'static str] {
-        &["BK-AI-INF-001", "BK-AI-INF-004"]
+        &["BK-AI-INF-003", "BK-AI-INF-004"]
     }
 
     fn supported_languages(&self) -> &[&'static str] {
@@ -398,7 +398,7 @@ impl SecurityDetector for OsvScaDetector {
                 scanner_id: self.id().to_string(),
                 scanner_version: env!("CARGO_PKG_VERSION").to_string(),
                 target_id: ctx.root.display().to_string(),
-                status: CoverageStatus::Complete,
+                status: CoverageStatus::NotRun,
                 items_examined: 0,
                 skipped_reasons: vec![
                     "Network OSV lookup disabled for offline profile".to_string(),
@@ -473,10 +473,19 @@ impl DetectorRegistry {
         let mut langs = HashSet::new();
         langs.insert("generic".to_string());
 
-        if let Ok(entries) = walkdir::WalkDir::new(root)
+        let entries = walkdir::WalkDir::new(root)
             .max_depth(5)
             .into_iter()
-            .collect::<Result<Vec<_>, _>>()
+            .filter_entry(|entry| {
+                entry.depth() == 0
+                    || !matches!(
+                        entry.file_name().to_str(),
+                        Some(
+                            ".git" | "node_modules" | "vendor" | "target" | ".aegis" | ".bugkiller"
+                        )
+                    )
+            })
+            .filter_map(Result::ok);
         {
             for entry in entries {
                 if !entry.file_type().is_file() {
@@ -578,8 +587,35 @@ impl DetectorRegistry {
         }
 
         // Deduplicate findings
-        all_findings.sort_by(|a, b| a.id.cmp(&b.id));
-        all_findings.dedup_by(|a, b| a.id == b.id);
+        all_findings.sort_by(|a, b| {
+            (&a.id, &a.file_path, a.line_number).cmp(&(&b.id, &b.file_path, b.line_number))
+        });
+        all_findings.dedup_by(|a, b| {
+            a.id == b.id && a.file_path == b.file_path && a.line_number == b.line_number
+        });
+
+        if let Some(changed) = &ctx.changed_files {
+            let changed_paths: HashSet<PathBuf> = changed
+                .iter()
+                .map(|path| {
+                    if path.is_absolute() {
+                        path.clone()
+                    } else {
+                        root.join(path)
+                    }
+                })
+                .collect();
+            all_findings.retain(|finding| {
+                finding.file_path.as_ref().is_some_and(|path| {
+                    let full_path = if path.is_absolute() {
+                        path.clone()
+                    } else {
+                        root.join(path)
+                    };
+                    changed_paths.contains(&full_path)
+                })
+            });
+        }
 
         // 3. Compute status and classification
         let has_parser_failures = !base_report.coverage.parser_failures.is_empty();

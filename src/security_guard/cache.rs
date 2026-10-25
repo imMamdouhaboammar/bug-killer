@@ -77,7 +77,10 @@ impl CacheEngine {
     ) -> Option<Vec<Finding>> {
         let entry = cache.entries.get(rel_path)?;
         let current_hash = Self::compute_sha256(content);
-        if entry.sha256 == current_hash && entry.rules_version == current_rules_version {
+        if entry.sha256 == current_hash
+            && entry.rules_version == current_rules_version
+            && entry.detector_version == env!("CARGO_PKG_VERSION")
+        {
             Some(entry.findings.clone())
         } else {
             None

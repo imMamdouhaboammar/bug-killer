@@ -1,13 +1,14 @@
 #![allow(dead_code)]
 
+use crate::detectors::DetectorRegistry;
 use crate::healer::approval::ApprovalManager;
 use crate::healer::backup::BackupManager;
 use crate::healer::rollback::RollbackManager;
-use crate::scanner::FleetScanner;
 use crate::security_guard::config::RemediationLevel;
 use crate::types::*;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,7 +42,7 @@ impl RemediationEngine {
             .as_ref()
             .ok_or_else(|| "Finding does not have an associated file path".to_string())?;
 
-        let full_path = if file_path.is_absolute() {
+        let full_path = if file_path.is_absolute() || file_path.starts_with(root) {
             file_path.clone()
         } else {
             root.join(file_path)
@@ -61,70 +62,56 @@ impl RemediationEngine {
 
         let rule_id = finding.cve.as_str();
 
+        let manual_fix = || {
+            (
+                String::new(),
+                "No safe automatic patch for this target; manual remediation required.".to_string(),
+                finding.suggested_remediation.clone(),
+                RemediationLevel::Propose,
+            )
+        };
         let (replacement_content, diff_preview, explanation, required_level) = match rule_id {
-            "BK-AI-INF-001" => {
-                // Docker root user -> add USER appuser or USER node
-                let patched = if content.contains("USER ") {
-                    content.replace("USER root", "USER node")
-                } else {
-                    format!("{}\nUSER node\n", content.trim_end())
-                };
-                let diff =
-                    "+ USER node (switch container runtime from root to non-privileged user)"
-                        .to_string();
-                let exp =
-                    "Enforce least privilege by running the container as non-root user 'node'."
-                        .to_string();
-                (patched, diff, exp, RemediationLevel::GuardedLocalFix)
-            }
-            "BK-AI-CIC-001" => {
-                // Untrusted GitHub Actions context interpolation in run:
-                let patched = content
-                    .replace("${{ github.event.comment.body }}", "\"$COMMENT_BODY\"")
-                    .replace("${{ github.event.issue.title }}", "\"$ISSUE_TITLE\"");
-                let diff = "- ${{ github.event... }}\n+ \"$ENV_VAR\" (pass via step environment variables)".to_string();
-                let exp = "Isolate untrusted user-controlled strings into shell environment variables to prevent command injection.".to_string();
-                (patched, diff, exp, RemediationLevel::GuardedLocalFix)
-            }
-            "BK-AI-SEC-001" => {
-                // Hardcoded secret -> replace with process.env lookup
-                let lines: Vec<String> = content
+            "BK-AI-INF-003" => {
+                let last_image = content
                     .lines()
-                    .enumerate()
-                    .map(|(idx, l)| {
-                        if Some(idx + 1) == finding.line_number {
-                            if l.contains("AKIA") {
-                                return l.replace(
-                                    &l.trim().to_string(),
-                                    "const apiKey = process.env.AWS_ACCESS_KEY_ID;",
-                                );
-                            }
-                            if l.contains("sk-") {
-                                return l.replace(
-                                    &l.trim().to_string(),
-                                    "const apiKey = process.env.OPENAI_API_KEY;",
-                                );
-                            }
+                    .filter_map(|line| {
+                        let mut words = line.split_whitespace();
+                        if words.next()?.eq_ignore_ascii_case("FROM") {
+                            words.next()
+                        } else {
+                            None
                         }
-                        l.to_string()
                     })
-                    .collect();
-                let patched = lines.join("\n");
-                let diff = "- <hardcoded_secret>\n+ process.env.<SECRET_KEY>".to_string();
-                let exp = "Replace hardcoded API key with runtime environment variable access."
-                    .to_string();
-                (patched, diff, exp, RemediationLevel::GuardedLocalFix)
+                    .next_back()
+                    .unwrap_or("");
+                if last_image != "node" && !last_image.starts_with("node:") {
+                    manual_fix()
+                } else {
+                    let mut lines: Vec<&str> = content.lines().collect();
+                    let last_from = lines
+                        .iter()
+                        .rposition(|line| {
+                            line.trim_start().to_ascii_uppercase().starts_with("FROM ")
+                        })
+                        .unwrap_or(0);
+                    if let Some(idx) = (last_from..lines.len())
+                        .rev()
+                        .find(|idx| matches!(lines[*idx].trim(), "USER root" | "USER 0"))
+                    {
+                        lines[idx] = "USER node";
+                    } else {
+                        lines.push("USER node");
+                    }
+                    (
+                        format!("{}\n", lines.join("\n")),
+                        "Switch the final official Node image stage to USER node".to_string(),
+                        "Use the non-root node user provided by the official Node image"
+                            .to_string(),
+                        RemediationLevel::GuardedLocalFix,
+                    )
+                }
             }
-            _ => {
-                // Generic remediation guidance proposal
-                let exp = format!("Remediation guidance: {}", finding.suggested_remediation);
-                (
-                    content.clone(),
-                    "No automatic syntax patch available; manual remediation required.".to_string(),
-                    exp,
-                    RemediationLevel::Propose,
-                )
-            }
+            _ => manual_fix(),
         };
 
         Ok(FixProposal {
@@ -185,7 +172,18 @@ impl RemediationEngine {
         }
 
         // 2. Path confinement check
-        if !proposal.target_file.starts_with(root) {
+        let canonical_root = root
+            .canonicalize()
+            .map_err(|e| format!("Invalid workspace root: {e}"))?;
+        let canonical_target = proposal
+            .target_file
+            .canonicalize()
+            .map_err(|e| format!("Invalid target path: {e}"))?;
+        if !canonical_target.starts_with(&canonical_root)
+            || !canonical_target.is_file()
+            || fs::symlink_metadata(&proposal.target_file)
+                .is_ok_and(|metadata| metadata.file_type().is_symlink())
+        {
             return Err(format!(
                 "Security Boundary Violation: Target file {} escapes workspace root {}",
                 proposal.target_file.display(),
@@ -210,11 +208,23 @@ impl RemediationEngine {
         let backup_id = manifest.backup_id.clone();
 
         // 5. Apply patch
-        fs::write(&proposal.target_file, &proposal.replacement_content)
-            .map_err(|e| format!("Failed to apply patch to file: {}", e))?;
+        let parent = proposal.target_file.parent().unwrap_or(root);
+        let original_permissions = fs::metadata(&proposal.target_file)
+            .map_err(|e| format!("Failed to inspect target permissions: {e}"))?
+            .permissions();
+        let mut temp = tempfile::NamedTempFile::new_in(parent)
+            .map_err(|e| format!("Failed to stage replacement: {e}"))?;
+        temp.write_all(proposal.replacement_content.as_bytes())
+            .map_err(|e| format!("Failed to write staged replacement: {e}"))?;
+        temp.as_file()
+            .set_permissions(original_permissions)
+            .map_err(|e| format!("Failed to preserve target permissions: {e}"))?;
+        temp.persist(&proposal.target_file)
+            .map_err(|e| format!("Failed to atomically apply patch: {e}"))?;
 
         // 6. Independent verification
-        let post_scan = FleetScanner::scan_directory(root, false);
+        let post_scan =
+            DetectorRegistry::default().execute_guard_scan(root, ScanProfile::Project, None, false);
         let finding_still_exists = post_scan.findings.iter().any(|f| {
             (f.cve.as_str() == proposal.rule_id
                 || f.advisory_ids.iter().any(|a| a == &proposal.rule_id))
@@ -224,9 +234,13 @@ impl RemediationEngine {
                     .unwrap_or(false)
         });
 
-        if finding_still_exists {
+        if finding_still_exists || post_scan.status != ScanStatus::Completed {
             // Independent verification failed! Automatic rollback.
-            let _ = RollbackManager::rollback(root, &backup_id);
+            if let Err(error) = RollbackManager::rollback(root, &backup_id) {
+                return Err(format!(
+                    "Verification failed and rollback failed (backup {backup_id}): {error}"
+                ));
+            }
             Ok(RemediationOutcome {
                 success: false,
                 finding_id: proposal.finding_id.clone(),

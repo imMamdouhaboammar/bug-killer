@@ -11,7 +11,6 @@ use self::remediation::{FixProposal, RemediationEngine, RemediationOutcome};
 use crate::catalog::SecurityCatalog;
 use crate::detectors::DetectorRegistry;
 use crate::identity::AgentIdentity;
-use crate::scanner::FleetScanner;
 use crate::types::*;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -148,8 +147,8 @@ impl SecurityGuard {
         let mut hook_installed = false;
         if install_hooks {
             hook_installed = Self::install_pre_commit_hook(root)?;
-            config.pre_commit_gate = true;
-            let _ = ConfigManager::save_config(root, &config);
+            config.pre_commit_gate = hook_installed;
+            ConfigManager::save_config(root, &config)?;
         }
 
         Ok(InitReceipt {
@@ -178,7 +177,7 @@ impl SecurityGuard {
         let hook_content = r#"# BUG_KILLER_SECURITY_GATE_START
 # Run Bug Killer quick security scan on staged/changed files
 if command -v bug-killer >/dev/null 2>&1; then
-    bug-killer security scan --profile quick || {
+    bug-killer security scan --profile quick --changed-only || {
         echo "❌ [Bug Killer] Security Gate Failed. Fix critical findings or update policy before committing."
         exit 1
     }
@@ -230,7 +229,7 @@ fi
                 (None, 0, None)
             };
 
-        let identity_configured = AgentIdentity::get_or_create(root).is_ok();
+        let identity_configured = root.join(".aegis/agent_identity.key").is_file();
 
         SecurityStatusReport {
             is_initialized: is_init,
@@ -267,7 +266,7 @@ fi
         let output = std::process::Command::new("git")
             .arg("-C")
             .arg(root)
-            .args(["status", "--porcelain"])
+            .args(["status", "--porcelain=v1", "-z"])
             .output()
             .ok()?;
 
@@ -276,12 +275,18 @@ fi
         }
 
         let mut files = Vec::new();
-        let text = String::from_utf8_lossy(&output.stdout);
-        for line in text.lines() {
-            let line = line.trim();
-            if line.len() > 3 {
-                let file_part = &line[3..].trim();
-                let p = root.join(file_part);
+        let mut entries = output
+            .stdout
+            .split(|byte| *byte == 0)
+            .filter(|e| !e.is_empty());
+        while let Some(entry) = entries.next() {
+            if entry.len() >= 4 {
+                let status = &entry[..2];
+                // -z puts the destination path first and the former path second for renames.
+                if status.contains(&b'R') || status.contains(&b'C') {
+                    entries.next();
+                }
+                let p = root.join(String::from_utf8_lossy(&entry[3..]).as_ref());
                 if p.is_file() {
                     files.push(p);
                 }
@@ -290,15 +295,44 @@ fi
         Some(files)
     }
 
+    fn resolve_finding(finding_id: &str, root: &Path) -> Result<Finding, String> {
+        if finding_id.is_empty() {
+            return Err("Finding ID cannot be empty".to_string());
+        }
+        let report = Self::scan(root, ScanProfile::Project, false, false);
+        let exact: Vec<&Finding> = report
+            .findings
+            .iter()
+            .filter(|f| f.id == finding_id || f.dedupe_fingerprint == finding_id)
+            .collect();
+        let matches: Vec<&Finding> = if exact.is_empty() {
+            report
+                .findings
+                .iter()
+                .filter(|f| {
+                    f.id.starts_with(finding_id) || f.dedupe_fingerprint.starts_with(finding_id)
+                })
+                .collect()
+        } else {
+            exact
+        };
+        match matches.as_slice() {
+            [finding] => Ok((*finding).clone()),
+            [] => Err(format!(
+                "Finding '{}' not found in current scan",
+                finding_id
+            )),
+            _ => Err(format!(
+                "Finding prefix '{}' is ambiguous; use an exact ID or longer fingerprint",
+                finding_id
+            )),
+        }
+    }
+
     /// Provides deep technical explanation and catalog grounding for a finding ID.
     pub fn explain(finding_id: &str, root: &Path) -> Option<FindingExplanation> {
         let catalog = SecurityCatalog::global();
-        let report = FleetScanner::scan_directory(root, false);
-        let finding = report.findings.iter().find(|f| {
-            f.id == finding_id
-                || f.id.starts_with(finding_id)
-                || f.dedupe_fingerprint.starts_with(finding_id)
-        })?;
+        let finding = Self::resolve_finding(finding_id, root).ok()?;
 
         let rule_id = finding.cve.as_str();
         let catalog_rule = catalog.get_rule(rule_id);
@@ -329,18 +363,9 @@ fi
 
     /// Prepares a non-mutating prospective repair plan for a finding.
     pub fn plan_fix(finding_id: &str, root: &Path) -> Result<FixProposal, String> {
-        let report = FleetScanner::scan_directory(root, false);
-        let finding = report
-            .findings
-            .iter()
-            .find(|f| {
-                f.id == finding_id
-                    || f.id.starts_with(finding_id)
-                    || f.dedupe_fingerprint.starts_with(finding_id)
-            })
-            .ok_or_else(|| format!("Finding '{}' not found in current scan", finding_id))?;
+        let finding = Self::resolve_finding(finding_id, root)?;
 
-        RemediationEngine::propose_fix(root, finding)
+        RemediationEngine::propose_fix(root, &finding)
     }
 
     /// Applies an authorized fix plan with verification and automatic rollback.
@@ -350,6 +375,10 @@ fi
         receipt: Option<&str>,
     ) -> Result<RemediationOutcome, String> {
         let config = ConfigManager::load_config(root);
+        let policy = ConfigManager::load_policy(root);
+        if !policy.allow_guarded_local_fix {
+            return Err("Project policy denies guarded local file mutation".to_string());
+        }
         RemediationEngine::apply_guarded_fix(root, proposal, config.remediation_level, receipt)
     }
 

@@ -32,12 +32,12 @@ Autonomous remediation engine, prospective diff planner, and cryptographic rollb
 
 Before applying patches, verify runtime invariants:
 - **Bug Killer executable**: Available via `bk`, `bug-killer`, or `./target/release/bug-killer`.
-- **Agent Identity**: Ed25519 keypair exists at `~/.bug-killer/identity/agent.key` for manifest signing.
+- **Agent Identity**: Ed25519 keypair exists at `<project>/.aegis/agent_identity.key` for manifest signing.
 - **Detailed pre-flight checks** -> **`references/runtime-setup.md`**.
 
 ```bash
 # Check identity key existence
-test -f ~/.bug-killer/identity/agent.key || bk doctor .
+test -f .aegis/agent_identity.key || bk init . --hooks=false
 ```
 
 ---
@@ -47,21 +47,21 @@ test -f ~/.bug-killer/identity/agent.key || bk doctor .
 ### Step 1: Prospective Non-Mutating Plan
 Never apply unverified mutations. Generate a prospective patch with a cryptographic diff hash:
 ```bash
-bk plan . <FINDING_ID>
+bk plan <FINDING_ID> .
 ```
 This generates a unique `receipt_id` and writes the candidate diff without touching source files.
 
 ### Step 2: Operator Review & Approval
 Present the diff and blast radius to the operator. Obtain cryptographic approval:
 ```bash
-bk approve . <RECEIPT_ID>
+bk approve <FINDING_ID> .
 ```
 See **`references/cryptographic-receipts.md`** for receipt structure and token validation.
 
 ### Step 3: Apply Patch with Signed Backup Snapshot
 Apply the approved remediation:
 ```bash
-bk apply . <RECEIPT_ID>
+bk apply <FINDING_ID> .
 ```
 Or for emergency autonomous virtual patching:
 ```bash
@@ -69,7 +69,7 @@ bk heal . --dry-run   # Preview first
 bk heal .             # Apply with automated backup
 ```
 Every applied patch:
-1. Snapshots target files to `.bugkiller/backups/<backup_id>/`.
+1. Snapshots target files to `.aegis/backups/<backup_id>/`.
 2. Computes SHA-256 digests and signs the manifest with Ed25519.
 3. Applies changes atomically.
 

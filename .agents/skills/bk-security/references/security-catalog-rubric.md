@@ -22,7 +22,7 @@ Bug Killer indexes 373+ static and dynamic security rules across 27 distinct cat
 | `CAT-10` | **Authentication & Session Flaws** | Missing JWT expiration, `alg: none` acceptance, insecure session cookies without `HttpOnly`/`Secure`. |
 | `CAT-11` | **Authorization & IDOR** | Missing tenancy checks, horizontal privilege escalation on entity lookups. |
 | `CAT-12` | **XML External Entity (XXE)** | XML parsers with external entity resolution enabled. |
-| `CAT-13` | **Container & Dockerfile Flaws** | Running as root user, unpinned base images, sensitive env leakage, `curl ... | bash`. |
+| `CAT-13` | **Container & Dockerfile Flaws** | Running as root user, unpinned base images, sensitive env leakage, `curl ... \| bash`. |
 | `CAT-14` | **Reverse Proxy & WAF Gaps** | Nginx/Apache missing body size limits, disabled security headers, unmitigated chunked Brotli. |
 | `CAT-15` | **SCA Vulnerable Dependencies** | Known CVEs in npm, Composer, PyPI, Cargo, Go modules matched via OSV.dev. |
 | `CAT-16` | **Open Redirects** | Redirection based on unvalidated `?next=` or `?redirect=` query parameters. |
