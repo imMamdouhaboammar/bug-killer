@@ -7,6 +7,7 @@ pub mod catalog;
 pub mod completion;
 pub mod cve_db;
 pub mod dast;
+pub mod deep;
 pub mod detectors;
 pub mod doctor;
 pub mod engine;
