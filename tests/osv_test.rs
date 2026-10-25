@@ -3,10 +3,13 @@ use bug_killer::healer::rollback::RollbackManager;
 use bug_killer::osv::OsvClient;
 use bug_killer::types::*;
 use std::fs;
+use std::io::{Read, Write};
+use std::net::TcpListener;
+use std::thread;
 use tempfile::tempdir;
 
 #[test]
-fn test_osv_package_discovery_and_live_query() {
+fn test_osv_package_discovery_query_heal_and_rollback() {
     let dir = tempdir().expect("Failed to create tempdir");
     let root = dir.path();
 
@@ -29,11 +32,27 @@ fn test_osv_package_discovery_and_live_query() {
     assert_eq!(discovered[0].version, "1.2.5");
     assert_eq!(discovered[0].ecosystem, "npm");
 
-    // 3. Query OSV.dev
-    let client = OsvClient::new();
+    // 3. Query a deterministic local OSV response. CI must not depend on
+    // external TLS, API uptime, or mutable advisory content.
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let endpoint = format!("http://{}/v1/query", listener.local_addr().unwrap());
+    let mock_server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = [0u8; 4096];
+        let _ = stream.read(&mut request);
+        let response_body = r#"{"vulns":[{"id":"GHSA-minimist-test","aliases":["CVE-2021-44906"],"summary":"Prototype pollution test fixture","affected":[{"package":{"name":"minimist","ecosystem":"npm"},"ranges":[{"type":"SEMVER","events":[{"introduced":"0"},{"fixed":"1.2.6"}]}]}]}]}"#;
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            response_body.len(),
+            response_body
+        );
+        stream.write_all(response.as_bytes()).unwrap();
+    });
+    let client = OsvClient::with_endpoint(endpoint);
     let findings = client
         .query_package(&discovered[0])
-        .expect("OSV query should succeed");
+        .expect("Local OSV fixture query should succeed");
+    mock_server.join().unwrap();
     assert!(
         !findings.is_empty(),
         "Minimist 1.2.5 should return confirmed CVEs from OSV.dev"

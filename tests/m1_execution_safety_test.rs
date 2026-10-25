@@ -208,6 +208,10 @@ fn test_m1_multi_file_transaction_rollback_on_failure() {
         result.is_err(),
         "Multi-file transaction must abort on error"
     );
+    assert!(
+        result.unwrap_err().contains("Restored"),
+        "Error must report verified rollback outcome, not an unconditional safety claim"
+    );
 
     // CRITICAL: File 1 MUST be rolled back to original content, not left modified!
     let content1 = fs::read_to_string(&file1).unwrap();

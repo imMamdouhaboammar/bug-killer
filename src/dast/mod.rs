@@ -1,7 +1,99 @@
 use crate::types::Severity;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::net::IpAddr;
 use std::time::{Duration, Instant};
+use ureq::unversioned::resolver::{DefaultResolver, ResolvedSocketAddrs, Resolver};
+
+fn is_public_address(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(addr) => {
+            let [a, b, _, _] = addr.octets();
+            !(addr.is_private()
+                || addr.is_loopback()
+                || addr.is_link_local()
+                || addr.is_broadcast()
+                || addr.is_multicast()
+                || addr.is_unspecified()
+                || addr.is_documentation()
+                || a == 0
+                || a >= 224
+                || (a == 100 && (64..=127).contains(&b))
+                || (a == 198 && (b == 18 || b == 19))
+                || (a == 192 && b == 0))
+        }
+        IpAddr::V6(addr) => {
+            // Fail closed on non-global IPv6 ranges, including mapped IPv4.
+            let segments = addr.segments();
+            (segments[0] & 0xe000) == 0x2000
+                && !addr.is_unique_local()
+                && !addr.is_unicast_link_local()
+                && !addr.is_multicast()
+                && !addr.is_loopback()
+                && addr.to_ipv4_mapped().is_none()
+                && !(segments[0] == 0x2001 && segments[1] == 0x0db8)
+        }
+    }
+}
+
+fn is_forbidden_destination(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(addr) => {
+            let first = addr.octets()[0];
+            addr.is_link_local()
+                || addr.is_multicast()
+                || addr.is_broadcast()
+                || addr.is_unspecified()
+                || first == 0
+        }
+        IpAddr::V6(addr) => {
+            addr.is_unicast_link_local()
+                || addr.is_multicast()
+                || addr.is_unspecified()
+                || addr
+                    .to_ipv4_mapped()
+                    .is_some_and(|mapped| is_forbidden_destination(IpAddr::V4(mapped)))
+        }
+    }
+}
+
+// Enforce the address policy at the resolver used by the connection itself.
+// A separate DNS preflight would leave a rebinding window before connect.
+#[derive(Debug)]
+struct ScopedResolver {
+    allow_private_targets: bool,
+}
+
+impl Resolver for ScopedResolver {
+    fn resolve(
+        &self,
+        uri: &ureq::http::Uri,
+        config: &ureq::config::Config,
+        timeout: ureq::unversioned::transport::NextTimeout,
+    ) -> Result<ResolvedSocketAddrs, ureq::Error> {
+        let host = uri.authority().ok_or(ureq::Error::HostNotFound)?.host();
+        let literal_ip = host
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .parse::<IpAddr>()
+            .ok();
+        let local_target =
+            host.eq_ignore_ascii_case("localhost") || literal_ip.is_some_and(|ip| ip.is_loopback());
+        let addresses = DefaultResolver::default().resolve(uri, config, timeout)?;
+        if addresses.iter().any(|address| {
+            let ip = address.ip();
+            if local_target {
+                !ip.is_loopback()
+            } else {
+                is_forbidden_destination(ip)
+                    || (!self.allow_private_targets && !is_public_address(ip))
+            }
+        }) {
+            return Err(ureq::Error::HostNotFound);
+        }
+        Ok(addresses)
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DastCategory {
@@ -39,6 +131,10 @@ pub struct DastReport {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DastScopeConfig {
+    /// Explicit operator authorization for the specified URL and its host.
+    pub authorized: bool,
+    /// Explicitly permit an authorized host to resolve to internal addresses.
+    pub allow_private_targets: bool,
     pub allow_sensitive_paths: bool,
     pub timeout_seconds: u64,
     pub max_response_bytes: usize,
@@ -47,6 +143,8 @@ pub struct DastScopeConfig {
 impl Default for DastScopeConfig {
     fn default() -> Self {
         Self {
+            authorized: false,
+            allow_private_targets: false,
             allow_sensitive_paths: false,
             timeout_seconds: 10,
             max_response_bytes: 1024 * 1024,
@@ -124,8 +222,8 @@ pub fn validate_target_url(raw_url: &str) -> Result<String, String> {
 
     // Check if host is IPv6
     if let Ok(ipv6) = host.parse::<std::net::Ipv6Addr>() {
-        if ipv6.is_unicast_link_local() {
-            return Err("Scope Violation: Prohibited Destination - IPv6 link-local addresses are prohibited.".into());
+        if is_forbidden_destination(IpAddr::V6(ipv6)) {
+            return Err("Scope Violation: Prohibited Destination - IPv6 link-local or metadata-mapped addresses are prohibited.".into());
         }
     }
 
@@ -139,9 +237,8 @@ impl DastProber {
     #[allow(dead_code)]
     pub fn probe(base_url: &str, timeout_secs: u64) -> Result<DastReport, String> {
         let config = DastScopeConfig {
-            allow_sensitive_paths: false,
             timeout_seconds: timeout_secs,
-            max_response_bytes: 1024 * 1024,
+            ..Default::default()
         };
         Self::probe_with_config(base_url, &config)
     }
@@ -153,17 +250,64 @@ impl DastProber {
     ) -> Result<DastReport, String> {
         let start = Instant::now();
         let normalized_url = validate_target_url(base_url)?;
+        let parsed_url = normalized_url
+            .parse::<ureq::http::Uri>()
+            .map_err(|error| format!("Malformed DAST target URL: {error}"))?;
+        let origin = format!(
+            "{}://{}",
+            parsed_url.scheme_str().ok_or("Missing HTTP scheme")?,
+            parsed_url.authority().ok_or("Missing URL authority")?
+        );
+        let url_host = normalized_url
+            .split_once("://")
+            .map(|(_, value)| value.split(['/', '?', '#']).next().unwrap_or_default())
+            .unwrap_or_default();
+        let host = if let Some(ipv6) = url_host.strip_prefix('[') {
+            ipv6.split(']').next().unwrap_or_default()
+        } else {
+            url_host.split(':').next().unwrap_or_default()
+        };
+        let local_explicit_target = host.eq_ignore_ascii_case("localhost")
+            || host.parse::<IpAddr>().is_ok_and(|ip| ip.is_loopback());
+        if !config.authorized && !local_explicit_target {
+            return Err("Authorization Required: Explicit scope approval is required before probing a non-local target".into());
+        }
+        if (config.allow_private_targets || config.allow_sensitive_paths) && !config.authorized {
+            return Err("Authorization Required: Private-network or sensitive-path probing needs explicit scope approval".into());
+        }
 
         let ureq_config = ureq::config::Config::builder()
             .timeout_global(Some(Duration::from_secs(config.timeout_seconds)))
+            .max_redirects(0)
+            .proxy(None)
             .build();
-        let agent = ureq_config.new_agent();
+        let agent = ureq::Agent::with_parts(
+            ureq_config,
+            ureq::unversioned::transport::DefaultConnector::default(),
+            ScopedResolver {
+                allow_private_targets: config.allow_private_targets,
+            },
+        );
 
         // 1. Audit root endpoint
         let root_resp = agent
             .get(&normalized_url)
             .call()
             .map_err(|e| format!("Failed to reach target URL {}: {}", normalized_url, e))?;
+
+        if root_resp.status().is_redirection() {
+            return Err("Scope Violation: DAST does not follow redirects outside the explicitly requested URL".into());
+        }
+
+        if root_resp
+            .headers()
+            .get("content-length")
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.parse::<usize>().ok())
+            .is_some_and(|length| length > config.max_response_bytes)
+        {
+            return Err("Scope Violation: Response exceeds the configured size limit".into());
+        }
 
         let status_code = root_resp.status().as_u16();
         let mut findings = Vec::new();
@@ -396,7 +540,7 @@ impl DastProber {
 
             for (path, sev, desc, rem) in sensitive_paths {
                 endpoints_audited += 1;
-                let target = format!("{}{}", normalized_url, path);
+                let target = format!("{}{}", origin, path);
                 if let Ok(resp) = agent.get(&target).call() {
                     if resp.status().as_u16() == 200 {
                         let clean_id = path

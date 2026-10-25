@@ -223,6 +223,28 @@ module.exports = { add };
 }
 
 #[test]
+fn high_severity_pattern_indicators_are_not_confirmed_exposures() {
+    let dir = tempdir().unwrap();
+    fs::write(
+        dir.path().join("user.js"),
+        "const userInput = req.query.id;\ndb.query(\"SELECT * FROM users WHERE id = \" + userInput);\n",
+    )
+    .unwrap();
+
+    let report =
+        DetectorRegistry::default().execute_guard_scan(dir.path(), ScanProfile::Quick, None, false);
+    assert!(report.findings.iter().any(|finding| {
+        finding.detector_id == "taint-engine"
+            && finding.evidence_certainty == EvidenceCertainty::PatternIndicator
+    }));
+    assert_eq!(
+        report.result_classification,
+        ResultClassification::Suspected,
+        "Lexical sink matches cannot establish confirmed exploitability"
+    );
+}
+
+#[test]
 fn test_expanded_detector_catalog_rules() {
     let registry = DetectorRegistry::default();
     let supported = registry.supported_rule_ids();

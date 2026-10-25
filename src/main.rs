@@ -140,6 +140,14 @@ enum Commands {
         /// Allow probing sensitive endpoints (/.env, /.git/HEAD) on authorized local targets (default: false)
         #[arg(long, default_value_t = false)]
         sensitive_paths: bool,
+
+        /// Confirm you have permission to probe the exact target URL and host
+        #[arg(long, default_value_t = false)]
+        authorized: bool,
+
+        /// Include internal/private IP destinations for the explicitly authorized host
+        #[arg(long, requires = "authorized", default_value_t = false)]
+        allow_private_targets: bool,
     },
 
     /// Query open-source vulnerability database (https://osv.dev) for dependencies across npm, Packagist, PyPI, and crates.io
@@ -386,6 +394,10 @@ enum SecurityAction {
         /// Scan only git-changed / staged files
         #[arg(long, default_value_t = false)]
         changed_only: bool,
+
+        /// Scan the exact staged Git index snapshot (for pre-commit enforcement)
+        #[arg(long, conflicts_with = "changed_only", default_value_t = false)]
+        staged: bool,
 
         /// Exit with code 1 for findings at or above this severity
         #[arg(long, value_parser = ["critical", "high", "medium", "low"])]
@@ -962,8 +974,12 @@ fn main() {
             json,
             timeout,
             sensitive_paths,
+            authorized,
+            allow_private_targets,
         } => {
             let config = DastScopeConfig {
+                authorized,
+                allow_private_targets,
                 allow_sensitive_paths: sensitive_paths,
                 timeout_seconds: timeout,
                 max_response_bytes: 1024 * 1024,
@@ -1547,6 +1563,7 @@ fn main() {
                 path,
                 profile,
                 changed_only,
+                staged,
                 fail_on,
                 osv,
                 json,
@@ -1558,7 +1575,17 @@ fn main() {
                     "deep" => ScanProfile::Deep,
                     _ => ScanProfile::Quick,
                 };
-                let report = SecurityGuard::scan(&path, prof, changed_only, osv);
+                let report = if staged {
+                    match SecurityGuard::scan_staged(&path, prof) {
+                        Ok(report) => report,
+                        Err(error) => {
+                            eprintln!("[Bug Killer] Staged scan unavailable: {error}");
+                            std::process::exit(3);
+                        }
+                    }
+                } else {
+                    SecurityGuard::scan(&path, prof, changed_only, osv)
+                };
                 if json {
                     println!("{}", serde_json::to_string_pretty(&report).unwrap());
                 } else {

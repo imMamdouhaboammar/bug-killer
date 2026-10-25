@@ -93,3 +93,38 @@ def ping():
             .any(|f| f.severity == Severity::Critical && f.id.starts_with("taint-cwe-78"))
     );
 }
+
+#[test]
+fn url_encoding_one_derived_value_does_not_sanitize_the_original_for_sql() {
+    let source = r#"
+const userInput = req.query.id;
+const encoded = encodeURIComponent(userInput);
+db.query("SELECT * FROM users WHERE id = " + userInput);
+"#;
+    let findings = TaintEngine::scan_source(std::path::Path::new("server.js"), source);
+    assert!(
+        findings.iter().any(|finding| {
+            finding.sink_kind == TaintSinkKind::SqlInjection && finding.variable_name == "userInput"
+        }),
+        "Encoding a separate value for URLs must not erase SQL taint on the original"
+    );
+}
+
+#[test]
+fn clean_path_without_containment_guard_remains_tainted() {
+    let source = r#"
+func handle(r *http.Request) {
+    filename := r.URL.Query().Get("file")
+    cleanPath := filepath.Clean(filepath.Join("/var/www/uploads", filename))
+    data, _ := os.ReadFile(cleanPath)
+    _ = data
+}
+"#;
+    let findings = TaintEngine::scan_source(std::path::Path::new("vulnerable.go"), source);
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.sink_kind == TaintSinkKind::PathTraversal),
+        "Cleaning an untrusted path without checking its base directory is not sufficient"
+    );
+}

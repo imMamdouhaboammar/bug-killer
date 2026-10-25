@@ -34,6 +34,7 @@ fn test_mcp_tools_list_includes_all_bugkiller_tools() {
         "bugkiller_verify_fix",
         "bugkiller_get_coverage",
         "bugkiller_security_guidance",
+        "bugkiller_probe_authorized",
     ];
 
     for expected in &expected_tools {
@@ -42,6 +43,31 @@ fn test_mcp_tools_list_includes_all_bugkiller_tools() {
             "Expected tool '{}' not found in tools/list: {:?}",
             expected,
             tool_names
+        );
+    }
+}
+
+#[test]
+fn test_mcp_dast_requires_explicit_scope_authorization() {
+    let dir = tempdir().unwrap();
+    let mut server = McpServer::new(dir.path().to_path_buf(), true);
+    for arguments in [
+        json!({"url": "http://example.com"}),
+        json!({"url": "http://example.com", "authorized": false}),
+        json!({"url": "http://example.com", "allow_private_targets": true}),
+    ] {
+        let call = json!({
+            "jsonrpc": "2.0", "id": 25, "method": "tools/call",
+            "params": {"name": "bugkiller_probe_authorized", "arguments": arguments}
+        });
+        let response: Value =
+            serde_json::from_str(&server.handle_json_rpc_line(&call.to_string()).unwrap()).unwrap();
+        assert_eq!(response["result"]["isError"], true);
+        assert!(
+            response["result"]["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("Authorization")
         );
     }
 }

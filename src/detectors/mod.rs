@@ -2303,10 +2303,10 @@ impl DetectorRegistry {
             ));
         }
 
+        // Severity is impact, not proof. A critical lexical match remains suspected.
         let has_confirmed = all_findings.iter().any(|f| {
-            f.severity == Severity::Critical
-                || f.severity == Severity::High
-                || f.affectedness == Affectedness::ConfirmedAffected
+            f.affectedness == Affectedness::ConfirmedAffected
+                && f.evidence_certainty == EvidenceCertainty::Confirmed
         });
 
         let result_classification = if has_confirmed {
