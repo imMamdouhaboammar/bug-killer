@@ -17,275 +17,190 @@ Initial benchmark targets:
 
 ---
 
-## Architecture & System Design
+## Start with a read-only scan
 
-```mermaid
-flowchart TD
-    subgraph Host ["Target Host / Asset Layer"]
-        FS["Filesystem & Source Repos"]
-        Proc["Running Processes (/proc)"]
-        DockerSock["Docker Daemon (/var/run/docker.sock)"]
-        WAF["Reverse Proxy (Nginx / Apache / HAProxy)"]
-    end
+Build the Rust CLI and scan your current project. This path does not require the Go services or a running Docker daemon.
 
-    subgraph Orchestrator ["Service A: Orchestrator (Go)"]
-        Crawler["Bounded Goroutine Crawler"]
-        ProcMap["Process Table Mapper"]
-        DockerClient["Unix Socket Container Inspector"]
-        Ledger["coverage-ledger.json"]
-    end
-
-    subgraph Inspector ["Service B: Deep Inspector (Rust)"]
-        Mmap["memmap2 Zero-Copy Engine"]
-        Goblin["Goblin ELF/Mach-O Disassembler"]
-        SymbolEngine["Symbol & Reachability Analyzer"]
-        Findings["findings.json"]
-    end
-
-    subgraph Healer ["Service C: Autopilot Healer (Rust & Go)"]
-        WafInjector["Idempotent WAF Patch Injector"]
-        ManifestPatcher["AST & Manifest Patcher"]
-        RollbackLedger["SHA-256 Checkpoint Ledger"]
-    end
-
-    FS & Proc & DockerSock --> Orchestrator
-    Orchestrator --> Ledger
-    Ledger --> Inspector
-    Inspector --> Findings
-    Findings --> Healer
-    Healer -->|"Atomic Virtual Patch"| WAF
-    Healer -->|"Instant Rollback"| RollbackLedger
-```
-
-### Polyglot Specialization Matrix
-
-| Service | Binary | Language | Core Competency & Justification |
-|---|---|---|---|
-| **Core CLI Engine** | `bug-killer` (`bk`) | **Rust (2024)** | Unified standalone scanner, AST patch planner, atomic transactional file mutator (`tempfile::persist`), and SHA-256 rollback manager. |
-| **Service A: Orchestrator** | `bug-killer-orchestrator` | **Go (1.26)** | Concurrent filesystem inventory, Docker socket inspection, and packet analysis using libpcap. |
-| **Service B: Deep Inspector** | `bug-killer-inspector` | **Rust (2024)** | Zero-copy memory mapping (`memmap2`) and binary disassembling (`goblin`) for ELF, Mach-O, and PE targets with compile-time memory safety. |
-| **Service C: Autopilot Healer** | `bug-killer-healer` | **Go (1.26)** | Idempotent reverse proxy WAF rule injection (Nginx, HAProxy), package manager invocation (`apt`, `apk`, `dnf`), and systemd process supervision. |
-
----
-
-## Core Product Invariants
-
-Privileged file mutation requires an independently pinned operator signing key. See [Operator approval setup](docs/OPERATOR-APPROVAL.md) before attempting supervised remediation.
-
-1. **Discover Broadly:** Inventory runtime binaries, shared libraries, container layers, and package manifests without premature filtering.
-2. **Verify Carefully:** Version strings alone never constitute vulnerability proof; require verified symbol presence or mapped `/proc` memory evidence.
-3. **Evidence-First Explanations:** Every finding cites exact byte offsets, symbol signatures (`BrotliDecoderContext`, `zend_hash_destroy`), or line-level configurations.
-4. **Active Reachability Prioritization:** Differentiate inactive binaries on disk from active listening processes handling production traffic.
-5. **Smallest Effective Repair:** Prefer virtual proxy guards (HTTP 415 on malicious Brotli streams) over sweeping destructive updates.
-6. **Deterministic Policy Gating:** Strict enforcement of authorization levels (Level 0 Read-Only to Level 4 High-Risk).
-7. **Zero-Loss Safety:** Calculate SHA-256 hashes and create atomic snapshots in `.aegis/backups/` before modifying any byte.
-8. **Independent Post-Repair Verification:** Rerun active detectors after mutation; package manager exit code 0 is never accepted as proof of healing.
-9. **Tamper-Evident Ledger:** Maintain cryptographically verifiable audit trails across all discovery and healing passes.
-10. **Fail-Closed Operations:** Indeterminate evidence or health check regressions abort operations and demand operator intervention.
-
----
-
-## Installation & Build
-
-### Prerequisites
-- Rust 1.99+ (`cargo`)
-- Go 1.26.5+
-- Make
-- `protobuf-compiler` and `libpcap-dev` for Inspector and Orchestrator builds
-
-### Local Compilation
 ```bash
 git clone https://github.com/imMamdouhaboammar/bug-killer.git
 cd bug-killer
-make build
-sudo make install
+cargo build --release
+./target/release/bug-killer security scan . --profile quick
 ```
 
-This compiles and installs:
-- `/usr/local/bin/bug-killer` (and symlink `bk`)
-- `/usr/local/bin/bug-killer-orchestrator`
-- `/usr/local/bin/bug-killer-inspector`
-- `/usr/local/bin/bug-killer-healer`
+Requires a Rust toolchain that supports edition 2024 and a compiler toolchain for native dependencies. The executable is `bug-killer`; the shorter `bk` command is installed by `make install`.
 
-### Container Image Build
+For a machine-readable report:
+
 ```bash
-docker build -t bug-killer:latest .
+./target/release/bug-killer security scan . --profile quick --json
 ```
 
-To start the Orchestrator and Inspector with Compose on a Linux Docker host:
+To initialize another Git project, use `bk init /path/to/project` after installation. **Initialization writes project security configuration, runs a baseline scan, and installs a Git pre-commit hook by default.** Run a read-only scan first if you only want to inspect the project.
+
+## One place to assess, investigate, and repair
+
+A scanner finding is the start of a security decision. You still need to know which files and dependencies were checked, whether the issue affects the running software, and whether a proposed fix survives verification.
+
+Bug Killer brings those steps together:
+
+1. **Inspect the target.** Inventory source files, manifests, runtimes, and applicable security checks.
+2. **Collect evidence.** Record findings, affectedness, uncertainty, and gaps in scan coverage.
+3. **Investigate.** Use source analysis, optional advisory lookups, bounded agent investigations, or approved runtime checks.
+4. **Plan the repair.** Review a proposed change before granting write access.
+5. **Verify the result.** Recheck the affected property and retain rollback evidence when a change is approved.
+
+### What works in the current code
+
+| Capability | Current interface | Important boundary |
+|---|---|---|
+| Workspace and runtime scanning | `bk scan`, `bk doctor` | Evidence depends on the target and available runtime data |
+| Security catalog and guard | `bk security scan`, `bk security catalog`, `bk security verify` | The 373-entry catalog is a taxonomy; supported and executed checks are reported separately |
+| Dependency advisories | `bk osv`, `bk scan --osv`, `bk security scan --osv` | OSV queries require network access; a version match does not prove exploitability |
+| Source analysis | `bk scan --taint`, structural and built-in engine modules | Language, rule, and analysis depth vary; unsupported paths must remain visible |
+| Agent-assisted investigation | `bk agent doctor`, `bk agent investigate` | Investigation is bounded and read-only; remote model access requires configuration and data-export policy |
+| Coding-agent access | `bk mcp serve`, `bk mcp config` | Local stdio transport; read-only is the default |
+| Supervised remediation | `bk heal --dry-run`, `bk plan`, `bk approve`, `bk apply`, `bk rollback` | Privileged changes require separate operator approval and verification |
+
+The source also contains an analyzer adapter registry, an execution protocol, and a benchmark harness. **Connecting a mature external scanner does not automatically make it part of a released scan profile.** Availability, license, output fidelity, and coverage must be tested per adapter.
+
+## Common workflows
+
+### Check a repository or CI job
 
 ```bash
-DOCKER_GID=$(stat -c '%g' /var/run/docker.sock) docker compose up --build
+bk security scan . --profile project --json
+bk security scan . --profile ci --fail-on high
+bk security scan . --profile quick --staged
 ```
 
-The operator must authorize access to the host filesystem and Docker daemon. Mounting `docker.sock` as `:ro` does **not** restrict the Docker API to read-only operations. Use only on trusted, explicitly approved hosts.
+`--staged` evaluates the staged Git snapshot for pre-commit use. CI can block on findings or incomplete mandatory coverage; a report with no findings is not proof that every check ran.
 
----
+### Investigate a dependency or runtime
 
-## CLI Reference
-
-### 1. Standalone Core CLI (`bug-killer` / `bk`)
-
-#### Interactive REPL Shell (`bk shell`)
 ```bash
-# Launch interactive session for workspace
-bk shell .
-
-# Supported interactive commands inside the shell:
-# bk [silly-kepler] (idle) > doctor
-# bk [silly-kepler] (idle) > scan
-# bk [silly-kepler] (⚠️ vuln:2) > findings
-# bk [silly-kepler] (⚠️ vuln:2) > plan
-# bk [silly-kepler] (⚠️ vuln:2) > diff
-# bk [silly-kepler] (⚠️ vuln:2) > heal --dry-run
-# bk [silly-kepler] (⚠️ vuln:2) > heal
-# bk [silly-kepler] (✅ clean) > verify
-# bk [silly-kepler] (✅ clean) > rollback <backup_id>
-# bk [silly-kepler] (✅ clean) > exit
-```
-
-#### System & Runtime Environment Doctor (`bk doctor`)
-```bash
-# Audit host runtimes (Node.js, PHP), proxies (Nginx, HAProxy), Docker socket, and procfs
-bk doctor .
-
-# Machine-readable diagnostic JSON
 bk doctor . --json
+bk scan . --check-runtime --json
+bk scan . --osv --taint --json
+bk cve-info CVE-2026-109618
 ```
 
-#### Live Surveillance & Continuous Watcher Engine (`bk watch`)
+`--osv` makes external advisory requests. Use it when the workspace and network policy permit those requests. Live endpoint probing is separate and requires authorization for the exact target.
+
+### Get security guidance for a coding task
+
 ```bash
-# Monitor directory for file modifications and trigger audits every 3 seconds
-bk watch . --interval 3
-
-# Continuous autonomous healing mode
-bk watch /var/www --interval 5 --auto-heal
+bk security guidance "Add a file upload endpoint" --language rust
+bk security catalog --json
+bk agent doctor --provider local --json
 ```
 
-#### Shell Completions
-```bash
-# Generate shell autocompletion scripts
-bk completion bash > ~/.local/share/bash-completion/completions/bk
-bk completion zsh > ~/.zsh/completion/_bk
-bk completion fish > ~/.config/fish/completions/bk.fish
-```
+Guidance and model-generated hypotheses are inputs for review. They do not certify that code is safe or authorize a fix.
 
-#### Scan Directory or Repository
-```bash
-# Standard console audit
-bk scan .
+### Preview a fix, then use operator approval
 
-# Machine-readable JSON output
-bk scan /var/www --json > audit-report.json
-
-# Scan filesystem plus host PATH binaries (node, php)
-bk scan . --check-runtime
-```
-
-#### Preview Remediation Plan (Dry-Run)
 ```bash
 bk heal . --dry-run
+bk evidence <finding-id> .
+bk plan <finding-id> .
 ```
 
-#### Execute Live Atomic Healing
+After provisioning a separate operator signing key and reviewing the plan, the authorized operator can use `bk approve` and `bk apply`. See [Operator approval setup](docs/OPERATOR-APPROVAL.md) for the trust and receipt requirements.
+
+`bk heal --apply` and `bk heal --auto-apply` are **deprecated shortcuts that the CLI rejects**. They cannot bypass independent approval. A successful patch command alone does not prove remediation.
+
+### Connect a coding agent through MCP
+
 ```bash
-bk heal . --auto-apply
+bk mcp config --host codex
+bk mcp config --host claude
+bk mcp serve --transport stdio .
 ```
 
-#### Revert Healing Session (Cryptographic Rollback)
-```bash
-# List all created backup snapshots
-bk history
+The configuration command prints host-specific examples. The MCP server communicates over standard input and output; it does not expose a network listener by default. See the [operator guide](docs/OPERATOR_GUIDE.md) for scope and permission details.
 
-# Rollback to exact snapshot state
-bk rollback 20261024_111448
+## Microservices architecture
+
+The Rust CLI is the main local entry point. Additional services cover inventory, binary inspection, and supervised host changes. They are separate build targets, so ordinary source scans do not require starting the full service stack.
+
+```mermaid
+flowchart TD
+    A["Authorized project or host"] --> B["Rust CLI and security guard"]
+    B --> C["Built-in analysis and optional advisory checks"]
+    C --> D["Findings, coverage, and evidence"]
+    D --> E["Review and operator approval"]
+    E --> F["Scoped repair and independent verification"]
+    G["Go inventory and Rust inspector services"] --> D
+    F --> H["Rollback records"]
 ```
 
-#### CVE Technical Deep Dive
-```bash
-bk cve-info CVE-2026-109618
-bk cve-info CVE-2026-111497
-```
+### Polyglot specialization matrix
 
----
-
-### 2. Shell Automation Utilities (`scripts/`)
-
-| Script | Purpose | Execution |
+| Component | Language | Responsibility |
 |---|---|---|
-| [`bk-shell.sh`](scripts/bk-shell.sh) | Interactive REPL launcher with terminal color setup | `./scripts/bk-shell.sh [dir]` |
-| [`bk-triage.sh`](scripts/bk-triage.sh) | Automated 3-step rapid incident response triage (Doctor $\to$ Scan $\to$ Dry-run) | `./scripts/bk-triage.sh [dir]` |
-| [`bk-watch.sh`](scripts/bk-watch.sh) | Background surveillance loop daemon wrapper | `./scripts/bk-watch.sh [dir] [interval] [--auto-heal]` |
+| `bug-killer` (`bk`) | Rust 2024 | CLI, security guard, scanning, evidence, MCP, agent investigation, and repair coordination |
+| `bug-killer-orchestrator` | Go | Filesystem and host inventory; separate service |
+| `bug-killer-inspector` | Rust 2024 | Binary inspection using `goblin` and `memmap2` |
+| `bug-killer-healer` | Go | Host-specific supervised remediation service |
 
----
+### Build the full stack
 
-### 3. Microservices Pipeline
-
-```bash
-# Step 1: Orchestrator maps target environment into structured ledger
-./target/bug-killer-orchestrator -path /srv/apps -out /tmp/coverage-ledger.json
-
-# Step 2: Inspector performs zero-copy binary disassembling & symbol audit
-./target/bug-killer-inspector --ledger /tmp/coverage-ledger.json --out /tmp/findings.json
-
-# Step 3: Healer injects virtual proxy mitigations & executes verified updates
-./target/bug-killer-healer -findings /tmp/findings.json -nginx /etc/nginx/nginx.conf
-```
-
----
-
-## Verification & Quality Gates
+The full build needs Rust, Go 1.26.5 or a compatible newer toolchain, Make, and platform-specific native dependencies. Inspector and orchestrator builds may require protobuf and libpcap development packages.
 
 ```bash
-$ make test
-
-==> Running Rust Test Suites...
-running 5 tests
-test cve_db::tests::test_node_brotli_checks ... ok
-test cve_db::tests::test_php_vulnerability_checks ... ok
-test test_end_to_end_scan_and_heal_and_rollback ... ok
-test result: ok. 5 passed; 0 failed; 0 ignored; finished in 0.04s
-
-==> Running Go Test Suites...
-=== RUN   TestFileCrawlerDiscovery
---- PASS: TestFileCrawlerDiscovery (0.00s)
-=== RUN   TestWafInjectorNginxIdempotency
---- PASS: TestWafInjectorNginxIdempotency (0.00s)
-=== RUN   TestWafInjectorHAProxy
---- PASS: TestWafInjectorHAProxy (0.00s)
-PASS
-
-$ make lint
-==> Running Linters...
-cargo clippy --workspace --all-targets -- -D warnings
-cd services/inspector && cargo clippy --all-targets -- -D warnings
-cd services/orchestrator && go vet ./...
-cd services/healer && go vet ./...
+make build
+make test
+make lint
 ```
 
----
+To install the resulting executables, choose an appropriate `PREFIX` and run `make install` with write permission to that directory. The Makefile's default is `/usr/local/bin`.
 
-## Licensing & Intellectual Property Terms
+Docker Compose is available for controlled Linux-host deployments. Access to `/var/run/docker.sock` can grant broad host control, even when mounted read-only. Use the service stack only on hosts where that access is explicitly approved.
 
-This project is licensed under the **Bug Killer Source-Available & Business Attribution License (Version 1.0)**.
+## The agentic security room roadmap
 
-### Summary of Rights and Restrictions
+The [Ultimate Spec](bug-killer-ultimate-spec-v1/README.md) defines Bug Killer's next product direction: an agentic workspace that selects and coordinates mature security tools, keeps their evidence separate, and helps a human approve and verify repairs.
 
-- **Forking and Development Permitted:** Anyone is free to fork, clone, inspect, modify, and contribute to this repository.
-- **Mandatory Attribution Retention:** All forks and derivative works must prominently preserve the original copyright notice (`Copyright (c) 2026 Mamdouh Aboammar`) and author credits across all source files, documentation, UI, and packages. Removing original copyright notices is strictly forbidden.
-- **Internal Business Use Permitted (Free of Charge):** Commercial enterprises and businesses are fully permitted to run and use Bug Killer internally to audit, protect, and heal their own company's systems, codebases, and servers at zero cost.
-- **Commercial Paid Service / Resale Prohibited:** Offering Bug Killer or derivative works as a paid commercial product, hosted Software-as-a-Service (SaaS), Security-as-a-Service, or managed commercial security offering to third parties is strictly prohibited without prior explicit written authorization from Mamdouh Aboammar.
+| Planned capability | Why it matters | Current status |
+|---|---|---|
+| Tool discovery and capability checks | Know which engine is installed, applicable, licensed, and healthy | Specified; not a complete public workflow |
+| Multi-tool execution planner | Choose suitable tools for each authorized target and resource budget | Proposed |
+| External SAST and SCA adapters | Reuse tools such as Semgrep, CodeQL, Trivy, and OSV-Scanner where suitable | Evaluated as candidates; not claimed as bundled integrations |
+| Research tool coordination | Run target-specific fuzzers and experiments under isolation and consent | Proposed research workflow |
+| Correlated evidence and independent recheck | Separate repeated signals from genuine corroboration; prove that a fix was tested | Contracts and acceptance criteria specified |
 
-### ملخص ترخيص الاستخدام وحفظ الحقوق (Arabic Summary)
+**The goal is coordination over reinvention.** Existing engines do the specialized analysis. Bug Killer selects them, enforces scope and budgets, records what actually ran, and presents evidence that a developer or security reviewer can act on.
 
-- **حفظ الحقوق الأصلية إلزامي:** يُسمح لأي مطور أو جهة بعمل Fork للريبو وتطويره مع وجوب الاحتفاظ الكامل بحقوق الملكية الفكرية الأصلية ونسبها إلى المطور الأساسي (`Mamdouh Aboammar`). يُحظر تماماً إزالة أو طمس الحقوق الأصلية من أي ملف أو واجهة.
-- **الاستخدام التجاري الداخلي مسموح ومجاني:** يحق للشركات والمؤسسات استخدام الأداة داخلياً لفحص وحماية أنظمتها وخوادمها الخاصة دون دفع أي رسوم.
-- **حظر إعادة البيع أو تقديمها كخدمة مدفوعة:** يُمنع منعاً باتاً استغلال هذه الأداة أو مشتقاتها تجارياً عن طريق إعادة بيعها أو تحويلها إلى خدمة سحابية مدفوعة (SaaS / Managed Security Service) للغير دون الحصول على تصريح وموافقة خطية مسبقة من صاحب الحقوق (`Mamdouh Aboammar`).
+The architecture is deliberately incremental. A registered tool, a catalog entry, or an agent's confident explanation is never enough to claim complete security coverage.
 
-See [LICENSE](LICENSE) for the complete legal text.
+- [Operations-room architecture and integration decisions](bug-killer-ultimate-spec-v1/14-AGENTIC-SECURITY-OPERATIONS-ROOM.md)
+- [Milestones and implementation gates](bug-killer-ultimate-spec-v1/10-IMPLEMENTATION-PLAN.md)
+- [Benchmarks and verification requirements](bug-killer-ultimate-spec-v1/11-TESTING-BENCHMARKS-AND-RELEASE.md)
 
----
+## Development and verification
 
-## Security Policy
+```bash
+cargo test --workspace
+cargo clippy --all-targets -- -D warnings
 
-Bug Killer operates strictly as a defensive discovery and auto-remediation tool. It never packages, generates, or transmits weaponized exploits. See [SECURITY.md](SECURITY.md) for vulnerability disclosure procedures.
+# Run from each Go service directory
+cd services/orchestrator && go test -v ./... && go vet ./...
+cd ../healer && go test -v ./... && go vet ./...
+```
+
+The separate Rust inspector has its own tests under `services/inspector`. The repository's `make test` and `make lint` targets cover the configured Rust and Go projects.
+
+Security reports need more than a passing build. Detection claims require reproducible fixtures and coverage receipts; repair claims require a fresh recheck of the changed target. See the [contribution instructions](AGENTS.md) and [security policy](SECURITY.md).
+
+## License and responsible use
+
+Bug Killer uses the [Source-Available & Business Attribution License v1.0](LICENSE), copyright © 2026 Mamdouh Aboammar.
+
+- You may inspect, fork, modify, and contribute while retaining the required attribution and license terms.
+- Internal use by businesses, non-profits, educational organizations, and government teams is permitted without royalties.
+- Selling Bug Killer or derivatives, or offering them as a paid hosted or managed security service, requires separate written commercial authorization.
+- Public derivatives must retain the same license terms, copyright, and author attribution.
+
+The [LICENSE](LICENSE) governs use and redistribution. Third-party analyzers and their rules may carry separate terms.
+
+Only assess systems you own or have explicit permission to test. Bug Killer's defensive scope excludes weaponized exploits and unauthorized probing. Report issues in Bug Killer itself through [SECURITY.md](SECURITY.md).
