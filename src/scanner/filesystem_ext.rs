@@ -25,7 +25,10 @@ static RE_FIL_003_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 
 // 2. BK-AI-FIL-004: Unsafe archive decompression creates resource exhaustion (zip bomb)
 static RE_FIL_004_UNBOUNDED_PIPE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\.pipe\s*\(\s*zlib\.(?:createGunzip|createInflate|createUnzip)\s*\([^)]*\)\s*\)"#).unwrap()
+    Regex::new(
+        r#"(?i)\.pipe\s*\(\s*zlib\.(?:createGunzip|createInflate|createUnzip)\s*\([^)]*\)\s*\)"#,
+    )
+    .unwrap()
 });
 
 static RE_FIL_004_SYNC_DECOMPRESS: LazyLock<Regex> = LazyLock::new(|| {
@@ -51,7 +54,8 @@ static RE_FIL_006_PUBLIC_DEST: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_FIL_006_UNSAFE_PERMS: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:fs\.(?:chmod|chmodSync)|os\.chmod)\s*\([^,]+,\s*(?:0o?777|0777|511)\s*\)"#).unwrap()
+    Regex::new(r#"(?i)(?:fs\.(?:chmod|chmodSync)|os\.chmod)\s*\([^,]+,\s*(?:0o?777|0777|511)\s*\)"#)
+        .unwrap()
 });
 
 static RE_FIL_006_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -72,16 +76,16 @@ static RE_FIL_007_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 // 6. BK-AI-FIL-009: Insecure temporary/backup files persist secrets or become publicly readable
-static RE_FIL_009_MKTEMP: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\btempfile\.mktemp\s*\("#).unwrap()
-});
+static RE_FIL_009_MKTEMP: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\btempfile\.mktemp\s*\("#).unwrap());
 
 static RE_FIL_009_TMP_SECRET: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)['"]/tmp/[a-zA-Z0-9_\-\.]*(?:backup|secret|key|token|cred|dump|passwd|shadow|id_rsa)[a-zA-Z0-9_\-\.]*['"]"#).unwrap()
 });
 
 static RE_FIL_009_FS_TMP_SECRET: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)fs\.(?:writeFileSync|writeFile)\s*\(\s*['"]/tmp/(?:backup|key|secret|dump)"#).unwrap()
+    Regex::new(r#"(?i)fs\.(?:writeFileSync|writeFile)\s*\(\s*['"]/tmp/(?:backup|key|secret|dump)"#)
+        .unwrap()
 });
 
 static RE_FIL_009_BAK_FILE: LazyLock<Regex> = LazyLock::new(|| {
@@ -89,7 +93,8 @@ static RE_FIL_009_BAK_FILE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_FIL_009_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:NamedTemporaryFile|TemporaryDirectory|mkdtemp|randomBytes|0o?600)"#).unwrap()
+    Regex::new(r#"(?i)(?:NamedTemporaryFile|TemporaryDirectory|mkdtemp|randomBytes|0o?600)"#)
+        .unwrap()
 });
 
 // 7. BK-AI-FIL-010: Unsafe file overwrite, truncation or deletion from arbitrary user-supplied path
@@ -107,7 +112,10 @@ static RE_FIL_010_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 
 // 8. BK-AI-FIL-011: TOCTOU between file validation and opening/replacement
 static RE_FIL_011_TOCTOU_EXISTS: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?is)if\s*\(\s*(?:fs\.)?existsSync\s*\(\s*([a-zA-Z0-9_]+)\s*\)\s*\)\s*\{([^}]{1,300})"#).unwrap()
+    Regex::new(
+        r#"(?is)if\s*\(\s*(?:fs\.)?existsSync\s*\(\s*([a-zA-Z0-9_]+)\s*\)\s*\)\s*\{([^}]{1,300})"#,
+    )
+    .unwrap()
 });
 
 static RE_FIL_011_TOCTOU_ACCESS: LazyLock<Regex> = LazyLock::new(|| {
@@ -118,9 +126,8 @@ static RE_FIL_011_TOCTOU_PY: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?is)if\s+os\.path\.exists\s*\(\s*([a-zA-Z0-9_]+)\s*\)\s*:\s*([^\n\r]+(?:\r?\n[ \t]+[^\n\r]+){1,5})"#).unwrap()
 });
 
-static RE_FIL_011_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:O_EXCL|['"]wx['"])"#).unwrap()
-});
+static RE_FIL_011_SAFE_GUARD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)(?:O_EXCL|['"]wx['"])"#).unwrap());
 
 // 9. BK-AI-FIL-012: Files served/downloaded without proper per-object authorization
 static RE_FIL_012_DOWNLOAD_UNAUTH: LazyLock<Regex> = LazyLock::new(|| {
@@ -141,12 +148,12 @@ static RE_FIL_013_SVG_HEADER: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_FIL_013_SVG_TYPE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)res\.type\s*\(\s*['"](?:svg|image/svg\+xml|html)['"]\s*\)\.send\s*\("#).unwrap()
+    Regex::new(r#"(?i)res\.type\s*\(\s*['"](?:svg|image/svg\+xml|html)['"]\s*\)\.send\s*\("#)
+        .unwrap()
 });
 
-static RE_FIL_013_SEND_FILE_SVG: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)send_file\s*\([^)]*\.svg['"][^)]*\)"#).unwrap()
-});
+static RE_FIL_013_SEND_FILE_SVG: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)send_file\s*\([^)]*\.svg['"][^)]*\)"#).unwrap());
 
 static RE_FIL_013_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:Content-Disposition['"]\s*,\s*['"]attachment|as_attachment\s*=\s*True|Content-Security-Policy['"]\s*,\s*['"]default-src\s+'none'|DOMPurify\.sanitize)"#).unwrap()
@@ -196,7 +203,10 @@ static RE_INJ_004_PY_SUBPROCESS: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_INJ_004_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:['"]--['"]|\.startsWith\s*\(\s*['"]-['"]\s*\)|!/^-/|check_flag|sanitize_arg)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:['"]--['"]|\.startsWith\s*\(\s*['"]-['"]\s*\)|!/^-/|check_flag|sanitize_arg)"#,
+    )
+    .unwrap()
 });
 
 // 14. BK-AI-INJ-005: OS command execution via helper/wrapper/library omitted from basic grep rules
@@ -209,7 +219,10 @@ static RE_INJ_005_OS_SYSTEM: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_INJ_005_SUBPROCESS_SHELL: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)subprocess\.(?:run|Popen|call|check_call|check_output)\s*\([^)]*shell\s*=\s*True"#).unwrap()
+    Regex::new(
+        r#"(?i)subprocess\.(?:run|Popen|call|check_call|check_output)\s*\([^)]*shell\s*=\s*True"#,
+    )
+    .unwrap()
 });
 
 static RE_INJ_005_SHELLJS: LazyLock<Regex> = LazyLock::new(|| {
@@ -235,7 +248,8 @@ static RE_INJ_009_SAFE_PIPE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_INJ_009_MARKUP_CALL: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:markupsafe\.)?Markup\s*\(\s*(?:req\.|request\.|user|f["']|["'].*\+)"#).unwrap()
+    Regex::new(r#"(?i)(?:markupsafe\.)?Markup\s*\(\s*(?:req\.|request\.|user|f["']|["'].*\+)"#)
+        .unwrap()
 });
 
 static RE_INJ_009_MARK_SAFE: LazyLock<Regex> = LazyLock::new(|| {
@@ -273,7 +287,8 @@ static RE_INJ_011_LDAP_QUERY_ARG: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_INJ_011_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:escapeLDAPFilter|escape_filter_chars|parseFilter|escape_dn_chars)"#).unwrap()
+    Regex::new(r#"(?i)(?:escapeLDAPFilter|escape_filter_chars|parseFilter|escape_dn_chars)"#)
+        .unwrap()
 });
 
 // 19. BK-AI-INJ-012: NoSQL query/operator injection from user-controlled objects
@@ -308,7 +323,10 @@ static RE_INJ_013_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 
 // 21. BK-AI-INJ-016: Trusting generic `sanitize()` or `escape()` without checking target context
 static RE_INJ_016_SCRIPT_SANITIZE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?is)<script\b[^>]*>[^<]*(?:escape|sanitize|sanitizeHtml)\s*\([^)]*\)[^<]*</script>"#).unwrap()
+    Regex::new(
+        r#"(?is)<script\b[^>]*>[^<]*(?:escape|sanitize|sanitizeHtml)\s*\([^)]*\)[^<]*</script>"#,
+    )
+    .unwrap()
 });
 
 static RE_INJ_016_SQL_SANITIZE: LazyLock<Regex> = LazyLock::new(|| {
@@ -320,7 +338,8 @@ static RE_INJ_016_SHELL_SANITIZE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_INJ_016_HREF_ESCAPE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)href=['"]?\$\{\s*(?:escape|validator\.escape)\s*\([^)]*\)\s*\}['"]?"#).unwrap()
+    Regex::new(r#"(?i)href=['"]?\$\{\s*(?:escape|validator\.escape)\s*\([^)]*\)\s*\}['"]?"#)
+        .unwrap()
 });
 
 static RE_INJ_016_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -378,7 +397,11 @@ impl FilesystemExtScanner {
         let lines: Vec<&str> = content.lines().collect();
 
         let byte_to_line = |byte_offset: usize| -> usize {
-            content[..byte_offset].bytes().filter(|&b| b == b'\n').count() + 1
+            content[..byte_offset]
+                .bytes()
+                .filter(|&b| b == b'\n')
+                .count()
+                + 1
         };
 
         // File-level contextual indicators
@@ -391,7 +414,8 @@ impl FilesystemExtScanner {
             || content.contains("validate_magic");
 
         let has_defusedxml = content.contains("defusedxml");
-        let has_nosql_sanitize = content.contains("mongo-sanitize") || content.contains("mongoSanitize");
+        let has_nosql_sanitize =
+            content.contains("mongo-sanitize") || content.contains("mongoSanitize");
         let has_auth_guard = content.contains("requireAuth")
             || content.contains("authenticate")
             || content.contains("checkPermission")
@@ -437,7 +461,8 @@ impl FilesystemExtScanner {
             }
 
             // 1. BK-AI-FIL-003: Zip/Tar extraction writes outside destination (Zip Slip)
-            let is_extractall_vuln = RE_FIL_003_EXTRACTALL.is_match(trimmed) && !RE_FIL_003_SAFE_GUARD.is_match(trimmed);
+            let is_extractall_vuln =
+                RE_FIL_003_EXTRACTALL.is_match(trimmed) && !RE_FIL_003_SAFE_GUARD.is_match(trimmed);
             let is_zip_slip_entry_vuln = RE_FIL_003_ZIP_SLIP_ENTRY.is_match(trimmed)
                 && !RE_FIL_003_SAFE_GUARD.is_match(trimmed)
                 && !has_zip_guard;
@@ -464,7 +489,8 @@ impl FilesystemExtScanner {
             }
 
             // 2. BK-AI-FIL-004: Unsafe archive decompression creates resource exhaustion (zip bomb)
-            if (RE_FIL_004_UNBOUNDED_PIPE.is_match(trimmed) || RE_FIL_004_SYNC_DECOMPRESS.is_match(trimmed))
+            if (RE_FIL_004_UNBOUNDED_PIPE.is_match(trimmed)
+                || RE_FIL_004_SYNC_DECOMPRESS.is_match(trimmed))
                 && !RE_FIL_004_SAFE_GUARD.is_match(trimmed)
             {
                 Self::record_finding(
@@ -515,7 +541,8 @@ impl FilesystemExtScanner {
             }
 
             // 4. BK-AI-FIL-006: User upload stored in executable/public directory with unsafe permissions
-            if (RE_FIL_006_PUBLIC_DEST.is_match(trimmed) || RE_FIL_006_UNSAFE_PERMS.is_match(trimmed))
+            if (RE_FIL_006_PUBLIC_DEST.is_match(trimmed)
+                || RE_FIL_006_UNSAFE_PERMS.is_match(trimmed))
                 && !RE_FIL_006_SAFE_GUARD.is_match(trimmed)
             {
                 Self::record_finding(
@@ -540,7 +567,8 @@ impl FilesystemExtScanner {
             }
 
             // 5. BK-AI-FIL-007: Filename allows path separators, control chars or Unicode normalization escape
-            if (RE_FIL_007_RAW_FILENAME.is_match(trimmed) || RE_FIL_007_WRITE_RAW_NAME.is_match(trimmed))
+            if (RE_FIL_007_RAW_FILENAME.is_match(trimmed)
+                || RE_FIL_007_WRITE_RAW_NAME.is_match(trimmed))
                 && !RE_FIL_007_SAFE_GUARD.is_match(trimmed)
             {
                 Self::record_finding(
@@ -593,7 +621,8 @@ impl FilesystemExtScanner {
             }
 
             // 7. BK-AI-FIL-010: Unsafe file overwrite, truncation or deletion from arbitrary user-supplied path
-            if (RE_FIL_010_UNSAFE_UNLINK.is_match(trimmed) || RE_FIL_010_OS_REMOVE.is_match(trimmed))
+            if (RE_FIL_010_UNSAFE_UNLINK.is_match(trimmed)
+                || RE_FIL_010_OS_REMOVE.is_match(trimmed))
                 && !RE_FIL_010_SAFE_GUARD.is_match(trimmed)
             {
                 Self::record_finding(
@@ -672,7 +701,8 @@ impl FilesystemExtScanner {
             }
 
             // 11. BK-AI-FIL-014: File parser accepts unbounded content/recursive structure
-            if (RE_FIL_014_PARSER_UNBOUNDED.is_match(trimmed) || RE_FIL_014_PY_XML_UNGUARDED.is_match(trimmed))
+            if (RE_FIL_014_PARSER_UNBOUNDED.is_match(trimmed)
+                || RE_FIL_014_PY_XML_UNGUARDED.is_match(trimmed))
                 && !RE_FIL_014_SAFE_GUARD.is_match(trimmed)
                 && !has_defusedxml
             {
@@ -726,7 +756,8 @@ impl FilesystemExtScanner {
             }
 
             // 13. BK-AI-INJ-004: Command-line argument injection despite use of a subprocess argument array
-            if (RE_INJ_004_NODE_EXECFILE.is_match(trimmed) || RE_INJ_004_PY_SUBPROCESS.is_match(trimmed))
+            if (RE_INJ_004_NODE_EXECFILE.is_match(trimmed)
+                || RE_INJ_004_PY_SUBPROCESS.is_match(trimmed))
                 && !RE_INJ_004_SAFE_GUARD.is_match(trimmed)
             {
                 Self::record_finding(
@@ -832,7 +863,8 @@ impl FilesystemExtScanner {
             }
 
             // 17. BK-AI-INJ-010: XPath/XQuery expression assembled from inputs
-            if RE_INJ_010_XPATH_CONCAT.is_match(trimmed) && !RE_INJ_010_SAFE_GUARD.is_match(trimmed) {
+            if RE_INJ_010_XPATH_CONCAT.is_match(trimmed) && !RE_INJ_010_SAFE_GUARD.is_match(trimmed)
+            {
                 Self::record_finding(
                     &mut findings,
                     &mut seen,
@@ -883,7 +915,8 @@ impl FilesystemExtScanner {
             }
 
             // 19. BK-AI-INJ-012: NoSQL query/operator injection from user-controlled objects
-            if (RE_INJ_012_NOSQL_QUERY.is_match(trimmed) || RE_INJ_012_COLLECTION_QUERY.is_match(trimmed))
+            if (RE_INJ_012_NOSQL_QUERY.is_match(trimmed)
+                || RE_INJ_012_COLLECTION_QUERY.is_match(trimmed))
                 && !RE_INJ_012_SAFE_GUARD.is_match(trimmed)
                 && !has_nosql_sanitize
             {
@@ -1039,7 +1072,9 @@ impl FilesystemExtScanner {
             for cap in RE_FIL_011_TOCTOU_PY.captures_iter(content) {
                 let var_name = &cap[1];
                 let body = &cap[2];
-                if (body.contains("with open") || body.contains("os.remove") || body.contains("os.unlink"))
+                if (body.contains("with open")
+                    || body.contains("os.remove")
+                    || body.contains("os.unlink"))
                     && body.contains(var_name)
                 {
                     let m = cap.get(0).unwrap();

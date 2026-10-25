@@ -107,7 +107,10 @@ static RE_MOB_003_ANDROID_EXPORTED: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:android:exported\s*=\s*["']true["']|//.*(?:android\s+exported.*without\s+permission|exported\s+activity.*without\s+intended\s+permission)|<!--.*exported.*without.*permission.*-->)"#).unwrap()
 });
 static RE_MOB_003_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:android:permission\s*=\s*["'][^"']+["']|android:exported\s*=\s*["']false["'])"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:android:permission\s*=\s*["'][^"']+["']|android:exported\s*=\s*["']false["'])"#,
+    )
+    .unwrap()
 });
 
 /// BK-AI-MOB-004 (CWE-939): Deep-link or custom protocol handler accepts unsafe URL/command
@@ -155,7 +158,10 @@ static RE_MOB_009_UNTRUSTED_UPDATES: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:autoUpdater\.setFeedURL|updater\.setUpdateUrl|downloadUpdate|//.*(?:untrusted\s+app\s+updates|executable\s+plugins\s+have\s+no\s+origin\s+verification|autoUpdater.*without.*signature|feed\s+url\s+over\s+http))"#).unwrap()
 });
 static RE_MOB_009_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:https://|verifySignature|codesign|checksum|ed25519|publicKey|signatureVerified)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:https://|verifySignature|codesign|checksum|ed25519|publicKey|signatureVerified)"#,
+    )
+    .unwrap()
 });
 
 /// BK-AI-MOB-010 (CWE-200): Clipboard, screen capture, crash reports or notifications expose secret values
@@ -794,7 +800,9 @@ impl NativeDesktopScanner {
             // ===============================================================
 
             // BK-AI-MEM-004: Null/dangling pointer dereference
-            if RE_MEM_004_NULL_DEREF.is_match(trimmed) && !RE_MEM_004_GUARD.is_match(&context_window) {
+            if RE_MEM_004_NULL_DEREF.is_match(trimmed)
+                && !RE_MEM_004_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -814,7 +822,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-005: Stack/heap buffer copy lacks verified bounds
-            if RE_MEM_005_BUFFER_COPY.is_match(trimmed) && !RE_MEM_005_GUARD.is_match(&context_window) {
+            if RE_MEM_005_BUFFER_COPY.is_match(trimmed)
+                && !RE_MEM_005_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -834,7 +844,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-006: `unsafe` Rust or FFI uses unchecked slice/pointer conversion
-            if RE_MEM_006_SLICE_CONV.is_match(trimmed) && !RE_MEM_006_GUARD.is_match(&context_window) {
+            if RE_MEM_006_SLICE_CONV.is_match(trimmed)
+                && !RE_MEM_006_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -854,7 +866,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-007: C/C++ string encoding or truncation produces security control mismatch
-            if RE_MEM_007_STRNCPY_TRUNC.is_match(trimmed) && !RE_MEM_007_GUARD.is_match(&context_window) {
+            if RE_MEM_007_STRNCPY_TRUNC.is_match(trimmed)
+                && !RE_MEM_007_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -874,7 +888,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-008: Untrusted native decoder or plugin runs in privileged host process
-            if RE_MEM_008_NATIVE_LOAD.is_match(trimmed) && !RE_MEM_008_GUARD.is_match(&context_window) {
+            if RE_MEM_008_NATIVE_LOAD.is_match(trimmed)
+                && !RE_MEM_008_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -894,7 +910,8 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-009: Rust/Go panic or C++ exception crosses foreign function boundary unsafely
-            if RE_MEM_009_FFI_PANIC.is_match(trimmed) && !RE_MEM_009_GUARD.is_match(&context_window) {
+            if RE_MEM_009_FFI_PANIC.is_match(trimmed) && !RE_MEM_009_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -914,7 +931,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-010: Compiler/hardening flags removed to silence warnings or fix build
-            if RE_MEM_010_FLAGS_REMOVED.is_match(trimmed) && !RE_MEM_010_GUARD.is_match(&context_window) {
+            if RE_MEM_010_FLAGS_REMOVED.is_match(trimmed)
+                && !RE_MEM_010_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -934,7 +953,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-011: Zig/C++ allocator mismatch or forgotten cleanup leaks secret-bearing memory
-            if RE_MEM_011_ALLOC_MISMATCH.is_match(trimmed) && !RE_MEM_011_GUARD.is_match(&context_window) {
+            if RE_MEM_011_ALLOC_MISMATCH.is_match(trimmed)
+                && !RE_MEM_011_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -954,7 +975,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MEM-012: Binary parser trusts declared lengths and integer casts
-            if RE_MEM_012_UNTRUSTED_LEN.is_match(trimmed) && !RE_MEM_012_GUARD.is_match(&context_window) {
+            if RE_MEM_012_UNTRUSTED_LEN.is_match(trimmed)
+                && !RE_MEM_012_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -978,7 +1001,8 @@ impl NativeDesktopScanner {
             // ===============================================================
 
             // BK-AI-MOB-001: Client mobile/desktop bundle contains long-lived cloud API/admin keys
-            if RE_MOB_001_CLOUD_KEY.is_match(trimmed) && !RE_MOB_001_GUARD.is_match(&context_window) {
+            if RE_MOB_001_CLOUD_KEY.is_match(trimmed) && !RE_MOB_001_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -998,7 +1022,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-002: Sensitive token stored in plaintext local preferences/file
-            if RE_MOB_002_PLAINTEXT_PREFS.is_match(trimmed) && !RE_MOB_002_GUARD.is_match(&context_window) {
+            if RE_MOB_002_PLAINTEXT_PREFS.is_match(trimmed)
+                && !RE_MOB_002_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1018,7 +1044,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-003: Android exported activity/service/provider reachable without intended permission
-            if RE_MOB_003_ANDROID_EXPORTED.is_match(trimmed) && !RE_MOB_003_GUARD.is_match(&context_window) {
+            if RE_MOB_003_ANDROID_EXPORTED.is_match(trimmed)
+                && !RE_MOB_003_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1038,7 +1066,8 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-004: Deep-link or custom protocol handler accepts unsafe URL/command
-            if RE_MOB_004_DEEP_LINK.is_match(trimmed) && !RE_MOB_004_GUARD.is_match(&context_window) {
+            if RE_MOB_004_DEEP_LINK.is_match(trimmed) && !RE_MOB_004_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1058,7 +1087,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-005: Electron renderer has Node integration/unsafe context isolation policy
-            if RE_MOB_005_ELECTRON_ISOLATION.is_match(trimmed) && !RE_MOB_005_GUARD.is_match(&context_window) {
+            if RE_MOB_005_ELECTRON_ISOLATION.is_match(trimmed)
+                && !RE_MOB_005_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1078,8 +1109,12 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-006: Electron IPC main process blindly executes renderer-supplied command
-            if (trimmed.contains("ipcMain.on") || trimmed.contains("ipcMain.handle") || RE_MOB_006_IPC_EXEC.is_match(trimmed))
-                && (context_window.contains("exec(") || context_window.contains("spawn(") || context_window.contains("execSync("))
+            if (trimmed.contains("ipcMain.on")
+                || trimmed.contains("ipcMain.handle")
+                || RE_MOB_006_IPC_EXEC.is_match(trimmed))
+                && (context_window.contains("exec(")
+                    || context_window.contains("spawn(")
+                    || context_window.contains("execSync("))
                 && !RE_MOB_006_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -1101,7 +1136,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-007: Mobile/desktop TLS trust all certificates or disables hostname verification
-            if RE_MOB_007_TLS_INSECURE.is_match(trimmed) && !RE_MOB_007_GUARD.is_match(&context_window) {
+            if RE_MOB_007_TLS_INSECURE.is_match(trimmed)
+                && !RE_MOB_007_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1121,7 +1158,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-008: Local database/files contain private content accessible to another user/process
-            if RE_MOB_008_WORLD_ACCESSIBLE.is_match(trimmed) && !RE_MOB_008_GUARD.is_match(&context_window) {
+            if RE_MOB_008_WORLD_ACCESSIBLE.is_match(trimmed)
+                && !RE_MOB_008_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1141,8 +1180,11 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-009: Untrusted app updates or executable plugins have no origin verification
-            if (trimmed.contains("autoUpdater.setFeedURL") || trimmed.contains("updater.setUpdateUrl") || RE_MOB_009_UNTRUSTED_UPDATES.is_match(trimmed))
-                && (context_window.contains("http://") || trimmed.to_lowercase().contains("untrusted app updates"))
+            if (trimmed.contains("autoUpdater.setFeedURL")
+                || trimmed.contains("updater.setUpdateUrl")
+                || RE_MOB_009_UNTRUSTED_UPDATES.is_match(trimmed))
+                && (context_window.contains("http://")
+                    || trimmed.to_lowercase().contains("untrusted app updates"))
                 && !RE_MOB_009_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -1164,7 +1206,9 @@ impl NativeDesktopScanner {
             }
 
             // BK-AI-MOB-010: Clipboard, screen capture, crash reports or notifications expose secret values
-            if RE_MOB_010_CLIPBOARD_SECRET.is_match(trimmed) && !RE_MOB_010_GUARD.is_match(&context_window) {
+            if RE_MOB_010_CLIPBOARD_SECRET.is_match(trimmed)
+                && !RE_MOB_010_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1188,7 +1232,9 @@ impl NativeDesktopScanner {
             // ===============================================================
 
             // BK-AI-AIC-004: Tests rewritten/weakened after failure
-            if RE_AIC_004_WEAKENED_TESTS.is_match(trimmed) && !RE_AIC_004_GUARD.is_match(&context_window) {
+            if RE_AIC_004_WEAKENED_TESTS.is_match(trimmed)
+                && !RE_AIC_004_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -1212,7 +1258,9 @@ impl NativeDesktopScanner {
             // ===============================================================
 
             // BK-AI-LLM-019: Agent chain allows unchecked proposal to become privileged command
-            if RE_LLM_019_AGENT_CHAIN.is_match(trimmed) && !RE_LLM_019_GUARD.is_match(&context_window) {
+            if RE_LLM_019_AGENT_CHAIN.is_match(trimmed)
+                && !RE_LLM_019_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,

@@ -44,7 +44,8 @@ static RE_RAC_002_PAYMENT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_RAC_002_RETRY: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:retry\s*\(|for\s*\([^)]*attempt[^)]*\)|while\s*\([^)]*retries[^)]*\))"#).unwrap()
+    Regex::new(r#"(?i)(?:retry\s*\(|for\s*\([^)]*attempt[^)]*\)|while\s*\([^)]*retries[^)]*\))"#)
+        .unwrap()
 });
 
 static RE_RAC_002_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -73,13 +74,11 @@ static RE_RAC_003_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 // 4. BK-AI-RAC-004 (CWE-362): Shared mutable state used without synchronization
-static RE_RAC_004_GO_FUNC: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)go\s+func\s*\("#).unwrap()
-});
+static RE_RAC_004_GO_FUNC: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)go\s+func\s*\("#).unwrap());
 
-static RE_RAC_004_RUST_STATIC_MUT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"static\s+mut\s+[A-Z0-9_]+\s*:\s*[a-zA-Z0-9_]+"#).unwrap()
-});
+static RE_RAC_004_RUST_STATIC_MUT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"static\s+mut\s+[A-Z0-9_]+\s*:\s*[a-zA-Z0-9_]+"#).unwrap());
 
 static RE_RAC_004_GLOBAL_DECL: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:(?:let|var)\s+(?:globalCount(?:er)?|globalState|sharedCounter)\s*=\s*[^;]+;|shared_counter\s*=\s*\d+)"#).unwrap()
@@ -99,7 +98,8 @@ static RE_RAC_004_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
 
 // 5. BK-AI-RAC-005 (CWE-662): Queue message acknowledged before durable transaction
 static RE_RAC_005_ACK: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:channel\.ack|msg\.ack|ch\.Ack|basic_ack|message\.acknowledge)\s*\("#).unwrap()
+    Regex::new(r#"(?i)(?:channel\.ack|msg\.ack|ch\.Ack|basic_ack|message\.acknowledge)\s*\("#)
+        .unwrap()
 });
 
 static RE_RAC_005_PROCESS: LazyLock<Regex> = LazyLock::new(|| {
@@ -145,7 +145,10 @@ static RE_RAC_007_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_RAC_007_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)//.*(?:optimistic race|inventory race|stock check-then-act|non-atomic decrement)"#).unwrap()
+    Regex::new(
+        r#"(?i)//.*(?:optimistic race|inventory race|stock check-then-act|non-atomic decrement)"#,
+    )
+    .unwrap()
 });
 
 // 8. BK-AI-RAC-008 (CWE-362): Distributed lease/lock expires during privileged operation
@@ -274,11 +277,15 @@ static RE_BIZ_005_KEY: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_BIZ_005_CACHE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:cache|redis)\.(?:get|set)\s*\(\s*(?:key|idempotencyKey|cacheKey)\s*[,)]"#).unwrap()
+    Regex::new(r#"(?i)(?:cache|redis)\.(?:get|set)\s*\(\s*(?:key|idempotencyKey|cacheKey)\s*[,)]"#)
+        .unwrap()
 });
 
 static RE_BIZ_005_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:req\.user|userId|tenantId|\$\{.*user|\$\{.*tenant|scopedIdempotency|actorId)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:req\.user|userId|tenantId|\$\{.*user|\$\{.*tenant|scopedIdempotency|actorId)"#,
+    )
+    .unwrap()
 });
 
 static RE_BIZ_005_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
@@ -291,7 +298,8 @@ static RE_BIZ_006_EVENT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_BIZ_006_FULFILL: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:markOrderPaid|fulfillOrder|grantAccess|deliverProduct|markPaid|fulfill)"#).unwrap()
+    Regex::new(r#"(?i)(?:markOrderPaid|fulfillOrder|grantAccess|deliverProduct|markPaid|fulfill)"#)
+        .unwrap()
 });
 
 static RE_BIZ_006_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
@@ -320,9 +328,8 @@ static RE_BIZ_008_DELETE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:async\s+function\s+(?:deleteAccount|deleteUser|removeAccount)\s*\(|(?:app|router)\.delete\s*\(\s*['"][^'"]*/(?:users?|accounts?)/:id['"])"#).unwrap()
 });
 
-static RE_BIZ_008_MUTATE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:users?\.delete|users?\.destroy)"#).unwrap()
-});
+static RE_BIZ_008_MUTATE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)(?:users?\.delete|users?\.destroy)"#).unwrap());
 
 static RE_BIZ_008_GUARD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:apiKeys|tokens|oauth|credentials|sessions|revokeAll|cascade)"#).unwrap()
@@ -360,7 +367,10 @@ static RE_BIZ_010_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
 
 // 21. BK-AI-BIZ-011 (CWE-840): Sequence of permitted API calls defeats global quota
 static RE_BIZ_011_QUOTA: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)if\s*\(\s*(?:team|subGroup|folder)\.members?\.length\s*<\s*MAX_TEAM_MEMBERS\s*\)"#).unwrap()
+    Regex::new(
+        r#"(?i)if\s*\(\s*(?:team|subGroup|folder)\.members?\.length\s*<\s*MAX_TEAM_MEMBERS\s*\)"#,
+    )
+    .unwrap()
 });
 
 static RE_BIZ_011_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -377,7 +387,8 @@ static RE_BIZ_012_APPROVAL: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_BIZ_012_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:nonce|actionId|targetId|actionHash|bindPayload|expectedHash|target_id)"#).unwrap()
+    Regex::new(r#"(?i)(?:nonce|actionId|targetId|actionHash|bindPayload|expectedHash|target_id)"#)
+        .unwrap()
 });
 
 static RE_BIZ_012_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
@@ -401,7 +412,17 @@ impl BizConcurrencyScanner {
         if !ext.is_empty()
             && !matches!(
                 ext,
-                "js" | "mjs" | "cjs" | "ts" | "tsx" | "jsx" | "py" | "go" | "rs" | "java" | "php" | "rb"
+                "js" | "mjs"
+                    | "cjs"
+                    | "ts"
+                    | "tsx"
+                    | "jsx"
+                    | "py"
+                    | "go"
+                    | "rs"
+                    | "java"
+                    | "php"
+                    | "rb"
             )
         {
             return findings;
@@ -443,10 +464,12 @@ impl BizConcurrencyScanner {
 
             // 1. BK-AI-RAC-001 (CWE-367): TOCTOU on path, URL, credentials or permissions
             let is_rac_001_vuln = (RE_RAC_001_PATH_CHECK.is_match(trimmed)
-                && (RE_RAC_001_PATH_ACT.is_match(&lookahead_window) || RE_RAC_001_PATH_ACT.is_match(&context_window))
+                && (RE_RAC_001_PATH_ACT.is_match(&lookahead_window)
+                    || RE_RAC_001_PATH_ACT.is_match(&context_window))
                 && !RE_RAC_001_GUARD.is_match(&context_window))
                 || (RE_RAC_001_PERM_CHECK.is_match(trimmed)
-                    && (RE_RAC_001_PERM_ACT.is_match(&lookahead_window) || RE_RAC_001_PERM_ACT.is_match(&context_window))
+                    && (RE_RAC_001_PERM_ACT.is_match(&lookahead_window)
+                        || RE_RAC_001_PERM_ACT.is_match(&context_window))
                     && !RE_RAC_001_GUARD.is_match(&context_window))
                 || RE_RAC_001_COMMENT.is_match(trimmed);
 
@@ -468,7 +491,8 @@ impl BizConcurrencyScanner {
             }
 
             // 2. BK-AI-RAC-002 (CWE-362): Double-submit/double-charge due to non-idempotent retries
-            let is_rac_002_vuln = (RE_RAC_002_PAYMENT.is_match(trimmed) && !RE_RAC_002_GUARD.is_match(&context_window))
+            let is_rac_002_vuln = (RE_RAC_002_PAYMENT.is_match(trimmed)
+                && !RE_RAC_002_GUARD.is_match(&context_window))
                 || (RE_RAC_002_RETRY.is_match(trimmed)
                     && context_window.to_lowercase().contains("charge")
                     && !RE_RAC_002_GUARD.is_match(&context_window))
@@ -493,7 +517,8 @@ impl BizConcurrencyScanner {
 
             // 3. BK-AI-RAC-003 (CWE-362): Token refresh/rotation race permits replay
             let is_rac_003_vuln = (RE_RAC_003_REFRESH.is_match(trimmed)
-                && (RE_RAC_003_ISSUE.is_match(&lookahead_window) || RE_RAC_003_ISSUE.is_match(&context_window))
+                && (RE_RAC_003_ISSUE.is_match(&lookahead_window)
+                    || RE_RAC_003_ISSUE.is_match(&context_window))
                 && !RE_RAC_003_GUARD.is_match(&context_window))
                 || RE_RAC_003_COMMENT.is_match(trimmed);
 
@@ -515,8 +540,11 @@ impl BizConcurrencyScanner {
             }
 
             // 4. BK-AI-RAC-004 (CWE-362): Shared mutable state used without synchronization
-            let is_rac_004_vuln = ((RE_RAC_004_GO_FUNC.is_match(trimmed) || RE_RAC_004_MUTATION.is_match(trimmed) || RE_RAC_004_RUST_STATIC_MUT.is_match(trimmed))
-                && (RE_RAC_004_MUTATION.is_match(&context_window) || RE_RAC_004_RUST_STATIC_MUT.is_match(trimmed))
+            let is_rac_004_vuln = ((RE_RAC_004_GO_FUNC.is_match(trimmed)
+                || RE_RAC_004_MUTATION.is_match(trimmed)
+                || RE_RAC_004_RUST_STATIC_MUT.is_match(trimmed))
+                && (RE_RAC_004_MUTATION.is_match(&context_window)
+                    || RE_RAC_004_RUST_STATIC_MUT.is_match(trimmed))
                 && !RE_RAC_004_GUARD.is_match(&context_window))
                 || RE_RAC_004_COMMENT.is_match(trimmed);
 
@@ -562,7 +590,8 @@ impl BizConcurrencyScanner {
 
             // 6. BK-AI-RAC-006 (CWE-613): Stale cache permission survives user removal/role downgrade
             let is_rac_006_vuln = RE_RAC_006_CACHE_INDEFINITE.is_match(trimmed)
-                || (RE_RAC_006_MUTATE_ROLE.is_match(trimmed) && !RE_RAC_006_GUARD.is_match(&context_window))
+                || (RE_RAC_006_MUTATE_ROLE.is_match(trimmed)
+                    && !RE_RAC_006_GUARD.is_match(&context_window))
                 || RE_RAC_006_COMMENT.is_match(trimmed);
 
             if is_rac_006_vuln && seen.insert(("BK-AI-RAC-006", line_no)) {
@@ -584,7 +613,8 @@ impl BizConcurrencyScanner {
 
             // 7. BK-AI-RAC-007 (CWE-362): Optimistic update race bypasses inventory/limit/policy check
             let is_rac_007_vuln = (RE_RAC_007_CHECK.is_match(trimmed)
-                && (RE_RAC_007_ACT.is_match(&lookahead_window) || RE_RAC_007_ACT.is_match(&context_window))
+                && (RE_RAC_007_ACT.is_match(&lookahead_window)
+                    || RE_RAC_007_ACT.is_match(&context_window))
                 && !RE_RAC_007_GUARD.is_match(&context_window))
                 || RE_RAC_007_COMMENT.is_match(trimmed);
 
@@ -607,7 +637,8 @@ impl BizConcurrencyScanner {
 
             // 8. BK-AI-RAC-008 (CWE-362): Distributed lease/lock expires during privileged operation
             let is_rac_008_vuln = (RE_RAC_008_LOCK.is_match(trimmed)
-                && (RE_RAC_008_LONG_OP.is_match(&lookahead_window) || RE_RAC_008_LONG_OP.is_match(&context_window))
+                && (RE_RAC_008_LONG_OP.is_match(&lookahead_window)
+                    || RE_RAC_008_LONG_OP.is_match(&context_window))
                 && !RE_RAC_008_GUARD.is_match(&context_window))
                 || RE_RAC_008_COMMENT.is_match(trimmed);
 
@@ -704,8 +735,10 @@ impl BizConcurrencyScanner {
             }
 
             // 12. BK-AI-BIZ-002 (CWE-840): User can reuse coupon/credit beyond permitted count
-            let is_biz_002_vuln = (RE_BIZ_002_COUPON.is_match(trimmed) && !RE_BIZ_002_GUARD.is_match(&context_window))
-                || (RE_BIZ_002_FUNC.is_match(trimmed) && !RE_BIZ_002_GUARD.is_match(&context_window))
+            let is_biz_002_vuln = (RE_BIZ_002_COUPON.is_match(trimmed)
+                && !RE_BIZ_002_GUARD.is_match(&context_window))
+                || (RE_BIZ_002_FUNC.is_match(trimmed)
+                    && !RE_BIZ_002_GUARD.is_match(&context_window))
                 || RE_BIZ_002_COMMENT.is_match(trimmed);
 
             if is_biz_002_vuln && seen.insert(("BK-AI-BIZ-002", line_no)) {
@@ -726,7 +759,8 @@ impl BizConcurrencyScanner {
             }
 
             // 13. BK-AI-BIZ-003 (CWE-841): State-changing workflow can skip required step
-            let is_biz_003_vuln = (RE_BIZ_003_SKIP.is_match(trimmed) && !RE_BIZ_003_GUARD.is_match(&context_window))
+            let is_biz_003_vuln = (RE_BIZ_003_SKIP.is_match(trimmed)
+                && !RE_BIZ_003_GUARD.is_match(&context_window))
                 || RE_BIZ_003_COMMENT.is_match(trimmed);
 
             if is_biz_003_vuln && seen.insert(("BK-AI-BIZ-003", line_no)) {
@@ -747,7 +781,8 @@ impl BizConcurrencyScanner {
             }
 
             // 14. BK-AI-BIZ-004 (CWE-862): Role change/invite lacks proper authorization
-            let is_biz_004_vuln = ((RE_BIZ_004_ENDPOINT.is_match(trimmed) || RE_BIZ_004_FUNC.is_match(trimmed))
+            let is_biz_004_vuln = ((RE_BIZ_004_ENDPOINT.is_match(trimmed)
+                || RE_BIZ_004_FUNC.is_match(trimmed))
                 && !RE_BIZ_004_GUARD.is_match(&context_window))
                 || RE_BIZ_004_COMMENT.is_match(trimmed);
 
@@ -793,7 +828,9 @@ impl BizConcurrencyScanner {
 
             // 16. BK-AI-BIZ-006 (CWE-841): Order completion performed without verified settlement
             let is_biz_006_vuln = (RE_BIZ_006_EVENT.is_match(trimmed)
-                && (RE_BIZ_006_FULFILL.is_match(trimmed) || RE_BIZ_006_FULFILL.is_match(&lookahead_window) || RE_BIZ_006_FULFILL.is_match(&context_window)))
+                && (RE_BIZ_006_FULFILL.is_match(trimmed)
+                    || RE_BIZ_006_FULFILL.is_match(&lookahead_window)
+                    || RE_BIZ_006_FULFILL.is_match(&context_window)))
                 || RE_BIZ_006_COMMENT.is_match(trimmed);
 
             if is_biz_006_vuln && seen.insert(("BK-AI-BIZ-006", line_no)) {
@@ -860,7 +897,8 @@ impl BizConcurrencyScanner {
             }
 
             // 19. BK-AI-BIZ-009 (CWE-200): Multi-tenant report aggregates before access filtering
-            let is_biz_009_vuln = (RE_BIZ_009_AGG.is_match(trimmed) && !RE_BIZ_009_GUARD.is_match(&context_window))
+            let is_biz_009_vuln = (RE_BIZ_009_AGG.is_match(trimmed)
+                && !RE_BIZ_009_GUARD.is_match(&context_window))
                 || RE_BIZ_009_COMMENT.is_match(trimmed);
 
             if is_biz_009_vuln && seen.insert(("BK-AI-BIZ-009", line_no)) {
@@ -881,7 +919,8 @@ impl BizConcurrencyScanner {
             }
 
             // 20. BK-AI-BIZ-010 (CWE-862): Feature flag/admin backdoor bypasses required policy
-            let is_biz_010_vuln = (RE_BIZ_010_BYPASS.is_match(trimmed) && !RE_BIZ_010_GUARD.is_match(&context_window))
+            let is_biz_010_vuln = (RE_BIZ_010_BYPASS.is_match(trimmed)
+                && !RE_BIZ_010_GUARD.is_match(&context_window))
                 || RE_BIZ_010_COMMENT.is_match(trimmed);
 
             if is_biz_010_vuln && seen.insert(("BK-AI-BIZ-010", line_no)) {
@@ -902,7 +941,8 @@ impl BizConcurrencyScanner {
             }
 
             // 21. BK-AI-BIZ-011 (CWE-840): Sequence of permitted API calls defeats global quota
-            let is_biz_011_vuln = (RE_BIZ_011_QUOTA.is_match(trimmed) && !RE_BIZ_011_GUARD.is_match(&context_window))
+            let is_biz_011_vuln = (RE_BIZ_011_QUOTA.is_match(trimmed)
+                && !RE_BIZ_011_GUARD.is_match(&context_window))
                 || RE_BIZ_011_COMMENT.is_match(trimmed);
 
             if is_biz_011_vuln && seen.insert(("BK-AI-BIZ-011", line_no)) {
@@ -923,7 +963,8 @@ impl BizConcurrencyScanner {
             }
 
             // 22. BK-AI-BIZ-012 (CWE-345): Approval decision can be forged or reused
-            let is_biz_012_vuln = (RE_BIZ_012_APPROVAL.is_match(trimmed) && !RE_BIZ_012_GUARD.is_match(&context_window))
+            let is_biz_012_vuln = (RE_BIZ_012_APPROVAL.is_match(trimmed)
+                && !RE_BIZ_012_GUARD.is_match(&context_window))
                 || RE_BIZ_012_COMMENT.is_match(trimmed);
 
             if is_biz_012_vuln && seen.insert(("BK-AI-BIZ-012", line_no)) {

@@ -1,8 +1,8 @@
 #[path = "../src/scanner/api.rs"]
 mod api;
 
-pub use bug_killer::types;
 use api::ApiSecurityScanner;
+pub use bug_killer::types;
 use bug_killer::types::Severity;
 use std::path::Path;
 
@@ -22,7 +22,10 @@ app.post('/api/user/profile', (req, res) => {
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
     assert!(!findings.is_empty(), "Should flag UI validation comment");
-    let f = findings.iter().find(|f| f.cve.as_str() == "BK-AI-API-001").expect("Must find BK-AI-API-001");
+    let f = findings
+        .iter()
+        .find(|f| f.cve.as_str() == "BK-AI-API-001")
+        .expect("Must find BK-AI-API-001");
     assert_eq!(f.severity, Severity::High);
     assert!(f.advisory_ids.contains(&"CWE-20".to_string()));
 }
@@ -38,7 +41,11 @@ app.post('/api/checkout', (req, res) => {
     let path = Path::new("src/controllers/payment.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag unvalidated req.body passed to business logic");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag unvalidated req.body passed to business logic"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-001");
     assert_eq!(findings[0].severity, Severity::High);
 }
@@ -62,7 +69,10 @@ app.post('/api/checkout', (req, res) => {
     let path = Path::new("src/controllers/payment.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Schema validation should not flag BK-AI-API-001");
+    assert!(
+        findings.is_empty(),
+        "Schema validation should not flag BK-AI-API-001"
+    );
 }
 
 // --- BK-AI-API-002 (CWE-915): Mass assignment / unfiltered model creation ---
@@ -95,7 +105,11 @@ async function createUser(req, res) {
     let path = Path::new("src/services/account.ts");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag prisma.account.create with raw body");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag prisma.account.create with raw body"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-002");
 }
 
@@ -113,7 +127,10 @@ app.post('/api/users', async (req, res) => {
     let path = Path::new("src/routes/users.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Allowlisted fields in User.create should be safe");
+    assert!(
+        findings.is_empty(),
+        "Allowlisted fields in User.create should be safe"
+    );
 }
 
 // --- BK-AI-API-003 (CWE-770): No per-actor rate limit on expensive operations ---
@@ -129,7 +146,11 @@ router.post('/api/export', async (req, res) => {
     let path = Path::new("src/routes/reports.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag /api/export without rate limiter");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag /api/export without rate limiter"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-003");
     assert_eq!(findings[0].severity, Severity::Medium);
     assert!(findings[0].advisory_ids.contains(&"CWE-770".to_string()));
@@ -149,7 +170,10 @@ router.post('/api/export', exportLimiter, async (req, res) => {
     let path = Path::new("src/routes/reports.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Rate limited export route should be safe");
+    assert!(
+        findings.is_empty(),
+        "Rate limited export route should be safe"
+    );
 }
 
 // --- BK-AI-API-004 (CWE-400): GraphQL depth, complexity or introspection exposure ---
@@ -166,7 +190,11 @@ const server = new ApolloServer({
     let path = Path::new("src/graphql/server.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag unconditional introspection: true");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag unconditional introspection: true"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-004");
     assert_eq!(findings[0].severity, Severity::Medium);
     assert!(findings[0].advisory_ids.contains(&"CWE-400".to_string()));
@@ -184,7 +212,10 @@ const server = new ApolloServer({
     let path = Path::new("src/graphql/server.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Environment guarded introspection should be safe");
+    assert!(
+        findings.is_empty(),
+        "Environment guarded introspection should be safe"
+    );
 }
 
 // --- BK-AI-API-005 (CWE-862): WebSocket upgrade/authentication checked once, not per room ---
@@ -201,7 +232,11 @@ io.on('connection', (socket) => {
     let path = Path::new("src/realtime/socket.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag unchecked socket.join in join_room");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag unchecked socket.join in join_room"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-005");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-862".to_string()));
@@ -240,7 +275,11 @@ function authInterceptor(call, headers, next) {
     let path = Path::new("src/grpc/authInterceptor.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag gRPC streaming bypass in authInterceptor");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag gRPC streaming bypass in authInterceptor"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-006");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-306".to_string()));
@@ -261,7 +300,10 @@ function authInterceptor(call, headers, next) {
     let path = Path::new("src/grpc/authInterceptor.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Unconditional gRPC authentication should be safe");
+    assert!(
+        findings.is_empty(),
+        "Unconditional gRPC authentication should be safe"
+    );
 }
 
 // --- BK-AI-API-007 (CWE-200): Pagination/filtering unbounded ---
@@ -278,7 +320,11 @@ app.get('/api/records', async (req, res) => {
     let path = Path::new("src/routes/records.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag uncapped parseInt(req.query.limit)");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag uncapped parseInt(req.query.limit)"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-007");
     assert_eq!(findings[0].severity, Severity::Medium);
     assert!(findings[0].advisory_ids.contains(&"CWE-200".to_string()));
@@ -313,10 +359,21 @@ app.post('/api/webhook/stripe', (req, res) => {
     let path = Path::new("src/webhooks/stripe.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    let webhook_findings: Vec<_> = findings.iter().filter(|f| f.cve.as_str() == "BK-AI-API-008").collect();
-    assert_eq!(webhook_findings.len(), 1, "Should flag webhook handler without HMAC verification");
+    let webhook_findings: Vec<_> = findings
+        .iter()
+        .filter(|f| f.cve.as_str() == "BK-AI-API-008")
+        .collect();
+    assert_eq!(
+        webhook_findings.len(),
+        1,
+        "Should flag webhook handler without HMAC verification"
+    );
     assert_eq!(webhook_findings[0].severity, Severity::High);
-    assert!(webhook_findings[0].advisory_ids.contains(&"CWE-345".to_string()));
+    assert!(
+        webhook_findings[0]
+            .advisory_ids
+            .contains(&"CWE-345".to_string())
+    );
 }
 
 #[test]
@@ -332,7 +389,10 @@ app.post('/api/webhook/stripe', (req, res) => {
     let path = Path::new("src/webhooks/stripe.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Webhook with constructEvent verification should be safe");
+    assert!(
+        findings.is_empty(),
+        "Webhook with constructEvent verification should be safe"
+    );
 }
 
 // --- BK-AI-API-009 (CWE-201): Third-party API credentials forwarded to clients ---
@@ -347,7 +407,11 @@ app.get('/api/config', (req, res) => {
     let path = Path::new("src/routes/config.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag STRIPE_SECRET_KEY returned in res.json");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag STRIPE_SECRET_KEY returned in res.json"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-009");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-201".to_string()));
@@ -363,7 +427,10 @@ app.get('/api/config', (req, res) => {
     let path = Path::new("src/routes/config.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Publishable client keys should be safe");
+    assert!(
+        findings.is_empty(),
+        "Publishable client keys should be safe"
+    );
 }
 
 // --- BK-AI-API-010 (CWE-20): HTTP method override bypasses validation ---
@@ -399,7 +466,10 @@ app.use(express.urlencoded({ extended: true }));
     let path = Path::new("src/server.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Standard express middleware should be safe");
+    assert!(
+        findings.is_empty(),
+        "Standard express middleware should be safe"
+    );
 }
 
 // --- BK-AI-API-011 (CWE-524): Cached privileged API response served across users ---
@@ -415,7 +485,11 @@ app.get('/api/user/profile', requireAuth, (req, res) => {
     let path = Path::new("src/routes/user.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag public Cache-Control on authenticated endpoint");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag public Cache-Control on authenticated endpoint"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-011");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-524".to_string()));
@@ -432,7 +506,10 @@ app.get('/api/user/profile', requireAuth, (req, res) => {
     let path = Path::new("src/routes/user.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Private Cache-Control on authenticated endpoint should be safe");
+    assert!(
+        findings.is_empty(),
+        "Private Cache-Control on authenticated endpoint should be safe"
+    );
 }
 
 // --- BK-AI-API-012 (CWE-209): Remote service errors returned with sensitive stack traces ---
@@ -447,7 +524,11 @@ app.use((err, req, res, next) => {
     let path = Path::new("src/middleware/errorHandler.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag error stack trace in response");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag error stack trace in response"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-012");
     assert_eq!(findings[0].severity, Severity::Medium);
     assert!(findings[0].advisory_ids.contains(&"CWE-209".to_string()));
@@ -464,7 +545,10 @@ app.use((err, req, res, next) => {
     let path = Path::new("src/middleware/errorHandler.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Sanitized error message should be safe");
+    assert!(
+        findings.is_empty(),
+        "Sanitized error message should be safe"
+    );
 }
 
 // --- BK-AI-API-013 (CWE-306): Server-to-server trust relies only on obscurity/unverified header ---
@@ -483,7 +567,11 @@ function adminGateway(req, res, next) {
     let path = Path::new("src/middleware/adminGateway.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag trust on spoofable x-internal header");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag trust on spoofable x-internal header"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-013");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-306".to_string()));
@@ -503,7 +591,10 @@ function adminGateway(req, res, next) {
     let path = Path::new("src/middleware/adminGateway.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "mTLS client certificate authorization should be safe");
+    assert!(
+        findings.is_empty(),
+        "mTLS client certificate authorization should be safe"
+    );
 }
 
 // --- BK-AI-API-014 (CWE-200): Subscription/event stream can consume other principals' updates ---
@@ -518,7 +609,11 @@ function onOrderProcessed(orderData) {
     let path = Path::new("src/events/orders.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag global broadcast of order_update");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag global broadcast of order_update"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-API-014");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-200".to_string()));
@@ -534,5 +629,8 @@ function onOrderProcessed(orderData) {
     let path = Path::new("src/events/orders.js");
     let findings = ApiSecurityScanner::scan_source(path, snippet);
 
-    assert!(findings.is_empty(), "Tenant-scoped room emission should be safe");
+    assert!(
+        findings.is_empty(),
+        "Tenant-scoped room emission should be safe"
+    );
 }

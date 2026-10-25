@@ -26,7 +26,10 @@ require_once($_POST['view']);
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-LNG-001"));
     assert_eq!(findings[0].detector_id, "language-pitfalls");
-    assert_eq!(findings[0].category, "2.24 Language/runtime-specific red flags");
+    assert_eq!(
+        findings[0].category,
+        "2.24 Language/runtime-specific red flags"
+    );
     assert_eq!(findings[0].severity, Severity::Critical);
     assert_eq!(findings[0].target_kind, TargetKind::GenericSourceFile);
 
@@ -40,7 +43,10 @@ require_once __DIR__ . '/config.php';
 ?>
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Safe include must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Safe include must not trigger finding"
+    );
 }
 
 // 2. BK-AI-LNG-002 (CWE-502): PHP unserialize() called on attacker-provided bytes
@@ -68,7 +74,10 @@ $json_user = json_decode($raw_data, true);
 ?>
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Safe unserialize with allowed_classes => false must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Safe unserialize with allowed_classes => false must not trigger finding"
+    );
 }
 
 // 3. BK-AI-LNG-003 (CWE-78): PHP shell_exec, system, passthru fed from request
@@ -96,7 +105,10 @@ system("ping -c 1 " . $safe_host);
 ?>
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Sanitized shell command must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Sanitized shell command must not trigger finding"
+    );
 }
 
 // 4. BK-AI-LNG-004 (CWE-434): PHP upload/filename checks rely solely on extension or client MIME
@@ -127,7 +139,10 @@ if ($mime === 'image/png') {
 ?>
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Server-verified MIME via finfo_file must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Server-verified MIME via finfo_file must not trigger finding"
+    );
 }
 
 // 5. BK-AI-LNG-005 (CWE-489): PHP debug/errors exposed publicly or dangerous runtime settings enabled
@@ -153,7 +168,10 @@ ini_set('display_startup_errors', 0);
 ?>
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Disabled display_errors must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Disabled display_errors must not trigger finding"
+    );
 }
 
 // 6. BK-AI-LNG-006 (CWE-78): Node.js child_process.exec() receives request data
@@ -184,7 +202,10 @@ function handlePing(req, res) {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "execFile with argument array must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "execFile with argument array must not trigger finding"
+    );
 }
 
 // 7. BK-AI-LNG-007 (CWE-95): Node/Bun eval, vm, dynamic import of untrusted strings
@@ -212,7 +233,10 @@ export function executeUserScript(req: any) {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Safe JSON parsing must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Safe JSON parsing must not trigger finding"
+    );
 }
 
 // 8. BK-AI-LNG-008 (CWE-1321): Node/Express prototype pollution via unsafe deep merge
@@ -243,7 +267,10 @@ function deepMerge(target, source) {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Merge filtering __proto__ must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Merge filtering __proto__ must not trigger finding"
+    );
 }
 
 // 9. BK-AI-LNG-009 (CWE-306): Express/Fastify auth middleware omitted on one router/method
@@ -267,7 +294,10 @@ app.post('/admin/delete-user', requireAuth, (req, res) => {
 });
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Route protected with requireAuth must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Route protected with requireAuth must not trigger finding"
+    );
 }
 
 // 10. BK-AI-LNG-010 (CWE-400): Node request/compression/decompression stream lacks size and CPU caps
@@ -293,7 +323,10 @@ function unpackRequest(req, res) {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Gunzip with maxOutputLength must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Gunzip with maxOutputLength must not trigger finding"
+    );
 }
 
 // 11. BK-AI-LNG-011 (CWE-829): Bun/Node process runs postinstall or startup hook from untrusted package
@@ -323,7 +356,10 @@ fn test_lng_011_package_untrusted_postinstall() {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Safe tsc build script must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Safe tsc build script must not trigger finding"
+    );
 }
 
 // 12. BK-AI-LNG-012 (CWE-78): Python subprocess(..., shell=True), os.system() with untrusted data
@@ -347,7 +383,10 @@ def run_command(user_input):
     subprocess.run(["echo", user_input], shell=False)
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "subprocess with shell=False must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "subprocess with shell=False must not trigger finding"
+    );
 }
 
 // 13. BK-AI-LNG-013 (CWE-502): Python pickle, dill, joblib, unsafe YAML used for untrusted data
@@ -377,7 +416,10 @@ def load_session(payload):
     return data
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "yaml.safe_load and json.loads must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "yaml.safe_load and json.loads must not trigger finding"
+    );
 }
 
 // 14. BK-AI-LNG-014 (CWE-489): Flask/Django/FastAPI debug, secret, route dependency/auth controls misconfigured
@@ -399,7 +441,10 @@ DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1")
 SECRET_KEY = os.environ["SECRET_KEY"]
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Environment-loaded secrets must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Environment-loaded secrets must not trigger finding"
+    );
 }
 
 // 15. BK-AI-LNG-015 (CWE-88): Go exec.Command arguments accept attacker-controlled flags/subcommands
@@ -435,7 +480,10 @@ func runGit(userArgs []string) {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Go command with '--' flag terminator must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Go command with '--' flag terminator must not trigger finding"
+    );
 }
 
 // 16. BK-AI-LNG-016 (CWE-918): Go HTTP clients follow redirects into forbidden origins or lack deadlines
@@ -468,7 +516,10 @@ func newClient() *http.Client {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "http.Client with Timeout must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "http.Client with Timeout must not trigger finding"
+    );
 }
 
 // 17. BK-AI-LNG-017 (CWE-79): Go template uses text/template for user-controlled HTML where html/template expected
@@ -504,7 +555,10 @@ func renderPage(w http.ResponseWriter, userHtml string) {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "html/template must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "html/template must not trigger finding"
+    );
 }
 
 // 18. BK-AI-LNG-018 (CWE-22): Go path check uses strings.HasPrefix without symlink/segment safety
@@ -539,7 +593,10 @@ func isContained(targetPath string, baseDir string) bool {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "filepath.Rel check must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "filepath.Rel check must not trigger finding"
+    );
 }
 
 // 19. BK-AI-LNG-019 (CWE-119): Rust unsafe/FFI/parser code claims compiler guarantees for unchecked memory
@@ -565,7 +622,10 @@ pub unsafe fn raw_to_slice<'a>(ptr: *const u8, len: usize) -> &'a [u8] {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "slice::from_raw_parts with null/bounds assertions must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "slice::from_raw_parts with null/bounds assertions must not trigger finding"
+    );
 }
 
 // 20. BK-AI-LNG-020 (CWE-754): Rust unwrap/expect on attacker-controlled parser path causes service crash
@@ -591,7 +651,10 @@ pub fn parse_packet(buf: &[u8]) -> Result<u32, &'static str> {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Error handling with ok_or must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Error handling with ok_or must not trigger finding"
+    );
 }
 
 // 21. BK-AI-LNG-021 (CWE-391): Rust error fallback returns empty findings/success after IO failure
@@ -624,7 +687,10 @@ pub fn load_manifest(path: &Path) -> Result<Vec<String>, String> {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "Propagating Err with log::error! must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Propagating Err with log::error! must not trigger finding"
+    );
 }
 
 // 22. BK-AI-LNG-022 (CWE-502): Java deserialization, expression language or unsafe JNDI lookup
@@ -650,7 +716,10 @@ public Object readObjectStream(InputStream is) throws Exception {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "ValidatingObjectInputStream must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "ValidatingObjectInputStream must not trigger finding"
+    );
 }
 
 // 23. BK-AI-LNG-023 (CWE-862): .NET middleware/policy attribute omitted on controller/minimal API
@@ -678,7 +747,10 @@ public IActionResult GetAdminUsers() {
 }
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "[Authorize] attribute must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "[Authorize] attribute must not trigger finding"
+    );
 }
 
 // 24. BK-AI-LNG-024 (CWE-94): Ruby send, ERB/Marshal/YAML loaders execute untrusted material
@@ -706,7 +778,10 @@ def handle_request(params)
 end
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "ALLOWED_ACTIONS check must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "ALLOWED_ACTIONS check must not trigger finding"
+    );
 }
 
 // 25. BK-AI-LNG-025 (CWE-120): C/C++/Zig generated code uses unchecked raw pointer/array copy
@@ -757,5 +832,8 @@ $stmt->execute(['id' => $id]);
 ?>
 "#;
     let safe_findings = LanguagePitfallsScanner::scan_source(path, safe_code);
-    assert!(safe_findings.is_empty(), "PDO prepared statement binding must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "PDO prepared statement binding must not trigger finding"
+    );
 }

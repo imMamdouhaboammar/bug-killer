@@ -52,7 +52,10 @@ static RE_LLM_008_PROMPT_ORDER: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LLM_008_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:role['"]?\s*:\s*['"]system['"]|<system>|<system_instructions>|<user_input>)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:role['"]?\s*:\s*['"]system['"]|<system>|<system_instructions>|<user_input>)"#,
+    )
+    .unwrap()
 });
 
 /// BK-AI-LLM-009: Untrusted skill/plugin/agent instruction file gains precedence over system policy
@@ -88,7 +91,10 @@ static RE_LLM_012_SHARED_CACHE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LLM_012_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:tenant_id|user_id|org_id|account_id|partition|namespace\s*[:=]\s*f['"]tenant_)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:tenant_id|user_id|org_id|account_id|partition|namespace\s*[:=]\s*f['"]tenant_)"#,
+    )
+    .unwrap()
 });
 
 /// BK-AI-LLM-013: Model memory persists poisoned instruction or attacker-controlled long-term state
@@ -106,7 +112,10 @@ static RE_LLM_014_LOOP_START: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LLM_014_AGENT_ACTION: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:agent\.step|execute_tool|executeTool|call_model|callModel|model\.generate)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:agent\.step|execute_tool|executeTool|call_model|callModel|model\.generate)"#,
+    )
+    .unwrap()
 });
 
 static RE_LLM_014_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -142,7 +151,8 @@ static RE_LLM_020_BLIND_PROMPT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LLM_020_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:diff|command|cmd|target|file_path|payload|impact|action_summary)"#).unwrap()
+    Regex::new(r#"(?i)(?:diff|command|cmd|target|file_path|payload|impact|action_summary)"#)
+        .unwrap()
 });
 
 /// BK-AI-LLM-022: Model/tool endpoint sends proprietary code, secrets or PII to unapproved external provider
@@ -155,7 +165,10 @@ static RE_LLM_022_SENSITIVE_PAYLOAD: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LLM_022_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:redact_secrets|mask_pii|anonymize|scrub_credentials|dlp_filter|sanitize_pii)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:redact_secrets|mask_pii|anonymize|scrub_credentials|dlp_filter|sanitize_pii)"#,
+    )
+    .unwrap()
 });
 
 // ============================================================================
@@ -225,13 +238,11 @@ static RE_AIC_012_BROAD_PERMS: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:chmod\s+(?:-R\s+)?777\b|os\.chmod\s*\([^,]+,\s*0o?777\)|origin\s*:\s*['"]\*['"][^}]*credentials\s*:\s*true|credentials\s*:\s*true[^}]*origin\s*:\s*['"]\*['"]|['"]Action['"]\s*:\s*['"]\*['"]\s*,\s*['"]Resource['"]\s*:\s*['"]\*['"]|--no-sandbox\b|//.*chmod\s+777|//.*origin:\s*"\*"\s+with\s+credentials)"#).unwrap()
 });
 
-static RE_AIC_012_CORS_ORIGIN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)origin\s*:\s*['"]\*['"]"#).unwrap()
-});
+static RE_AIC_012_CORS_ORIGIN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)origin\s*:\s*['"]\*['"]"#).unwrap());
 
-static RE_AIC_012_CORS_CREDENTIALS: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)credentials\s*:\s*true"#).unwrap()
-});
+static RE_AIC_012_CORS_CREDENTIALS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)credentials\s*:\s*true"#).unwrap());
 
 /// BK-AI-AIC-013 (CWE-754): Agent adds broad exception handler that logs and continues privileged execution
 static RE_AIC_013_SWALLOW_AUTH: LazyLock<Regex> = LazyLock::new(|| {
@@ -269,7 +280,20 @@ impl AiAgentExtScanner {
 
         let is_supported = matches!(
             ext.as_str(),
-            "js" | "mjs" | "cjs" | "ts" | "tsx" | "jsx" | "py" | "go" | "rs" | "json" | "yaml" | "yml" | "sh" | "bash" | ""
+            "js" | "mjs"
+                | "cjs"
+                | "ts"
+                | "tsx"
+                | "jsx"
+                | "py"
+                | "go"
+                | "rs"
+                | "json"
+                | "yaml"
+                | "yml"
+                | "sh"
+                | "bash"
+                | ""
         );
         if !is_supported {
             return findings;
@@ -284,8 +308,8 @@ impl AiAgentExtScanner {
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
-        let is_test_file = path.to_string_lossy().contains("test")
-            || path.to_string_lossy().contains("spec");
+        let is_test_file =
+            path.to_string_lossy().contains("test") || path.to_string_lossy().contains("spec");
 
         // Whole-file test check for BK-AI-AIC-003
         if is_test_file && !content.contains("// test-has-negative-cases") {
@@ -357,7 +381,9 @@ impl AiAgentExtScanner {
             // ===============================================================
 
             // 1. BK-AI-LLM-002: Prompt content used to authorize action
-            if RE_LLM_002_PROMPT_AUTH.is_match(trimmed) && !RE_LLM_002_GUARD.is_match(&context_window) {
+            if RE_LLM_002_PROMPT_AUTH.is_match(trimmed)
+                && !RE_LLM_002_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -377,7 +403,9 @@ impl AiAgentExtScanner {
             }
 
             // 2. BK-AI-LLM-005: External tool result injected into context without delimiter sanitization
-            if RE_LLM_005_TOOL_INJECT.is_match(trimmed) && !RE_LLM_005_GUARD.is_match(&context_window) {
+            if RE_LLM_005_TOOL_INJECT.is_match(trimmed)
+                && !RE_LLM_005_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -417,7 +445,9 @@ impl AiAgentExtScanner {
             }
 
             // 4. BK-AI-LLM-007: Read-only agent intent can invoke mutation tool
-            if RE_LLM_007_READONLY_DISPATCH.is_match(trimmed) && !RE_LLM_007_GUARD.is_match(&context_window) {
+            if RE_LLM_007_READONLY_DISPATCH.is_match(trimmed)
+                && !RE_LLM_007_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -437,7 +467,9 @@ impl AiAgentExtScanner {
             }
 
             // 5. BK-AI-LLM-008: Direct prompt injection overrides system instructions
-            if RE_LLM_008_PROMPT_ORDER.is_match(trimmed) && !RE_LLM_008_GUARD.is_match(&context_window) {
+            if RE_LLM_008_PROMPT_ORDER.is_match(trimmed)
+                && !RE_LLM_008_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -457,7 +489,9 @@ impl AiAgentExtScanner {
             }
 
             // 6. BK-AI-LLM-009: Untrusted skill instruction overrides system policy
-            if RE_LLM_009_SKILL_OVERRIDE.is_match(trimmed) && !RE_LLM_009_GUARD.is_match(&context_window) {
+            if RE_LLM_009_SKILL_OVERRIDE.is_match(trimmed)
+                && !RE_LLM_009_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -477,7 +511,9 @@ impl AiAgentExtScanner {
             }
 
             // 7. BK-AI-LLM-010: Remote tool update without integrity verification
-            if RE_LLM_010_REMOTE_TOOL.is_match(trimmed) && !RE_LLM_010_GUARD.is_match(&context_window) {
+            if RE_LLM_010_REMOTE_TOOL.is_match(trimmed)
+                && !RE_LLM_010_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -517,7 +553,9 @@ impl AiAgentExtScanner {
             }
 
             // 9. BK-AI-LLM-012: Shared vector namespace or cache across tenants
-            if RE_LLM_012_SHARED_CACHE.is_match(trimmed) && !RE_LLM_012_GUARD.is_match(&context_window) {
+            if RE_LLM_012_SHARED_CACHE.is_match(trimmed)
+                && !RE_LLM_012_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -537,7 +575,9 @@ impl AiAgentExtScanner {
             }
 
             // 10. BK-AI-LLM-013: Model memory persists poisoned instruction
-            if RE_LLM_013_PERSIST_POISON.is_match(trimmed) && !RE_LLM_013_GUARD.is_match(&context_window) {
+            if RE_LLM_013_PERSIST_POISON.is_match(trimmed)
+                && !RE_LLM_013_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -557,8 +597,10 @@ impl AiAgentExtScanner {
             }
 
             // 11. BK-AI-LLM-014: Unbounded agent execution loop
-            let is_unbounded_loop = (RE_LLM_014_LOOP_START.is_match(trimmed) && RE_LLM_014_AGENT_ACTION.is_match(&lookahead_window))
-                || (RE_LLM_014_AGENT_ACTION.is_match(trimmed) && RE_LLM_014_LOOP_START.is_match(&context_window))
+            let is_unbounded_loop = (RE_LLM_014_LOOP_START.is_match(trimmed)
+                && RE_LLM_014_AGENT_ACTION.is_match(&lookahead_window))
+                || (RE_LLM_014_AGENT_ACTION.is_match(trimmed)
+                    && RE_LLM_014_LOOP_START.is_match(&context_window))
                 || (trimmed.contains("while True:") && trimmed.contains("step"));
             if is_unbounded_loop && !RE_LLM_014_GUARD.is_match(&context_window) {
                 Self::push_finding(
@@ -600,7 +642,9 @@ impl AiAgentExtScanner {
             }
 
             // 13. BK-AI-LLM-016: Model patch applied without verification
-            if RE_LLM_016_AUTO_PATCH.is_match(trimmed) && !RE_LLM_016_GUARD.is_match(&context_window) {
+            if RE_LLM_016_AUTO_PATCH.is_match(trimmed)
+                && !RE_LLM_016_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -620,7 +664,8 @@ impl AiAgentExtScanner {
             }
 
             // 14. BK-AI-LLM-018: Multi-agent message lacks authenticated channel
-            if RE_LLM_018_AGENT_MSG.is_match(trimmed) && !RE_LLM_018_GUARD.is_match(&context_window) {
+            if RE_LLM_018_AGENT_MSG.is_match(trimmed) && !RE_LLM_018_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -640,7 +685,9 @@ impl AiAgentExtScanner {
             }
 
             // 15. BK-AI-LLM-020: Human approval prompt omits target/command diff
-            if RE_LLM_020_BLIND_PROMPT.is_match(trimmed) && !RE_LLM_020_GUARD.is_match(&context_window) {
+            if RE_LLM_020_BLIND_PROMPT.is_match(trimmed)
+                && !RE_LLM_020_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -660,9 +707,12 @@ impl AiAgentExtScanner {
             }
 
             // 16. BK-AI-LLM-022: Sensitive code or secrets sent to external LLM provider
-            let is_sensitive_send = (RE_LLM_022_MODEL_CALL.is_match(trimmed) && RE_LLM_022_SENSITIVE_PAYLOAD.is_match(&lookahead_window))
-                || (RE_LLM_022_SENSITIVE_PAYLOAD.is_match(trimmed) && RE_LLM_022_MODEL_CALL.is_match(&context_window))
-                || (RE_LLM_022_MODEL_CALL.is_match(trimmed) && RE_LLM_022_SENSITIVE_PAYLOAD.is_match(trimmed))
+            let is_sensitive_send = (RE_LLM_022_MODEL_CALL.is_match(trimmed)
+                && RE_LLM_022_SENSITIVE_PAYLOAD.is_match(&lookahead_window))
+                || (RE_LLM_022_SENSITIVE_PAYLOAD.is_match(trimmed)
+                    && RE_LLM_022_MODEL_CALL.is_match(&context_window))
+                || (RE_LLM_022_MODEL_CALL.is_match(trimmed)
+                    && RE_LLM_022_SENSITIVE_PAYLOAD.is_match(trimmed))
                 || trimmed.contains("sending raw database dumps or api keys in openai");
             if is_sensitive_send && !RE_LLM_022_GUARD.is_match(&context_window) {
                 Self::push_finding(
@@ -893,8 +943,10 @@ impl AiAgentExtScanner {
 
             // 27. BK-AI-AIC-012 (CWE-732): Broad chmod 777 or open CORS
             let is_broad_perms = RE_AIC_012_BROAD_PERMS.is_match(trimmed)
-                || (RE_AIC_012_CORS_ORIGIN.is_match(trimmed) && RE_AIC_012_CORS_CREDENTIALS.is_match(&lookahead_window))
-                || (RE_AIC_012_CORS_CREDENTIALS.is_match(trimmed) && RE_AIC_012_CORS_ORIGIN.is_match(&context_window));
+                || (RE_AIC_012_CORS_ORIGIN.is_match(trimmed)
+                    && RE_AIC_012_CORS_CREDENTIALS.is_match(&lookahead_window))
+                || (RE_AIC_012_CORS_CREDENTIALS.is_match(trimmed)
+                    && RE_AIC_012_CORS_ORIGIN.is_match(&context_window));
             if is_broad_perms {
                 Self::push_finding(
                     &mut findings,
@@ -915,7 +967,9 @@ impl AiAgentExtScanner {
             }
 
             // 28. BK-AI-AIC-013 (CWE-754): Broad exception swallows auth
-            if RE_AIC_013_SWALLOW_AUTH.is_match(trimmed) || (RE_AIC_013_SWALLOW_AUTH.is_match(&context_window) && trimmed.contains("catch")) {
+            if RE_AIC_013_SWALLOW_AUTH.is_match(trimmed)
+                || (RE_AIC_013_SWALLOW_AUTH.is_match(&context_window) && trimmed.contains("catch"))
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,

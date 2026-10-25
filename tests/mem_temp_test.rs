@@ -41,7 +41,11 @@ pub unsafe fn read_offset_guarded(ptr: *const u8, idx: usize, len: usize) -> Opt
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-001"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-001")
+    );
 }
 
 #[test]
@@ -68,7 +72,11 @@ void set_element_safe(int *arr, int idx, int val, int max_len) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-001"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-001")
+    );
 }
 
 #[test]
@@ -91,7 +99,11 @@ pub fn read_safe(slice: &[u8], offset: usize) -> Option<u8> {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-001"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-001")
+    );
 }
 
 // ============================================================================
@@ -127,7 +139,11 @@ void free_connection_safe(char *conn_buf) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-002"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-002")
+    );
 }
 
 #[test]
@@ -153,7 +169,11 @@ void free_two_buffers(char *buf_a, char *buf_b) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_two_pointers);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-002"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-002")
+    );
 }
 
 #[test]
@@ -192,7 +212,11 @@ void destroy_node_raii(std::unique_ptr<Node> node) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-002"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-002")
+    );
 }
 
 // ============================================================================
@@ -227,7 +251,11 @@ void *alloc_matrix_safe(size_t width, size_t height) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code_builtin);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-003"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-003")
+    );
 
     let safe_code_calloc = r#"
 void *alloc_matrix_calloc(size_t width, size_t height) {
@@ -235,7 +263,11 @@ void *alloc_matrix_calloc(size_t width, size_t height) {
 }
 "#;
     let calloc_findings = MemTempScanner::scan_source(path, safe_code_calloc);
-    assert!(calloc_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-003"));
+    assert!(
+        calloc_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-003")
+    );
 }
 
 #[test]
@@ -259,7 +291,11 @@ pub fn allocate_items_safe(count: usize, item_size: usize) -> Option<Vec<u8>> {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-003"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-003")
+    );
 }
 
 #[test]
@@ -285,7 +321,11 @@ function createBufferSafe(numElements, elementSize) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-003"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-003")
+    );
 }
 
 // ============================================================================
@@ -310,7 +350,10 @@ def write_scratch(data):
     assert_eq!(f.cve.as_str(), "BK-AI-FIL-008");
     assert_eq!(f.detector_id, "mem-temp");
     assert_eq!(f.severity, Severity::High);
-    assert_eq!(f.category, "2.7 Filesystem, path traversal and archive extraction");
+    assert_eq!(
+        f.category,
+        "2.7 Filesystem, path traversal and archive extraction"
+    );
     assert!(f.advisory_ids.contains(&"CWE-377".to_string()));
 
     let safe_code = r#"
@@ -321,7 +364,11 @@ def write_scratch_safe(data):
         tmp.write(data)
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-FIL-008"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-FIL-008")
+    );
 }
 
 #[test]
@@ -347,7 +394,11 @@ void write_temp_safe(const char *content) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-FIL-008"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-FIL-008")
+    );
 }
 
 #[test]
@@ -371,7 +422,11 @@ fn persist_session_safe(data: &[u8]) {
 }
 "#;
     let safe_findings = MemTempScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-FIL-008"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-FIL-008")
+    );
 }
 
 #[test]

@@ -92,12 +92,12 @@ static RE_AZ_013_TOCTOU: LazyLock<Regex> = LazyLock::new(|| {
 
 // BK-AI-AZ-014 (CWE-200): Search, cache, or vector index query leaks cross-tenant objects
 static RE_AZ_014_PINECONE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\b(?:index|pineconeIndex|vectorIndex)\.query\s*\(\s*\{([^}]+)\}\s*\)"#).unwrap()
+    Regex::new(r#"(?i)\b(?:index|pineconeIndex|vectorIndex)\.query\s*\(\s*\{([^}]+)\}\s*\)"#)
+        .unwrap()
 });
 
-static RE_AZ_014_CHROMA: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\bcollection\.query\s*\(\s*\{([^}]+)\}\s*\)"#).unwrap()
-});
+static RE_AZ_014_CHROMA: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\bcollection\.query\s*\(\s*\{([^}]+)\}\s*\)"#).unwrap());
 
 static RE_AZ_014_SIMILARITY: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)\bvectorStore\.similaritySearch\s*\(\s*[^,)]+\s*,\s*\d+\s*\)"#).unwrap()
@@ -125,10 +125,7 @@ impl AuthzSecurityScanner {
             let line_no = idx + 1;
             let trimmed = line.trim();
 
-            if trimmed.is_empty()
-                || trimmed.starts_with('#')
-                || trimmed.starts_with('*')
-            {
+            if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with('*') {
                 continue;
             }
 
@@ -361,8 +358,8 @@ impl AuthzSecurityScanner {
             }
 
             // G. BK-AI-AZ-007 (CWE-863): Batch APIs authorize first object but not each element
-            let matches_first = RE_AZ_007_BATCH_FIRST.is_match(trimmed)
-                || RE_AZ_007_BATCH_PROP.is_match(trimmed);
+            let matches_first =
+                RE_AZ_007_BATCH_FIRST.is_match(trimmed) || RE_AZ_007_BATCH_PROP.is_match(trimmed);
             if matches_first {
                 findings.push(create_authz_finding(
                     "BK-AI-AZ-007",
@@ -468,7 +465,8 @@ impl AuthzSecurityScanner {
                     && !block.contains("WHERE account_id")
                     && !block.contains("WHERE company_id");
 
-                let has_unfiltered_orm = (block.contains(".find()") || block.contains(".findAll()"))
+                let has_unfiltered_orm = (block.contains(".find()")
+                    || block.contains(".findAll()"))
                     && !block.contains("tenantId")
                     && !block.contains("orgId")
                     && !block.contains("userId");

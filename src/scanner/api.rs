@@ -58,9 +58,8 @@ static RE_API_005_WS_EVENT: LazyLock<Regex> = LazyLock::new(|| {
         .unwrap()
 });
 
-static RE_API_005_SOCKET_JOIN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:socket\.join|this\.join)\s*\("#).unwrap()
-});
+static RE_API_005_SOCKET_JOIN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)(?:socket\.join|this\.join)\s*\("#).unwrap());
 
 static RE_API_005_AUTH_GUARDS: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:canJoin|hasPermission|authorize|checkAuth|isAllowed|verifyPermission|user\.rooms|socket\.user)"#)
@@ -73,9 +72,8 @@ static RE_API_006_STREAM_CHECK: LazyLock<Regex> = LazyLock::new(|| {
         .unwrap()
 });
 
-static RE_API_006_RETURN_NEXT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\breturn\s+(?:next|next\.startCall|handler)"#).unwrap()
-});
+static RE_API_006_RETURN_NEXT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\breturn\s+(?:next|next\.startCall|handler)"#).unwrap());
 
 static RE_API_006_BYPASS_LIST: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:bypass(?:Methods|Paths|Services)|public(?:Methods|RpcPrefixes|Services))\s*=\s*\[[^\]]*(?:Stream|Admin|Internal|User)"#)
@@ -111,8 +109,10 @@ static RE_API_009_LEAK_SECRET_ENV: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_API_009_PUBLIC_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)process\.env\.(?:[A-Za-z0-9_]*(?:PUBLISHABLE|PUBLIC|CLIENT_ID)[A-Za-z0-9_]*)"#)
-        .unwrap()
+    Regex::new(
+        r#"(?i)process\.env\.(?:[A-Za-z0-9_]*(?:PUBLISHABLE|PUBLIC|CLIENT_ID)[A-Za-z0-9_]*)"#,
+    )
+    .unwrap()
 });
 
 // 10. BK-AI-API-010 (CWE-20): HTTP method override or content-type ambiguity bypasses validation
@@ -215,7 +215,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: server enforces type, length, shape, enum",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-001", "CWE-20", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-001",
+                    "CWE-20",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
                 continue;
             } else if RE_API_001_RAW_BODY.is_match(trimmed)
@@ -242,7 +249,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: server enforces type, length, shape, enum",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-001", "CWE-20", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-001",
+                    "CWE-20",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -275,7 +289,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: reject or strip unauthorized fields",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-002", "CWE-915", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-002",
+                    "CWE-915",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -288,7 +309,8 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-003".to_string(),
-                        title: "Unbounded Expensive API Operation Without Rate Limiting".to_string(),
+                        title: "Unbounded Expensive API Operation Without Rate Limiting"
+                            .to_string(),
                     },
                     Severity::Medium,
                     target_kind.clone(),
@@ -303,7 +325,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: bounded usage by identity/tenant",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-003", "CWE-770", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-003",
+                    "CWE-770",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -316,7 +345,8 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-004".to_string(),
-                        title: "GraphQL Uncontrolled Query Depth or Introspection Exposure".to_string(),
+                        title: "GraphQL Uncontrolled Query Depth or Introspection Exposure"
+                            .to_string(),
                     },
                     Severity::Medium,
                     target_kind.clone(),
@@ -331,7 +361,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: bounded query cost; deliberate schema exposure",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-004", "CWE-400", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-004",
+                    "CWE-400",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -339,7 +376,9 @@ impl ApiSecurityScanner {
             if RE_API_005_WS_EVENT.is_match(trimmed) {
                 let end_idx = (idx + 8).min(total_lines);
                 let block = lines[idx..end_idx].join("\n");
-                if RE_API_005_SOCKET_JOIN.is_match(&block) && !RE_API_005_AUTH_GUARDS.is_match(&block) {
+                if RE_API_005_SOCKET_JOIN.is_match(&block)
+                    && !RE_API_005_AUTH_GUARDS.is_match(&block)
+                {
                     let id = format!("API-005-{}-{}", file_tag, line_no);
                     let mut finding = Finding::new(
                         id,
@@ -360,7 +399,14 @@ impl ApiSecurityScanner {
                         ),
                         "Restore invariant: membership and operations rechecked",
                     );
-                    Self::populate_metadata(&mut finding, "BK-AI-API-005", "CWE-862", path, line_no, trimmed);
+                    Self::populate_metadata(
+                        &mut finding,
+                        "BK-AI-API-005",
+                        "CWE-862",
+                        path,
+                        line_no,
+                        trimmed,
+                    );
                     findings.push(finding);
                 }
             }
@@ -372,7 +418,8 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-006".to_string(),
-                        title: "gRPC Auth Interceptor Omits Streaming or Privileged Methods".to_string(),
+                        title: "gRPC Auth Interceptor Omits Streaming or Privileged Methods"
+                            .to_string(),
                     },
                     Severity::High,
                     target_kind.clone(),
@@ -387,7 +434,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: all privileged RPC paths gated",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-006", "CWE-306", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-006",
+                    "CWE-306",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             } else if RE_API_006_STREAM_CHECK.is_match(trimmed) {
                 let end_idx = (idx + 4).min(total_lines);
@@ -413,7 +467,14 @@ impl ApiSecurityScanner {
                         ),
                         "Restore invariant: all privileged RPC paths gated",
                     );
-                    Self::populate_metadata(&mut finding, "BK-AI-API-006", "CWE-306", path, line_no, trimmed);
+                    Self::populate_metadata(
+                        &mut finding,
+                        "BK-AI-API-006",
+                        "CWE-306",
+                        path,
+                        line_no,
+                        trimmed,
+                    );
                     findings.push(finding);
                 }
             }
@@ -442,7 +503,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: scoped query enforced",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-007", "CWE-200", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-007",
+                    "CWE-200",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -456,7 +524,8 @@ impl ApiSecurityScanner {
                         id,
                         CveId::Custom {
                             id: "BK-AI-API-008".to_string(),
-                            title: "Webhook Endpoint Missing HMAC Signature Verification".to_string(),
+                            title: "Webhook Endpoint Missing HMAC Signature Verification"
+                                .to_string(),
                         },
                         Severity::High,
                         target_kind.clone(),
@@ -471,7 +540,14 @@ impl ApiSecurityScanner {
                         ),
                         "Restore invariant: signature, timestamp and replay as applicable",
                     );
-                    Self::populate_metadata(&mut finding, "BK-AI-API-008", "CWE-345", path, line_no, trimmed);
+                    Self::populate_metadata(
+                        &mut finding,
+                        "BK-AI-API-008",
+                        "CWE-345",
+                        path,
+                        line_no,
+                        trimmed,
+                    );
                     findings.push(finding);
                 }
             }
@@ -500,7 +576,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: tokens restricted to intended backend",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-009", "CWE-201", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-009",
+                    "CWE-201",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -511,7 +594,8 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-010".to_string(),
-                        title: "HTTP Method Override Ambiguity Bypassing Security Controls".to_string(),
+                        title: "HTTP Method Override Ambiguity Bypassing Security Controls"
+                            .to_string(),
                     },
                     Severity::Medium,
                     target_kind.clone(),
@@ -526,7 +610,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: equivalent encodings and verbs protected",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-010", "CWE-20", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-010",
+                    "CWE-20",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -537,7 +628,8 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-011".to_string(),
-                        title: "Public Cache-Control on Authenticated/Privileged Endpoint".to_string(),
+                        title: "Public Cache-Control on Authenticated/Privileged Endpoint"
+                            .to_string(),
                     },
                     Severity::High,
                     target_kind.clone(),
@@ -552,7 +644,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: cache key/scope and `Cache-Control` correct",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-011", "CWE-524", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-011",
+                    "CWE-524",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -563,7 +662,9 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-012".to_string(),
-                        title: "Sensitive Stack Trace or Internal Details Returned in Error Response".to_string(),
+                        title:
+                            "Sensitive Stack Trace or Internal Details Returned in Error Response"
+                                .to_string(),
                     },
                     Severity::Medium,
                     target_kind.clone(),
@@ -578,7 +679,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: caller sees bounded error details",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-012", "CWE-209", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-012",
+                    "CWE-209",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -589,7 +697,8 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-013".to_string(),
-                        title: "Server-to-Server Trust Relies Solely on Unverified Header".to_string(),
+                        title: "Server-to-Server Trust Relies Solely on Unverified Header"
+                            .to_string(),
                     },
                     Severity::High,
                     target_kind.clone(),
@@ -604,7 +713,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: explicit service authentication/authorization",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-013", "CWE-306", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-013",
+                    "CWE-306",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
 
@@ -615,7 +731,8 @@ impl ApiSecurityScanner {
                     id,
                     CveId::Custom {
                         id: "BK-AI-API-014".to_string(),
-                        title: "Realtime Subscription Stream Broadcasting Without Tenant Scope".to_string(),
+                        title: "Realtime Subscription Stream Broadcasting Without Tenant Scope"
+                            .to_string(),
                     },
                     Severity::High,
                     target_kind.clone(),
@@ -630,7 +747,14 @@ impl ApiSecurityScanner {
                     ),
                     "Restore invariant: per-topic/channel permission enforced",
                 );
-                Self::populate_metadata(&mut finding, "BK-AI-API-014", "CWE-200", path, line_no, trimmed);
+                Self::populate_metadata(
+                    &mut finding,
+                    "BK-AI-API-014",
+                    "CWE-200",
+                    path,
+                    line_no,
+                    trimmed,
+                );
                 findings.push(finding);
             }
         }

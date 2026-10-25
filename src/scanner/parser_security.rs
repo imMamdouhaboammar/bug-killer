@@ -21,13 +21,11 @@ static RE_PAR_002_YAML_UNSAFE: LazyLock<Regex> = LazyLock::new(|| {
         .unwrap()
 });
 
-static RE_PAR_002_YAML_PLAIN_LOAD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\byaml\.(?:load|load_all)\s*\("#).unwrap()
-});
+static RE_PAR_002_YAML_PLAIN_LOAD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\byaml\.(?:load|load_all)\s*\("#).unwrap());
 
-static RE_PAR_002_YAML_SAFE_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:SafeLoader|CSafeLoader|safe_load)"#).unwrap()
-});
+static RE_PAR_002_YAML_SAFE_GUARD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)(?:SafeLoader|CSafeLoader|safe_load)"#).unwrap());
 
 // BK-AI-PAR-003 (CWE-502): Unsafe object deserialization (unserialize, Marshal, BinaryFormatter)
 static RE_PAR_003_OBJECT_DESER: LazyLock<Regex> = LazyLock::new(|| {
@@ -35,9 +33,8 @@ static RE_PAR_003_OBJECT_DESER: LazyLock<Regex> = LazyLock::new(|| {
         .unwrap()
 });
 
-static RE_PAR_003_PHP_UNSERIALIZE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\bunserialize\s*\(\s*\$[a-zA-Z0-9_]+"#).unwrap()
-});
+static RE_PAR_003_PHP_UNSERIALIZE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\bunserialize\s*\(\s*\$[a-zA-Z0-9_]+"#).unwrap());
 
 // BK-AI-PAR-004 (CWE-611): XML external entity (XXE) resolution enabled
 static RE_PAR_004_XXE_ENABLED: LazyLock<Regex> = LazyLock::new(|| {
@@ -233,7 +230,9 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("double decode") || lower.contains("normalization after validation") {
+                if lower.contains("double decode")
+                    || lower.contains("normalization after validation")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-PAR-011",
                         "CWE-174",
@@ -267,7 +266,9 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("unauthenticated encryption") || lower.contains("aes-cbc without hmac") {
+                if lower.contains("unauthenticated encryption")
+                    || lower.contains("aes-cbc without hmac")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-CRY-004",
                         "CWE-327",
@@ -284,7 +285,10 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("static nonce") || lower.contains("nonce reuse") || lower.contains("fixed iv") {
+                if lower.contains("static nonce")
+                    || lower.contains("nonce reuse")
+                    || lower.contains("fixed iv")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-CRY-005",
                         "CWE-329",
@@ -301,7 +305,8 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("hardcoded private key") || lower.contains("hardcoded secret key") {
+                if lower.contains("hardcoded private key") || lower.contains("hardcoded secret key")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-CRY-006",
                         "CWE-321",
@@ -335,7 +340,9 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("non-crypto hash for signature") || lower.contains("insecure hash used for signature") {
+                if lower.contains("non-crypto hash for signature")
+                    || lower.contains("insecure hash used for signature")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-CRY-008",
                         "CWE-347",
@@ -352,7 +359,9 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("canonical mismatch") || lower.contains("signature checked over different bytes") {
+                if lower.contains("canonical mismatch")
+                    || lower.contains("signature checked over different bytes")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-CRY-009",
                         "CWE-345",
@@ -369,7 +378,9 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("timing attack") || lower.contains("secret comparison leaks through timing") {
+                if lower.contains("timing attack")
+                    || lower.contains("secret comparison leaks through timing")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-CRY-010",
                         "CWE-208",
@@ -386,7 +397,8 @@ impl ParserSecurityScanner {
                     ));
                 }
 
-                if lower.contains("no tenant binding") || lower.contains("missing associated data") {
+                if lower.contains("no tenant binding") || lower.contains("missing associated data")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-CRY-012",
                         "CWE-347",
@@ -480,7 +492,9 @@ impl ParserSecurityScanner {
                     "Use secure, data-only formats such as JSON or Protocol Buffers instead of native object serialization.",
                 ));
             } else if RE_PAR_003_PHP_UNSERIALIZE.is_match(trimmed)
-                && (!trimmed.contains("allowed_classes") || trimmed.contains("allowed_classes' => true") || trimmed.contains("allowed_classes\" => true"))
+                && (!trimmed.contains("allowed_classes")
+                    || trimmed.contains("allowed_classes' => true")
+                    || trimmed.contains("allowed_classes\" => true"))
             {
                 findings.push(Self::create_finding(
                     "BK-AI-PAR-003",

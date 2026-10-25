@@ -21,7 +21,10 @@ static RE_INF_005_WILDCARD_IAM: LazyLock<Regex> = LazyLock::new(|| {
 
 /// BK-AI-INF-006 (CWE-284): Security group/network rule opens management/database port to internet
 static RE_INF_006_SENSITIVE_PORT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:from_port|to_port|\bport)\s*[:=]\s*(?:22|3389|5432|3306|27017|6379|9200|1433)\b"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:from_port|to_port|\bport)\s*[:=]\s*(?:22|3389|5432|3306|27017|6379|9200|1433)\b"#,
+    )
+    .unwrap()
 });
 
 /// BK-AI-INF-009 (CWE-306): Database/queue/Redis/Elasticsearch has no authentication in reachable environment
@@ -39,9 +42,8 @@ static RE_INF_012_FROM_IMAGE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)^FROM\s+(?:--platform=[^\s]+\s+)?([a-zA-Z0-9_\-\./]+)(?::([^\s]+))?(?:\s+as\s+[a-zA-Z0-9_\-]+)?$"#).unwrap()
 });
 
-static RE_INF_012_COMPOSE_LATEST: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\bimage:\s*['"]?[a-zA-Z0-9_\-\./]+:latest['"]?"#).unwrap()
-});
+static RE_INF_012_COMPOSE_LATEST: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\bimage:\s*['"]?[a-zA-Z0-9_\-\./]+:latest['"]?"#).unwrap());
 
 /// BK-AI-INF-013 (CWE-778): Infrastructure logs/audit disabled for security-critical asset
 static RE_INF_013_AUDIT_DISABLED: LazyLock<Regex> = LazyLock::new(|| {
@@ -82,9 +84,8 @@ static RE_CIC_008_WILDCARD_BRANCH: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)\bbranches\s*:\s*(?:\[\s*["']\*\*?["']\s*\]|["']\*\*?["'])"#).unwrap()
 });
 
-static RE_CIC_008_DEPLOY_NO_APPROVAL: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\bdeploy_without_approval\s*[:=]\s*true\b"#).unwrap()
-});
+static RE_CIC_008_DEPLOY_NO_APPROVAL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\bdeploy_without_approval\s*[:=]\s*true\b"#).unwrap());
 
 /// BK-AI-CIC-009 (CWE-494): Release generated from a different commit than tested/reviewed
 static RE_CIC_009_MUTABLE_CHECKOUT: LazyLock<Regex> = LazyLock::new(|| {
@@ -92,9 +93,8 @@ static RE_CIC_009_MUTABLE_CHECKOUT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// BK-AI-CIC-010 (None): Test/security jobs optional, skipped or configured with continue-on-error: true
-static RE_CIC_010_CONTINUE_ON_ERROR: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\bcontinue-on-error\s*:\s*true\b"#).unwrap()
-});
+static RE_CIC_010_CONTINUE_ON_ERROR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\bcontinue-on-error\s*:\s*true\b"#).unwrap());
 
 static RE_CIC_010_MASKED_ERROR: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:npm\s+test|cargo\s+test|pytest|trivy|snyk|audit)\b[^|\n;]*\|\|\s*(?:true|exit\s+0)\b"#).unwrap()
@@ -139,7 +139,19 @@ impl IacScanner {
         }
         matches!(
             path.extension().and_then(|ext| ext.to_str()),
-            Some("tf" | "yaml" | "yml" | "json" | "toml" | "sh" | "bash" | "js" | "mjs" | "cjs" | "ts" | "py")
+            Some(
+                "tf" | "yaml"
+                    | "yml"
+                    | "json"
+                    | "toml"
+                    | "sh"
+                    | "bash"
+                    | "js"
+                    | "mjs"
+                    | "cjs"
+                    | "ts"
+                    | "py"
+            )
         )
     }
 
@@ -295,7 +307,8 @@ impl IacScanner {
 
             // 4. BK-AI-INF-009 (CWE-306): Database/queue/Redis/Elasticsearch has no authentication in reachable environment
             if RE_INF_009_NO_AUTH.is_match(trimmed) {
-                let is_empty_pass = trimmed.contains("password") && (trimmed.contains("\"\"") || trimmed.contains("''"));
+                let is_empty_pass = trimmed.contains("password")
+                    && (trimmed.contains("\"\"") || trimmed.contains("''"));
                 let is_datastore = !is_empty_pass
                     || context_window.contains("redis")
                     || context_window.contains("mongo")
@@ -545,7 +558,9 @@ impl IacScanner {
             }
 
             // 14. BK-AI-CIC-009 (CWE-494): Release generated from a different commit than tested/reviewed
-            if (content.contains("release") || content.contains("deploy") || content.contains("publish"))
+            if (content.contains("release")
+                || content.contains("deploy")
+                || content.contains("publish"))
                 && RE_CIC_009_MUTABLE_CHECKOUT.is_match(trimmed)
             {
                 findings.push(Self::create_finding(
@@ -671,7 +686,8 @@ impl IacScanner {
                     || context_window.contains("APPROVED")
                     || context_window.contains("approved")
                     || context_window.contains("required_reviews");
-                let is_zero_reviews = trimmed.contains("required_reviews: 0") || trimmed.contains("required_reviews = 0");
+                let is_zero_reviews = trimmed.contains("required_reviews: 0")
+                    || trimmed.contains("required_reviews = 0");
                 if !has_review_guard || is_zero_reviews {
                     findings.push(Self::create_finding(
                         "BK-AI-CIC-013",

@@ -1,8 +1,8 @@
 #[path = "../src/scanner/bkh_safety.rs"]
 mod bkh_safety;
 
-pub use bug_killer::types;
 use bkh_safety::BkhSafetyScanner;
+pub use bug_killer::types;
 use bug_killer::types::Severity;
 use std::path::Path;
 
@@ -47,7 +47,9 @@ fn run_scan(target: &str) -> Result<Report, ScanError> {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-001"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-001"),
         "Safe error propagation must not flag BK-AI-BKH-001"
     );
 }
@@ -81,7 +83,9 @@ fn evaluate_dependency(dep: &Dependency) -> Result<VersionStatus, ResolveError> 
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-002"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-002"),
         "Lockfile verification must not flag BK-AI-BKH-002"
     );
 }
@@ -117,7 +121,9 @@ fn process_candidate(finding: &Finding) {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-003"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-003"),
         "Deterministic taint proof must not flag BK-AI-BKH-003"
     );
 }
@@ -150,7 +156,9 @@ fn prepare_ast(repo_path: &Path, consent: &UserConsent) {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-004"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-004"),
         "User consent and sandbox runner must not flag BK-AI-BKH-004"
     );
 }
@@ -194,7 +202,9 @@ fn configure_dast_client(scope: &AllowedScope) -> reqwest::Client {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-005"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-005"),
         "In-scope validated redirection must not flag BK-AI-BKH-005"
     );
 }
@@ -232,7 +242,9 @@ fn launch_external_scanner(tool_bin: &str) {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-006"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-006"),
         "Clean isolated environment must not flag BK-AI-BKH-006"
     );
 }
@@ -264,7 +276,9 @@ fn record_finding_evidence(report: &mut Report, token: &str) {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-007"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-007"),
         "Redacted token must not flag BK-AI-BKH-007"
     );
 }
@@ -300,7 +314,9 @@ fn locate_patch_target(workspace: &Workspace, path: &Path) -> Option<PathBuf> {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-008"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-008"),
         "Canonical path resolution must not flag BK-AI-BKH-008"
     );
 }
@@ -337,7 +353,9 @@ fn execute_virtual_patch(workspace_root: &Path, target: &Path, patch: &str) -> s
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-009"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-009"),
         "Workspace boundary check must not flag BK-AI-BKH-009"
     );
 }
@@ -375,7 +393,9 @@ fn snapshot_files(files: Vec<PathBuf>, key: &SigningKey) -> BackupManifest {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-010"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-010"),
         "Ed25519 signed backup must not flag BK-AI-BKH-010"
     );
 }
@@ -412,7 +432,9 @@ fn apply_batch_fixes(manifest: &Manifest) -> Result<RollbackReceipt, Error> {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-011"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-011"),
         "Transactional rollback must not flag BK-AI-BKH-011"
     );
 }
@@ -447,7 +469,9 @@ fn publish_remediation_branch(test_results: &TestResults) -> Result<(), Error> {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-012"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-012"),
         "Test verification guard must not flag BK-AI-BKH-012"
     );
 }
@@ -484,7 +508,9 @@ fn configure_filter() -> SuppressRule {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-013"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-013"),
         "Expiring specific rule suppression must not flag BK-AI-BKH-013"
     );
 }
@@ -523,7 +549,9 @@ fn analyze_line(line: &str, finding: &mut Finding, ast: &AstGraph) {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-014"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-014"),
         "Data-flow verification must not flag BK-AI-BKH-014"
     );
 }
@@ -561,7 +589,9 @@ jobs:
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-015"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-015"),
         "Full test coverage for Go services must not flag BK-AI-BKH-015"
     );
 }
@@ -595,7 +625,9 @@ fn start_dast_job(host: &str, token: &str, limiter: &RateLimiter) -> Result<(), 
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-016"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-016"),
         "Asset authorization check and rate limiter must not flag BK-AI-BKH-016"
     );
 }
@@ -629,7 +661,9 @@ fn update_shared_config(lock: &Mutex<()>) {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-017"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-017"),
         "Acquired FileLock and Mutex must not flag BK-AI-BKH-017"
     );
 }
@@ -658,7 +692,9 @@ fn test_bkh_018_unverified_claim() {
 "#;
     let safe_findings = BkhSafetyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BKH-018"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BKH-018"),
         "Marking check status as planned must not flag BK-AI-BKH-018"
     );
 }

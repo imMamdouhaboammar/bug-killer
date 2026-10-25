@@ -11,9 +11,8 @@ use std::sync::LazyLock;
 // ----------------------------------------------------------------------------
 
 // BK-AI-WEB-001: DOM XSS Sinks
-static RE_INNER_OUTER_HTML: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\.(?:innerHTML|outerHTML)\s*=\s*(.+)"#).unwrap()
-});
+static RE_INNER_OUTER_HTML: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\.(?:innerHTML|outerHTML)\s*=\s*(.+)"#).unwrap());
 
 static RE_DANGEROUSLY_SET_INNER_HTML: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?is)dangerouslySetInnerHTML\s*=\s*\{\{\s*__html\s*:\s*([^}]+)\}\}"#).unwrap()
@@ -23,9 +22,8 @@ static RE_DOC_WRITE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)\bdocument\.(?:write|writeln)\s*\(\s*([^)]+)\s*\)"#).unwrap()
 });
 
-static RE_JQUERY_HTML: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\$\([^)]+\)\.html\s*\(\s*([^)]+)\s*\)"#).unwrap()
-});
+static RE_JQUERY_HTML: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\$\([^)]+\)\.html\s*\(\s*([^)]+)\s*\)"#).unwrap());
 
 // BK-AI-WEB-002: Stored/Reflected Server-Side Template XSS
 static RE_RENDER_TEMPLATE_STRING: LazyLock<Regex> = LazyLock::new(|| {
@@ -36,13 +34,11 @@ static RE_MARKUP_SAFE_CALL: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:\b(?:markupsafe\.)?Markup\s*\(\s*(?:f["']|["'].*?\+|[^"'\s\),]+)|\bmark_safe\s*\(\s*(?:f["']|["'].*?\+|[^"'\s\),]+))"#).unwrap()
 });
 
-static RE_BLADE_RAW_ECHO: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"\{!!\s*([^!]+?)\s*!!\}"#).unwrap()
-});
+static RE_BLADE_RAW_ECHO: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"\{!!\s*([^!]+?)\s*!!\}"#).unwrap());
 
-static RE_TEMPLATE_SAFE_FILTER: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"\{\{\s*([^}]+?)\s*\|\s*safe\s*\}\}"#).unwrap()
-});
+static RE_TEMPLATE_SAFE_FILTER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"\{\{\s*([^}]+?)\s*\|\s*safe\s*\}\}"#).unwrap());
 
 // BK-AI-WEB-003: Naive Regex/Blacklist HTML Sanitization
 static RE_REGEX_SANITIZATION: LazyLock<Regex> = LazyLock::new(|| {
@@ -60,7 +56,8 @@ static RE_SERVER_REDIRECT: LazyLock<Regex> = LazyLock::new(|| {
 
 // BK-AI-WEB-005: postMessage missing origin check
 static RE_POSTMESSAGE_LISTENER: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:window\.)?(?:addEventListener\s*\(\s*['"]message['"]|onmessage\s*=)"#).unwrap()
+    Regex::new(r#"(?i)(?:window\.)?(?:addEventListener\s*\(\s*['"]message['"]|onmessage\s*=)"#)
+        .unwrap()
 });
 
 // BK-AI-WEB-006: Frontend sensitive data
@@ -154,14 +151,25 @@ impl WebSecurityScanner {
         }
 
         // Static single- or double-quoted string literal without interpolation
-        if (trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() >= 2 && !trimmed[1..trimmed.len() - 1].contains('"'))
-            || (trimmed.starts_with('\'') && trimmed.ends_with('\'') && trimmed.len() >= 2 && !trimmed[1..trimmed.len() - 1].contains('\''))
+        if (trimmed.starts_with('"')
+            && trimmed.ends_with('"')
+            && trimmed.len() >= 2
+            && !trimmed[1..trimmed.len() - 1].contains('"'))
+            || (trimmed.starts_with('\'')
+                && trimmed.ends_with('\'')
+                && trimmed.len() >= 2
+                && !trimmed[1..trimmed.len() - 1].contains('\''))
         {
             return true;
         }
 
         // Static backtick literal without template interpolation
-        if trimmed.starts_with('`') && trimmed.ends_with('`') && trimmed.len() >= 2 && !trimmed[1..trimmed.len() - 1].contains('`') && !trimmed.contains("${") {
+        if trimmed.starts_with('`')
+            && trimmed.ends_with('`')
+            && trimmed.len() >= 2
+            && !trimmed[1..trimmed.len() - 1].contains('`')
+            && !trimmed.contains("${")
+        {
             return true;
         }
 
@@ -193,7 +201,11 @@ impl WebSecurityScanner {
         let lines: Vec<&str> = content.lines().collect();
 
         let byte_to_line = |byte_offset: usize| -> usize {
-            content[..byte_offset].bytes().filter(|&b| b == b'\n').count() + 1
+            content[..byte_offset]
+                .bytes()
+                .filter(|&b| b == b'\n')
+                .count()
+                + 1
         };
 
         // --------------------------------------------------------------------
@@ -213,7 +225,9 @@ impl WebSecurityScanner {
 
             // 1. BK-AI-WEB-001: DOM XSS via innerHTML / outerHTML
             if let Some(rhs) = RE_INNER_OUTER_HTML.captures(trimmed).and_then(|c| c.get(1)) {
-                if !Self::is_safe_html_rhs(rhs.as_str()) && seen.insert(("BK-AI-WEB-001".to_string(), line_no)) {
+                if !Self::is_safe_html_rhs(rhs.as_str())
+                    && seen.insert(("BK-AI-WEB-001".to_string(), line_no))
+                {
                     let mut finding = Finding::new(
                         format!("WEB-001-{}-{}", file_tag, line_no),
                         CveId::Custom {
@@ -253,7 +267,9 @@ impl WebSecurityScanner {
 
             // 1b. BK-AI-WEB-001: document.write / document.writeln
             if let Some(arg) = RE_DOC_WRITE.captures(trimmed).and_then(|c| c.get(1)) {
-                if !Self::is_safe_html_rhs(arg.as_str()) && seen.insert(("BK-AI-WEB-001".to_string(), line_no)) {
+                if !Self::is_safe_html_rhs(arg.as_str())
+                    && seen.insert(("BK-AI-WEB-001".to_string(), line_no))
+                {
                     let mut finding = Finding::new(
                         format!("WEB-001-{}-{}", file_tag, line_no),
                         CveId::Custom {
@@ -293,7 +309,9 @@ impl WebSecurityScanner {
 
             // 1c. BK-AI-WEB-001: jQuery .html(...)
             if let Some(arg) = RE_JQUERY_HTML.captures(trimmed).and_then(|c| c.get(1)) {
-                if !Self::is_safe_html_rhs(arg.as_str()) && seen.insert(("BK-AI-WEB-001".to_string(), line_no)) {
+                if !Self::is_safe_html_rhs(arg.as_str())
+                    && seen.insert(("BK-AI-WEB-001".to_string(), line_no))
+                {
                     let mut finding = Finding::new(
                         format!("WEB-001-{}-{}", file_tag, line_no),
                         CveId::Custom {
@@ -385,7 +403,8 @@ impl WebSecurityScanner {
                         format!("WEB-003-{}-{}", file_tag, line_no),
                         CveId::Custom {
                             id: cve_id.to_string(),
-                            title: "Insecure HTML Sanitization via Naive Regular Expression".to_string(),
+                            title: "Insecure HTML Sanitization via Naive Regular Expression"
+                                .to_string(),
                         },
                         Severity::High,
                         target_kind.clone(),
@@ -420,18 +439,26 @@ impl WebSecurityScanner {
 
             // 4. BK-AI-WEB-004: Open Redirect
             let is_client_redirect = if let Some(caps) = RE_CLIENT_REDIRECT.captures(trimmed) {
-                let target_expr = caps.get(1).or_else(|| caps.get(2)).map(|m| m.as_str().trim()).unwrap_or("");
+                let target_expr = caps
+                    .get(1)
+                    .or_else(|| caps.get(2))
+                    .map(|m| m.as_str().trim())
+                    .unwrap_or("");
                 // Safe if it's a fixed relative path starting with '/'
-                let is_static_relative = (target_expr.starts_with("\"/") && target_expr.ends_with('"'))
+                let is_static_relative = (target_expr.starts_with("\"/")
+                    && target_expr.ends_with('"'))
                     || (target_expr.starts_with("'/'") && target_expr.ends_with('\''))
-                    || (target_expr.starts_with("`/") && target_expr.ends_with('`') && !target_expr.contains("${"));
+                    || (target_expr.starts_with("`/")
+                        && target_expr.ends_with('`')
+                        && !target_expr.contains("${"));
 
-                !is_static_relative && (target_expr.contains("url")
-                    || target_expr.contains("redirect")
-                    || target_expr.contains("target")
-                    || target_expr.contains("query")
-                    || target_expr.contains("params")
-                    || target_expr.contains("search"))
+                !is_static_relative
+                    && (target_expr.contains("url")
+                        || target_expr.contains("redirect")
+                        || target_expr.contains("target")
+                        || target_expr.contains("query")
+                        || target_expr.contains("params")
+                        || target_expr.contains("search"))
             } else {
                 false
             };
@@ -582,7 +609,8 @@ impl WebSecurityScanner {
                         format!("WEB-007-{}-{}", file_tag, line_no),
                         CveId::Custom {
                             id: cve_id.to_string(),
-                            title: "State-Mutating Action Exposed via HTTP GET (CSRF Vulnerable)".to_string(),
+                            title: "State-Mutating Action Exposed via HTTP GET (CSRF Vulnerable)"
+                                .to_string(),
                         },
                         Severity::High,
                         target_kind.clone(),
@@ -623,7 +651,8 @@ impl WebSecurityScanner {
                         format!("WEB-008-{}-{}", file_tag, line_no),
                         CveId::Custom {
                             id: cve_id.to_string(),
-                            title: "Over-Permissive or Disabled Content Security Policy".to_string(),
+                            title: "Over-Permissive or Disabled Content Security Policy"
+                                .to_string(),
                         },
                         Severity::Medium,
                         target_kind.clone(),
@@ -658,13 +687,16 @@ impl WebSecurityScanner {
 
             // 9. BK-AI-WEB-009: External third-party scripts missing SRI (line-level)
             if let Some(caps) = RE_SCRIPT_CDN.captures(trimmed) {
-                if !trimmed.contains("integrity=") && seen.insert(("BK-AI-WEB-009".to_string(), line_no)) {
+                if !trimmed.contains("integrity=")
+                    && seen.insert(("BK-AI-WEB-009".to_string(), line_no))
+                {
                     let cdn_src = caps.get(1).map(|m| m.as_str()).unwrap_or("CDN script");
                     let mut finding = Finding::new(
                         format!("WEB-009-{}-{}", file_tag, line_no),
                         CveId::Custom {
                             id: "BK-AI-WEB-009".to_string(),
-                            title: "External Script Missing Subresource Integrity (SRI)".to_string(),
+                            title: "External Script Missing Subresource Integrity (SRI)"
+                                .to_string(),
                         },
                         Severity::Medium,
                         target_kind.clone(),
@@ -788,8 +820,13 @@ impl WebSecurityScanner {
         for m in RE_DANGEROUSLY_SET_INNER_HTML.find_iter(content) {
             let line_no = byte_to_line(m.start());
             let snippet = m.as_str().trim();
-            if let Some(arg) = RE_DANGEROUSLY_SET_INNER_HTML.captures(snippet).and_then(|c| c.get(1)) {
-                if !Self::is_safe_html_rhs(arg.as_str()) && seen.insert(("BK-AI-WEB-001".to_string(), line_no)) {
+            if let Some(arg) = RE_DANGEROUSLY_SET_INNER_HTML
+                .captures(snippet)
+                .and_then(|c| c.get(1))
+            {
+                if !Self::is_safe_html_rhs(arg.as_str())
+                    && seen.insert(("BK-AI-WEB-001".to_string(), line_no))
+                {
                     let mut finding = Finding::new(
                         format!("WEB-001-{}-{}", file_tag, line_no),
                         CveId::Custom {
@@ -969,7 +1006,8 @@ impl WebSecurityScanner {
                     format!("WEB-013-{}-{}", file_tag, line_no),
                     CveId::Custom {
                         id: cve_id.to_string(),
-                        title: "Unprotected File Download Endpoint Missing Authorization Check".to_string(),
+                        title: "Unprotected File Download Endpoint Missing Authorization Check"
+                            .to_string(),
                     },
                     Severity::Medium,
                     target_kind.clone(),
@@ -1012,7 +1050,8 @@ impl WebSecurityScanner {
                     format!("WEB-014-{}-{}", file_tag, line_no),
                     CveId::Custom {
                         id: cve_id.to_string(),
-                        title: "Service Worker / CacheStorage Caching User-Private API Responses".to_string(),
+                        title: "Service Worker / CacheStorage Caching User-Private API Responses"
+                            .to_string(),
                     },
                     Severity::Medium,
                     target_kind.clone(),
@@ -1055,7 +1094,8 @@ impl WebSecurityScanner {
                     format!("WEB-015-{}-{}", file_tag, line_no),
                     CveId::Custom {
                         id: cve_id.to_string(),
-                        title: "SSR Hydration State Serializes Sensitive Credentials or PII".to_string(),
+                        title: "SSR Hydration State Serializes Sensitive Credentials or PII"
+                            .to_string(),
                     },
                     Severity::High,
                     target_kind.clone(),

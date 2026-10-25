@@ -311,21 +311,47 @@ impl FleetScanner {
                     ));
                     raw_findings.extend(self::web::WebSecurityScanner::scan_source(path, &content));
                     raw_findings.extend(self::api::ApiSecurityScanner::scan_source(path, &content));
-                    raw_findings.extend(self::auth::AuthSecurityScanner::scan_source(path, &content));
-                    raw_findings.extend(self::authz::AuthzSecurityScanner::scan_source(path, &content));
-                    raw_findings.extend(self::filesystem_ext::FilesystemExtScanner::scan_source(path, &content));
-                    raw_findings.extend(self::data_privacy::DataPrivacyScanner::scan_source(path, &content));
-                    raw_findings.extend(self::parser_security::ParserSecurityScanner::scan_source(path, &content));
-                    raw_findings.extend(self::network_dos::NetworkDosScanner::scan_source(path, &content));
+                    raw_findings
+                        .extend(self::auth::AuthSecurityScanner::scan_source(path, &content));
+                    raw_findings.extend(self::authz::AuthzSecurityScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings.extend(self::filesystem_ext::FilesystemExtScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings.extend(self::data_privacy::DataPrivacyScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings.extend(self::parser_security::ParserSecurityScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings.extend(self::network_dos::NetworkDosScanner::scan_source(
+                        path, &content,
+                    ));
                     raw_findings.extend(self::iac::IacScanner::scan_source(path, &content));
-                    raw_findings.extend(self::supply_chain::SupplyChainScanner::scan_source(path, &content));
-                    raw_findings.extend(self::biz_concurrency::BizConcurrencyScanner::scan_source(path, &content));
-                    raw_findings.extend(self::ai_agent_ext::AiAgentExtScanner::scan_source(path, &content));
-                    raw_findings.extend(self::language_pitfalls::LanguagePitfallsScanner::scan_source(path, &content));
-                    raw_findings.extend(self::native_desktop::NativeDesktopScanner::scan_source(path, &content));
+                    raw_findings.extend(self::supply_chain::SupplyChainScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings.extend(self::biz_concurrency::BizConcurrencyScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings.extend(self::ai_agent_ext::AiAgentExtScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings.extend(
+                        self::language_pitfalls::LanguagePitfallsScanner::scan_source(
+                            path, &content,
+                        ),
+                    );
+                    raw_findings.extend(self::native_desktop::NativeDesktopScanner::scan_source(
+                        path, &content,
+                    ));
                     raw_findings.extend(self::ops_qa::OpsQaScanner::scan_source(path, &content));
-                    raw_findings.extend(self::bkh_safety::BkhSafetyScanner::scan_source(path, &content));
-                    raw_findings.extend(self::mem_temp::MemTempScanner::scan_source(path, &content));
+                    raw_findings.extend(self::bkh_safety::BkhSafetyScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings
+                        .extend(self::mem_temp::MemTempScanner::scan_source(path, &content));
                 }
             }
 
@@ -343,7 +369,9 @@ impl FleetScanner {
             if is_iac_or_manifest && !is_test_file {
                 if let Ok(content) = std::fs::read_to_string(path) {
                     raw_findings.extend(self::iac::IacScanner::scan_source(path, &content));
-                    raw_findings.extend(self::supply_chain::SupplyChainScanner::scan_source(path, &content));
+                    raw_findings.extend(self::supply_chain::SupplyChainScanner::scan_source(
+                        path, &content,
+                    ));
                 }
             }
 

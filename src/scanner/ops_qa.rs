@@ -57,7 +57,10 @@ static RE_OPS_003_SENSITIVE_MUTATION: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:function|fn|def|async\s+def)\s+[a-zA-Z0-9_]*(?:grant_?admin|grant_?role|update_?role|set_?role|reset_?password|change_?password|delete_?user|delete_?account|disable_?mfa|disable_?2fa|update_?policy)[a-zA-Z0-9_]*\b"#).unwrap()
 });
 static RE_OPS_003_DISABLE_AUDIT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\b(?:skip_audit|disable_audit|skip_audit_logging|audit_enabled\s*[:=]\s*false)\b"#).unwrap()
+    Regex::new(
+        r#"(?i)\b(?:skip_audit|disable_audit|skip_audit_logging|audit_enabled\s*[:=]\s*false)\b"#,
+    )
+    .unwrap()
 });
 static RE_OPS_003_AUDIT_GUARD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)\b(?:audit|audit_log|auditLog|auditLogger|emit_audit|log_audit|recordAudit|auditTrail|AuditLogger::log)\b"#).unwrap()
@@ -123,9 +126,8 @@ static RE_OPS_010_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// BK-AI-OPS-011 (CWE-754): Healthcheck reports success when dependencies/scanners skipped or failed
-static RE_OPS_011_HEALTH_ENDPOINT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)/(?:healthz?|ready|health)['"]"#).unwrap()
-});
+static RE_OPS_011_HEALTH_ENDPOINT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)/(?:healthz?|ready|health)['"]"#).unwrap());
 static RE_OPS_011_STATUS_OK: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:res\.(?:status\s*\(\s*200\s*\)\.)?send\s*\(\s*['"]OK['"]|status\s*[:=]\s*["'](?:ok|UP)["']|HTTP_200_OK)"#).unwrap()
 });
@@ -133,7 +135,8 @@ static RE_OPS_011_CONFIG: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)\b(?:skip_dependency_health_check\s*[:=]\s*true|ignore_downstream_health\s*[:=]\s*true)\b"#).unwrap()
 });
 static RE_OPS_011_SWALLOW_DEP_ERROR: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)catch\s*(?:\([^)]*\))?\s*\{[^{}]*?return\s+res\.status\s*\(\s*200\s*\)"#).unwrap()
+    Regex::new(r#"(?i)catch\s*(?:\([^)]*\))?\s*\{[^{}]*?return\s+res\.status\s*\(\s*200\s*\)"#)
+        .unwrap()
 });
 static RE_OPS_011_GUARD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:check_db|check_database|ping_db|check_redis|503|SERVICE_UNAVAILABLE|ServiceUnavailable|is_healthy\s*&&\s*is_db_ready|checkDependencies|ping\(|dependencies_healthy)"#).unwrap()
@@ -208,9 +211,8 @@ static RE_QAT_007_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// BK-AI-QAT-008 (CWE-1059): "Mitigated" classification accepted without a test of the real guard
-static RE_QAT_008_STATUS_MITIGATED: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\bstatus\s*=\s*['"]Mitigated['"]"#).unwrap()
-});
+static RE_QAT_008_STATUS_MITIGATED: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\bstatus\s*=\s*['"]Mitigated['"]"#).unwrap());
 static RE_QAT_008_UNTESTED: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)\b(?:verified\s*[:=]\s*false|verification_test\s*=\s*None|accept_mitigation_without_test\s*[:=]\s*true|trust_mitigation_comment\s*[:=]\s*true|mitigation_test_required\s*[:=]\s*false)\b"#).unwrap()
 });
@@ -296,11 +298,14 @@ impl OpsQaScanner {
             // ===============================================================
 
             // 1. BK-AI-OPS-001 (CWE-390): Security exception swallowed
-            let is_ops_001 = ((RE_OPS_001_SWALLOW_CATCH.is_match(trimmed) || RE_OPS_001_SWALLOW_CATCH.is_match(&context_window))
+            let is_ops_001 = ((RE_OPS_001_SWALLOW_CATCH.is_match(trimmed)
+                || RE_OPS_001_SWALLOW_CATCH.is_match(&context_window))
                 && RE_OPS_001_SECURITY_CONTEXT.is_match(&context_window)
                 && !RE_OPS_001_GUARD.is_match(&context_window))
-                || (RE_OPS_001_UNWRAP_DEFAULT.is_match(trimmed) && !RE_OPS_001_GUARD.is_match(&context_window))
-                || (RE_OPS_001_PYTHON_PASS.is_match(trimmed) && !RE_OPS_001_GUARD.is_match(&context_window));
+                || (RE_OPS_001_UNWRAP_DEFAULT.is_match(trimmed)
+                    && !RE_OPS_001_GUARD.is_match(&context_window))
+                || (RE_OPS_001_PYTHON_PASS.is_match(trimmed)
+                    && !RE_OPS_001_GUARD.is_match(&context_window));
 
             if is_ops_001 && seen.insert(("BK-AI-OPS-001", line_no)) {
                 findings.push(Self::create_finding(
@@ -320,11 +325,13 @@ impl OpsQaScanner {
             }
 
             // 2. BK-AI-OPS-002 (CWE-755): Auth check returns allow after timeout/error
-            let is_ops_002 = ((RE_OPS_002_RETURN_TRUE.is_match(trimmed) || RE_OPS_002_CONFIG_ALLOW.is_match(trimmed))
+            let is_ops_002 = ((RE_OPS_002_RETURN_TRUE.is_match(trimmed)
+                || RE_OPS_002_CONFIG_ALLOW.is_match(trimmed))
                 && RE_OPS_002_AUTH_CONTEXT.is_match(&context_window)
                 && RE_OPS_002_CATCH_ALLOW.is_match(&context_window)
                 && !RE_OPS_002_GUARD.is_match(&context_window))
-                || (RE_OPS_002_CONFIG_ALLOW.is_match(trimmed) && !RE_OPS_002_GUARD.is_match(&context_window));
+                || (RE_OPS_002_CONFIG_ALLOW.is_match(trimmed)
+                    && !RE_OPS_002_GUARD.is_match(&context_window));
 
             if is_ops_002 && seen.insert(("BK-AI-OPS-002", line_no)) {
                 findings.push(Self::create_finding(
@@ -344,7 +351,8 @@ impl OpsQaScanner {
             }
 
             // 3. BK-AI-OPS-003 (CWE-778): Security-relevant events have no audit log
-            let is_ops_003 = (RE_OPS_003_SENSITIVE_MUTATION.is_match(trimmed) && !RE_OPS_003_AUDIT_GUARD.is_match(&context_window))
+            let is_ops_003 = (RE_OPS_003_SENSITIVE_MUTATION.is_match(trimmed)
+                && !RE_OPS_003_AUDIT_GUARD.is_match(&context_window))
                 || RE_OPS_003_DISABLE_AUDIT.is_match(trimmed);
 
             if is_ops_003 && seen.insert(("BK-AI-OPS-003", line_no)) {
@@ -365,7 +373,8 @@ impl OpsQaScanner {
             }
 
             // 4. BK-AI-OPS-004 (CWE-532): Raw secrets, authorization headers, PII logged
-            let is_ops_004 = RE_OPS_004_LOG_RAW_SECRET.is_match(trimmed) && !RE_OPS_004_GUARD.is_match(trimmed);
+            let is_ops_004 =
+                RE_OPS_004_LOG_RAW_SECRET.is_match(trimmed) && !RE_OPS_004_GUARD.is_match(trimmed);
 
             if is_ops_004 && seen.insert(("BK-AI-OPS-004", line_no)) {
                 findings.push(Self::create_finding(
@@ -385,7 +394,8 @@ impl OpsQaScanner {
             }
 
             // 5. BK-AI-OPS-005 (CWE-209): Detailed internal stack traces sent to untrusted clients
-            let is_ops_005 = RE_OPS_005_LEAK_TRACE.is_match(trimmed) && !RE_OPS_005_GUARD.is_match(&context_window);
+            let is_ops_005 = RE_OPS_005_LEAK_TRACE.is_match(trimmed)
+                && !RE_OPS_005_GUARD.is_match(&context_window);
 
             if is_ops_005 && seen.insert(("BK-AI-OPS-005", line_no)) {
                 findings.push(Self::create_finding(
@@ -405,7 +415,8 @@ impl OpsQaScanner {
             }
 
             // 6. BK-AI-OPS-006 (CWE-1059): Alert threshold/recipient disabled
-            let is_ops_006 = RE_OPS_006_DISABLE_ALERT.is_match(trimmed) && !RE_OPS_006_GUARD.is_match(&context_window);
+            let is_ops_006 = RE_OPS_006_DISABLE_ALERT.is_match(trimmed)
+                && !RE_OPS_006_GUARD.is_match(&context_window);
 
             if is_ops_006 && seen.insert(("BK-AI-OPS-006", line_no)) {
                 findings.push(Self::create_finding(
@@ -425,7 +436,8 @@ impl OpsQaScanner {
             }
 
             // 7. BK-AI-OPS-007 (CWE-117): Log forging through unsanitized multiline user fields
-            let is_ops_007 = RE_OPS_007_LOG_INJECTION.is_match(trimmed) && !RE_OPS_007_GUARD.is_match(&context_window);
+            let is_ops_007 = RE_OPS_007_LOG_INJECTION.is_match(trimmed)
+                && !RE_OPS_007_GUARD.is_match(&context_window);
 
             if is_ops_007 && seen.insert(("BK-AI-OPS-007", line_no)) {
                 findings.push(Self::create_finding(
@@ -445,7 +457,8 @@ impl OpsQaScanner {
             }
 
             // 8. BK-AI-OPS-008 (CWE-778): Traces/audit lack correlation
-            let is_ops_008 = (RE_OPS_008_AUDIT_WITHOUT_CORRELATION.is_match(trimmed) && !RE_OPS_008_CORRELATION_GUARD.is_match(&context_window))
+            let is_ops_008 = (RE_OPS_008_AUDIT_WITHOUT_CORRELATION.is_match(trimmed)
+                && !RE_OPS_008_CORRELATION_GUARD.is_match(&context_window))
                 || RE_OPS_008_DISABLE_CORRELATION.is_match(trimmed);
 
             if is_ops_008 && seen.insert(("BK-AI-OPS-008", line_no)) {
@@ -466,7 +479,8 @@ impl OpsQaScanner {
             }
 
             // 9. BK-AI-OPS-009 (CWE-284): Sensitive audit logs can be modified or deleted
-            let is_ops_009 = RE_OPS_009_MUTATE_AUDIT_LOG.is_match(trimmed) && !RE_OPS_009_GUARD.is_match(&context_window);
+            let is_ops_009 = RE_OPS_009_MUTATE_AUDIT_LOG.is_match(trimmed)
+                && !RE_OPS_009_GUARD.is_match(&context_window);
 
             if is_ops_009 && seen.insert(("BK-AI-OPS-009", line_no)) {
                 findings.push(Self::create_finding(
@@ -486,7 +500,8 @@ impl OpsQaScanner {
             }
 
             // 10. BK-AI-OPS-010 (CWE-693): Recovery runbook promises rollback but no backup tested
-            let is_ops_010 = RE_OPS_010_UNTESTED_BACKUP.is_match(trimmed) && !RE_OPS_010_GUARD.is_match(&context_window);
+            let is_ops_010 = RE_OPS_010_UNTESTED_BACKUP.is_match(trimmed)
+                && !RE_OPS_010_GUARD.is_match(&context_window);
 
             if is_ops_010 && seen.insert(("BK-AI-OPS-010", line_no)) {
                 findings.push(Self::create_finding(
@@ -506,12 +521,15 @@ impl OpsQaScanner {
             }
 
             // 11. BK-AI-OPS-011 (CWE-754): Healthcheck reports success when dependencies fail
-            let is_ops_011 = ((RE_OPS_011_HEALTH_ENDPOINT.is_match(trimmed) || RE_OPS_011_STATUS_OK.is_match(trimmed))
+            let is_ops_011 = ((RE_OPS_011_HEALTH_ENDPOINT.is_match(trimmed)
+                || RE_OPS_011_STATUS_OK.is_match(trimmed))
                 && RE_OPS_011_HEALTH_ENDPOINT.is_match(&context_window)
                 && RE_OPS_011_STATUS_OK.is_match(&context_window)
                 && !RE_OPS_011_GUARD.is_match(&context_window))
                 || RE_OPS_011_CONFIG.is_match(trimmed)
-                || (RE_OPS_011_SWALLOW_DEP_ERROR.is_match(trimmed) && RE_OPS_011_HEALTH_ENDPOINT.is_match(&context_window) && !RE_OPS_011_GUARD.is_match(&context_window));
+                || (RE_OPS_011_SWALLOW_DEP_ERROR.is_match(trimmed)
+                    && RE_OPS_011_HEALTH_ENDPOINT.is_match(&context_window)
+                    && !RE_OPS_011_GUARD.is_match(&context_window));
 
             if is_ops_011 && seen.insert(("BK-AI-OPS-011", line_no)) {
                 findings.push(Self::create_finding(
@@ -531,7 +549,8 @@ impl OpsQaScanner {
             }
 
             // 12. BK-AI-OPS-012 (CWE-1059): Security fix suppresses test or warning
-            let is_ops_012 = RE_OPS_012_SUPPRESS_TEST.is_match(trimmed) && !RE_OPS_012_GUARD.is_match(&context_window);
+            let is_ops_012 = RE_OPS_012_SUPPRESS_TEST.is_match(trimmed)
+                && !RE_OPS_012_GUARD.is_match(&context_window);
 
             if is_ops_012 && seen.insert(("BK-AI-OPS-012", line_no)) {
                 findings.push(Self::create_finding(
@@ -555,7 +574,8 @@ impl OpsQaScanner {
             // ===============================================================
 
             // 13. BK-AI-QAT-001 (CWE-1059): Security test only checks existence of validator
-            let is_qat_001 = RE_QAT_001_WEAK_TEST.is_match(trimmed) && !RE_QAT_001_GUARD.is_match(&context_window);
+            let is_qat_001 = RE_QAT_001_WEAK_TEST.is_match(trimmed)
+                && !RE_QAT_001_GUARD.is_match(&context_window);
 
             if is_qat_001 && seen.insert(("BK-AI-QAT-001", line_no)) {
                 findings.push(Self::create_finding(
@@ -575,7 +595,8 @@ impl OpsQaScanner {
             }
 
             // 14. BK-AI-QAT-002 (CWE-1059): Fixture lacks safe lookalike
-            let is_qat_002 = RE_QAT_002_NO_SAFE_FIXTURE.is_match(trimmed) && !RE_QAT_002_GUARD.is_match(&context_window);
+            let is_qat_002 = RE_QAT_002_NO_SAFE_FIXTURE.is_match(trimmed)
+                && !RE_QAT_002_GUARD.is_match(&context_window);
 
             if is_qat_002 && seen.insert(("BK-AI-QAT-002", line_no)) {
                 findings.push(Self::create_finding(
@@ -595,7 +616,8 @@ impl OpsQaScanner {
             }
 
             // 15. BK-AI-QAT-003 (CWE-1059): Scanner detection relies on file extension only
-            let is_qat_003 = RE_QAT_003_EXT_ONLY.is_match(trimmed) && !RE_QAT_003_GUARD.is_match(&context_window);
+            let is_qat_003 = RE_QAT_003_EXT_ONLY.is_match(trimmed)
+                && !RE_QAT_003_GUARD.is_match(&context_window);
 
             if is_qat_003 && seen.insert(("BK-AI-QAT-003", line_no)) {
                 findings.push(Self::create_finding(
@@ -615,7 +637,8 @@ impl OpsQaScanner {
             }
 
             // 16. BK-AI-QAT-004 (CWE-1059): Rule source/sink coverage not versioned
-            let is_qat_004 = RE_QAT_004_UNVERSIONED_RULE.is_match(trimmed) && !RE_QAT_004_GUARD.is_match(&context_window);
+            let is_qat_004 = RE_QAT_004_UNVERSIONED_RULE.is_match(trimmed)
+                && !RE_QAT_004_GUARD.is_match(&context_window);
 
             if is_qat_004 && seen.insert(("BK-AI-QAT-004", line_no)) {
                 findings.push(Self::create_finding(
@@ -635,7 +658,8 @@ impl OpsQaScanner {
             }
 
             // 17. BK-AI-QAT-005 (CWE-1059): Clean test run covers only one role/tenant
-            let is_qat_005 = RE_QAT_005_SINGLE_TENANT_TEST.is_match(trimmed) && !RE_QAT_005_GUARD.is_match(&context_window);
+            let is_qat_005 = RE_QAT_005_SINGLE_TENANT_TEST.is_match(trimmed)
+                && !RE_QAT_005_GUARD.is_match(&context_window);
 
             if is_qat_005 && seen.insert(("BK-AI-QAT-005", line_no)) {
                 findings.push(Self::create_finding(
@@ -655,7 +679,8 @@ impl OpsQaScanner {
             }
 
             // 18. BK-AI-QAT-006 (CWE-1059): Static scanner ignores indirect imports/aliases silently
-            let is_qat_006 = RE_QAT_006_SILENT_IGNORE.is_match(trimmed) && !RE_QAT_006_GUARD.is_match(&context_window);
+            let is_qat_006 = RE_QAT_006_SILENT_IGNORE.is_match(trimmed)
+                && !RE_QAT_006_GUARD.is_match(&context_window);
 
             if is_qat_006 && seen.insert(("BK-AI-QAT-006", line_no)) {
                 findings.push(Self::create_finding(
@@ -675,7 +700,8 @@ impl OpsQaScanner {
             }
 
             // 19. BK-AI-QAT-007 (CWE-1059): Severity inferred from CWE alone
-            let is_qat_007 = RE_QAT_007_CWE_SEVERITY_ONLY.is_match(trimmed) && !RE_QAT_007_GUARD.is_match(&context_window);
+            let is_qat_007 = RE_QAT_007_CWE_SEVERITY_ONLY.is_match(trimmed)
+                && !RE_QAT_007_GUARD.is_match(&context_window);
 
             if is_qat_007 && seen.insert(("BK-AI-QAT-007", line_no)) {
                 findings.push(Self::create_finding(
@@ -695,11 +721,13 @@ impl OpsQaScanner {
             }
 
             // 20. BK-AI-QAT-008 (CWE-1059): "Mitigated" accepted without test of real guard
-            let is_qat_008 = ((RE_QAT_008_STATUS_MITIGATED.is_match(trimmed) || RE_QAT_008_UNTESTED.is_match(trimmed))
+            let is_qat_008 = ((RE_QAT_008_STATUS_MITIGATED.is_match(trimmed)
+                || RE_QAT_008_UNTESTED.is_match(trimmed))
                 && RE_QAT_008_STATUS_MITIGATED.is_match(&context_window)
                 && RE_QAT_008_UNTESTED.is_match(&context_window)
                 && !RE_QAT_008_GUARD.is_match(&context_window))
-                || (RE_QAT_008_UNTESTED.is_match(trimmed) && !RE_QAT_008_GUARD.is_match(&context_window));
+                || (RE_QAT_008_UNTESTED.is_match(trimmed)
+                    && !RE_QAT_008_GUARD.is_match(&context_window));
 
             if is_qat_008 && seen.insert(("BK-AI-QAT-008", line_no)) {
                 findings.push(Self::create_finding(
@@ -719,7 +747,8 @@ impl OpsQaScanner {
             }
 
             // 21. BK-AI-QAT-009 (CWE-1059): Test silently calls live external system or mutates prod
-            let is_qat_009 = RE_QAT_009_LIVE_EXTERNAL_TEST.is_match(trimmed) && !RE_QAT_009_GUARD.is_match(&context_window);
+            let is_qat_009 = RE_QAT_009_LIVE_EXTERNAL_TEST.is_match(trimmed)
+                && !RE_QAT_009_GUARD.is_match(&context_window);
 
             if is_qat_009 && seen.insert(("BK-AI-QAT-009", line_no)) {
                 findings.push(Self::create_finding(
@@ -739,7 +768,8 @@ impl OpsQaScanner {
             }
 
             // 22. BK-AI-QAT-010 (CWE-1059): Report hides unknown coverage or suppressions
-            let is_qat_010 = RE_QAT_010_HIDE_SUPPRESSIONS.is_match(trimmed) && !RE_QAT_010_GUARD.is_match(&context_window);
+            let is_qat_010 = RE_QAT_010_HIDE_SUPPRESSIONS.is_match(trimmed)
+                && !RE_QAT_010_GUARD.is_match(&context_window);
 
             if is_qat_010 && seen.insert(("BK-AI-QAT-010", line_no)) {
                 findings.push(Self::create_finding(
@@ -759,7 +789,8 @@ impl OpsQaScanner {
             }
 
             // 23. BK-AI-QAT-011 (CWE-1059): Automatic repair writes without diff, backup or verification
-            let is_qat_011 = RE_QAT_011_BLIND_REPAIR.is_match(trimmed) && !RE_QAT_011_GUARD.is_match(&context_window);
+            let is_qat_011 = RE_QAT_011_BLIND_REPAIR.is_match(trimmed)
+                && !RE_QAT_011_GUARD.is_match(&context_window);
 
             if is_qat_011 && seen.insert(("BK-AI-QAT-011", line_no)) {
                 findings.push(Self::create_finding(
@@ -779,7 +810,8 @@ impl OpsQaScanner {
             }
 
             // 24. BK-AI-QAT-012 (CWE-1059): One LLM reviews own output and marks security proven
-            let is_qat_012 = RE_QAT_012_SELF_SIGNED_AI.is_match(trimmed) && !RE_QAT_012_GUARD.is_match(&context_window);
+            let is_qat_012 = RE_QAT_012_SELF_SIGNED_AI.is_match(trimmed)
+                && !RE_QAT_012_GUARD.is_match(&context_window);
 
             if is_qat_012 && seen.insert(("BK-AI-QAT-012", line_no)) {
                 findings.push(Self::create_finding(

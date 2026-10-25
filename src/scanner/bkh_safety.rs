@@ -203,7 +203,8 @@ impl BkhSafetyScanner {
             let context_window = lines[window_start..window_end].join("\n");
 
             // 1. BK-AI-BKH-001 (CWE-754): Scanner reports "clean" after parser/network/tool failure
-            if (RE_BKH_001_FAIL_CLEAN.is_match(trimmed) || RE_BKH_001_FAIL_CLEAN.is_match(&context_window))
+            if (RE_BKH_001_FAIL_CLEAN.is_match(trimmed)
+                || RE_BKH_001_FAIL_CLEAN.is_match(&context_window))
                 && !RE_BKH_001_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -224,7 +225,8 @@ impl BkhSafetyScanner {
             }
 
             // 2. BK-AI-BKH-002 (CWE-704): Scanner treats unresolved manifest constraint as installed vulnerable/safe version
-            if (RE_BKH_002_UNRESOLVED_MANIFEST.is_match(trimmed) || RE_BKH_002_UNRESOLVED_MANIFEST.is_match(&context_window))
+            if (RE_BKH_002_UNRESOLVED_MANIFEST.is_match(trimmed)
+                || RE_BKH_002_UNRESOLVED_MANIFEST.is_match(&context_window))
                 && !RE_BKH_002_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -245,7 +247,8 @@ impl BkhSafetyScanner {
             }
 
             // 3. BK-AI-BKH-003 (CWE-693): Finding goes to healer solely because model believes it is exploitable
-            if (RE_BKH_003_HEALER_ON_MODEL_BELIEF.is_match(trimmed) || RE_BKH_003_HEALER_ON_MODEL_BELIEF.is_match(&context_window))
+            if (RE_BKH_003_HEALER_ON_MODEL_BELIEF.is_match(trimmed)
+                || RE_BKH_003_HEALER_ON_MODEL_BELIEF.is_match(&context_window))
                 && !RE_BKH_003_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -266,7 +269,8 @@ impl BkhSafetyScanner {
             }
 
             // 4. BK-AI-BKH-004 (CWE-829): New analyzer runs arbitrary repository build/install hooks without consent
-            if (RE_BKH_004_RUN_BUILD_HOOKS.is_match(trimmed) || RE_BKH_004_RUN_BUILD_HOOKS.is_match(&context_window))
+            if (RE_BKH_004_RUN_BUILD_HOOKS.is_match(trimmed)
+                || RE_BKH_004_RUN_BUILD_HOOKS.is_match(&context_window))
                 && !RE_BKH_004_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -287,7 +291,8 @@ impl BkhSafetyScanner {
             }
 
             // 5. BK-AI-BKH-005 (CWE-918): DAST scanner follows redirect or DNS to out-of-scope network
-            if (RE_BKH_005_UNSCOPED_REDIRECT.is_match(trimmed) || RE_BKH_005_UNSCOPED_REDIRECT.is_match(&context_window))
+            if (RE_BKH_005_UNSCOPED_REDIRECT.is_match(trimmed)
+                || RE_BKH_005_UNSCOPED_REDIRECT.is_match(&context_window))
                 && !RE_BKH_005_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -308,7 +313,8 @@ impl BkhSafetyScanner {
             }
 
             // 6. BK-AI-BKH-006 (CWE-250): External scanner tool/plugin inherits host secrets or admin credentials
-            if (RE_BKH_006_INHERIT_SECRETS.is_match(trimmed) || RE_BKH_006_INHERIT_SECRETS.is_match(&context_window))
+            if (RE_BKH_006_INHERIT_SECRETS.is_match(trimmed)
+                || RE_BKH_006_INHERIT_SECRETS.is_match(&context_window))
                 && !RE_BKH_006_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -329,7 +335,8 @@ impl BkhSafetyScanner {
             }
 
             // 7. BK-AI-BKH-007 (CWE-532): Security report leaks credentials, environment or response body
-            if (RE_BKH_007_REPORT_LEAKS_CREDS.is_match(trimmed) || RE_BKH_007_REPORT_LEAKS_CREDS.is_match(&context_window))
+            if (RE_BKH_007_REPORT_LEAKS_CREDS.is_match(trimmed)
+                || RE_BKH_007_REPORT_LEAKS_CREDS.is_match(&context_window))
                 && !RE_BKH_007_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -350,7 +357,8 @@ impl BkhSafetyScanner {
             }
 
             // 8. BK-AI-BKH-008 (CWE-22): Auto-fix edits wrong file because matching by basename or ambiguous path
-            if (RE_BKH_008_BASENAME_MATCH.is_match(trimmed) || RE_BKH_008_BASENAME_MATCH.is_match(&context_window))
+            if (RE_BKH_008_BASENAME_MATCH.is_match(trimmed)
+                || RE_BKH_008_BASENAME_MATCH.is_match(&context_window))
                 && !RE_BKH_008_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -371,7 +379,8 @@ impl BkhSafetyScanner {
             }
 
             // 9. BK-AI-BKH-009 (CWE-284): Healing changes unapproved file, service or cloud asset
-            if (RE_BKH_009_UNAPPROVED_MUTATION.is_match(trimmed) || RE_BKH_009_UNAPPROVED_MUTATION.is_match(&context_window))
+            if (RE_BKH_009_UNAPPROVED_MUTATION.is_match(trimmed)
+                || RE_BKH_009_UNAPPROVED_MUTATION.is_match(&context_window))
                 && !RE_BKH_009_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -392,7 +401,8 @@ impl BkhSafetyScanner {
             }
 
             // 10. BK-AI-BKH-010 (CWE-345): Backup not independently authenticated or restorable
-            if (RE_BKH_010_UNAUTHENTICATED_BACKUP.is_match(trimmed) || RE_BKH_010_UNAUTHENTICATED_BACKUP.is_match(&context_window))
+            if (RE_BKH_010_UNAUTHENTICATED_BACKUP.is_match(trimmed)
+                || RE_BKH_010_UNAUTHENTICATED_BACKUP.is_match(&context_window))
                 && !RE_BKH_010_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -413,7 +423,8 @@ impl BkhSafetyScanner {
             }
 
             // 11. BK-AI-BKH-011 (CWE-693): Multi-file healing fails halfway without coherent rollback/state receipt
-            if (RE_BKH_011_NO_BATCH_ROLLBACK.is_match(trimmed) || RE_BKH_011_NO_BATCH_ROLLBACK.is_match(&context_window))
+            if (RE_BKH_011_NO_BATCH_ROLLBACK.is_match(trimmed)
+                || RE_BKH_011_NO_BATCH_ROLLBACK.is_match(&context_window))
                 && !RE_BKH_011_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -434,7 +445,8 @@ impl BkhSafetyScanner {
             }
 
             // 12. BK-AI-BKH-012 (CWE-693): Agent merges or releases a fix despite failing/skipped required tests
-            if (RE_BKH_012_MERGE_WITHOUT_TESTS.is_match(trimmed) || RE_BKH_012_MERGE_WITHOUT_TESTS.is_match(&context_window))
+            if (RE_BKH_012_MERGE_WITHOUT_TESTS.is_match(trimmed)
+                || RE_BKH_012_MERGE_WITHOUT_TESTS.is_match(&context_window))
                 && !RE_BKH_012_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -455,7 +467,8 @@ impl BkhSafetyScanner {
             }
 
             // 13. BK-AI-BKH-013 (CWE-1059): Exclusion/suppression never expires or hides entire directory silently
-            if (RE_BKH_013_UNBOUNDED_SUPPRESSION.is_match(trimmed) || RE_BKH_013_UNBOUNDED_SUPPRESSION.is_match(&context_window))
+            if (RE_BKH_013_UNBOUNDED_SUPPRESSION.is_match(trimmed)
+                || RE_BKH_013_UNBOUNDED_SUPPRESSION.is_match(&context_window))
                 && !RE_BKH_013_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -476,7 +489,8 @@ impl BkhSafetyScanner {
             }
 
             // 14. BK-AI-BKH-014 (CWE-1059): Scanner's source-to-sink claim is only a regex keyword hit
-            if (RE_BKH_014_REGEX_TAINT_CLAIM.is_match(trimmed) || RE_BKH_014_REGEX_TAINT_CLAIM.is_match(&context_window))
+            if (RE_BKH_014_REGEX_TAINT_CLAIM.is_match(trimmed)
+                || RE_BKH_014_REGEX_TAINT_CLAIM.is_match(&context_window))
                 && !RE_BKH_014_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -497,7 +511,8 @@ impl BkhSafetyScanner {
             }
 
             // 15. BK-AI-BKH-015 (CWE-1059): CI checks Rust crate but skips Go services, nested Cargo workspace or installer
-            if (RE_BKH_015_CI_SKIPS_SERVICES.is_match(trimmed) || RE_BKH_015_CI_SKIPS_SERVICES.is_match(&context_window))
+            if (RE_BKH_015_CI_SKIPS_SERVICES.is_match(trimmed)
+                || RE_BKH_015_CI_SKIPS_SERVICES.is_match(&context_window))
                 && !RE_BKH_015_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -518,7 +533,8 @@ impl BkhSafetyScanner {
             }
 
             // 16. BK-AI-BKH-016 (CWE-770): Remote target scan begins without asset authorization and rate/egress budgets
-            if (RE_BKH_016_UNAUTHORIZED_UNRATED_SCAN.is_match(trimmed) || RE_BKH_016_UNAUTHORIZED_UNRATED_SCAN.is_match(&context_window))
+            if (RE_BKH_016_UNAUTHORIZED_UNRATED_SCAN.is_match(trimmed)
+                || RE_BKH_016_UNAUTHORIZED_UNRATED_SCAN.is_match(&context_window))
                 && !RE_BKH_016_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -539,7 +555,8 @@ impl BkhSafetyScanner {
             }
 
             // 17. BK-AI-BKH-017 (CWE-362): Parallel healers race on same manifest/config, overwriting each other's changes
-            if (RE_BKH_017_RACING_HEALERS.is_match(trimmed) || RE_BKH_017_RACING_HEALERS.is_match(&context_window))
+            if (RE_BKH_017_RACING_HEALERS.is_match(trimmed)
+                || RE_BKH_017_RACING_HEALERS.is_match(&context_window))
                 && !RE_BKH_017_GUARD.is_match(&context_window)
             {
                 Self::push_finding(
@@ -560,7 +577,8 @@ impl BkhSafetyScanner {
             }
 
             // 18. BK-AI-BKH-018 (CWE-1059): Public README claims support for checks not implemented, validated or enabled
-            if (RE_BKH_018_UNVERIFIED_CLAIM.is_match(trimmed) || RE_BKH_018_UNVERIFIED_CLAIM.is_match(&context_window))
+            if (RE_BKH_018_UNVERIFIED_CLAIM.is_match(trimmed)
+                || RE_BKH_018_UNVERIFIED_CLAIM.is_match(&context_window))
                 && !RE_BKH_018_GUARD.is_match(&context_window)
             {
                 Self::push_finding(

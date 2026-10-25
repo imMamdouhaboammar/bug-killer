@@ -33,7 +33,11 @@ fn test_web_001_dom_xss_detection() {
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-001"));
     assert!(findings.iter().all(|f| f.severity == Severity::High));
     assert!(findings.iter().all(|f| f.detector_id == "web-security"));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-79".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-79".to_string()))
+    );
 }
 
 #[test]
@@ -68,7 +72,11 @@ fn test_web_001_dom_xss_clean() {
     "#;
     let path = Path::new("frontend/src/views/SafeView.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings for safe DOM operations, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings for safe DOM operations, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -90,10 +98,18 @@ fn test_web_002_server_rendered_xss_detection() {
     let path = Path::new("server/routes.py");
     let findings = WebSecurityScanner::scan_source(path, snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for Markup and render_template_string");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for Markup and render_template_string"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-002"));
     assert!(findings.iter().all(|f| f.severity == Severity::High));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-79".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-79".to_string()))
+    );
 }
 
 #[test]
@@ -122,7 +138,11 @@ fn test_web_002_clean() {
     "#;
     let path = Path::new("server/templates/profile.html");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +163,11 @@ fn test_web_003_regex_sanitization_detection() {
 
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-003"));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-79".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-79".to_string()))
+    );
 }
 
 #[test]
@@ -160,7 +184,11 @@ fn test_web_003_clean() {
     "#;
     let path = Path::new("src/utils/sanitizer.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -186,7 +214,11 @@ fn test_web_004_open_redirect_detection() {
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-004"));
     assert!(findings.iter().all(|f| f.severity == Severity::High));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-601".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-601".to_string()))
+    );
 }
 
 #[test]
@@ -198,7 +230,11 @@ fn test_web_004_clean() {
     "#;
     let path = Path::new("src/routes/auth.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -235,7 +271,11 @@ fn test_web_005_clean() {
     "#;
     let path = Path::new("frontend/src/listener.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings for validated origin, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings for validated origin, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -254,7 +294,11 @@ fn test_web_006_frontend_secret_detection() {
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-006"));
     assert!(findings.iter().all(|f| f.severity == Severity::High));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-200".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-200".to_string()))
+    );
 }
 
 #[test]
@@ -266,7 +310,11 @@ fn test_web_006_clean() {
     "#;
     let path = Path::new(".env.production");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -291,7 +339,11 @@ fn test_web_007_csrf_get_mutation_detection() {
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-007"));
     assert!(findings.iter().all(|f| f.severity == Severity::High));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-352".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-352".to_string()))
+    );
 }
 
 #[test]
@@ -306,7 +358,11 @@ fn test_web_007_clean() {
     "#;
     let path = Path::new("server/routes/users.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -325,7 +381,11 @@ fn test_web_008_overpermissive_csp_detection() {
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-008"));
     assert!(findings.iter().all(|f| f.severity == Severity::Medium));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-693".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-693".to_string()))
+    );
 }
 
 #[test]
@@ -335,7 +395,11 @@ fn test_web_008_clean() {
     "#;
     let path = Path::new("public/index.html");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -354,7 +418,11 @@ fn test_web_009_missing_sri_detection() {
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-009"));
     assert!(findings.iter().all(|f| f.severity == Severity::Medium));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-829".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-829".to_string()))
+    );
 }
 
 #[test]
@@ -365,7 +433,11 @@ fn test_web_009_clean() {
     "#;
     let path = Path::new("public/index.html");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -384,7 +456,11 @@ fn test_web_010_clickjacking_framing_detection() {
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-010"));
     assert!(findings.iter().all(|f| f.severity == Severity::Medium));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-1021".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-1021".to_string()))
+    );
 }
 
 #[test]
@@ -395,7 +471,11 @@ fn test_web_010_clean() {
     "#;
     let path = Path::new("server/security.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -429,7 +509,11 @@ fn test_web_011_clean() {
     "#;
     let path = Path::new("server/app.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -448,7 +532,11 @@ fn test_web_012_telemetry_credentials_detection() {
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-WEB-012"));
     assert!(findings.iter().all(|f| f.severity == Severity::High));
-    assert!(findings.iter().all(|f| f.advisory_ids.contains(&"CWE-532".to_string())));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.advisory_ids.contains(&"CWE-532".to_string()))
+    );
 }
 
 #[test]
@@ -459,7 +547,11 @@ fn test_web_012_clean() {
     "#;
     let path = Path::new("frontend/src/auth.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -492,7 +584,11 @@ fn test_web_013_clean() {
     "#;
     let path = Path::new("server/controllers/files.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -539,7 +635,11 @@ fn test_web_014_clean() {
     "#;
     let path = Path::new("public/sw.js");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -578,5 +678,9 @@ fn test_web_015_clean() {
     "#;
     let path = Path::new("server/views/index.html");
     let findings = WebSecurityScanner::scan_source(path, snippet);
-    assert!(findings.is_empty(), "Expected 0 findings, got {:?}", findings);
+    assert!(
+        findings.is_empty(),
+        "Expected 0 findings, got {:?}",
+        findings
+    );
 }

@@ -33,8 +33,10 @@ static RE_SCA_006_UNPINNED: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_SCA_006_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:rev\s*=\s*["'][0-9a-f]{40}["']|#[0-9a-f]{40}|@[0-9a-f]{40}|"[\^~]?\d+\.\d+)"#)
-        .unwrap()
+    Regex::new(
+        r#"(?i)(?:rev\s*=\s*["'][0-9a-f]{40}["']|#[0-9a-f]{40}|@[0-9a-f]{40}|"[\^~]?\d+\.\d+)"#,
+    )
+    .unwrap()
 });
 
 // BK-AI-SCA-007 (CWE-1104): Lockfile missing/stale or differs from manifest resolution
@@ -88,8 +90,7 @@ static RE_SCA_011_SBOM_MISSING: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_SCA_011_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:syft\s+dir:/|cyclonedx-generate|record-sbom|sbom-complete)"#)
-        .unwrap()
+    Regex::new(r#"(?i)(?:syft\s+dir:/|cyclonedx-generate|record-sbom|sbom-complete)"#).unwrap()
 });
 
 // BK-AI-SCA-012 (CWE-1104): Vendored or copied code never checked because absent from manifest
@@ -147,8 +148,10 @@ static RE_AGS_002_UNSAFE_LOADER: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_AGS_002_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:weights_only\s*=\s*True|trust_remote_code\s*=\s*False|safetensors\.torch)"#)
-        .unwrap()
+    Regex::new(
+        r#"(?i)(?:weights_only\s*=\s*True|trust_remote_code\s*=\s*False|safetensors\.torch)"#,
+    )
+    .unwrap()
 });
 
 // BK-AI-AGS-003 (None): Prompt templates from package/registry allowed to include tool-use instruction without review
@@ -158,8 +161,7 @@ static RE_AGS_003_REMOTE_PROMPT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_AGS_003_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:review_prompt|sanitize_prompt|PromptReviewGate|static_template)"#)
-        .unwrap()
+    Regex::new(r#"(?i)(?:review_prompt|sanitize_prompt|PromptReviewGate|static_template)"#).unwrap()
 });
 
 // BK-AI-AGS-004 (None): Skills/MCP tool descriptions embed instructions to overstep authority
@@ -180,8 +182,7 @@ static RE_AGS_005_UNAUTH_TRANSPORT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_AGS_005_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:wss://|Authorization|bearer_token|tls_cert|pinned_cert)"#)
-        .unwrap()
+    Regex::new(r#"(?i)(?:wss://|Authorization|bearer_token|tls_cert|pinned_cert)"#).unwrap()
 });
 
 // BK-AI-AGS-006 (None): Agent configuration hot reload widens tool grants without reapproval
@@ -224,8 +225,7 @@ static RE_AGS_009_DYNAMIC_POLICY: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_AGS_009_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:verify_signature|signed_policy|sha256_pinned|ed25519_verify)"#)
-        .unwrap()
+    Regex::new(r#"(?i)(?:verify_signature|signed_policy|sha256_pinned|ed25519_verify)"#).unwrap()
 });
 
 // BK-AI-AGS-010 (None): Approval result can be fabricated by another agent/tool response
@@ -291,8 +291,18 @@ impl SupplyChainScanner {
         matches!(
             path.extension().and_then(|e| e.to_str()),
             Some(
-                "js" | "mjs" | "cjs" | "ts" | "tsx" | "jsx" | "py" | "go" | "rs" | "json"
-                    | "yaml" | "yml" | "toml",
+                "js" | "mjs"
+                    | "cjs"
+                    | "ts"
+                    | "tsx"
+                    | "jsx"
+                    | "py"
+                    | "go"
+                    | "rs"
+                    | "json"
+                    | "yaml"
+                    | "yml"
+                    | "toml",
             )
         )
     }
@@ -634,7 +644,8 @@ impl SupplyChainScanner {
                     continue;
                 }
 
-                if lower.contains("prompt templates from package/registry allowed to include tool-use")
+                if lower
+                    .contains("prompt templates from package/registry allowed to include tool-use")
                     || lower.contains("unreviewed prompt template")
                 {
                     findings.push(Self::create_finding(
@@ -1035,8 +1046,7 @@ impl SupplyChainScanner {
             }
 
             // 11. BK-AI-SCA-014 (CWE-829): Omitted Checksum / Integrity Verification
-            if RE_SCA_014_INTEGRITY_OMITTED.is_match(trimmed)
-                && !RE_SCA_014_GUARD.is_match(trimmed)
+            if RE_SCA_014_INTEGRITY_OMITTED.is_match(trimmed) && !RE_SCA_014_GUARD.is_match(trimmed)
             {
                 findings.push(Self::create_finding(
                     "BK-AI-SCA-014",
@@ -1131,8 +1141,7 @@ impl SupplyChainScanner {
             }
 
             // 16. BK-AI-AGS-005 (None): Unauthenticated Remote Tool Transport
-            if RE_AGS_005_UNAUTH_TRANSPORT.is_match(trimmed)
-                && !RE_AGS_005_GUARD.is_match(trimmed)
+            if RE_AGS_005_UNAUTH_TRANSPORT.is_match(trimmed) && !RE_AGS_005_GUARD.is_match(trimmed)
             {
                 findings.push(Self::create_finding(
                     "BK-AI-AGS-005",

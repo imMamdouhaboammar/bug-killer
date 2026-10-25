@@ -240,7 +240,9 @@ impl MemTempScanner {
             // ----------------------------------------------------------------
             // 1. BK-AI-MEM-001: Out-of-bounds read/write
             // ----------------------------------------------------------------
-            if RE_MEM_001_OOB_ACCESS.is_match(trimmed) && !RE_MEM_001_GUARD.is_match(&context_window) {
+            if RE_MEM_001_OOB_ACCESS.is_match(trimmed)
+                && !RE_MEM_001_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -292,7 +294,9 @@ impl MemTempScanner {
                     let lookahead_limit = (idx + 15).min(total_lines);
                     let mut defect_found = false;
 
-                    for (sub_idx, sub_line) in lines.iter().enumerate().take(lookahead_limit).skip(idx + 1) {
+                    for (sub_idx, sub_line) in
+                        lines.iter().enumerate().take(lookahead_limit).skip(idx + 1)
+                    {
                         let sub_trimmed = sub_line.trim();
                         if sub_trimmed.is_empty() {
                             continue;
@@ -307,7 +311,9 @@ impl MemTempScanner {
 
                         // Check double free
                         if let Some(ref re_df) = re_double_free {
-                            if re_df.is_match(sub_trimmed) && !RE_MEM_002_GUARD.is_match(&context_window) {
+                            if re_df.is_match(sub_trimmed)
+                                && !RE_MEM_002_GUARD.is_match(&context_window)
+                            {
                                 Self::push_finding(
                                     &mut findings,
                                     &mut seen,
@@ -331,7 +337,9 @@ impl MemTempScanner {
 
                         // Check use after free
                         if let Some(ref re_use) = re_uaf {
-                            if re_use.is_match(sub_trimmed) && !RE_MEM_002_GUARD.is_match(&context_window) {
+                            if re_use.is_match(sub_trimmed)
+                                && !RE_MEM_002_GUARD.is_match(&context_window)
+                            {
                                 Self::push_finding(
                                     &mut findings,
                                     &mut seen,
@@ -367,7 +375,9 @@ impl MemTempScanner {
                                     .is_some_and(|re| re.is_match(remainder));
                                 let has_uaf =
                                     re_uaf.as_ref().is_some_and(|re| re.is_match(remainder));
-                                if (has_df || has_uaf) && !RE_MEM_002_GUARD.is_match(&context_window) {
+                                if (has_df || has_uaf)
+                                    && !RE_MEM_002_GUARD.is_match(&context_window)
+                                {
                                     Self::push_finding(
                                         &mut findings,
                                         &mut seen,
@@ -394,7 +404,9 @@ impl MemTempScanner {
             // ----------------------------------------------------------------
             // 3. BK-AI-MEM-003: Integer overflow in allocation
             // ----------------------------------------------------------------
-            if RE_MEM_003_ALLOC_OVERFLOW.is_match(trimmed) && !RE_MEM_003_GUARD.is_match(&context_window) {
+            if RE_MEM_003_ALLOC_OVERFLOW.is_match(trimmed)
+                && !RE_MEM_003_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
@@ -416,7 +428,9 @@ impl MemTempScanner {
             // ----------------------------------------------------------------
             // 4. BK-AI-FIL-008: Predictable or insecure temporary file
             // ----------------------------------------------------------------
-            if RE_FIL_008_INSECURE_TEMP.is_match(trimmed) && !RE_FIL_008_GUARD.is_match(&context_window) {
+            if RE_FIL_008_INSECURE_TEMP.is_match(trimmed)
+                && !RE_FIL_008_GUARD.is_match(&context_window)
+            {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,

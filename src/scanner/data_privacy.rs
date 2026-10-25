@@ -16,7 +16,8 @@ static RE_SEC_005_DUMP_ENV: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_SEC_005_DUMP_STACK: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:res|response)\.(?:send|json|write)\s*\(\s*(?:err|error)\.stack\s*\)"#).unwrap()
+    Regex::new(r#"(?i)(?:res|response)\.(?:send|json|write)\s*\(\s*(?:err|error)\.stack\s*\)"#)
+        .unwrap()
 });
 
 /// BK-AI-SEC-006 (CWE-200): Sensitive PII in metrics tags, trace spans or analytics
@@ -79,7 +80,8 @@ static RE_SEC_012_TOOL_RESULT_STRING: LazyLock<Regex> = LazyLock::new(|| {
 
 /// BK-AI-DAT-001 (CWE-250): Database connection uses superuser/owner credentials
 static RE_DAT_001_SUPERUSER_CONN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:postgres|postgresql|mysql|mariadb|mongodb)://(?:postgres|root|sa):[^@]+@"#).unwrap()
+    Regex::new(r#"(?i)(?:postgres|postgresql|mysql|mariadb|mongodb)://(?:postgres|root|sa):[^@]+@"#)
+        .unwrap()
 });
 
 static RE_DAT_001_SUPERUSER_CONFIG: LazyLock<Regex> = LazyLock::new(|| {
@@ -145,9 +147,8 @@ static RE_DAT_008_RAW_CONCAT: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:sequelize\.query|prisma\.\$queryRawUnsafe|db\.raw|connection\.query)\s*\(\s*['"][^'"]*(?:SELECT|UPDATE|DELETE|INSERT)[\s\S]*?['"]\s*\+\s*[a-zA-Z0-9_.]+"#).unwrap()
 });
 
-static RE_DAT_008_WHERE_INTERPOLATION: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\$where\s*:\s*`[^`]*\$\{[^}]+\}[^`]*`"#).unwrap()
-});
+static RE_DAT_008_WHERE_INTERPOLATION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\$where\s*:\s*`[^`]*\$\{[^}]+\}[^`]*`"#).unwrap());
 
 /// BK-AI-DAT-009 (CWE-284): Migration drops security constraints or audit triggers
 static RE_DAT_009_DROP_SECURITY: LazyLock<Regex> = LazyLock::new(|| {
@@ -692,8 +693,7 @@ impl DataPrivacyScanner {
             }
 
             // 9. BK-AI-DAT-002: Row-level security bypassed by service role / admin override
-            if RE_DAT_002_SERVICE_ROLE.is_match(trimmed)
-                || RE_DAT_002_BYPASS_FLAG.is_match(trimmed)
+            if RE_DAT_002_SERVICE_ROLE.is_match(trimmed) || RE_DAT_002_BYPASS_FLAG.is_match(trimmed)
             {
                 if seen.insert(("BK-AI-DAT-002", line_no)) {
                     findings.push(Self::create_finding(
@@ -767,7 +767,8 @@ impl DataPrivacyScanner {
                 if trimmed.contains("-=") || trimmed.contains("+=") || trimmed.contains(" = ") {
                     let end_idx = (idx + 4).min(lines.len());
                     let forward_window = lines[idx..end_idx].join("\n");
-                    if forward_window.contains(".save()") && !forward_window.contains("transaction") {
+                    if forward_window.contains(".save()") && !forward_window.contains("transaction")
+                    {
                         if seen.insert(("BK-AI-DAT-006", line_no)) {
                             findings.push(Self::create_finding(
                                 "BK-AI-DAT-006",

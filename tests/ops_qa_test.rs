@@ -41,7 +41,9 @@ function verifyUserSession(token) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-001"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-001"),
         "Safe code must not flag BK-AI-OPS-001"
     );
 }
@@ -77,7 +79,9 @@ function checkAccess(user, resource) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-002"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-002"),
         "Safe code must not flag BK-AI-OPS-002"
     );
 }
@@ -106,7 +110,9 @@ function grantAdminRole(userId, operatorId) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-003"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-003"),
         "Safe code with audit logging must not flag BK-AI-OPS-003"
     );
 }
@@ -134,7 +140,9 @@ function authenticateClient(authHeader) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-004"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-004"),
         "Safe code with masked header must not flag BK-AI-OPS-004"
     );
 }
@@ -166,7 +174,9 @@ app.use((err, req, res, next) => {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-005"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-005"),
         "Safe code with development gating must not flag BK-AI-OPS-005"
     );
 }
@@ -194,7 +204,9 @@ function muteMonitoring() {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-006"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-006"),
         "Safe code with ticket and fallback must not flag BK-AI-OPS-006"
     );
 }
@@ -223,7 +235,9 @@ function handleSearch(req, res) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-007"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-007"),
         "Safe code with newline sanitization must not flag BK-AI-OPS-007"
     );
 }
@@ -258,7 +272,9 @@ function recordUserDelete(userId, correlation_id) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-008"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-008"),
         "Safe code with correlation_id must not flag BK-AI-OPS-008"
     );
 }
@@ -287,7 +303,9 @@ async function fetchOldLogs() {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-009"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-009"),
         "Safe code with WORM policy must not flag BK-AI-OPS-009"
     );
 }
@@ -317,7 +335,9 @@ runbook:
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-010"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-010"),
         "Safe code with tested restore must not flag BK-AI-OPS-010"
     );
 }
@@ -349,7 +369,9 @@ app.get("/healthz", async (req, res) => {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-011"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-011"),
         "Safe code with dependency readiness check must not flag BK-AI-OPS-011"
     );
 }
@@ -376,7 +398,9 @@ def test_jwt_signature_verification():
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-OPS-012"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-OPS-012"),
         "Safe active security test must not flag BK-AI-OPS-012"
     );
 }
@@ -408,7 +432,9 @@ test("auth validator rejects malformed payload", () => {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-001"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-001"),
         "Safe test verifying rejection behavior must not flag BK-AI-QAT-001"
     );
 }
@@ -436,7 +462,9 @@ rule_fixture_manifest:
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-002"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-002"),
         "Safe fixture manifest with safe counterpart must not flag BK-AI-QAT-002"
     );
 }
@@ -466,7 +494,9 @@ function scanDirectory(file) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-003"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-003"),
         "Safe scanner with content type sniffing must not flag BK-AI-QAT-003"
     );
 }
@@ -498,7 +528,9 @@ fn test_qat_004_unversioned_rule_coverage_vulnerable_and_safe() {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-004"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-004"),
         "Safe rule definition with pinned version must not flag BK-AI-QAT-004"
     );
 }
@@ -532,7 +564,9 @@ suite("Tenant isolation suite", () => {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-005"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-005"),
         "Safe test matrix covering multiple tenants must not flag BK-AI-QAT-005"
     );
 }
@@ -561,7 +595,9 @@ analyzer_options:
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-006"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-006"),
         "Safe config disclosing untracked imports must not flag BK-AI-QAT-006"
     );
 }
@@ -590,7 +626,9 @@ def assign_severity(cwe, call_graph):
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-007"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-007"),
         "Safe scoring factoring reachability must not flag BK-AI-QAT-007"
     );
 }
@@ -621,7 +659,9 @@ function triageVulnerability(finding) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-008"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-008"),
         "Safe triage requiring verification test must not flag BK-AI-QAT-008"
     );
 }
@@ -654,7 +694,9 @@ describe("Billing test suite", () => {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-009"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-009"),
         "Safe test using nock/mock must not flag BK-AI-QAT-009"
     );
 }
@@ -689,7 +731,9 @@ fn test_qat_010_hidden_suppressions_in_report_vulnerable_and_safe() {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-010"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-010"),
         "Safe reporting config including suppressions must not flag BK-AI-QAT-010"
     );
 }
@@ -719,7 +763,9 @@ function autoHealFile(filePath, fixedCode) {
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-011"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-011"),
         "Safe auto repair creating backup and diff must not flag BK-AI-QAT-011"
     );
 }
@@ -748,7 +794,9 @@ def evaluate_autonomous_fix(patch):
 "#;
     let safe_findings = OpsQaScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-QAT-012"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-QAT-012"),
         "Safe multi-model/sandbox verification must not flag BK-AI-QAT-012"
     );
 }

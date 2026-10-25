@@ -93,7 +93,11 @@ public void DeserializeNet(Stream stream) {
     let path_mixed = Path::new("worker/processor.cs");
     let mixed_findings = ParserSecurityScanner::scan_source(path_mixed, vuln_ruby_dotnet);
     assert_eq!(mixed_findings.len(), 2);
-    assert!(mixed_findings.iter().all(|f| f.cve.as_str() == "BK-AI-PAR-003"));
+    assert!(
+        mixed_findings
+            .iter()
+            .all(|f| f.cve.as_str() == "BK-AI-PAR-003")
+    );
 
     let safe_php = r#"
 <?php
@@ -355,7 +359,10 @@ function encryptData(key, iv, plaintext) {
 
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-CRY-004"));
-    assert_eq!(findings[0].category, "2.9 Cryptography, randomness and key management");
+    assert_eq!(
+        findings[0].category,
+        "2.9 Cryptography, randomness and key management"
+    );
 
     let safe_code = r#"
 const crypto = require('crypto');

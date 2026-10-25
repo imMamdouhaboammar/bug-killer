@@ -1309,7 +1309,11 @@ impl SecurityDetector for IacSecurityDetector {
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
-        &[TargetKind::Dockerfile, TargetKind::GenericConfigFile, TargetKind::GenericSourceFile]
+        &[
+            TargetKind::Dockerfile,
+            TargetKind::GenericConfigFile,
+            TargetKind::GenericSourceFile,
+        ]
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
@@ -1385,11 +1389,22 @@ impl SecurityDetector for SupplyChainDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["javascript", "typescript", "python", "rust", "go", "generic"]
+        &[
+            "javascript",
+            "typescript",
+            "python",
+            "rust",
+            "go",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
-        &[TargetKind::NodePackageManifest, TargetKind::GenericConfigFile, TargetKind::GenericSourceFile]
+        &[
+            TargetKind::NodePackageManifest,
+            TargetKind::GenericConfigFile,
+            TargetKind::GenericSourceFile,
+        ]
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
@@ -1464,7 +1479,15 @@ impl SecurityDetector for BizConcurrencyDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["javascript", "typescript", "python", "go", "rust", "php", "generic"]
+        &[
+            "javascript",
+            "typescript",
+            "python",
+            "go",
+            "rust",
+            "php",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
@@ -1552,11 +1575,22 @@ impl SecurityDetector for AiAgentExtDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["javascript", "typescript", "python", "go", "rust", "generic"]
+        &[
+            "javascript",
+            "typescript",
+            "python",
+            "go",
+            "rust",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
-        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::AgentSkillManifest]
+        &[
+            TargetKind::GenericSourceFile,
+            TargetKind::NodeSourceFile,
+            TargetKind::AgentSkillManifest,
+        ]
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
@@ -1635,7 +1669,20 @@ impl SecurityDetector for LanguagePitfallsDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["javascript", "typescript", "python", "go", "rust", "php", "java", "c", "cpp", "ruby", "dotnet", "generic"]
+        &[
+            "javascript",
+            "typescript",
+            "python",
+            "go",
+            "rust",
+            "php",
+            "java",
+            "c",
+            "cpp",
+            "ruby",
+            "dotnet",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
@@ -1716,11 +1763,22 @@ impl SecurityDetector for OpsQaDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["javascript", "typescript", "python", "go", "rust", "generic"]
+        &[
+            "javascript",
+            "typescript",
+            "python",
+            "go",
+            "rust",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
-        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::GenericConfigFile]
+        &[
+            TargetKind::GenericSourceFile,
+            TargetKind::NodeSourceFile,
+            TargetKind::GenericConfigFile,
+        ]
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
@@ -1795,11 +1853,27 @@ impl SecurityDetector for NativeDesktopDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["c", "cpp", "rust", "zig", "swift", "kotlin", "java", "javascript", "typescript", "python", "generic"]
+        &[
+            "c",
+            "cpp",
+            "rust",
+            "zig",
+            "swift",
+            "kotlin",
+            "java",
+            "javascript",
+            "typescript",
+            "python",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
-        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::GenericConfigFile]
+        &[
+            TargetKind::GenericSourceFile,
+            TargetKind::NodeSourceFile,
+            TargetKind::GenericConfigFile,
+        ]
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
@@ -1870,11 +1944,22 @@ impl SecurityDetector for BkhSafetyDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["javascript", "typescript", "python", "go", "rust", "generic"]
+        &[
+            "javascript",
+            "typescript",
+            "python",
+            "go",
+            "rust",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
-        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile, TargetKind::GenericConfigFile]
+        &[
+            TargetKind::GenericSourceFile,
+            TargetKind::NodeSourceFile,
+            TargetKind::GenericConfigFile,
+        ]
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
@@ -1931,7 +2016,16 @@ impl SecurityDetector for MemTempDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["c", "cpp", "rust", "zig", "javascript", "typescript", "python", "generic"]
+        &[
+            "c",
+            "cpp",
+            "rust",
+            "zig",
+            "javascript",
+            "typescript",
+            "python",
+            "generic",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
@@ -2130,8 +2224,12 @@ impl DetectorRegistry {
         }
 
         // 2. Execute detectors
-        let base_report =
-            Arc::new(FleetScanner::scan_directory_with_rules_and_taint(root, false, &[], true));
+        let base_report = Arc::new(FleetScanner::scan_directory_with_rules_and_taint(
+            root,
+            false,
+            &[],
+            true,
+        ));
         let ctx = ScanContext {
             root: root.to_path_buf(),
             profile,

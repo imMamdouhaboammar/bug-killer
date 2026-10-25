@@ -64,7 +64,11 @@ def admin_dashboard():
 "#;
     let path = Path::new("views/admin.py");
     let findings = AuthSecurityScanner::scan_source(path, vuln_flask);
-    assert_eq!(findings.len(), 1, "Should detect Flask route lacking auth decorator");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should detect Flask route lacking auth decorator"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AUT-001");
 
     let safe_flask = r#"
@@ -74,7 +78,10 @@ def admin_dashboard():
     return render_template('dashboard.html')
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_flask);
-    assert!(safe_findings.is_empty(), "Decorated Flask route must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Decorated Flask route must be clean"
+    );
 }
 
 #[test]
@@ -98,7 +105,10 @@ if (canonicalPath.startsWith('/admin')) {
 }
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Normalized path check must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Normalized path check must be clean"
+    );
 }
 
 #[test]
@@ -111,7 +121,11 @@ function checkAccess(req) {
 "#;
     let path = Path::new("src/auth/guard.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_js);
-    assert_eq!(findings.len(), 2, "Should detect always-true auth stubs in JS");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Should detect always-true auth stubs in JS"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AUT-003");
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -121,7 +135,11 @@ demoLogin = True
 "#;
     let path_py = Path::new("auth/helpers.py");
     let findings_py = AuthSecurityScanner::scan_source(path_py, vuln_py);
-    assert_eq!(findings_py.len(), 2, "Should detect Python auth stub and demo login");
+    assert_eq!(
+        findings_py.len(),
+        2,
+        "Should detect Python auth stub and demo login"
+    );
 
     let safe_js = r#"
 const isAuthenticated = (req) => {
@@ -129,7 +147,10 @@ const isAuthenticated = (req) => {
 };
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_js);
-    assert!(safe_findings.is_empty(), "Authentic session validation must not be flagged");
+    assert!(
+        safe_findings.is_empty(),
+        "Authentic session validation must not be flagged"
+    );
 }
 
 #[test]
@@ -149,7 +170,11 @@ function legacyHasher(pwd) {
     let path = Path::new("services/user.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Should detect md5, sha1, and plaintext password storage");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Should detect md5, sha1, and plaintext password storage"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-AUT-004"));
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -163,7 +188,10 @@ async function storeCredentials(username, password) {
 }
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Argon2/bcrypt password hashing must not be flagged");
+    assert!(
+        safe_findings.is_empty(),
+        "Argon2/bcrypt password hashing must not be flagged"
+    );
 }
 
 #[test]
@@ -178,7 +206,11 @@ function generateRecovery(user) {
     let path = Path::new("auth/password_reset.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Should flag Math.random() for reset token and code");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Should flag Math.random() for reset token and code"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AUT-005");
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -192,7 +224,10 @@ function generateRecovery(user) {
 }
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "CSPRNG reset token generation must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "CSPRNG reset token generation must be clean"
+    );
 }
 
 #[test]
@@ -220,7 +255,10 @@ app.post('/api/user/email', async (req, res) => {
 });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Verified email update with password check must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Verified email update with password check must be clean"
+    );
 }
 
 #[test]
@@ -237,7 +275,11 @@ router.post('/otp', async (req, res) => {
     let path = Path::new("routes/auth.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Should flag login and otp routes without rate limiter");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Should flag login and otp routes without rate limiter"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AUT-007");
     assert_eq!(findings[0].severity, Severity::Medium);
 
@@ -254,7 +296,10 @@ router.post('/otp', otpLimiter, async (req, res) => {
 });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Rate-limited authentication routes must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Rate-limited authentication routes must be clean"
+    );
 }
 
 #[test]
@@ -273,7 +318,11 @@ if (user.isAdmin) {
     let path = Path::new("config/auth.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Should flag disabled MFA flags and admin bypass");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Should flag disabled MFA flags and admin bypass"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-AUT-008"));
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -284,7 +333,10 @@ const authConfig = {
 };
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Enforced MFA configurations must not be flagged");
+    assert!(
+        safe_findings.is_empty(),
+        "Enforced MFA configurations must not be flagged"
+    );
 }
 
 #[test]
@@ -301,7 +353,11 @@ function authFilter(req, res, next) {
     let path = Path::new("middleware/authFilter.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag catch next() fail-open pattern");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag catch next() fail-open pattern"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AUT-009");
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -316,7 +372,10 @@ function authFilter(req, res, next) {
 }
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Fail-closed exception handling must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Fail-closed exception handling must be clean"
+    );
 }
 
 #[test]
@@ -347,7 +406,10 @@ async function renderDashboard() {
 }
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Server-evaluated session access must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Server-evaluated session access must be clean"
+    );
 }
 
 #[test]
@@ -363,7 +425,11 @@ function getUserClaims(token) {
     let path = Path::new("services/jwtHelper.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag jwt.decode() usage without verify");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag jwt.decode() usage without verify"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AUT-011");
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -388,7 +454,11 @@ passport.authenticate('oauth2', { state: false });
     let path = Path::new("auth/oauth.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Should flag missing OAuth state parameter");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Should flag missing OAuth state parameter"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-AUT-012"));
     assert_eq!(findings[0].severity, Severity::Medium);
 
@@ -397,7 +467,10 @@ const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?client_id=123&redi
 passport.authenticate('oauth2', { state: true });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "OAuth URL with state parameter must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "OAuth URL with state parameter must be clean"
+    );
 }
 
 // ===========================================================================
@@ -429,7 +502,10 @@ function newSession(user) {
 }
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "CSPRNG session ID generation must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "CSPRNG session ID generation must be clean"
+    );
 }
 
 #[test]
@@ -446,7 +522,11 @@ app.post('/login', loginLimiter, async (req, res) => {
     let path = Path::new("controllers/auth.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag unrotated session after login");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag unrotated session after login"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-SES-002");
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -462,7 +542,10 @@ app.post('/login', loginLimiter, async (req, res) => {
 });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Regenerated session on login must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Regenerated session on login must be clean"
+    );
 }
 
 #[test]
@@ -476,7 +559,11 @@ app.post('/logout', (req, res) => {
     let path = Path::new("routes/logout.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Should flag logout with only cookie clearing");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Should flag logout with only cookie clearing"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-SES-003");
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -489,7 +576,10 @@ app.post('/logout', (req, res) => {
 });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Logout with server session destruction must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Logout with server session destruction must be clean"
+    );
 }
 
 #[test]
@@ -522,7 +612,11 @@ app.use(session({ cookie: { httpOnly: false } }));
     let path = Path::new("server.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Should flag cookies with httpOnly: false");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Should flag cookies with httpOnly: false"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-SES-005"));
     assert_eq!(findings[0].severity, Severity::Medium);
 
@@ -559,7 +653,10 @@ res.cookie('sid', sid, { sameSite: 'Lax', secure: true });
 const sessionConfig = { sameSite: 'Strict' };
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Proper SameSite attributes must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Proper SameSite attributes must be clean"
+    );
 }
 
 #[test]
@@ -581,7 +678,10 @@ const accessToken = jwt.sign(payload, secret, { expiresIn: '15m' });
 const refreshToken = jwt.sign(payload, secret, { expiresIn: '7d' });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Bounded token lifetimes must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Bounded token lifetimes must be clean"
+    );
 }
 
 #[test]
@@ -594,7 +694,11 @@ const claims3 = jwt.verify(token, pubkey, { algorithms: ['HS256', 'RS256'] });
     let path = Path::new("services/jwt.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Should flag none and algorithm confusion configurations");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Should flag none and algorithm confusion configurations"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-SES-008"));
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -602,7 +706,10 @@ const claims3 = jwt.verify(token, pubkey, { algorithms: ['HS256', 'RS256'] });
 const claims = jwt.verify(token, pubkey, { algorithms: ['RS256'] });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Pinned asymmetric algorithm must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Pinned asymmetric algorithm must be clean"
+    );
 }
 
 #[test]
@@ -615,7 +722,11 @@ res.redirect('/callback?access_token=' + accessToken);
     let path = Path::new("routes/auth.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Should flag logged tokens and URL embedding");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Should flag logged tokens and URL embedding"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-SES-009"));
     assert_eq!(findings[0].severity, Severity::Medium);
 
@@ -624,7 +735,10 @@ res.json({ token: accessToken });
 req.headers['authorization'] = `Bearer ${accessToken}`;
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Tokens passed in response body or headers must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Tokens passed in response body or headers must be clean"
+    );
 }
 
 #[test]
@@ -637,7 +751,11 @@ localStorage['jwt'] = userToken;
     let path = Path::new("frontend/storage.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Should flag Web Storage credential storage");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Should flag Web Storage credential storage"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-SES-010"));
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -646,7 +764,10 @@ localStorage.setItem('theme', 'dark');
 sessionStorage.setItem('sidebar_collapsed', 'true');
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Non-credential UI state in localStorage must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Non-credential UI state in localStorage must be clean"
+    );
 }
 
 #[test]
@@ -658,7 +779,11 @@ res.cookie('sid', sid, { domain: '.example.com', path: '/' });
     let path = Path::new("server.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Should flag broad wildcard/root domain cookies");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Should flag broad wildcard/root domain cookies"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-SES-011"));
     assert_eq!(findings[0].severity, Severity::Medium);
 
@@ -667,7 +792,10 @@ res.cookie('sid', sid, { domain: 'app.example.com', path: '/api' });
 res.cookie('sid', sid, { httpOnly: true, secure: true });
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Host-only or scoped domain cookies must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Host-only or scoped domain cookies must be clean"
+    );
 }
 
 #[test]
@@ -680,7 +808,11 @@ rotate_refresh_token = False
     let path = Path::new("config/jwt.js");
     let findings = AuthSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Should flag refresh token reuse permissions and comments");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Should flag refresh token reuse permissions and comments"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-SES-012"));
     assert_eq!(findings[0].severity, Severity::High);
 
@@ -691,5 +823,8 @@ const opts = {
 };
 "#;
     let safe_findings = AuthSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Strict token rotation with no reuse must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Strict token rotation with no reuse must be clean"
+    );
 }

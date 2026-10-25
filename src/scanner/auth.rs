@@ -62,9 +62,8 @@ static RE_AUT_009_FAIL_OPEN_LINE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)catch\s*(?:\([^)]*\))?\s*\{\s*(?:console\.(?:log|error|warn)\([^)]*\);\s*)?next\s*\(\s*\)\s*;?\s*\}|catch\s*(?:\([^)]*\))?\s*\{\s*return\s+true\s*;?\s*\}|except\s*(?:Exception)?\s*:\s*(?:#.*)?\s*return\s+True\b|except\s*(?:Exception)?\s*:\s*(?:#.*)?\s*pass\b"#).unwrap()
 });
 
-static RE_AUT_009_CATCH_HEADER: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)catch\s*(?:\([^)]*\))?\s*\{"#).unwrap()
-});
+static RE_AUT_009_CATCH_HEADER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)catch\s*(?:\([^)]*\))?\s*\{"#).unwrap());
 
 /// BK-AI-AUT-010: Authentication relies on client-side JS or route guard alone
 static RE_AUT_010_CLIENT_AUTH: LazyLock<Regex> = LazyLock::new(|| {
@@ -95,13 +94,13 @@ static RE_SES_001_WEAK_SESSION_ID: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// BK-AI-SES-002: Session not rotated after login
-static RE_SES_002_SAVE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:req\.)?session\.save\s*\("#).unwrap()
-});
+static RE_SES_002_SAVE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)(?:req\.)?session\.save\s*\("#).unwrap());
 
 /// BK-AI-SES-003: Logout fails to invalidate server session
 static RE_SES_003_CLEAR_COOKIE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)res\.clearCookie\s*\(\s*['"](?:session|sid|connect\.sid|auth|token)['"]"#).unwrap()
+    Regex::new(r#"(?i)res\.clearCookie\s*\(\s*['"](?:session|sid|connect\.sid|auth|token)['"]"#)
+        .unwrap()
 });
 
 /// BK-AI-SES-004: Cookie carrying session lacks Secure flag
@@ -172,7 +171,11 @@ impl AuthSecurityScanner {
             }
 
             // Check comment-specific indicators first before skipping general comments
-            if trimmed.starts_with("//") || trimmed.starts_with('#') || trimmed.starts_with('*') || trimmed.starts_with("/*") {
+            if trimmed.starts_with("//")
+                || trimmed.starts_with('#')
+                || trimmed.starts_with('*')
+                || trimmed.starts_with("/*")
+            {
                 // BK-AI-AUT-008 comment indicator
                 let lower_comment = trimmed.to_lowercase();
                 if lower_comment.contains("skip mfa") || lower_comment.contains("bypass mfa") {
@@ -430,7 +433,10 @@ impl AuthSecurityScanner {
                 // Check if next non-empty line calls next(); without arguments
                 if let Some(next_l) = lines.iter().skip(idx + 1).find(|l| !l.trim().is_empty()) {
                     let next_t = next_l.trim();
-                    next_t == "next();" || next_t == "next()" || next_t == "return true;" || next_t == "return true"
+                    next_t == "next();"
+                        || next_t == "next()"
+                        || next_t == "return true;"
+                        || next_t == "return true"
                 } else {
                     false
                 }

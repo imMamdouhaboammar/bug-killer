@@ -38,11 +38,15 @@ static RE_NET_003_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 
 /// BK-AI-NET-004 (CWE-918): DNS rebinding / TOCTOU between IP check and request
 static RE_NET_004_DNS_LOOKUP: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:dns\.(?:lookup|resolve(?:4|6)?)|socket\.gethostbyname|net\.LookupIP)\s*\("#).unwrap()
+    Regex::new(
+        r#"(?i)(?:dns\.(?:lookup|resolve(?:4|6)?)|socket\.gethostbyname|net\.LookupIP)\s*\("#,
+    )
+    .unwrap()
 });
 
 static RE_NET_004_HTTP_CALL: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:fetch|axios\.(?:get|post|request)|requests\.(?:get|post)|http\.get)\s*\("#).unwrap()
+    Regex::new(r#"(?i)(?:fetch|axios\.(?:get|post|request)|requests\.(?:get|post)|http\.get)\s*\("#)
+        .unwrap()
 });
 
 static RE_NET_004_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -83,9 +87,8 @@ static RE_NET_010_TIMEOUT_DISABLED: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:\btimeout\s*:\s*0\b|\btimeout\s*=\s*(?:None|0)\b|//.*(?:missing\s+timeout|no\s+(?:deadline|timeout)\s+configured|network\s+call\s+without\s+timeout))"#).unwrap()
 });
 
-static RE_NET_010_REQUESTS_NO_TIMEOUT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\brequests\.(?:get|post|put|delete)\s*\([^)]+\)"#).unwrap()
-});
+static RE_NET_010_REQUESTS_NO_TIMEOUT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\brequests\.(?:get|post|put|delete)\s*\([^)]+\)"#).unwrap());
 
 // ---------------------------------------------------------------------------
 // Category 16: Availability & Denial of Service (BK-AI-DOS-001 through 012)
@@ -97,7 +100,10 @@ static RE_DOS_001_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_DOS_001_FUNC: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:function\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)|def\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\))"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:function\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)|def\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\))"#,
+    )
+    .unwrap()
 });
 
 static RE_DOS_001_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -146,7 +152,10 @@ static RE_DOS_005_RETRY_STORM: LazyLock<Regex> = LazyLock::new(|| {
 
 /// BK-AI-DOS-006 (CWE-400): Unbounded in-memory cache/map without eviction policy or max size
 static RE_DOS_006_CACHE_INIT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:(?:const|let|var)\s+cache\s*=\s*(?:\{\}|new\s+Map\(\))\s*;|cache\s*=\s*\{\})"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:(?:const|let|var)\s+cache\s*=\s*(?:\{\}|new\s+Map\(\))\s*;|cache\s*=\s*\{\})"#,
+    )
+    .unwrap()
 });
 
 static RE_DOS_006_CACHE_SET: LazyLock<Regex> = LazyLock::new(|| {
@@ -175,7 +184,8 @@ static RE_DOS_007_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_DOS_007_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)//.*(?:query\s+lacks\s+pagination|unpaginated\s+query|missing\s+pagination)"#).unwrap()
+    Regex::new(r#"(?i)//.*(?:query\s+lacks\s+pagination|unpaginated\s+query|missing\s+pagination)"#)
+        .unwrap()
 });
 
 /// BK-AI-DOS-008 (CWE-1333): Regex catastrophic backtracking on user input
@@ -282,7 +292,9 @@ impl NetworkDosScanner {
             }
 
             // 2. BK-AI-NET-002 (CWE-918): IP literals, localhost, or cloud metadata address access
-            if RE_NET_002_METADATA_IP.is_match(trimmed) && !RE_NET_002_GUARD.is_match(&context_window) {
+            if RE_NET_002_METADATA_IP.is_match(trimmed)
+                && !RE_NET_002_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-NET-002",
                     "CWE-918",
@@ -300,7 +312,8 @@ impl NetworkDosScanner {
             }
 
             // 3. BK-AI-NET-003 (CWE-918): Redirect follows from allowed host to disallowed private/metadata address
-            if RE_NET_003_REDIRECTS.is_match(trimmed) && !RE_NET_003_GUARD.is_match(&context_window) {
+            if RE_NET_003_REDIRECTS.is_match(trimmed) && !RE_NET_003_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-NET-003",
                     "CWE-918",
@@ -460,11 +473,20 @@ impl NetworkDosScanner {
             let is_unbounded_recursion = if RE_DOS_001_COMMENT.is_match(trimmed) {
                 true
             } else if let Some(caps) = RE_DOS_001_FUNC.captures(trimmed) {
-                let func_name = caps.get(1).or_else(|| caps.get(3)).map(|m| m.as_str()).unwrap_or("");
-                let params = caps.get(2).or_else(|| caps.get(4)).map(|m| m.as_str()).unwrap_or("");
+                let func_name = caps
+                    .get(1)
+                    .or_else(|| caps.get(3))
+                    .map(|m| m.as_str())
+                    .unwrap_or("");
+                let params = caps
+                    .get(2)
+                    .or_else(|| caps.get(4))
+                    .map(|m| m.as_str())
+                    .unwrap_or("");
                 if !func_name.is_empty() && !RE_DOS_001_GUARD.is_match(params) {
                     // Check if function name appears recursively in lookahead window without depth check
-                    lookahead_window.contains(&format!("{}(", func_name)) && !RE_DOS_001_GUARD.is_match(&lookahead_window)
+                    lookahead_window.contains(&format!("{}(", func_name))
+                        && !RE_DOS_001_GUARD.is_match(&lookahead_window)
                 } else {
                     false
                 }
@@ -593,7 +615,8 @@ impl NetworkDosScanner {
 
             // 17. BK-AI-DOS-007 (CWE-400): Database query lacks pagination
             let is_unpaginated_query = RE_DOS_007_COMMENT.is_match(trimmed)
-                || ((RE_DOS_007_RAW_QUERY.is_match(trimmed) || RE_DOS_007_ORM_FIND.is_match(trimmed))
+                || ((RE_DOS_007_RAW_QUERY.is_match(trimmed)
+                    || RE_DOS_007_ORM_FIND.is_match(trimmed))
                     && !RE_DOS_007_GUARD.is_match(trimmed)
                     && !RE_DOS_007_GUARD.is_match(&lookahead_window));
 
@@ -673,7 +696,9 @@ impl NetworkDosScanner {
             }
 
             // 21. BK-AI-DOS-011 (CWE-400): Unbounded directory crawl / file reading without max depth or file limit
-            if RE_DOS_011_DIRECTORY_CRAWL.is_match(trimmed) && !RE_DOS_011_GUARD.is_match(&lookahead_window) {
+            if RE_DOS_011_DIRECTORY_CRAWL.is_match(trimmed)
+                && !RE_DOS_011_GUARD.is_match(&lookahead_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-DOS-011",
                     "CWE-400",

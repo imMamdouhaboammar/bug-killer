@@ -38,7 +38,11 @@ fn deref_raw(raw_ptr: *const i32) -> Option<i32> {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-004"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-004")
+    );
 }
 
 #[test]
@@ -64,7 +68,11 @@ void copy_payload(char *dest, const char *src, size_t max_len) {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-005"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-005")
+    );
 }
 
 #[test]
@@ -90,7 +98,11 @@ pub unsafe fn decode_slice<'a>(ptr: *const u8, len: usize) -> Option<&'a [u8]> {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-006"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-006")
+    );
 }
 
 #[test]
@@ -116,7 +128,11 @@ void process_tag(char *dest, const char *src) {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-007"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-007")
+    );
 }
 
 #[test]
@@ -144,7 +160,11 @@ void load_dynamic_plugin(const char *userPluginPath) {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-008"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-008")
+    );
 }
 
 #[test]
@@ -179,7 +199,11 @@ pub extern "C" fn ffi_calculate(val: i32) -> i32 {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-009"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-009")
+    );
 }
 
 #[test]
@@ -200,7 +224,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector -z execstack")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong -z noexecstack")
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-010"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-010")
+    );
 }
 
 #[test]
@@ -226,7 +254,11 @@ void clear_credentials(char *secret_key, size_t key_len) {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-011"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-011")
+    );
 }
 
 #[test]
@@ -258,7 +290,11 @@ fn parse_payload(reader: &mut PacketReader) -> Result<Vec<u8>, Error> {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-012"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-012")
+    );
 }
 
 // ============================================================================
@@ -288,7 +324,11 @@ const mobileConfig = {
 };
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-001"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-001")
+    );
 }
 
 #[test]
@@ -313,7 +353,11 @@ func saveAuth(token: String) {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-002"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-002")
+    );
 }
 
 #[test]
@@ -342,7 +386,11 @@ fn test_mob_003_android_exported_without_permission() {
 </activity>
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-003"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-003")
+    );
 }
 
 #[test]
@@ -357,7 +405,10 @@ app.on('open-url', (event, url) => {
     let findings = NativeDesktopScanner::scan_source(path, vuln_code);
 
     assert!(findings.iter().any(|f| f.cve.as_str() == "BK-AI-MOB-004"));
-    let f = findings.iter().find(|f| f.cve.as_str() == "BK-AI-MOB-004").unwrap();
+    let f = findings
+        .iter()
+        .find(|f| f.cve.as_str() == "BK-AI-MOB-004")
+        .unwrap();
     assert_eq!(f.detector_id, "native-desktop");
     assert_eq!(f.severity, Severity::High);
 
@@ -370,7 +421,11 @@ app.on('open-url', (event, url) => {
 });
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-004"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-004")
+    );
 }
 
 #[test]
@@ -400,7 +455,11 @@ const mainWindow = new BrowserWindow({
 });
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-005"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-005")
+    );
 }
 
 #[test]
@@ -427,7 +486,11 @@ ipcMain.on('execute', (_, cmd) => {
 });
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-006"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-006")
+    );
 }
 
 #[test]
@@ -452,7 +515,11 @@ const agent = new https.Agent({
 });
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-007"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-007")
+    );
 }
 
 #[test]
@@ -477,7 +544,11 @@ function initStorage(databasePath) {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-008"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-008")
+    );
 }
 
 #[test]
@@ -506,7 +577,11 @@ function setupUpdates() {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-009"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-009")
+    );
 }
 
 #[test]
@@ -533,7 +608,11 @@ function copySessionSecret(secretToken) {
 }
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-MOB-010"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MOB-010")
+    );
 }
 
 // ============================================================================
@@ -555,7 +634,10 @@ def test_user_authentication():
     assert_eq!(f.cve.as_str(), "BK-AI-AIC-004");
     assert_eq!(f.detector_id, "native-desktop");
     assert_eq!(f.severity, Severity::High);
-    assert_eq!(f.category, "2.21 AI coding assistant-specific engineering traps");
+    assert_eq!(
+        f.category,
+        "2.21 AI coding assistant-specific engineering traps"
+    );
 
     let safe_code = r#"
 def test_user_authentication():
@@ -564,7 +646,11 @@ def test_user_authentication():
     assert res.token in active_sessions
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-AIC-004"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-AIC-004")
+    );
 }
 
 // ============================================================================
@@ -586,7 +672,10 @@ def run_agent_chain(planner, executor):
     assert_eq!(f.cve.as_str(), "BK-AI-LLM-019");
     assert_eq!(f.detector_id, "native-desktop");
     assert_eq!(f.severity, Severity::High);
-    assert_eq!(f.category, "2.22 LLM, RAG, autonomous agent and MCP application flaws");
+    assert_eq!(
+        f.category,
+        "2.22 LLM, RAG, autonomous agent and MCP application flaws"
+    );
 
     let safe_code = r#"
 def run_agent_chain(planner, executor):
@@ -595,7 +684,11 @@ def run_agent_chain(planner, executor):
         executor.execute(proposal)
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-LLM-019"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-LLM-019")
+    );
 }
 
 #[test]
@@ -613,7 +706,10 @@ async def run_autonomous_loop(agent):
     assert_eq!(f.cve.as_str(), "BK-AI-LLM-021");
     assert_eq!(f.detector_id, "native-desktop");
     assert_eq!(f.severity, Severity::High);
-    assert_eq!(f.category, "2.22 LLM, RAG, autonomous agent and MCP application flaws");
+    assert_eq!(
+        f.category,
+        "2.22 LLM, RAG, autonomous agent and MCP application flaws"
+    );
 
     let safe_code = r#"
 async def run_autonomous_loop(agent, abort_signal):
@@ -623,7 +719,11 @@ async def run_autonomous_loop(agent, abort_signal):
         await agent.step()
 "#;
     let safe_findings = NativeDesktopScanner::scan_source(path, safe_code);
-    assert!(safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-LLM-021"));
+    assert!(
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-LLM-021")
+    );
 }
 
 // ============================================================================
@@ -662,11 +762,28 @@ fn test_native_desktop_comment_indicators() {
     assert_eq!(findings.len(), 22);
 
     let rules = [
-        "BK-AI-MEM-004", "BK-AI-MEM-005", "BK-AI-MEM-006", "BK-AI-MEM-007",
-        "BK-AI-MEM-008", "BK-AI-MEM-009", "BK-AI-MEM-010", "BK-AI-MEM-011", "BK-AI-MEM-012",
-        "BK-AI-MOB-001", "BK-AI-MOB-002", "BK-AI-MOB-003", "BK-AI-MOB-004", "BK-AI-MOB-005",
-        "BK-AI-MOB-006", "BK-AI-MOB-007", "BK-AI-MOB-008", "BK-AI-MOB-009", "BK-AI-MOB-010",
-        "BK-AI-AIC-004", "BK-AI-LLM-019", "BK-AI-LLM-021",
+        "BK-AI-MEM-004",
+        "BK-AI-MEM-005",
+        "BK-AI-MEM-006",
+        "BK-AI-MEM-007",
+        "BK-AI-MEM-008",
+        "BK-AI-MEM-009",
+        "BK-AI-MEM-010",
+        "BK-AI-MEM-011",
+        "BK-AI-MEM-012",
+        "BK-AI-MOB-001",
+        "BK-AI-MOB-002",
+        "BK-AI-MOB-003",
+        "BK-AI-MOB-004",
+        "BK-AI-MOB-005",
+        "BK-AI-MOB-006",
+        "BK-AI-MOB-007",
+        "BK-AI-MOB-008",
+        "BK-AI-MOB-009",
+        "BK-AI-MOB-010",
+        "BK-AI-AIC-004",
+        "BK-AI-LLM-019",
+        "BK-AI-LLM-021",
     ];
 
     for rule in rules {

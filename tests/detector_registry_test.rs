@@ -143,7 +143,12 @@ COPY package*.json ./
 
     println!("FINDINGS COUNT: {}", report.findings.len());
     for f in &report.findings {
-        println!("FINDING: id={} cve={} desc={}", f.id, f.cve.as_str(), f.description);
+        println!(
+            "FINDING: id={} cve={} desc={}",
+            f.id,
+            f.cve.as_str(),
+            f.description
+        );
     }
 
     assert_eq!(report.status, ScanStatus::Completed);
@@ -194,7 +199,12 @@ module.exports = { add };
 
     println!("FINDINGS COUNT: {}", report.findings.len());
     for f in &report.findings {
-        println!("FINDING: id={} cve={} desc={}", f.id, f.cve.as_str(), f.description);
+        println!(
+            "FINDING: id={} cve={} desc={}",
+            f.id,
+            f.cve.as_str(),
+            f.description
+        );
     }
 
     assert_eq!(report.status, ScanStatus::Completed);

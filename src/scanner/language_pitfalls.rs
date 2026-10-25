@@ -24,7 +24,8 @@ static RE_LNG_002_PHP_UNSERIALIZE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_002_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:allowed_classes\s*['"]?\s*=>\s*false|hash_equals|hash_hmac|json_decode)"#).unwrap()
+    Regex::new(r#"(?i)(?:allowed_classes\s*['"]?\s*=>\s*false|hash_equals|hash_hmac|json_decode)"#)
+        .unwrap()
 });
 
 // 3. BK-AI-LNG-003 (CWE-78): PHP shell_exec, system, passthru fed from request
@@ -42,7 +43,8 @@ static RE_LNG_004_PHP_UPLOAD: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_004_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:finfo_file|finfo_open|mime_content_type|getimagesize|exif_imagetype)"#).unwrap()
+    Regex::new(r#"(?i)(?:finfo_file|finfo_open|mime_content_type|getimagesize|exif_imagetype)"#)
+        .unwrap()
 });
 
 // 5. BK-AI-LNG-005 (CWE-489): PHP debug/errors exposed publicly or dangerous runtime settings enabled
@@ -60,7 +62,10 @@ static RE_LNG_006_NODE_EXEC: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_006_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:execFile|spawn\s*\(|validator\.isAlphanumeric|ALLOWED_COMMANDS|allowlist)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:execFile|spawn\s*\(|validator\.isAlphanumeric|ALLOWED_COMMANDS|allowlist)"#,
+    )
+    .unwrap()
 });
 
 // 7. BK-AI-LNG-007 (CWE-95): Node/Bun eval, vm, dynamic import of untrusted strings
@@ -96,7 +101,10 @@ static RE_LNG_010_NODE_STREAM_DOS: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_010_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:maxOutputLength|maxDecompressedSize|ByteCounter|limitStream|maxBytes|MAX_SIZE)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:maxOutputLength|maxDecompressedSize|ByteCounter|limitStream|maxBytes|MAX_SIZE)"#,
+    )
+    .unwrap()
 });
 
 // 11. BK-AI-LNG-011 (CWE-829): Bun/Node process runs postinstall or startup hook from untrusted package
@@ -150,7 +158,8 @@ static RE_LNG_016_GO_HTTP_CLIENT: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_016_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:Timeout\s*:\s*[1-9]\d*\s*\*?\s*(?:time\.)?|CheckRedirect\s*:\s*func)"#).unwrap()
+    Regex::new(r#"(?i)(?:Timeout\s*:\s*[1-9]\d*\s*\*?\s*(?:time\.)?|CheckRedirect\s*:\s*func)"#)
+        .unwrap()
 });
 
 // 17. BK-AI-LNG-017 (CWE-79): Go template uses text/template for user-controlled HTML where html/template expected
@@ -158,9 +167,8 @@ static RE_LNG_017_GO_TEXT_TEMPLATE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:import\s+(?:[a-zA-Z0-9_]+\s+)?['"]text/template['"]|['"]text/template['"]|text_template\.New\s*\(|template\.New\s*\([^)]*\)\.Parse\s*\([^)]*(?:\.html|<h1>|<div>|<p>)|//.*(?:text/template\s+used\s+for\s+html|go\s+text/template\s+xss))"#).unwrap()
 });
 
-static RE_LNG_017_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:html/template|//\s*plain\s+text\s+only)"#).unwrap()
-});
+static RE_LNG_017_GUARD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)(?:html/template|//\s*plain\s+text\s+only)"#).unwrap());
 
 // 18. BK-AI-LNG-018 (CWE-22): Go path check uses strings.HasPrefix without symlink/segment safety
 static RE_LNG_018_GO_PATH_CHECK: LazyLock<Regex> = LazyLock::new(|| {
@@ -195,7 +203,8 @@ static RE_LNG_021_RUST_ERROR_SWALLOW: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_021_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:log::error!|eprintln!|tracing::error!|return\s+Err|warn_and_report)"#).unwrap()
+    Regex::new(r#"(?i)(?:log::error!|eprintln!|tracing::error!|return\s+Err|warn_and_report)"#)
+        .unwrap()
 });
 
 // 22. BK-AI-LNG-022 (CWE-502): Java deserialization, expression language or unsafe JNDI lookup
@@ -204,7 +213,10 @@ static RE_LNG_022_JAVA_DESERIALIZE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_022_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:setObjectInputFilter|ValidatingObjectInputStream|whitelist|ALLOWED_PREFIX)"#).unwrap()
+    Regex::new(
+        r#"(?i)(?:setObjectInputFilter|ValidatingObjectInputStream|whitelist|ALLOWED_PREFIX)"#,
+    )
+    .unwrap()
 });
 
 // 23. BK-AI-LNG-023 (CWE-862): .NET middleware/policy attribute omitted on controller/minimal API
@@ -212,13 +224,11 @@ static RE_LNG_023_DOTNET_ALLOW_ANON: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:\[AllowAnonymous\].*(?:Admin|Manage|Internal|Delete|Account|Secure)|(?:AdminController|ManageController|InternalController).*\[AllowAnonymous\]|\.Map(?:Get|Post|Put|Delete)\s*\(\s*['"]/(?:admin|manage|internal)[^'"]*['"].*\)\.AllowAnonymous\(\)|//.*(?:\.net\s+middleware/policy\s+attribute\s+omitted|allowanonymous\s+on\s+admin))"#).unwrap()
 });
 
-static RE_LNG_023_ANON_ATTR: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\[AllowAnonymous\]|\.AllowAnonymous\(\)"#).unwrap()
-});
+static RE_LNG_023_ANON_ATTR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\[AllowAnonymous\]|\.AllowAnonymous\(\)"#).unwrap());
 
-static RE_LNG_023_SENSITIVE_CONTEXT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:admin|manage|internal|delete|secure)"#).unwrap()
-});
+static RE_LNG_023_SENSITIVE_CONTEXT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)(?:admin|manage|internal|delete|secure)"#).unwrap());
 
 static RE_LNG_023_GUARD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:\[Authorize|RequireAuthorization|AuthorizeAttribute)"#).unwrap()
@@ -248,7 +258,8 @@ static RE_LNG_026_SQL_ESCAPE_HELPER: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_LNG_026_GUARD: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:prepare\s*\(|bindParam|bindValue|\$stmt->execute|execute\s*\(\s*\[)"#).unwrap()
+    Regex::new(r#"(?i)(?:prepare\s*\(|bindParam|bindValue|\$stmt->execute|execute\s*\(\s*\[)"#)
+        .unwrap()
 });
 
 pub struct LanguagePitfallsScanner;
@@ -288,7 +299,9 @@ impl LanguagePitfallsScanner {
             {
                 let lower = trimmed.to_lowercase();
 
-                if lower.contains("bk-ai-lng-001") || lower.contains("php include controlled by user") {
+                if lower.contains("bk-ai-lng-001")
+                    || lower.contains("php include controlled by user")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-001",
                         "CWE-98",
@@ -322,7 +335,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-003") || lower.contains("php shell_exec fed from request") {
+                if lower.contains("bk-ai-lng-003")
+                    || lower.contains("php shell_exec fed from request")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-003",
                         "CWE-78",
@@ -339,7 +354,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-004") || lower.contains("upload checks rely solely on extension") {
+                if lower.contains("bk-ai-lng-004")
+                    || lower.contains("upload checks rely solely on extension")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-004",
                         "CWE-434",
@@ -373,7 +390,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-006") || lower.contains("child_process.exec receives request") {
+                if lower.contains("bk-ai-lng-006")
+                    || lower.contains("child_process.exec receives request")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-006",
                         "CWE-78",
@@ -407,7 +426,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-008") || lower.contains("prototype pollution via unsafe merge") {
+                if lower.contains("bk-ai-lng-008")
+                    || lower.contains("prototype pollution via unsafe merge")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-008",
                         "CWE-1321",
@@ -424,7 +445,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-009") || lower.contains("auth middleware omitted on router") {
+                if lower.contains("bk-ai-lng-009")
+                    || lower.contains("auth middleware omitted on router")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-009",
                         "CWE-306",
@@ -441,7 +464,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-010") || lower.contains("decompression stream lacks size") {
+                if lower.contains("bk-ai-lng-010")
+                    || lower.contains("decompression stream lacks size")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-010",
                         "CWE-400",
@@ -458,7 +483,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-011") || lower.contains("postinstall hook from untrusted") {
+                if lower.contains("bk-ai-lng-011")
+                    || lower.contains("postinstall hook from untrusted")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-011",
                         "CWE-829",
@@ -509,7 +536,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-014") || lower.contains("flask/django debug misconfigured") {
+                if lower.contains("bk-ai-lng-014")
+                    || lower.contains("flask/django debug misconfigured")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-014",
                         "CWE-489",
@@ -526,7 +555,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-015") || lower.contains("go exec.command argument injection") {
+                if lower.contains("bk-ai-lng-015")
+                    || lower.contains("go exec.command argument injection")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-015",
                         "CWE-88",
@@ -543,7 +574,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-016") || lower.contains("go http client lacks deadlines") {
+                if lower.contains("bk-ai-lng-016")
+                    || lower.contains("go http client lacks deadlines")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-016",
                         "CWE-918",
@@ -560,7 +593,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-017") || lower.contains("go text/template used for html") {
+                if lower.contains("bk-ai-lng-017")
+                    || lower.contains("go text/template used for html")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-017",
                         "CWE-79",
@@ -577,7 +612,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-018") || lower.contains("go strings.hasprefix path check") {
+                if lower.contains("bk-ai-lng-018")
+                    || lower.contains("go strings.hasprefix path check")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-018",
                         "CWE-22",
@@ -594,7 +631,8 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-019") || lower.contains("rust unsafe unchecked memory") {
+                if lower.contains("bk-ai-lng-019") || lower.contains("rust unsafe unchecked memory")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-019",
                         "CWE-119",
@@ -628,7 +666,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-021") || lower.contains("rust error fallback returns empty") {
+                if lower.contains("bk-ai-lng-021")
+                    || lower.contains("rust error fallback returns empty")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-021",
                         "CWE-391",
@@ -645,7 +685,8 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-022") || lower.contains("java deserialization or jndi") {
+                if lower.contains("bk-ai-lng-022") || lower.contains("java deserialization or jndi")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-022",
                         "CWE-502",
@@ -662,7 +703,8 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-023") || lower.contains(".net allowanonymous on admin") {
+                if lower.contains("bk-ai-lng-023") || lower.contains(".net allowanonymous on admin")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-023",
                         "CWE-862",
@@ -696,7 +738,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-025") || lower.contains("c/c++ unchecked raw pointer copy") {
+                if lower.contains("bk-ai-lng-025")
+                    || lower.contains("c/c++ unchecked raw pointer copy")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-025",
                         "CWE-120",
@@ -713,7 +757,9 @@ impl LanguagePitfallsScanner {
                     ));
                 }
 
-                if lower.contains("bk-ai-lng-026") || lower.contains("sql escape helper instead of bind") {
+                if lower.contains("bk-ai-lng-026")
+                    || lower.contains("sql escape helper instead of bind")
+                {
                     findings.push(Self::create_finding(
                         "BK-AI-LNG-026",
                         "CWE-89",
@@ -738,7 +784,9 @@ impl LanguagePitfallsScanner {
             // ---------------------------------------------------------------
 
             // 1. BK-AI-LNG-001 (CWE-98): PHP include, require or template path controlled by user
-            if RE_LNG_001_PHP_INCLUDE.is_match(trimmed) && !RE_LNG_001_GUARD.is_match(&context_window) {
+            if RE_LNG_001_PHP_INCLUDE.is_match(trimmed)
+                && !RE_LNG_001_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-001",
                     "CWE-98",
@@ -756,7 +804,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 2. BK-AI-LNG-002 (CWE-502): PHP unserialize() called on attacker-provided bytes
-            if RE_LNG_002_PHP_UNSERIALIZE.is_match(trimmed) && !RE_LNG_002_GUARD.is_match(&context_window) {
+            if RE_LNG_002_PHP_UNSERIALIZE.is_match(trimmed)
+                && !RE_LNG_002_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-002",
                     "CWE-502",
@@ -792,7 +842,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 4. BK-AI-LNG-004 (CWE-434): PHP upload/filename checks rely solely on extension or client MIME
-            if RE_LNG_004_PHP_UPLOAD.is_match(trimmed) && !RE_LNG_004_GUARD.is_match(&context_window) {
+            if RE_LNG_004_PHP_UPLOAD.is_match(trimmed)
+                && !RE_LNG_004_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-004",
                     "CWE-434",
@@ -810,7 +862,8 @@ impl LanguagePitfallsScanner {
             }
 
             // 5. BK-AI-LNG-005 (CWE-489): PHP debug/errors exposed publicly or dangerous runtime settings enabled
-            if RE_LNG_005_PHP_DEBUG.is_match(trimmed) && !RE_LNG_005_GUARD.is_match(&context_window) {
+            if RE_LNG_005_PHP_DEBUG.is_match(trimmed) && !RE_LNG_005_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-005",
                     "CWE-489",
@@ -828,7 +881,8 @@ impl LanguagePitfallsScanner {
             }
 
             // 6. BK-AI-LNG-006 (CWE-78): Node.js child_process.exec() receives request data
-            if RE_LNG_006_NODE_EXEC.is_match(trimmed) && !RE_LNG_006_GUARD.is_match(&context_window) {
+            if RE_LNG_006_NODE_EXEC.is_match(trimmed) && !RE_LNG_006_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-006",
                     "CWE-78",
@@ -846,7 +900,8 @@ impl LanguagePitfallsScanner {
             }
 
             // 7. BK-AI-LNG-007 (CWE-95): Node/Bun eval, vm, dynamic import of untrusted strings
-            if RE_LNG_007_NODE_EVAL.is_match(trimmed) && !RE_LNG_007_GUARD.is_match(&context_window) {
+            if RE_LNG_007_NODE_EVAL.is_match(trimmed) && !RE_LNG_007_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-007",
                     "CWE-95",
@@ -864,7 +919,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 8. BK-AI-LNG-008 (CWE-1321): Node/Express prototype pollution via unsafe deep merge
-            if RE_LNG_008_PROTOTYPE_POLLUTION.is_match(trimmed) && !RE_LNG_008_GUARD.is_match(&context_window) {
+            if RE_LNG_008_PROTOTYPE_POLLUTION.is_match(trimmed)
+                && !RE_LNG_008_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-008",
                     "CWE-1321",
@@ -882,7 +939,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 9. BK-AI-LNG-009 (CWE-306): Express/Fastify auth middleware omitted on one router/method
-            if RE_LNG_009_ROUTE_NO_AUTH.is_match(trimmed) && !RE_LNG_009_GUARD.is_match(&context_window) {
+            if RE_LNG_009_ROUTE_NO_AUTH.is_match(trimmed)
+                && !RE_LNG_009_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-009",
                     "CWE-306",
@@ -900,7 +959,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 10. BK-AI-LNG-010 (CWE-400): Node request/compression/decompression stream lacks size and CPU caps
-            if RE_LNG_010_NODE_STREAM_DOS.is_match(trimmed) && !RE_LNG_010_GUARD.is_match(&context_window) {
+            if RE_LNG_010_NODE_STREAM_DOS.is_match(trimmed)
+                && !RE_LNG_010_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-010",
                     "CWE-400",
@@ -918,7 +979,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 11. BK-AI-LNG-011 (CWE-829): Bun/Node process runs postinstall or startup hook from untrusted package
-            if RE_LNG_011_UNTRUSTED_HOOK.is_match(trimmed) && !RE_LNG_011_GUARD.is_match(&context_window) {
+            if RE_LNG_011_UNTRUSTED_HOOK.is_match(trimmed)
+                && !RE_LNG_011_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-011",
                     "CWE-829",
@@ -954,7 +1017,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 13. BK-AI-LNG-013 (CWE-502): Python pickle, dill, joblib, unsafe YAML used for untrusted data
-            if RE_LNG_013_PY_DESERIALIZE.is_match(trimmed) && !RE_LNG_013_GUARD.is_match(&context_window) {
+            if RE_LNG_013_PY_DESERIALIZE.is_match(trimmed)
+                && !RE_LNG_013_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-013",
                     "CWE-502",
@@ -972,7 +1037,8 @@ impl LanguagePitfallsScanner {
             }
 
             // 14. BK-AI-LNG-014 (CWE-489): Flask/Django/FastAPI debug, secret, route dependency/auth controls misconfigured
-            if RE_LNG_014_PY_CONFIG.is_match(trimmed) && !RE_LNG_014_GUARD.is_match(&context_window) {
+            if RE_LNG_014_PY_CONFIG.is_match(trimmed) && !RE_LNG_014_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-014",
                     "CWE-489",
@@ -990,7 +1056,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 15. BK-AI-LNG-015 (CWE-88): Go exec.Command arguments accept attacker-controlled flags/subcommands
-            if RE_LNG_015_GO_CMD_ARGS.is_match(trimmed) && !RE_LNG_015_GUARD.is_match(&context_window) {
+            if RE_LNG_015_GO_CMD_ARGS.is_match(trimmed)
+                && !RE_LNG_015_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-015",
                     "CWE-88",
@@ -1008,7 +1076,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 16. BK-AI-LNG-016 (CWE-918): Go HTTP clients follow redirects into forbidden origins or lack deadlines
-            if RE_LNG_016_GO_HTTP_CLIENT.is_match(trimmed) && !RE_LNG_016_GUARD.is_match(&context_window) {
+            if RE_LNG_016_GO_HTTP_CLIENT.is_match(trimmed)
+                && !RE_LNG_016_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-016",
                     "CWE-918",
@@ -1026,7 +1096,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 17. BK-AI-LNG-017 (CWE-79): Go template uses text/template for user-controlled HTML where html/template expected
-            if RE_LNG_017_GO_TEXT_TEMPLATE.is_match(trimmed) && !RE_LNG_017_GUARD.is_match(&context_window) {
+            if RE_LNG_017_GO_TEXT_TEMPLATE.is_match(trimmed)
+                && !RE_LNG_017_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-017",
                     "CWE-79",
@@ -1044,7 +1116,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 18. BK-AI-LNG-018 (CWE-22): Go path check uses strings.HasPrefix without symlink/segment safety
-            if RE_LNG_018_GO_PATH_CHECK.is_match(trimmed) && !RE_LNG_018_GUARD.is_match(&context_window) {
+            if RE_LNG_018_GO_PATH_CHECK.is_match(trimmed)
+                && !RE_LNG_018_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-018",
                     "CWE-22",
@@ -1062,7 +1136,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 19. BK-AI-LNG-019 (CWE-119): Rust unsafe/FFI/parser code claims compiler guarantees for unchecked memory
-            if RE_LNG_019_RUST_UNCHECKED_MEM.is_match(trimmed) && !RE_LNG_019_GUARD.is_match(&context_window) {
+            if RE_LNG_019_RUST_UNCHECKED_MEM.is_match(trimmed)
+                && !RE_LNG_019_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-019",
                     "CWE-119",
@@ -1080,7 +1156,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 20. BK-AI-LNG-020 (CWE-754): Rust unwrap/expect on attacker-controlled parser path causes service crash
-            if RE_LNG_020_RUST_UNWRAP_PARSER.is_match(trimmed) && !RE_LNG_020_GUARD.is_match(&context_window) {
+            if RE_LNG_020_RUST_UNWRAP_PARSER.is_match(trimmed)
+                && !RE_LNG_020_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-020",
                     "CWE-754",
@@ -1098,7 +1176,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 21. BK-AI-LNG-021 (CWE-391): Rust error fallback returns empty findings/success after IO failure
-            if RE_LNG_021_RUST_ERROR_SWALLOW.is_match(trimmed) && !RE_LNG_021_GUARD.is_match(&context_window) {
+            if RE_LNG_021_RUST_ERROR_SWALLOW.is_match(trimmed)
+                && !RE_LNG_021_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-021",
                     "CWE-391",
@@ -1116,7 +1196,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 22. BK-AI-LNG-022 (CWE-502): Java deserialization, expression language or unsafe JNDI lookup
-            if RE_LNG_022_JAVA_DESERIALIZE.is_match(trimmed) && !RE_LNG_022_GUARD.is_match(&context_window) {
+            if RE_LNG_022_JAVA_DESERIALIZE.is_match(trimmed)
+                && !RE_LNG_022_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-022",
                     "CWE-502",
@@ -1135,7 +1217,8 @@ impl LanguagePitfallsScanner {
 
             // 23. BK-AI-LNG-023 (CWE-862): .NET middleware/policy attribute omitted on controller/minimal API
             let is_dotnet_anon_match = RE_LNG_023_DOTNET_ALLOW_ANON.is_match(trimmed)
-                || (RE_LNG_023_ANON_ATTR.is_match(trimmed) && RE_LNG_023_SENSITIVE_CONTEXT.is_match(&context_window));
+                || (RE_LNG_023_ANON_ATTR.is_match(trimmed)
+                    && RE_LNG_023_SENSITIVE_CONTEXT.is_match(&context_window));
             if is_dotnet_anon_match && !RE_LNG_023_GUARD.is_match(&context_window) {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-023",
@@ -1154,7 +1237,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 24. BK-AI-LNG-024 (CWE-94): Ruby send, ERB/Marshal/YAML loaders execute untrusted material
-            if RE_LNG_024_RUBY_METAPROGRAM.is_match(trimmed) && !RE_LNG_024_GUARD.is_match(&context_window) {
+            if RE_LNG_024_RUBY_METAPROGRAM.is_match(trimmed)
+                && !RE_LNG_024_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-024",
                     "CWE-94",
@@ -1172,7 +1257,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 25. BK-AI-LNG-025 (CWE-120): C/C++/Zig generated code uses unchecked raw pointer/array copy
-            if RE_LNG_025_RAW_MEM_COPY.is_match(trimmed) && !RE_LNG_025_GUARD.is_match(&context_window) {
+            if RE_LNG_025_RAW_MEM_COPY.is_match(trimmed)
+                && !RE_LNG_025_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-025",
                     "CWE-120",
@@ -1190,7 +1277,9 @@ impl LanguagePitfallsScanner {
             }
 
             // 26. BK-AI-LNG-026 (CWE-89): SQL/ORM integration treats string escape helper as replacement for bind parameters
-            if RE_LNG_026_SQL_ESCAPE_HELPER.is_match(trimmed) && !RE_LNG_026_GUARD.is_match(&context_window) {
+            if RE_LNG_026_SQL_ESCAPE_HELPER.is_match(trimmed)
+                && !RE_LNG_026_GUARD.is_match(&context_window)
+            {
                 findings.push(Self::create_finding(
                     "BK-AI-LNG-026",
                     "CWE-89",

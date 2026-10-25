@@ -28,7 +28,10 @@ function debugPython() {
     let path = Path::new("src/server.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect environment and stack dumping");
+    assert!(
+        !findings.is_empty(),
+        "Must detect environment and stack dumping"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-SEC-005");
         assert_eq!(f.detector_id, "data-privacy");
@@ -65,7 +68,11 @@ function recordTelemetry(user, payment) {
     let path = Path::new("src/telemetry.ts");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 5, "Must detect all 5 PII telemetry instances");
+    assert_eq!(
+        findings.len(),
+        5,
+        "Must detect all 5 PII telemetry instances"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-SEC-006");
         assert_eq!(f.detector_id, "data-privacy");
@@ -109,7 +116,10 @@ async function savePayment(req) {
     let path = Path::new("src/models/payment.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect persistent storage/schema of CVV and plaintext password");
+    assert!(
+        !findings.is_empty(),
+        "Must detect persistent storage/schema of CVV and plaintext password"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-SEC-007");
         assert_eq!(f.detector_id, "data-privacy");
@@ -152,7 +162,11 @@ app.post('/api/delete-user-data', async (req, res) => {
     let path = Path::new("src/routes/gdpr.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must flag unauthenticated/unscoped export and delete routes");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must flag unauthenticated/unscoped export and delete routes"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-SEC-008");
         assert_eq!(f.detector_id, "data-privacy");
@@ -192,7 +206,10 @@ const bucketConfig = {
     let path = Path::new("src/config/storage.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect sensitive datasets with encryption: false");
+    assert!(
+        !findings.is_empty(),
+        "Must detect sensitive datasets with encryption: false"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-SEC-009");
         assert_eq!(f.detector_id, "data-privacy");
@@ -237,7 +254,10 @@ async function askAiAssistant(req, user) {
     let path = Path::new("src/services/ai.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect raw PII sent to AI provider or analytics");
+    assert!(
+        !findings.is_empty(),
+        "Must detect raw PII sent to AI provider or analytics"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-SEC-011");
         assert_eq!(f.detector_id, "data-privacy");
@@ -284,7 +304,10 @@ function runTool(cmd) {
     let path = Path::new("src/tools/diagnostics.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must flag raw secrets returned in tool replies or reports");
+    assert!(
+        !findings.is_empty(),
+        "Must flag raw secrets returned in tool replies or reports"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-SEC-012");
         assert_eq!(f.detector_id, "data-privacy");
@@ -326,7 +349,11 @@ const connStr = "postgres://root:password@localhost:5432/app";
     let path = Path::new("src/config/database.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must flag both superuser user: postgres and root conn URL");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must flag both superuser user: postgres and root conn URL"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-001");
         assert_eq!(f.detector_id, "data-privacy");
@@ -365,7 +392,11 @@ ALTER TABLE users DISABLE ROW LEVEL SECURITY;
     let path = Path::new("src/routes/items.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Must flag service role client, bypass flag, and DISABLE RLS");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Must flag service role client, bypass flag, and DISABLE RLS"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-002");
         assert_eq!(f.detector_id, "data-privacy");
@@ -398,7 +429,10 @@ app.get('/api/orders', async (req, res) => {
     let path = Path::new("src/controllers/orderController.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect in-memory tenant filtering after findAll()");
+    assert!(
+        !findings.is_empty(),
+        "Must detect in-memory tenant filtering after findAll()"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-003");
         assert_eq!(f.detector_id, "data-privacy");
@@ -434,7 +468,11 @@ await knex('users').insert({
     let path = Path::new("migrations/20261025_seed.sql");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must detect both SQL and ORM seed default admin passwords");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must detect both SQL and ORM seed default admin passwords"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-004");
         assert_eq!(f.detector_id, "data-privacy");
@@ -466,7 +504,10 @@ mysqldump -u app -p mydb > public/backup.sql
     let path = Path::new("scripts/backup.sh");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect public-read backups or webroot dumps");
+    assert!(
+        !findings.is_empty(),
+        "Must detect public-read backups or webroot dumps"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-005");
         assert_eq!(f.detector_id, "data-privacy");
@@ -499,7 +540,10 @@ app.post('/api/transfer', async (req, res) => {
     let path = Path::new("src/routes/wallet.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect non-atomic balance subtraction and save");
+    assert!(
+        !findings.is_empty(),
+        "Must detect non-atomic balance subtraction and save"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-006");
         assert_eq!(f.detector_id, "data-privacy");
@@ -545,7 +589,11 @@ async function getCachedDoc(req, res) {
     let path = Path::new("src/services/search.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must flag vector search without filter and unchecked cache return");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must flag vector search without filter and unchecked cache return"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-007");
         assert_eq!(f.detector_id, "data-privacy");
@@ -583,7 +631,11 @@ async function findUser(id, name) {
     let path = Path::new("src/models/user.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 4, "Must flag all 4 raw ORM string interpolations");
+    assert_eq!(
+        findings.len(),
+        4,
+        "Must flag all 4 raw ORM string interpolations"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-008");
         assert_eq!(f.detector_id, "data-privacy");
@@ -616,7 +668,11 @@ table.dropTrigger('audit_trigger');
     let path = Path::new("migrations/20261025_relax.sql");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 4, "Must flag all dropped audit triggers and security constraints");
+    assert_eq!(
+        findings.len(),
+        4,
+        "Must flag all dropped audit triggers and security constraints"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-009");
         assert_eq!(f.detector_id, "data-privacy");
@@ -648,7 +704,11 @@ app.post('/api/data', async (req, res) => {
     let path = Path::new("src/routes/dynamic.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must flag dynamic collection and knex table from request");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must flag dynamic collection and knex table from request"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-010");
         assert_eq!(f.detector_id, "data-privacy");
@@ -687,7 +747,11 @@ s3.upload({
     let path = Path::new("src/services/storage.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Must flag public-read ACL on storage upload");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Must flag public-read ACL on storage upload"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-011");
         assert_eq!(f.detector_id, "data-privacy");
@@ -722,7 +786,10 @@ app.delete('/api/users/:id', async (req, res) => {
     let path = Path::new("src/controllers/userController.js");
     let findings = DataPrivacyScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Must detect record deletion without cache purge");
+    assert!(
+        !findings.is_empty(),
+        "Must detect record deletion without cache purge"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-DAT-012");
         assert_eq!(f.detector_id, "data-privacy");

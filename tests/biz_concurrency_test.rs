@@ -1,9 +1,9 @@
 #[path = "../src/scanner/biz_concurrency.rs"]
 mod biz_concurrency;
 
+use biz_concurrency::BizConcurrencyScanner;
 pub use bug_killer::types;
 use bug_killer::types::Severity;
-use biz_concurrency::BizConcurrencyScanner;
 use std::path::Path;
 
 // ===========================================================================
@@ -47,7 +47,9 @@ function readConfigFile(filePath) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-001"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-001"),
         "Must not flag when atomic error handling try/catch is present"
     );
 }
@@ -92,7 +94,9 @@ async function chargeCustomer(token, amount, orderId) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-002"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-002"),
         "Must not flag when idempotencyKey is supplied"
     );
 }
@@ -131,7 +135,9 @@ async function refreshTokens(refreshToken) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-003"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-003"),
         "Must not flag when tokenFamily revocation and atomicRotate are used"
     );
 }
@@ -175,7 +181,9 @@ func handleEvent() {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-004"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-004"),
         "Must not flag when atomic operations are used"
     );
 }
@@ -210,7 +218,9 @@ channel.consume(queue, async (msg) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-005"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-005"),
         "Must not flag when ack is inside finally block after processing"
     );
 }
@@ -242,7 +252,9 @@ async function updateUserRole(userId, newRole) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-006"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-006"),
         "Must not flag when cache.del is executed on role update"
     );
 }
@@ -280,7 +292,9 @@ async function checkoutItem(itemId, qty) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-007"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-007"),
         "Must not flag when atomic SQL WHERE stock >= requested is enforced"
     );
 }
@@ -319,7 +333,9 @@ async function runDataMigration() {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-008"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-008"),
         "Must not flag when heartbeat renewal is active"
     );
 }
@@ -359,7 +375,9 @@ cron.schedule('0 * * * *', () => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-009"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-009"),
         "Must not flag when mtime check and activeUploads guard exist"
     );
 }
@@ -395,7 +413,9 @@ async function agentMutate(targetPath, diff) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-RAC-010"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-RAC-010"),
         "Must not flag when withLock serialization wraps agent mutation"
     );
 }
@@ -438,7 +458,9 @@ app.post('/checkout', async (req, res) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-001"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-001"),
         "Must not flag when price is derived from database product catalog"
     );
 }
@@ -475,7 +497,9 @@ async function applyCoupon(userId, cart, code) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-002"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-002"),
         "Must not flag when redemption count and record creation are enforced"
     );
 }
@@ -511,7 +535,9 @@ app.post('/orders/:id/fulfill', async (req, res) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-003"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-003"),
         "Must not flag when prerequisite order.status check is enforced"
     );
 }
@@ -546,7 +572,9 @@ app.post('/users/:id/role', async (req, res) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-004"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-004"),
         "Must not flag when isAdmin authorization is validated"
     );
 }
@@ -587,7 +615,9 @@ app.post('/transfers', async (req, res) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-005"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-005"),
         "Must not flag when key is bound to tenantId and userId"
     );
 }
@@ -621,7 +651,9 @@ switch (event.type) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-006"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-006"),
         "Must not flag when order is fulfilled on payment_intent.succeeded"
     );
 }
@@ -663,7 +695,9 @@ app.post('/api/webhook', async (req, res) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-007"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-007"),
         "Must not flag when event.id deduplication is enforced"
     );
 }
@@ -695,7 +729,9 @@ async function deleteAccount(userId) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-008"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-008"),
         "Must not flag when apiKeys and tokens are explicitly revoked"
     );
 }
@@ -730,7 +766,9 @@ app.get('/metrics/revenue', async (req, res) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-009"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-009"),
         "Must not flag when WHERE tenant_id filter is applied"
     );
 }
@@ -766,7 +804,9 @@ app.use((req, res, next) => {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-010"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-010"),
         "Must not flag when bypass is strictly gated behind NODE_ENV === 'test'"
     );
 }
@@ -808,7 +848,9 @@ async function addMemberToTeam(teamId, memberId) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-011"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-011"),
         "Must not flag when globalQuota / MAX_GLOBAL check is present"
     );
 }
@@ -843,7 +885,9 @@ function verifyApproval(approval, targetId, nonce) {
 "#;
     let safe_findings = BizConcurrencyScanner::scan_source(path, safe_code);
     assert!(
-        safe_findings.iter().all(|f| f.cve.as_str() != "BK-AI-BIZ-012"),
+        safe_findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-BIZ-012"),
         "Must not flag when signature binds actionId, targetId, and nonce"
     );
 }

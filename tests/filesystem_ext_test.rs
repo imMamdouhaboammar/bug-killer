@@ -30,7 +30,11 @@ fn test_fil_003_zip_slip_vulnerable_and_safe() {
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-FIL-003"));
     assert!(findings.iter().all(|f| f.severity == Severity::Critical));
     assert!(findings.iter().all(|f| f.detector_id == "filesystem-ext"));
-    assert!(findings.iter().all(|f| f.category == "2.7 Filesystem, uploads, archives and path traversal"));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.category == "2.7 Filesystem, uploads, archives and path traversal")
+    );
 
     let safe_snippet = r#"
         zip.getEntries().forEach(entry => {
@@ -43,7 +47,10 @@ fn test_fil_003_zip_slip_vulnerable_and_safe() {
         tarfile.extractall('/var/data', filter='data');
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Safe archive extraction must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Safe archive extraction must not trigger finding"
+    );
 }
 
 // 2. BK-AI-FIL-004: Unsafe Archive Decompression / Zip Bomb
@@ -58,7 +65,11 @@ fn test_fil_004_zip_bomb_vulnerable_and_safe() {
     let path = Path::new("src/routes/decompress.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for unconstrained decompression");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for unconstrained decompression"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-FIL-004"));
     assert!(findings.iter().all(|f| f.severity == Severity::High));
 
@@ -70,7 +81,10 @@ fn test_fil_004_zip_bomb_vulnerable_and_safe() {
         };
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Size-bounded decompression must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Size-bounded decompression must not trigger finding"
+    );
 }
 
 // 3. BK-AI-FIL-005: Uploaded File Extension Trusted
@@ -89,7 +103,10 @@ fn test_fil_005_extension_trusted_vulnerable_and_safe() {
     let path = Path::new("src/upload/validator.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Expected finding for trusting uploaded extension");
+    assert!(
+        !findings.is_empty(),
+        "Expected finding for trusting uploaded extension"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-FIL-005");
     assert_eq!(findings[0].advisory_ids, vec!["CWE-434", "BK-AI-FIL-005"]);
 
@@ -103,7 +120,10 @@ fn test_fil_005_extension_trusted_vulnerable_and_safe() {
         }
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Magic byte inspection must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Magic byte inspection must not trigger finding"
+    );
 }
 
 // 4. BK-AI-FIL-006: User Upload Stored in Executable/Public Directory or 0777
@@ -119,7 +139,11 @@ fn test_fil_006_public_upload_vulnerable_and_safe() {
     let path = Path::new("src/config/multer.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for public destination and 0777 permissions");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for public destination and 0777 permissions"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-FIL-006"));
 
     let safe_snippet = r#"
@@ -130,7 +154,10 @@ fn test_fil_006_public_upload_vulnerable_and_safe() {
         fs.chmodSync(uploadedPath, 0o600);
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Private non-executable storage must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Private non-executable storage must not trigger finding"
+    );
 }
 
 // 5. BK-AI-FIL-007: Filename Allows Path Separators / Control Characters
@@ -145,7 +172,10 @@ fn test_fil_007_raw_filename_traversal_vulnerable_and_safe() {
     let path = Path::new("src/controllers/avatar.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Expected finding for unvalidated filename in path.join");
+    assert!(
+        !findings.is_empty(),
+        "Expected finding for unvalidated filename in path.join"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-FIL-007");
 
     let safe_snippet = r#"
@@ -156,7 +186,10 @@ fn test_fil_007_raw_filename_traversal_vulnerable_and_safe() {
         };
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "path.basename sanitization must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "path.basename sanitization must not trigger finding"
+    );
 }
 
 // 6. BK-AI-FIL-009: Insecure Temporary/Backup Files
@@ -172,7 +205,11 @@ fn test_fil_009_insecure_temp_backup_vulnerable_and_safe() {
     let path = Path::new("scripts/backup_helper.py");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Expected 3 findings for mktemp, /tmp/backup.key and /tmp/secret.json");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Expected 3 findings for mktemp, /tmp/backup.key and /tmp/secret.json"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-FIL-009"));
 
     let safe_snippet = r#"
@@ -181,7 +218,10 @@ fn test_fil_009_insecure_temp_backup_vulnerable_and_safe() {
             tmp.write(secret_data)
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "NamedTemporaryFile must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "NamedTemporaryFile must not trigger finding"
+    );
 }
 
 // 7. BK-AI-FIL-010: Unsafe File Overwrite or Deletion
@@ -196,7 +236,11 @@ fn test_fil_010_unsafe_unlink_vulnerable_and_safe() {
     let path = Path::new("src/routes/files.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Expected finding for unconstrained unlinkSync");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Expected finding for unconstrained unlinkSync"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-FIL-010");
 
     let safe_snippet = r#"
@@ -209,7 +253,10 @@ fn test_fil_010_unsafe_unlink_vulnerable_and_safe() {
         });
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Guarded path deletion must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Guarded path deletion must not trigger finding"
+    );
 }
 
 // 8. BK-AI-FIL-011: TOCTOU Between File Validation and Opening
@@ -225,7 +272,11 @@ fn test_fil_011_toctou_vulnerable_and_safe() {
     let path = Path::new("src/utils/config.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Expected finding for TOCTOU existsSync -> writeFileSync");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Expected finding for TOCTOU existsSync -> writeFileSync"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-FIL-011");
     assert_eq!(findings[0].severity, Severity::Medium);
 
@@ -237,7 +288,10 @@ fn test_fil_011_toctou_vulnerable_and_safe() {
         }
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Atomic open with 'wx' must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Atomic open with 'wx' must not trigger finding"
+    );
 }
 
 // 9. BK-AI-FIL-012: Files Served/Downloaded Without Authorization Check
@@ -251,7 +305,10 @@ fn test_fil_012_unauth_file_download_vulnerable_and_safe() {
     let path = Path::new("src/routes/download.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert!(!findings.is_empty(), "Expected finding for unauthenticated file download");
+    assert!(
+        !findings.is_empty(),
+        "Expected finding for unauthenticated file download"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-FIL-012");
 
     let safe_snippet = r#"
@@ -264,7 +321,10 @@ fn test_fil_012_unauth_file_download_vulnerable_and_safe() {
         });
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Authorized download route must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Authorized download route must not trigger finding"
+    );
 }
 
 // 10. BK-AI-FIL-013: Uploaded SVG/HTML Rendered Inline Without Attachment or CSP
@@ -291,7 +351,10 @@ fn test_fil_013_inline_svg_vulnerable_and_safe() {
         });
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Attachment disposition must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Attachment disposition must not trigger finding"
+    );
 }
 
 // 11. BK-AI-FIL-014: File Parser Accepts Unbounded Content / Recursive Structure
@@ -304,7 +367,11 @@ fn test_fil_014_unbounded_parser_vulnerable_and_safe() {
     let path = Path::new("src/parsers/xml.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for unbounded XML parsers");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for unbounded XML parsers"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-FIL-014"));
 
     let safe_snippet = r#"
@@ -312,7 +379,10 @@ fn test_fil_014_unbounded_parser_vulnerable_and_safe() {
         ET.parse(userXmlFile)
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "defusedxml usage must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "defusedxml usage must not trigger finding"
+    );
 }
 
 // ============================================================================
@@ -332,9 +402,17 @@ fn test_inj_002_dynamic_sql_identifiers_vulnerable_and_safe() {
     let path = Path::new("src/db/users.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for dynamic SQL ORDER BY");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for dynamic SQL ORDER BY"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-002"));
-    assert!(findings.iter().all(|f| f.category == "2.1 Injection and interpreter boundaries"));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.category == "2.1 Injection and interpreter boundaries")
+    );
 
     let safe_snippet = r#"
         async function getUsers(req, res) {
@@ -346,7 +424,10 @@ fn test_inj_002_dynamic_sql_identifiers_vulnerable_and_safe() {
         }
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Allowlisted columns must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Allowlisted columns must not trigger finding"
+    );
 }
 
 // 13. BK-AI-INJ-004: Command-Line Argument Injection in Subprocess Array
@@ -359,7 +440,11 @@ fn test_inj_004_subprocess_arg_injection_vulnerable_and_safe() {
     let path = Path::new("src/vcs/git_service.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for subprocess argument injection");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for subprocess argument injection"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-004"));
 
     let safe_snippet = r#"
@@ -367,7 +452,10 @@ fn test_inj_004_subprocess_arg_injection_vulnerable_and_safe() {
         subprocess.run(['git', 'log', '--', user_branch])
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "'--' delimiter must prevent argument injection finding");
+    assert!(
+        safe_findings.is_empty(),
+        "'--' delimiter must prevent argument injection finding"
+    );
 }
 
 // 14. BK-AI-INJ-005: OS Command Execution via Helper/Wrapper/Library
@@ -381,7 +469,11 @@ fn test_inj_005_os_command_wrapper_vulnerable_and_safe() {
     let path = Path::new("src/tools/network.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Expected 3 findings for shell execution wrappers");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Expected 3 findings for shell execution wrappers"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-005"));
     assert!(findings.iter().all(|f| f.severity == Severity::Critical));
 
@@ -390,7 +482,10 @@ fn test_inj_005_os_command_wrapper_vulnerable_and_safe() {
         subprocess.run(['convert', '--', user_img, 'output.png'], shell=False)
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "execFile without shell must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "execFile without shell must not trigger finding"
+    );
 }
 
 // 15. BK-AI-INJ-008: Server-Side Template Expressions Compiled from User Data
@@ -404,7 +499,11 @@ fn test_inj_008_template_expression_compiled_vulnerable_and_safe() {
     let path = Path::new("src/templates/renderer.py");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for SSTI compilation");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for SSTI compilation"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-008"));
 
     let safe_snippet = r#"
@@ -412,7 +511,10 @@ fn test_inj_008_template_expression_compiled_vulnerable_and_safe() {
         res = template.render(user=user)
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Static file template rendering must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Static file template rendering must not trigger finding"
+    );
 }
 
 // 16. BK-AI-INJ-009: Template Escape Bypass (`safe`, raw output) Applied to Untrusted Values
@@ -426,7 +528,11 @@ fn test_inj_009_template_escape_bypass_vulnerable_and_safe() {
     let path = Path::new("src/views/comment.html");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Expected 3 findings for template escape bypass");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Expected 3 findings for template escape bypass"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-009"));
 
     let safe_snippet = r#"
@@ -435,7 +541,10 @@ fn test_inj_009_template_escape_bypass_vulnerable_and_safe() {
         <span><%= req.body.bio %></span>
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Default escaped template tags must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Default escaped template tags must not trigger finding"
+    );
 }
 
 // 17. BK-AI-INJ-010: XPath/XQuery Expression Assembled from Inputs
@@ -448,7 +557,11 @@ fn test_inj_010_xpath_injection_vulnerable_and_safe() {
     let path = Path::new("src/auth/xml_auth.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for XPath string assembly");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for XPath string assembly"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-010"));
 
     let safe_snippet = r#"
@@ -457,7 +570,10 @@ fn test_inj_010_xpath_injection_vulnerable_and_safe() {
         });
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Parameterized XPath must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Parameterized XPath must not trigger finding"
+    );
 }
 
 // 18. BK-AI-INJ-011: LDAP Filter/DN Assembled Without Escaping
@@ -472,7 +588,11 @@ fn test_inj_011_ldap_injection_vulnerable_and_safe() {
     let path = Path::new("src/auth/ldap.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for LDAP filter injection");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for LDAP filter injection"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-011"));
 
     let safe_snippet = r#"
@@ -482,7 +602,10 @@ fn test_inj_011_ldap_injection_vulnerable_and_safe() {
         }, (err, res) => {});
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Escaped LDAP filter must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Escaped LDAP filter must not trigger finding"
+    );
 }
 
 // 19. BK-AI-INJ-012: NoSQL Query/Operator Injection from User Objects
@@ -495,7 +618,11 @@ fn test_inj_012_nosql_injection_vulnerable_and_safe() {
     let path = Path::new("src/models/user.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for unvalidated NoSQL query object parameters");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for unvalidated NoSQL query object parameters"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-012"));
 
     let safe_snippet = r#"
@@ -505,7 +632,10 @@ fn test_inj_012_nosql_injection_vulnerable_and_safe() {
         });
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "String casting must not trigger NoSQL finding");
+    assert!(
+        safe_findings.is_empty(),
+        "String casting must not trigger NoSQL finding"
+    );
 }
 
 // 20. BK-AI-INJ-013: CRLF Injection into HTTP Response Headers or Logs
@@ -518,7 +648,11 @@ fn test_inj_013_crlf_injection_vulnerable_and_safe() {
     let path = Path::new("src/controllers/token.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Expected 2 findings for CRLF injection into header/log");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Expected 2 findings for CRLF injection into header/log"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-013"));
     assert!(findings.iter().all(|f| f.severity == Severity::Medium));
 
@@ -529,7 +663,10 @@ fn test_inj_013_crlf_injection_vulnerable_and_safe() {
         logger.info("User action performed by: " + sanitizedUser);
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "CRLF-stripped inputs must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "CRLF-stripped inputs must not trigger finding"
+    );
 }
 
 // 21. BK-AI-INJ-016: Trusting Generic `sanitize()` or `escape()` Without Checking Context
@@ -543,7 +680,11 @@ fn test_inj_016_generic_sanitize_misuse_vulnerable_and_safe() {
     let path = Path::new("src/views/bad_escape.js");
     let findings = FilesystemExtScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Expected 3 findings for improper generic sanitize context");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Expected 3 findings for improper generic sanitize context"
+    );
     assert!(findings.iter().all(|f| f.cve.as_str() == "BK-AI-INJ-016"));
 
     let safe_snippet = r#"
@@ -551,5 +692,8 @@ fn test_inj_016_generic_sanitize_misuse_vulnerable_and_safe() {
         const scriptBlock = `<script> var config = ${JSON.stringify(userData)}; </script>`;
     "#;
     let safe_findings = FilesystemExtScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Context-appropriate encoding must not trigger finding");
+    assert!(
+        safe_findings.is_empty(),
+        "Context-appropriate encoding must not trigger finding"
+    );
 }

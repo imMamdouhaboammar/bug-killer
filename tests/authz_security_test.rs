@@ -25,7 +25,11 @@ app.get('/api/orders/:id', async (req, res) => {
     let path = Path::new("controllers/documentController.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must detect both un-scoped findById and findUnique lookups");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must detect both un-scoped findById and findUnique lookups"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-AZ-001");
         assert_eq!(f.severity, Severity::High);
@@ -47,7 +51,10 @@ app.get('/api/verified/:id', async (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Safe scoped lookups or validated ownership must not trigger BK-AI-AZ-001");
+    assert!(
+        safe_findings.is_empty(),
+        "Safe scoped lookups or validated ownership must not trigger BK-AI-AZ-001"
+    );
 }
 
 #[test]
@@ -63,7 +70,11 @@ app.post('/api/records', async (req, res) => {
     let path = Path::new("routes/records.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Must flag tenantId from body, query, and header");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Must flag tenantId from body, query, and header"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-AZ-002");
         assert_eq!(f.severity, Severity::High);
@@ -78,7 +89,10 @@ app.post('/api/records', async (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Session-derived tenant identifiers must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Session-derived tenant identifiers must be clean"
+    );
 }
 
 #[test]
@@ -94,7 +108,11 @@ app.put('/api/users/:id', async (req, res) => {
     let path = Path::new("controllers/userController.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Must detect findByIdAndUpdate, Object.assign, and prisma mass assignment");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Must detect findByIdAndUpdate, Object.assign, and prisma mass assignment"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-AZ-003");
         assert_eq!(f.severity, Severity::High);
@@ -109,7 +127,10 @@ app.put('/api/users/:id', async (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Explicit field allowlist updates must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Explicit field allowlist updates must be clean"
+    );
 }
 
 #[test]
@@ -143,7 +164,10 @@ router.delete('/api/admin/system/reset', requireAdmin, (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Protected admin routes must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Protected admin routes must be clean"
+    );
 }
 
 #[test]
@@ -163,7 +187,11 @@ function AdminPanel({ user }) {
     let path = Path::new("components/AdminPanel.jsx");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must detect UI-only authorization gating");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must detect UI-only authorization gating"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-AZ-005");
         assert_eq!(f.severity, Severity::High);
@@ -184,7 +212,11 @@ const resolvers = {
     let path = Path::new("graphql/resolvers.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 2, "Must flag GraphQL nested resolvers lacking caller context checks");
+    assert_eq!(
+        findings.len(),
+        2,
+        "Must flag GraphQL nested resolvers lacking caller context checks"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-AZ-006");
         assert_eq!(f.severity, Severity::High);
@@ -204,7 +236,10 @@ const resolvers = {
 };
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Context-guarded resolvers must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Context-guarded resolvers must be clean"
+    );
 }
 
 #[test]
@@ -221,7 +256,11 @@ app.post('/api/items/batch-delete', async (req, res) => {
     let path = Path::new("routes/batch.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Must detect checkPermission called only on index [0]");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Must detect checkPermission called only on index [0]"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AZ-007");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-863".to_string()));
@@ -238,7 +277,10 @@ app.post('/api/items/batch-delete', async (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Iterative per-element checks must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Iterative per-element checks must be clean"
+    );
 }
 
 #[test]
@@ -253,7 +295,11 @@ queue.process(async (job) => {
     let path = Path::new("workers/cleanupWorker.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Must detect worker trusting role in job.data");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Must detect worker trusting role in job.data"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AZ-008");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-863".to_string()));
@@ -267,7 +313,10 @@ queue.process(async (job) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Worker querying fresh user status from DB must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Worker querying fresh user status from DB must be clean"
+    );
 }
 
 #[test]
@@ -282,7 +331,11 @@ app.post('/webhook', (req, res) => {
     let path = Path::new("routes/webhooks.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Must detect state-modifying webhook lacking signature verification");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Must detect state-modifying webhook lacking signature verification"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AZ-009");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-862".to_string()));
@@ -296,7 +349,10 @@ app.post('/webhook', (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Cryptographically verified webhook must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Cryptographically verified webhook must be clean"
+    );
 }
 
 #[test]
@@ -310,7 +366,11 @@ app.get('/export/customers', async (req, res) => {
     let path = Path::new("routes/export.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Must detect bulk data export without tenancy isolation");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Must detect bulk data export without tenancy isolation"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AZ-010");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-200".to_string()));
@@ -322,7 +382,10 @@ app.get('/export/customers', async (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Tenancy-isolated export query must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Tenancy-isolated export query must be clean"
+    );
 }
 
 #[test]
@@ -336,7 +399,11 @@ app.get('/user/profile', (req, res) => {
     let path = Path::new("routes/user.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 1, "Must detect superuser service token used in request handler");
+    assert_eq!(
+        findings.len(),
+        1,
+        "Must detect superuser service token used in request handler"
+    );
     assert_eq!(findings[0].cve.as_str(), "BK-AI-AZ-011");
     assert_eq!(findings[0].severity, Severity::High);
     assert!(findings[0].advisory_ids.contains(&"CWE-250".to_string()));
@@ -348,7 +415,10 @@ app.get('/user/profile', (req, res) => {
 });
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "User-scoped or anon tokens must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "User-scoped or anon tokens must be clean"
+    );
 }
 
 #[test]
@@ -367,7 +437,11 @@ const config = {
     let path = Path::new("models/User.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Must flag privileged default roles and wildcard permissions");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Must flag privileged default roles and wildcard permissions"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-AZ-012");
         assert_eq!(f.severity, Severity::High);
@@ -385,7 +459,10 @@ const config = {
 };
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Least-privileged defaults must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Least-privileged defaults must be clean"
+    );
 }
 
 #[test]
@@ -416,7 +493,10 @@ async function deleteResourceHandler(req, res) {
 }
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Atomic conditional mutation must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Atomic conditional mutation must be clean"
+    );
 }
 
 #[test]
@@ -432,7 +512,11 @@ async function searchKnowledgeBase(query, embeddings) {
     let path = Path::new("services/vectorSearch.js");
     let findings = AuthzSecurityScanner::scan_source(path, vuln_snippet);
 
-    assert_eq!(findings.len(), 3, "Must flag all 3 vector queries lacking tenant filter/namespace");
+    assert_eq!(
+        findings.len(),
+        3,
+        "Must flag all 3 vector queries lacking tenant filter/namespace"
+    );
     for f in &findings {
         assert_eq!(f.cve.as_str(), "BK-AI-AZ-014");
         assert_eq!(f.severity, Severity::High);
@@ -448,5 +532,8 @@ async function searchKnowledgeBase(query, embeddings, tenantId) {
 }
 "#;
     let safe_findings = AuthzSecurityScanner::scan_source(path, safe_snippet);
-    assert!(safe_findings.is_empty(), "Tenant-scoped vector searches must be clean");
+    assert!(
+        safe_findings.is_empty(),
+        "Tenant-scoped vector searches must be clean"
+    );
 }
