@@ -341,7 +341,7 @@
       "FLOW",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -366,8 +366,11 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
+      "javascript",
+      "typescript",
+      "python",
       "rust"
     ],
     "supported_targets": [
@@ -2700,7 +2703,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2725,7 +2728,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2750,9 +2753,12 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
-      "yaml"
+      "javascript",
+      "typescript",
+      "python",
+      "generic"
     ],
     "supported_targets": [
       "CI/CD Workflows"
@@ -4389,7 +4395,7 @@
       "SECRET",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -4793,7 +4799,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4844,7 +4850,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6954,7 +6960,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7285,7 +7291,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],

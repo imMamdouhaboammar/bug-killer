@@ -2,7 +2,9 @@ pub mod ai_agent;
 pub mod binary;
 pub mod cicd;
 pub mod container;
+pub mod crypto;
 pub mod host;
+pub mod injection;
 pub mod node;
 pub mod php;
 pub mod secret;
@@ -197,6 +199,12 @@ impl FleetScanner {
             {
                 raw_findings.extend(AgentSecurityScanner::scan_mcp_config(path));
             }
+            if file_name.ends_with(".json")
+                && !path.to_string_lossy().contains("/tests/")
+                && !path.to_string_lossy().starts_with("tests/")
+            {
+                raw_findings.extend(AgentSecurityScanner::scan_agent_config(path));
+            }
             if file_name == "SKILL.md" || file_name.ends_with(".skill") {
                 raw_findings.extend(AgentSecurityScanner::scan_agent_skill(path));
             }
@@ -244,6 +252,46 @@ impl FleetScanner {
             {
                 if let Ok(content) = std::fs::read_to_string(path) {
                     raw_findings.extend(CicdScanner::scan_workflow(path, &content));
+                }
+            }
+
+            // YAML expression injection in non-GitHub YAML files
+            if (file_name.ends_with(".yml") || file_name.ends_with(".yaml"))
+                && !path.to_string_lossy().contains(".github")
+                && !path.to_string_lossy().contains("/tests/")
+                && !path.to_string_lossy().starts_with("tests/")
+            {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    raw_findings.extend(
+                        self::injection::InjectionScanner::scan_yaml_expr_injection(path, &content),
+                    );
+                }
+            }
+
+            // Cryptographic weakness inspection, ReDoS checks, and LLM output sink checks across application sources
+            let is_script_source = file_name.ends_with(".js")
+                || file_name.ends_with(".ts")
+                || file_name.ends_with(".mjs")
+                || file_name.ends_with(".cjs")
+                || file_name.ends_with(".py")
+                || file_name.ends_with(".go")
+                || file_name.ends_with(".php");
+
+            let is_test_file = path.to_string_lossy().contains("/tests/")
+                || path.to_string_lossy().starts_with("tests/")
+                || file_name.ends_with("_test.rs")
+                || file_name.ends_with(".test.js")
+                || file_name.ends_with(".test.ts");
+
+            if is_script_source && !is_test_file {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    raw_findings.extend(self::crypto::CryptoScanner::scan_source(path, &content));
+                    raw_findings.extend(self::injection::InjectionScanner::scan_redos(
+                        path, &content,
+                    ));
+                    raw_findings.extend(AgentSecurityScanner::scan_model_output_execution(
+                        path, &content,
+                    ));
                 }
             }
 

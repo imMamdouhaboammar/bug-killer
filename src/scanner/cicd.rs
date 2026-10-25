@@ -9,6 +9,15 @@ static RE_UNTRUSTED_EXPR: LazyLock<Regex> = LazyLock::new(|| {
 });
 static RE_HEAD_REF: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"\$\{\{\s*github\.head_ref\s*\}\}"#).unwrap());
+static RE_ACTIONS_STEP_DEBUG: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?i)ACTIONS_(STEP|RUNNER)_DEBUG\s*[:=]\s*["']?(true|1)["']?"#).unwrap()
+});
+static RE_SECRET_EXPR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)\$\{\{\s*secrets[.\['"][^}]+\}\}"#).unwrap());
+static RE_PRINT_CMD: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?i)\b(echo|printf|print|printenv|write-host|write-output|console\.log)\b"#)
+        .unwrap()
+});
 
 pub struct CicdScanner;
 
@@ -141,7 +150,8 @@ impl CicdScanner {
                                 "Pin to full 40-character commit SHA (e.g. 'actions/checkout@8e5e7e5...') with inline comment for version tag".to_string(),
                             );
                             finding.detector_id = "cicd-security".to_string();
-                            finding.category = "2.14 CI/CD, build pipelines and repository automation".to_string();
+                            finding.category =
+                                "2.14 CI/CD, build pipelines and repository automation".to_string();
                             finding.affectedness = Affectedness::ConfirmedAffected;
                             finding.reachability = Reachability::ConfirmedReachable;
                             finding.confidence = Confidence::Confirmed;
@@ -150,6 +160,37 @@ impl CicdScanner {
                         }
                     }
                 }
+            }
+
+            // 5. Debug trace / step logging exposure (BK-AI-CIC-006)
+            if RE_ACTIONS_STEP_DEBUG.is_match(line) {
+                let mut finding = Finding::new(
+                    format!("CIC-DEBUGTRACE-{}-{}", path.display(), line_num),
+                    CveId::Custom {
+                        id: "BK-AI-CIC-006".to_string(),
+                        title: "CI Secret Exposure via Debug Trace / ACTIONS_STEP_DEBUG"
+                            .to_string(),
+                    },
+                    Severity::High,
+                    TargetKind::GenericConfigFile,
+                    Some(path.to_path_buf()),
+                    Some(line_num),
+                    trimmed,
+                    "Disable ACTIONS_STEP_DEBUG and runner diagnostic logging in CI workflows",
+                    format!(
+                        "Workflow enables diagnostic step debugging at line {}: '{}', which exposes secrets and decrypted variables in job execution logs",
+                        line_num, trimmed
+                    ),
+                    "Remove ACTIONS_STEP_DEBUG or set it to 'false' to prevent secret leakage in build logs",
+                );
+                finding.detector_id = "cicd-security".to_string();
+                finding.category =
+                    "2.14 CI/CD, build pipelines and repository automation".to_string();
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::ConfirmedReachable;
+                finding.confidence = Confidence::Confirmed;
+                finding.evidence_certainty = EvidenceCertainty::Confirmed;
+                findings.push(finding);
             }
 
             if in_run_block || is_run_start {
@@ -186,6 +227,36 @@ impl CicdScanner {
                     finding.category =
                         "2.14 CI/CD, build pipelines and repository automation".to_string();
                     finding.advisory_ids.push("BK-AI-CIC-004".to_string());
+                    finding.affectedness = Affectedness::ConfirmedAffected;
+                    finding.reachability = Reachability::ConfirmedReachable;
+                    finding.confidence = Confidence::Confirmed;
+                    finding.evidence_certainty = EvidenceCertainty::Confirmed;
+                    findings.push(finding);
+                }
+
+                // 6. Echoed or printed secrets in run steps (BK-AI-CIC-006)
+                if RE_SECRET_EXPR.is_match(line) && RE_PRINT_CMD.is_match(line) {
+                    let mut finding = Finding::new(
+                        format!("CIC-SECRETPRINT-{}-{}", path.display(), line_num),
+                        CveId::Custom {
+                            id: "BK-AI-CIC-006".to_string(),
+                            title: "CI Secret Printed or Echoed in Workflow Run Step".to_string(),
+                        },
+                        Severity::High,
+                        TargetKind::GenericConfigFile,
+                        Some(path.to_path_buf()),
+                        Some(line_num),
+                        trimmed,
+                        "Avoid echoing or printing repository secrets to standard output or build logs",
+                        format!(
+                            "Secret expression '${{ secrets.* }}' is echoed or printed at line {}: '{}'",
+                            line_num, trimmed
+                        ),
+                        "Remove commands that echo secrets or pipe them to logging utilities; use trusted actions or masked environment variables",
+                    );
+                    finding.detector_id = "cicd-security".to_string();
+                    finding.category =
+                        "2.14 CI/CD, build pipelines and repository automation".to_string();
                     finding.affectedness = Affectedness::ConfirmedAffected;
                     finding.reachability = Reachability::ConfirmedReachable;
                     finding.confidence = Confidence::Confirmed;

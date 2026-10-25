@@ -198,6 +198,7 @@ impl SecurityDetector for CicdSecurityDetector {
             "BK-AI-CIC-002",
             "BK-AI-CIC-003",
             "BK-AI-CIC-004",
+            "BK-AI-CIC-006",
         ]
     }
 
@@ -258,6 +259,8 @@ impl SecurityDetector for ContainerIacDetector {
             "BK-AI-INF-003",
             "BK-AI-INF-004",
             "BK-AI-INF-007",
+            "BK-AI-INF-008",
+            "BK-AI-INF-010",
         ]
     }
 
@@ -316,17 +319,25 @@ impl SecurityDetector for AgentSkillDetector {
         &[
             "BK-AI-LLM-001",
             "BK-AI-LLM-003",
+            "BK-AI-LLM-004",
             "BK-AI-LLM-008",
             "BK-AI-LLM-014",
+            "BK-AI-LLM-017",
         ]
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["markdown", "json"]
+        &["markdown", "json", "python", "javascript", "typescript"]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
-        &[TargetKind::AgentSkillManifest, TargetKind::McpServerConfig]
+        &[
+            TargetKind::AgentSkillManifest,
+            TargetKind::McpServerConfig,
+            TargetKind::GenericConfigFile,
+            TargetKind::GenericSourceFile,
+            TargetKind::NodeSourceFile,
+        ]
     }
 
     fn run(&self, ctx: &ScanContext) -> DetectorResult {
@@ -335,7 +346,10 @@ impl SecurityDetector for AgentSkillDetector {
             .findings
             .into_iter()
             .filter(|f| {
-                f.target_kind == TargetKind::AgentSkillManifest
+                f.detector_id == "agent-security-scanner"
+                    || f.detector_id == "agent-skill-scanner"
+                    || f.detector_id == "agent-mcp-scanner"
+                    || f.target_kind == TargetKind::AgentSkillManifest
                     || f.target_kind == TargetKind::McpServerConfig
             })
             .collect();
@@ -464,7 +478,15 @@ impl SecurityDetector for DynamicRulesDetector {
     }
 
     fn supported_languages(&self) -> &[&'static str] {
-        &["generic", "python", "nginx", "javascript", "typescript", "go", "php"]
+        &[
+            "generic",
+            "python",
+            "nginx",
+            "javascript",
+            "typescript",
+            "go",
+            "php",
+        ]
     }
 
     fn supported_targets(&self) -> &[TargetKind] {
@@ -510,6 +532,120 @@ impl SecurityDetector for DynamicRulesDetector {
     }
 }
 
+pub struct InjectionSecurityDetector;
+
+impl SecurityDetector for InjectionSecurityDetector {
+    fn id(&self) -> &'static str {
+        "injection-security"
+    }
+
+    fn name(&self) -> &'static str {
+        "YAML Expression Injection & ReDoS Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &["BK-AI-INJ-014", "BK-AI-INJ-015"]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["yaml", "javascript", "typescript", "python"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[
+            TargetKind::GenericConfigFile,
+            TargetKind::GenericSourceFile,
+            TargetKind::NodeSourceFile,
+        ]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let injection_findings: Vec<Finding> = report
+            .findings
+            .into_iter()
+            .filter(|f| f.detector_id == "injection-security")
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: injection_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
+pub struct CryptoWeaknessDetector;
+
+impl SecurityDetector for CryptoWeaknessDetector {
+    fn id(&self) -> &'static str {
+        "crypto-weakness"
+    }
+
+    fn name(&self) -> &'static str {
+        "Cryptographic Weakness (Hash/Cipher/IV) Security Detector"
+    }
+
+    fn supported_rule_ids(&self) -> &[&'static str] {
+        &["BK-AI-CRY-001", "BK-AI-CRY-002", "BK-AI-CRY-003"]
+    }
+
+    fn supported_languages(&self) -> &[&'static str] {
+        &["javascript", "typescript", "python", "go", "rust"]
+    }
+
+    fn supported_targets(&self) -> &[TargetKind] {
+        &[TargetKind::GenericSourceFile, TargetKind::NodeSourceFile]
+    }
+
+    fn run(&self, ctx: &ScanContext) -> DetectorResult {
+        let report = FleetScanner::scan_directory(&ctx.root, false);
+        let crypto_findings: Vec<Finding> = report
+            .findings
+            .into_iter()
+            .filter(|f| f.detector_id == "crypto-weakness")
+            .collect();
+
+        let rules_run = self
+            .supported_rule_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let receipt = CoverageReceipt {
+            scanner_id: self.id().to_string(),
+            scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+            target_id: ctx.root.display().to_string(),
+            status: CoverageStatus::Complete,
+            items_examined: report.total_files_scanned as u64,
+            skipped_reasons: Vec::new(),
+            errors: Vec::new(),
+            completed_at: Utc::now().to_rfc3339(),
+        };
+
+        DetectorResult {
+            findings: crypto_findings,
+            receipt,
+            rules_run,
+        }
+    }
+}
+
 // ---------------- Detector Registry ----------------
 
 pub struct DetectorRegistry {
@@ -528,6 +664,8 @@ impl Default for DetectorRegistry {
         reg.register(Arc::new(AgentSkillDetector));
         reg.register(Arc::new(OsvScaDetector));
         reg.register(Arc::new(DynamicRulesDetector));
+        reg.register(Arc::new(InjectionSecurityDetector));
+        reg.register(Arc::new(CryptoWeaknessDetector));
         reg
     }
 }
