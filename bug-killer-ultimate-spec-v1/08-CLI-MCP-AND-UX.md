@@ -73,7 +73,7 @@ Research candidates are visually separate from confirmed vulnerabilities to avoi
 
 ## JSON and exit contracts
 
-Use ``schemas/finding.schema.json`, `coverage-receipt.schema.json` and `repair-plan.schema.json`. Envelope contains `contract_version`. Existing `--json` stays compatible until explicit major migration. New `--report-version=2` opts into Section 06 proposed exit codes. CLI help and machine docs must explicitly mark optional engines unavailable/missing license rather than silently skipping.
+Use `schemas/finding.schema.json`, `schemas/coverage-receipt.schema.json` and `schemas/repair-plan.schema.json`. Envelope contains `contract_version`. Existing `--json` stays compatible until explicit major migration. Proposed `--report-version=2` selects the machine-readable report schema; separately, proposed `--exit-contract=v2` opts into Section 06 exit codes. Selecting a report version **must not** implicitly change exit-code behavior. CLI help and machine docs must explicitly mark optional engines unavailable/missing license rather than silently skipping.
 
 ## Accessibility and usability
 

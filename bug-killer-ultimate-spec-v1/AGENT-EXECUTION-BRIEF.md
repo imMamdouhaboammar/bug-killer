@@ -4,7 +4,7 @@ You are implementing the architecture in this ZIP against `https://github.com/im
 
 ## Non-negotiable instructions
 
-1. Read every document in this ZIP, the repository's current AGENTS.md, README, Cargo/Go manifests, test fixtures, open issues and current main source before writing code. Any discrepancy between the spec's 2026-10-25 baseline and current source must be documented, not hidden.
+1. Read every document in this ZIP, the repository's current AGENTS.md, README, Cargo/Go manifests, test fixtures, open issues and current main source before writing code. Pin the baseline master SHA and issue snapshot timestamp before implementation. The specification was drafted on 2026-10-25; any discrepancy between that date's assumptions and pinned source must be documented, not hidden. Later upstream changes form a new baseline and require revalidation.
 2. Follow `10-IMPLEMENTATION-PLAN.md` milestone dependency graph. First revalidate and finish the existing safety and coverage issues in [tracker #22](https://github.com/imMamdouhaboammar/bug-killer/issues/22); do not jump to autonomous research/privileged healing.
 3. Use small scoped PRs with meaningful atomic commits. One coherent behavior contract per PR. Do not create artificial commit counts. Do not directly push to main; do not merge without required checks and review.
 4. TDD for each behavior: demonstrate a failing regression on the old path, make it pass, add negative controls, run integration checks and show exact commands/results. Fix scanner and schema errors instead of suppressing errors or relaxing tests.
@@ -19,7 +19,7 @@ You are implementing the architecture in this ZIP against `https://github.com/im
 
 **M0 audit and work-order reconciliation:**
 
-- Fetch the latest master and issue tracker.
+- Fetch master and issue tracker once, record exact commit SHA and issue snapshot timestamp, and keep them fixed for the work-card's verification baseline.
 - Validate issues #10–#24 against current implementation following PR #25. For each: `resolved/partial/open` with exact source and tests; do not close without explicit complete acceptance proof.
 - List blocking trust boundaries for privileged healing and coverage.
 - Produce a dependency-ordered worklist and select the smallest testable first PR.

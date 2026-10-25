@@ -16,7 +16,7 @@
 | Integration | Rust/Go/MCP/adapter interoperability | Temp projects, fake OSV, offline tools |
 | Adversarial | Parser and trust boundary resilience | Property-based tests, fuzz input, symlink/permission fixtures |
 | End-to-end | Authorization → repair → verify/rollback | Ephemeral workspace, controlled fake services |
-| Benchmark | Detection precision/recall and speed | OWASP Benchmark, NIST SARD, internal labelled real-world fixtures |
+| Benchmark | Detection precision/recall and speed | OWASP Benchmark, NIST SARD, internally labeled synthetic reproductions of real-world bug patterns |
 | Release | Distribution/CI across OS/CPU | Signed bundles, Docker build where supported, SBOM, smoke tests |
 
 Benchmark sources: https://owasp.org/www-project-benchmark/ and https://samate.nist.gov/SARD

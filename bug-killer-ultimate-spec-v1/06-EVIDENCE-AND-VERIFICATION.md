@@ -66,6 +66,10 @@ Let `M` be mandatory rule-target checks, `E` be successfully evaluated relevant 
 - `ERROR` iff engine protocol, verification integrity, or internal invariant failed.
 - `NOT_ASSESSED` where no meaningful security assessment was actually performed.
 
+These are mutually exclusive aggregate outcomes. Evaluate in strict precedence order:
+`ERROR > BLOCKED_AUTHORIZATION > BLOCKED_INCOMPLETE > FAIL_FINDINGS > NOT_ASSESSED > PASS_IN_SCOPE`.
+`ERROR` is reserved for an engine/protocol/integrity fault, not ordinary incomplete source coverage. If verified findings coexist with missing mandatory checks, return `BLOCKED_INCOMPLETE` while still including all findings in the report and blocking CI. If no rule-target work ran, return `NOT_ASSESSED`, never `PASS_IN_SCOPE`. This precedence applies identically to CLI exit codes, MCP responses and CI policy.
+
 CI cannot succeed because there are no findings if mandatory source files were unreadable or required engines were absent.
 
 ## Compatibility and machine outputs

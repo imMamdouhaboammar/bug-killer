@@ -44,11 +44,13 @@ stateDiagram-v2
     Staged --> Applied
     Applied --> Verified
     Applied --> Failed
-    Failed --> RolledBack
-    RolledBack --> RecoveryRequired
+    Failed --> RollbackAttempted
+    RollbackAttempted --> RolledBack: restoration verified
+    RollbackAttempted --> RollbackFailed: restore error or partial
+    RollbackFailed --> RecoveryRequired
 ```
 
-Transitions are transactional with write-ahead records; a `ROLLBACK_FAILED` / `RECOVERY_REQUIRED` state cannot be reported as success. Partial commit across multiple files must have explicit recovery logic.
+Transitions are transactional with write-ahead records. `RolledBack` means the original state was restored but the attempted repair **did not succeed**. `RollbackFailed` and `RecoveryRequired` demand operator intervention and cannot be reported as success. Partial commit across multiple files must have explicit recovery logic.
 
 ### Plan
 
@@ -72,7 +74,7 @@ Run language format/typecheck/build/tests, impacted security rule, affectedness 
 
 ### Rollback
 
-Use signed manifests bound to exact destination and backup identity, authenticated encryption/secure directories as policy demands, target preimage/postimage safety, complete recovery ledger and explicit irrecoverable states. Do not suppress rollback errors. Records must be atomically stored.
+Use signed manifests bound to exact canonical destination, backup identity, unique cryptographically random nonce and source/postimage digests. Every backup requires a collision-resistant ID, exclusively created private staging directory (0700 on Unix), non-clobbering publication, restricted backup payload and manifest permissions (0600 on Unix), and a durable atomic manifest write. These protections are mandatory; authenticated encryption may additionally be required by policy. Preserve complete recovery ledgers and explicit irrecoverable states; never suppress rollback errors.
 
 ## Domain-specific policy
 

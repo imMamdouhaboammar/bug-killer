@@ -52,7 +52,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["verification_id", "kind"],
+        "required": ["verification_id", "kind", "required"],
         "properties": {
           "verification_id": { "type": "string", "minLength": 1 },
           "kind": { "type": "string", "enum": ["PARSER", "FORMAT", "TYPECHECK", "BUILD", "TEST", "SECURITY_RESCAN", "SERVICE_HEALTH", "DEPENDENCY_REQUERY"] },

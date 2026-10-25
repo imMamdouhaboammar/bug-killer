@@ -51,19 +51,20 @@ State machine:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Declared
-    Declared --> NotApplicable
-    Declared --> Unsupported
-    Declared --> Scheduled
-    Scheduled --> Completed
-    Scheduled --> Partial
-    Scheduled --> Error
-    Completed --> WithFinding
-    Completed --> NoFinding
+    [*] --> DECLARED
+    DECLARED --> NOT_APPLICABLE
+    DECLARED --> UNSUPPORTED
+    DECLARED --> SCHEDULED
+    SCHEDULED --> EVALUATED
+    SCHEDULED --> PARTIAL
+    SCHEDULED --> NOT_RUN
+    SCHEDULED --> ERROR
+    EVALUATED --> WITH_FINDING
+    EVALUATED --> NO_FINDING
 ```
 
 - `SUPPORTED` is static capability information only. It never implies execution.
-- `COMPLETED` requires a target-specific receipt, successful parser/analysis and known scope.
+- `EVALUATED` requires a target-specific receipt, successful parser/analysis and known scope. `DECLARED` and `SCHEDULED` are workflow states; `WITH_FINDING` and `NO_FINDING` are assessed outcomes, not coverage statuses.
 - `NO_FINDING` means no match **within this executed scope**, not "safe".
 - `PARTIAL` includes skipped sources, budget exhaustion, unresolved imports, unsupported syntax or optional engine failure.
 - `ERROR` includes scanner panic, invalid rule, parse failure or broken provider contract.
