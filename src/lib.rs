@@ -12,6 +12,7 @@ pub mod detectors;
 pub mod doctor;
 pub mod engine;
 pub mod healer;
+pub mod hunter;
 pub mod identity;
 pub mod mcp;
 pub mod osv;
