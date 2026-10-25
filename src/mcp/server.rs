@@ -1,10 +1,11 @@
+use crate::catalog::SecurityCatalog;
 use crate::healer::AutopilotHealer;
-use crate::identity::AgentIdentity;
 use crate::mcp::protocol::*;
 use crate::osv::OsvClient;
 use crate::scanner::FleetScanner;
 use crate::scanner::ai_agent::AgentSecurityScanner;
 use crate::scanner::host::HostProcessScanner;
+use crate::security_guard::SecurityGuard;
 use crate::types::*;
 use serde_json::{Value, json};
 use std::io::{BufRead, Write};
@@ -217,6 +218,116 @@ impl McpServer {
                     }
                 }),
             },
+            McpTool {
+                name: "bugkiller_security_status".into(),
+                description: "Query project initialization state, baseline findings, and security guard status.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "path": { "type": "string", "default": "." }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_scan_project".into(),
+                description: "Execute full project security guard scan across all applicable catalog rules.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "path": { "type": "string", "default": "." },
+                        "osv": { "type": "boolean", "default": false }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_scan_changed_files".into(),
+                description: "Execute fast incremental scan on changed or git-modified files only.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "path": { "type": "string", "default": "." }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_list_findings".into(),
+                description: "List detected security findings filtered by rule, severity, or affectedness.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "path": { "type": "string", "default": "." },
+                        "severity": { "type": "string" },
+                        "rule_id": { "type": "string" }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_explain_finding".into(),
+                description: "Retrieve comprehensive security catalog explanation, CWE reference, and remediation requirements for a finding.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "required": ["finding_id"],
+                    "properties": {
+                        "finding_id": { "type": "string" },
+                        "path": { "type": "string", "default": "." }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_get_rule".into(),
+                description: "Look up a rule in the 373-rule AI-Generated Code Security Catalog by rule ID (e.g. BK-AI-INJ-001 or INJ-001).".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "required": ["rule_id"],
+                    "properties": {
+                        "rule_id": { "type": "string" }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_propose_fix".into(),
+                description: "Generate a bounded, non-mutating repair proposal and diff preview for a detected security issue.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "required": ["finding_id"],
+                    "properties": {
+                        "finding_id": { "type": "string" },
+                        "path": { "type": "string", "default": "." }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_verify_fix".into(),
+                description: "Independently verify whether a security failure still occurs and check coverage completeness.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "path": { "type": "string", "default": "." }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_get_coverage".into(),
+                description: "Retrieve truthful coverage receipt, evaluated rules, and list of unexamined/unsupported catalog rules.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "path": { "type": "string", "default": "." }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bugkiller_security_guidance".into(),
+                description: "Request pre-generation task-scoped security guidance, safe patterns, and banned anti-patterns before coding.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "required": ["task"],
+                    "properties": {
+                        "task": { "type": "string" },
+                        "language": { "type": "string", "default": "generic" }
+                    }
+                }),
+            },
         ]
     }
 
@@ -291,7 +402,10 @@ impl McpServer {
 
     fn execute_tool(&mut self, tool_name: &str, args: &Value) -> CallToolResult {
         let path_str = args.get("path").and_then(Value::as_str).unwrap_or(".");
-        let target_path = self.resolve_path(path_str);
+        let target_path = match self.resolve_path(path_str) {
+            Ok(path) => path,
+            Err(error) => return CallToolResult::error_text(error),
+        };
 
         match tool_name {
             "bk.asset_inventory" => {
@@ -505,14 +619,13 @@ impl McpServer {
             }
 
             "bk.status" => {
-                let identity = AgentIdentity::load_default();
                 let status = json!({
                     "service": "bug-killer",
                     "version": env!("CARGO_PKG_VERSION"),
                     "read_only_mode": self.read_only,
                     "workspace_root": self.workspace_root.display().to_string(),
-                    "agent_identity_configured": identity.is_ok(),
-                    "trust_anchor": "Ed25519 Root Key (~/.bug-killer/identity/agent.key)",
+                    "agent_identity_configured": self.workspace_root.join(".aegis/agent_identity.key").is_file(),
+                    "trust_anchor": "Ed25519 Project Key (.aegis/agent_identity.key)",
                     "transport": "stdio",
                 });
                 CallToolResult::ok_json(&status)
@@ -550,17 +663,165 @@ impl McpServer {
                 )
             }
 
+            "bugkiller_security_status" => {
+                let status = SecurityGuard::status(&target_path);
+                CallToolResult::ok_json(&status)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
+            "bugkiller_scan_project" => {
+                let osv = args.get("osv").and_then(Value::as_bool).unwrap_or(false);
+                let report = SecurityGuard::scan(&target_path, ScanProfile::Project, false, osv);
+                CallToolResult::ok_json(&report)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
+            "bugkiller_scan_changed_files" => {
+                let report = SecurityGuard::scan(&target_path, ScanProfile::Quick, true, false);
+                CallToolResult::ok_json(&report)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
+            "bugkiller_list_findings" => {
+                let report = SecurityGuard::scan(&target_path, ScanProfile::Quick, false, false);
+                let sev_filter = args
+                    .get("severity")
+                    .and_then(Value::as_str)
+                    .map(|s| s.to_lowercase());
+                let rule_filter = args
+                    .get("rule_id")
+                    .and_then(Value::as_str)
+                    .map(|s| s.to_lowercase());
+
+                let filtered: Vec<&Finding> = report
+                    .findings
+                    .iter()
+                    .filter(|f| {
+                        if let Some(ref sev) = sev_filter {
+                            if !format!("{:?}", f.severity).to_lowercase().contains(sev) {
+                                return false;
+                            }
+                        }
+                        if let Some(ref r) = rule_filter {
+                            if !f.cve.as_str().to_lowercase().contains(r) {
+                                return false;
+                            }
+                        }
+                        true
+                    })
+                    .collect();
+
+                let out = json!({
+                    "total_findings": filtered.len(),
+                    "findings": filtered,
+                });
+                CallToolResult::ok_json(&out)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
+            "bugkiller_explain_finding" => {
+                let finding_id = args.get("finding_id").and_then(Value::as_str).unwrap_or("");
+                if finding_id.is_empty() {
+                    return CallToolResult::error_text("finding_id is required".to_string());
+                }
+                match SecurityGuard::explain(finding_id, &target_path) {
+                    Some(explanation) => CallToolResult::ok_json(&explanation)
+                        .unwrap_or_else(|e| CallToolResult::error_text(e.to_string())),
+                    None => {
+                        CallToolResult::error_text(format!("Finding '{}' not found", finding_id))
+                    }
+                }
+            }
+
+            "bugkiller_get_rule" => {
+                let rule_id = args.get("rule_id").and_then(Value::as_str).unwrap_or("");
+                let catalog = SecurityCatalog::global();
+                match catalog.get_rule(rule_id) {
+                    Some(rule) => CallToolResult::ok_json(rule)
+                        .unwrap_or_else(|e| CallToolResult::error_text(e.to_string())),
+                    None => CallToolResult::error_text(format!(
+                        "Rule '{}' not found in security catalog",
+                        rule_id
+                    )),
+                }
+            }
+
+            "bugkiller_propose_fix" => {
+                let finding_id = args.get("finding_id").and_then(Value::as_str).unwrap_or("");
+                if finding_id.is_empty() {
+                    return CallToolResult::error_text("finding_id is required".to_string());
+                }
+                match SecurityGuard::plan_fix(finding_id, &target_path) {
+                    Ok(plan) => CallToolResult::ok_json(&plan)
+                        .unwrap_or_else(|e| CallToolResult::error_text(e.to_string())),
+                    Err(e) => CallToolResult::error_text(e),
+                }
+            }
+
+            "bugkiller_verify_fix" => {
+                let report = SecurityGuard::scan(&target_path, ScanProfile::Quick, false, false);
+                let is_clean = report.is_clean();
+                let out = json!({
+                    "is_clean": is_clean,
+                    "status": report.status,
+                    "result_classification": report.result_classification,
+                    "unresolved_findings": report.findings.len(),
+                    "coverage_complete": report.coverage.is_complete(),
+                });
+                CallToolResult::ok_json(&out)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
+            "bugkiller_get_coverage" => {
+                let report = SecurityGuard::scan(&target_path, ScanProfile::Quick, false, false);
+                let out = json!({
+                    "coverage_status": report.coverage.coverage_status,
+                    "files_assessed": report.files_assessed,
+                    "rules_evaluated": report.rules_evaluated,
+                    "applicable_rules": report.applicable_rules,
+                    "unsupported_rules": report.unsupported_rules,
+                    "receipts": report.receipts,
+                    "unexamined_reasons": report.unexamined_reasons,
+                });
+                CallToolResult::ok_json(&out)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
+            "bugkiller_security_guidance" => {
+                let task = args.get("task").and_then(Value::as_str).unwrap_or("");
+                let lang = args
+                    .get("language")
+                    .and_then(Value::as_str)
+                    .unwrap_or("generic");
+                let guidance = SecurityGuard::guidance(task, lang);
+                CallToolResult::ok_json(&guidance)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
             _ => CallToolResult::error_text(format!("Unknown tool: {}", tool_name)),
         }
     }
 
-    fn resolve_path(&self, raw: &str) -> PathBuf {
+    fn resolve_path(&self, raw: &str) -> Result<PathBuf, String> {
+        let root = self
+            .workspace_root
+            .canonicalize()
+            .map_err(|e| format!("Workspace root is unavailable: {e}"))?;
         let p = Path::new(raw);
-        if p.is_absolute() {
+        let candidate = if p.is_absolute() {
             p.to_path_buf()
         } else {
-            self.workspace_root.join(p)
+            root.join(p)
+        };
+        let path = candidate
+            .canonicalize()
+            .map_err(|e| format!("Scan path is unavailable: {e}"))?;
+        if !path.starts_with(&root) {
+            return Err(
+                "Security Boundary Violation: requested path escapes MCP workspace".to_string(),
+            );
         }
+        Ok(path)
     }
 
     /// Runs the MCP server reading from standard input and writing to standard output.

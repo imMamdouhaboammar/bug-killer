@@ -1,9 +1,11 @@
 #![allow(clippy::collapsible_if, clippy::doc_lazy_continuation)]
 
 mod agent;
+mod catalog;
 mod completion;
 mod cve_db;
 mod dast;
+mod detectors;
 mod doctor;
 mod healer;
 mod identity;
@@ -11,6 +13,7 @@ mod mcp;
 mod osv;
 mod rules;
 mod scanner;
+mod security_guard;
 mod shell;
 mod taint;
 mod types;
@@ -19,6 +22,7 @@ mod watcher;
 use agent::investigation::InvestigationSupervisor;
 use agent::privacy::PrivacyPolicy;
 use agent::provider::{AgentModelConfig, ModelProvider, ProviderAdapter};
+use catalog::SecurityCatalog;
 use clap::{CommandFactory, Parser, Subcommand};
 use completion::CompletionGenerator;
 use dast::{DastProber, DastScopeConfig};
@@ -31,9 +35,10 @@ use mcp::{HostConfigGenerator, McpServer};
 use osv::OsvClient;
 use rules::RuleEngine;
 use scanner::FleetScanner;
+use security_guard::SecurityGuard;
 use shell::ShellEngine;
 use std::path::PathBuf;
-use types::Severity;
+use types::{ScanProfile, Severity};
 use watcher::WatcherEngine;
 
 #[derive(Parser, Debug)]
@@ -269,6 +274,27 @@ enum Commands {
     /// Model Context Protocol (MCP) server and integration commands
     #[command(subcommand)]
     Mcp(McpCommands),
+
+    /// Initialize Bug Killer in a project, create security configuration, and run baseline scan
+    Init {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Install Git pre-commit security hook (default: true)
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+        hooks: bool,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Bug Killer Security Guard suite (scan, status, explain, fix, verify, guidance, catalog)
+    Security {
+        #[command(subcommand)]
+        action: SecurityAction,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -338,6 +364,127 @@ enum AgentCommands {
         /// Approved export profile name for remote providers (required if allow_remote_data_export is true)
         #[arg(long)]
         export_profile: Option<String>,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum SecurityAction {
+    /// Execute security guard scan across all applicable catalog rules
+    Scan {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Scan profile (quick, project, ci, deep; default: quick)
+        #[arg(long, default_value = "quick", value_parser = ["quick", "project", "ci", "deep"])]
+        profile: String,
+
+        /// Scan only git-changed / staged files
+        #[arg(long, default_value_t = false)]
+        changed_only: bool,
+
+        /// Exit with code 1 for findings at or above this severity
+        #[arg(long, value_parser = ["critical", "high", "medium", "low"])]
+        fail_on: Option<String>,
+
+        /// Also query free open vulnerability database (OSV.dev)
+        #[arg(long, default_value_t = false)]
+        osv: bool,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show current workspace security guard status and baseline findings
+    Status {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Explain a finding using the 373-rule AI-Generated Code Security Catalog
+    Explain {
+        /// Finding ID or fingerprint prefix
+        finding_id: String,
+
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Propose or apply an authorized bounded security repair
+    Fix {
+        /// Finding ID or fingerprint prefix
+        finding_id: String,
+
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Generate repair proposal and diff preview without modifying files
+        #[arg(long, default_value_t = false, conflicts_with = "apply")]
+        plan: bool,
+
+        /// Apply authorized repair with atomic Ed25519 backup and verification
+        #[arg(long, default_value_t = false)]
+        apply: bool,
+
+        /// Optional operator approval receipt token (required for Level 3 fixes)
+        #[arg(long)]
+        receipt: Option<String>,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Independently verify workspace security status and coverage completeness
+    Verify {
+        /// Target directory path (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Generate pre-generation security guidance for a coding task
+    Guidance {
+        /// Task description or feature brief (e.g. "Add user file upload endpoint")
+        task: String,
+
+        /// Target programming language
+        #[arg(long, default_value = "generic")]
+        language: String,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Query or browse the 373-rule AI-Generated Code Security Issues Catalog
+    Catalog {
+        /// Filter by category number (1 to 27)
+        #[arg(long)]
+        category: Option<u8>,
+
+        /// Filter by rule lifecycle status (cataloged, supported_static, review_required, etc.)
+        #[arg(long)]
+        status: Option<String>,
 
         /// Output results as JSON
         #[arg(long)]
@@ -1335,6 +1482,364 @@ fn main() {
                                 bin_ref
                             ))
                             .unwrap()
+                        );
+                    }
+                }
+            }
+        },
+
+        Commands::Init { path, hooks, json } => {
+            if !json {
+                println!(
+                    "🚀 Initializing Bug Killer Security Guard in {}...",
+                    path.display()
+                );
+            }
+            match SecurityGuard::init(&path, hooks) {
+                Ok(receipt) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&receipt).unwrap());
+                    } else {
+                        println!("✅ Initialization complete for '{}'", receipt.project_name);
+                        println!(
+                            "   Languages detected: {}",
+                            receipt.detected_languages.join(", ")
+                        );
+                        println!(
+                            "   Package managers: {}",
+                            if receipt.package_managers.is_empty() {
+                                "none".to_string()
+                            } else {
+                                receipt.package_managers.join(", ")
+                            }
+                        );
+                        println!("   Config: {}", receipt.config_path.display());
+                        println!("   Policy: {}", receipt.policy_path.display());
+                        println!("   Baseline report: {}", receipt.baseline_path.display());
+                        println!(
+                            "   Git pre-commit hook: {}",
+                            if receipt.git_hook_installed {
+                                "installed"
+                            } else {
+                                "skipped/not a git repo"
+                            }
+                        );
+                        println!(
+                            "   Baseline findings: {} ({})",
+                            receipt.baseline_findings_count,
+                            if receipt.baseline_clean {
+                                "CLEAN"
+                            } else {
+                                "FINDINGS DETECTED"
+                            }
+                        );
+                    }
+                }
+                Err(e) => {
+                    eprintln!("❌ Initialization failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        Commands::Security { action } => match action {
+            SecurityAction::Scan {
+                path,
+                profile,
+                changed_only,
+                fail_on,
+                osv,
+                json,
+            } => {
+                let prof = match profile.to_lowercase().as_str() {
+                    "quick" => ScanProfile::Quick,
+                    "project" => ScanProfile::Project,
+                    "ci" => ScanProfile::Ci,
+                    "deep" => ScanProfile::Deep,
+                    _ => ScanProfile::Quick,
+                };
+                let report = SecurityGuard::scan(&path, prof, changed_only, osv);
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                } else {
+                    println!("🛡️  Bug Killer Security Guard Scan Report");
+                    println!("   Target: {}", report.workspace_root.display());
+                    println!("   Profile: {:?}", report.scan_profile);
+                    println!("   Status: {:?}", report.status);
+                    println!("   Result: {:?}", report.result_classification);
+                    println!("   Files assessed: {}", report.files_assessed);
+                    println!(
+                        "   Rules evaluated: {} | Applicable: {} | Unsupported: {}",
+                        report.rules_evaluated.len(),
+                        report.applicable_rules.len(),
+                        report.unsupported_rules.len()
+                    );
+                    println!("   Findings detected: {}", report.findings.len());
+                    for (idx, f) in report.findings.iter().enumerate() {
+                        println!(
+                            "     {}. [{:?}] {} ({}): {}",
+                            idx + 1,
+                            f.severity,
+                            f.cve.as_str(),
+                            f.cve.title(),
+                            f.description
+                        );
+                    }
+                    if report.is_clean() {
+                        println!("✅ Workspace is verified clean within evaluated coverage.");
+                    }
+                }
+                let threshold = match fail_on.as_deref() {
+                    Some("high") => Severity::High,
+                    Some("medium") => Severity::Medium,
+                    Some("low") => Severity::Low,
+                    _ => Severity::Critical,
+                };
+                if report
+                    .findings
+                    .iter()
+                    .any(|finding| finding.severity <= threshold)
+                {
+                    if !json {
+                        eprintln!("❌ Security findings meet the configured severity threshold.");
+                    }
+                    std::process::exit(1);
+                }
+            }
+
+            SecurityAction::Status { path, json } => {
+                let status = SecurityGuard::status(&path);
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&status).unwrap());
+                } else {
+                    println!("🛡️  Bug Killer Security Guard Status");
+                    println!("   Initialized: {}", status.is_initialized);
+                    println!("   Project: {}", status.project_name);
+                    println!("   Remediation level: {:?}", status.remediation_level);
+                    println!(
+                        "   Pre-commit gate enabled: {}",
+                        status.pre_commit_gate_enabled
+                    );
+                    println!(
+                        "   Agent cryptographic identity: {}",
+                        if status.agent_identity_configured {
+                            "configured"
+                        } else {
+                            "not configured"
+                        }
+                    );
+                    println!("   Baseline findings: {}", status.baseline_findings_count);
+                }
+            }
+
+            SecurityAction::Explain {
+                finding_id,
+                path,
+                json,
+            } => match SecurityGuard::explain(&finding_id, &path) {
+                Some(explanation) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&explanation).unwrap());
+                    } else {
+                        println!("📖 Security Finding Teardown: {}", explanation.finding_id);
+                        println!(
+                            "   Rule: {} ({})",
+                            explanation.rule_id, explanation.category
+                        );
+                        if let Some(ref cwe) = explanation.cwe {
+                            println!("   CWE: {}", cwe);
+                        }
+                        println!("   Severity: {:?}", explanation.severity);
+                        println!("   Description: {}", explanation.description);
+                        println!("   Method: {}", explanation.detection_method);
+                        println!(
+                            "   Remediation Guidance: {}",
+                            explanation.remediation_guidance
+                        );
+                        println!(
+                            "   Verification Requirements: {}",
+                            explanation.verification_requirements
+                        );
+                    }
+                }
+                None => {
+                    eprintln!("❌ Finding '{}' not found in workspace", finding_id);
+                    std::process::exit(1);
+                }
+            },
+
+            SecurityAction::Fix {
+                finding_id,
+                path,
+                plan: _plan,
+                apply,
+                receipt,
+                json,
+            } => {
+                if apply {
+                    match SecurityGuard::plan_fix(&finding_id, &path) {
+                        Ok(proposal) => {
+                            match SecurityGuard::apply_fix(&proposal, &path, receipt.as_deref()) {
+                                Ok(outcome) => {
+                                    if json {
+                                        println!(
+                                            "{}",
+                                            serde_json::to_string_pretty(&outcome).unwrap()
+                                        );
+                                    } else {
+                                        println!(
+                                            "🛠️  Remediation Outcome for {}",
+                                            outcome.finding_id
+                                        );
+                                        println!("   Success: {}", outcome.success);
+                                        println!("   Status: {}", outcome.verification_status);
+                                        println!("   Message: {}", outcome.message);
+                                        if let Some(ref b) = outcome.backup_id {
+                                            println!("   Backup snapshot: {}", b);
+                                        }
+                                    }
+                                    if !outcome.success {
+                                        std::process::exit(1);
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("❌ Remediation application failed: {}", e);
+                                    std::process::exit(1);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("❌ Failed to generate fix plan: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                } else {
+                    // Default to plan mode
+                    match SecurityGuard::plan_fix(&finding_id, &path) {
+                        Ok(proposal) => {
+                            if json {
+                                println!("{}", serde_json::to_string_pretty(&proposal).unwrap());
+                            } else {
+                                println!("📋 Prospective Repair Plan for {}", proposal.finding_id);
+                                println!("   Target: {}", proposal.target_file.display());
+                                println!("   Required level: {:?}", proposal.required_level);
+                                println!("   Explanation: {}", proposal.explanation);
+                                println!("   Diff preview:\n{}", proposal.diff_preview);
+                                println!(
+                                    "\nTo apply this fix, run:\n   bug-killer security fix {} --apply",
+                                    proposal.finding_id
+                                );
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("❌ Failed to generate fix plan: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+            }
+
+            SecurityAction::Verify { path, json } => {
+                let report = SecurityGuard::scan(&path, ScanProfile::Project, false, false);
+                let is_clean = report.is_clean();
+                if json {
+                    let out = serde_json::json!({
+                        "is_clean": is_clean,
+                        "status": report.status,
+                        "result_classification": report.result_classification,
+                        "findings_count": report.findings.len(),
+                        "coverage_complete": report.coverage.is_complete(),
+                    });
+                    println!("{}", serde_json::to_string_pretty(&out).unwrap());
+                } else {
+                    println!("🔍 Bug Killer Independent Verification");
+                    println!("   Status: {:?}", report.status);
+                    println!("   Result: {:?}", report.result_classification);
+                    println!("   Coverage complete: {}", report.coverage.is_complete());
+                    println!("   Findings remaining: {}", report.findings.len());
+                    if is_clean {
+                        println!("✅ All security properties independently verified clean.");
+                    } else {
+                        println!(
+                            "❌ Verification failed: Security properties violated or coverage incomplete."
+                        );
+                    }
+                }
+                if !is_clean {
+                    std::process::exit(1);
+                }
+            }
+
+            SecurityAction::Guidance {
+                task,
+                language,
+                json,
+            } => {
+                let guidance = SecurityGuard::guidance(&task, &language);
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&guidance).unwrap());
+                } else {
+                    println!(
+                        "🧭 Pre-Generation Security Guidance for: \"{}\"",
+                        guidance.task_query
+                    );
+                    println!("\n📌 Relevant Catalog Rules & Invariants:");
+                    for r in &guidance.relevant_rules {
+                        println!(
+                            "   - [{}] {}: {}",
+                            r.rule_id,
+                            r.cwe.as_deref().unwrap_or("No CWE"),
+                            r.invariant
+                        );
+                    }
+                    println!("\n✅ Recommended Safe Patterns:");
+                    for p in &guidance.recommended_safe_patterns {
+                        println!("   + {}", p);
+                    }
+                    println!("\n🚫 Banned Anti-Patterns:");
+                    for a in &guidance.banned_anti_patterns {
+                        println!("   - {}", a);
+                    }
+                    println!("\n🧪 Required Security Tests:");
+                    for t in &guidance.required_security_tests {
+                        println!("   * {}", t);
+                    }
+                }
+            }
+
+            SecurityAction::Catalog {
+                category,
+                status,
+                json,
+            } => {
+                let cat = SecurityCatalog::global();
+                let mut rules: Vec<&catalog::CatalogRule> = cat.all_rules().iter().collect();
+
+                if let Some(c) = category {
+                    rules.retain(|r| r.category_number == c);
+                }
+                if let Some(ref s) = status {
+                    let s_upper = s.to_uppercase();
+                    rules.retain(|r| r.status.as_str() == s_upper);
+                }
+
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&rules).unwrap());
+                } else {
+                    println!(
+                        "📚 Bug Killer Security Rule Catalog ({} rules found)",
+                        rules.len()
+                    );
+                    for r in rules.iter().take(50) {
+                        println!(
+                            "   [{}] {:?} (Cat {}): {}",
+                            r.rule_id, r.status, r.category_number, r.description
+                        );
+                    }
+                    if rules.len() > 50 {
+                        println!(
+                            "   ... and {} more rules (use --json to see all)",
+                            rules.len() - 50
                         );
                     }
                 }

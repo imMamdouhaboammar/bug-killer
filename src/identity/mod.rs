@@ -26,6 +26,7 @@ fn from_hex(s: &str) -> Result<Vec<u8>, &'static str> {
 
 impl AgentIdentity {
     /// Loads the agent identity from the user's home directory (~/.aegis or ~/.bug-killer).
+    #[allow(dead_code)]
     pub fn load_default() -> Result<Self, std::io::Error> {
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
         Self::get_or_create(Path::new(&home))

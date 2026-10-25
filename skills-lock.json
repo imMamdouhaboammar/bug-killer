@@ -1,6 +1,24 @@
 {
   "version": 1,
   "skills": {
+    "bk-healer": {
+      "source": "imMamdouhaboammar/bug-killer",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/bk-healer/SKILL.md",
+      "computedHash": "2a070532f95936e20dd38ae10732ef63ef4e42be3ce7bfdb7134898c115894de"
+    },
+    "bk-scanner": {
+      "source": "imMamdouhaboammar/bug-killer",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/bk-scanner/SKILL.md",
+      "computedHash": "ab5bf2fbec62f7831fd971b50360a5b821639548f698d3ed00b1ec117fc88037"
+    },
+    "bk-security": {
+      "source": "imMamdouhaboammar/bug-killer",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/bk-security/SKILL.md",
+      "computedHash": "f380b338d8d731374987b2b1b21865744c81118a123abe52bfbe1cc558624bb9"
+    },
     "dont-it-yourself": {
       "source": "imMamdouhaboammar/omni-skill",
       "sourceType": "github",

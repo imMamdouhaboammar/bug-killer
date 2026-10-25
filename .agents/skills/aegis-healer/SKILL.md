@@ -10,7 +10,10 @@ description: >
 
 # Aegis Healer: Autopilot Vulnerability Finder & Healer
 
-Autonomous, zero-downtime security auditor and patcher built in high-performance Rust (`aegis`).
+Autonomous, zero-downtime security auditor and patcher built in high-performance Rust (`bug-killer` / `bk`, formerly `aegis`).
+
+> [!NOTE]
+> Aegis has evolved into **Bug Killer (`bk`)**. For new implementations, prefer **`bk-security`**, **`bk-scanner`**, or **`bk-healer`**. `bk` CLI commands are fully compatible.
 
 ## Trigger Conditions
 
@@ -37,26 +40,28 @@ Use this skill when:
 3. **Safety & Zero-Loss Rollback:**
    - Pre-computation of SHA-256 hashes for all modified targets.
    - Snapshot archived in `.aegis/backups/<backup_id>/`.
-   - Instant cryptographic rollback restoring files bit-for-bit: `aegis rollback <backup_id>`.
+   - Instant cryptographic rollback restoring files bit-for-bit: `bk rollback <backup_id>`.
 
 ## CLI Usage
 
 ```bash
 # 1. Audit entire workspace or server root
-aegis scan . [--check-runtime] [--json]
+bk scan . [--check-runtime] [--json]
 
 # 2. Preview automated remediation without touching files
-aegis heal . --dry-run
+bk heal . --dry-run
 
 # 3. Apply atomic healing patches (creates automatic safety snapshot)
-aegis heal .
+bk heal .
 
 # 4. View backup snapshot history
-aegis history
+bk history
 
 # 5. Rollback changes if needed
-aegis rollback <BACKUP_ID>
+bk rollback <BACKUP_ID>
 
 # 6. Deep CVE vulnerability breakdown
+bk cve-info <CVE_ID>
+```
 aegis cve-info CVE-2026-109618
 ```
