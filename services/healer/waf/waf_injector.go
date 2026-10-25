@@ -243,8 +243,8 @@ func ValidateApacheConfig(content string) error {
 			fullTag := m[0]
 			tagName := strings.ToLower(m[1])
 
-			// Skip self-closing or XML headers
-			if strings.HasSuffix(fullTag, "/>") || strings.HasPrefix(fullTag, "<?") {
+			// Apache root sections such as <Directory /> are not XML self-closing tags.
+			if strings.HasPrefix(fullTag, "<?") {
 				continue
 			}
 
@@ -584,10 +584,11 @@ func (w *WafInjector) Rollback(configPath string) (bool, error) {
 			if startIdx == -1 {
 				break
 			}
-			endIdx := strings.Index(modified, endM)
-			if endIdx == -1 {
+			endRel := strings.Index(modified[startIdx+len(startM):], endM)
+			if endRel == -1 {
 				return false, fmt.Errorf("corrupted markers in %s: missing %s", configPath, endM)
 			}
+			endIdx := startIdx + len(startM) + endRel
 			cutEnd := endIdx + len(endM)
 			// Trim optional trailing newline
 			if cutEnd < len(modified) && modified[cutEnd] == '\n' {

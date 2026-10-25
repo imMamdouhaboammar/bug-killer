@@ -49,6 +49,28 @@ func TestWafInjectorRejectsFailedExternalValidationBeforeReplace(t *testing.T) {
 	}
 }
 
+func TestValidateApacheRootDirectoryAndLocationSections(t *testing.T) {
+	config := "<Directory />\nRequire all denied\n</Directory>\n<Location />\nRequire all granted\n</Location>\n"
+	if err := ValidateApacheConfig(config); err != nil {
+		t.Fatalf("Apache root sections are not XML self-closing tags: %v", err)
+	}
+}
+
+func TestWafRollbackRejectsEndMarkerBeforeStart(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nginx.conf")
+	corrupted := NginxMarkerEnd + "\nserver { listen 80; }\n" + NginxMarkerStart + "\n"
+	if err := os.WriteFile(path, []byte(corrupted), 0600); err != nil {
+		t.Fatal(err)
+	}
+	injector := newTestWafInjector(t)
+	if changed, err := injector.Rollback(path); err == nil || changed {
+		t.Fatalf("corrupted marker ordering must fail without mutation: changed=%v err=%v", changed, err)
+	}
+	if got, err := os.ReadFile(path); err != nil || string(got) != corrupted {
+		t.Fatalf("failed rollback must preserve file: %v", err)
+	}
+}
+
 func TestWafInjectorNginxIdempotency(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "aegis-waf-test")
 	if err != nil {

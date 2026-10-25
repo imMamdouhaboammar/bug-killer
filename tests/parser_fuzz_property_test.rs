@@ -2,38 +2,35 @@ use bug_killer::dast::DastProber;
 use bug_killer::osv::OsvClient;
 use bug_killer::scanner::binary::BinaryScanner;
 use bug_killer::types::*;
+use rand::{Rng, RngCore, SeedableRng, rngs::StdRng};
 use std::fs;
 use std::path::Path;
 use tempfile::tempdir;
 
-/// Simple deterministic linear congruential generator for reproducible pseudo-random fuzzing.
+/// Seeded standard generator for reproducible parser inputs.
 struct FuzzRng {
-    state: u64,
+    rng: StdRng,
 }
 
 impl FuzzRng {
     fn new(seed: u64) -> Self {
-        Self { state: seed }
+        Self {
+            rng: StdRng::seed_from_u64(seed),
+        }
     }
 
     fn next_u32(&mut self) -> u32 {
-        self.state = self
-            .state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
-        (self.state >> 32) as u32
+        self.rng.next_u32()
     }
 
     fn next_bytes(&mut self, len: usize) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(len);
-        for _ in 0..len {
-            buf.push((self.next_u32() & 0xFF) as u8);
-        }
+        let mut buf = vec![0; len];
+        self.rng.fill_bytes(&mut buf);
         buf
     }
 
     fn choose<'a, T>(&mut self, slice: &'a [T]) -> &'a T {
-        let idx = (self.next_u32() as usize) % slice.len();
+        let idx = self.rng.gen_range(0..slice.len());
         &slice[idx]
     }
 }
