@@ -69,10 +69,17 @@ impl ApprovalManager {
         valid_until: &str,
         nonce: &str,
     ) -> String {
-        format!(
-            "{}:{}:{}:{}:{}:{}:{}",
-            plan_id, plan_checksum, canonical_root, approver, action_risk, valid_until, nonce
-        )
+        // JSON tuple encoding preserves field boundaries even when values contain colons.
+        serde_json::to_string(&(
+            plan_id,
+            plan_checksum,
+            canonical_root,
+            approver,
+            action_risk,
+            valid_until,
+            nonce,
+        ))
+        .expect("serializing string tuple cannot fail")
     }
 
     fn used_nonces_path(root: &Path) -> PathBuf {
@@ -149,8 +156,16 @@ impl ApprovalManager {
         approver: &str,
         validity_mins: i64,
     ) -> Result<ApprovalReceipt, String> {
-        let operator = OperatorIdentity::get_or_create(root)
-            .map_err(|e| format!("Failed to access operator identity key: {}", e))?;
+        let key_path = OperatorIdentity::config_dir()
+            .map_err(|e| format!("Operator configuration unavailable: {e}"))?
+            .join("operator_identity.key");
+        Self::require_external_authority(root, &key_path)?;
+        let operator = OperatorIdentity::load_default().map_err(|e| {
+            format!(
+                "Operator-owned signing key not configured at {}: {e}",
+                key_path.display()
+            )
+        })?;
         Self::create_approval_receipt_with_operator(
             &operator,
             root,
@@ -210,6 +225,65 @@ impl ApprovalManager {
         receipt: &ApprovalReceipt,
         current_plan_checksum: &str,
     ) -> Result<(), String> {
+        let keys = Self::trusted_operator_keys(root)?;
+        Self::verify_approval_receipt_with_trusted_keys(root, receipt, current_plan_checksum, &keys)
+    }
+
+    /// Loads trusted public keys only from an explicitly configured operator-owned store.
+    fn trusted_operator_keys(root: &Path) -> Result<Vec<String>, String> {
+        let path = OperatorIdentity::config_dir()
+            .map_err(|e| format!("Operator configuration unavailable: {e}"))?
+            .join("trusted_operator_keys.json");
+        Self::require_external_authority(root, &path)?;
+        let content = fs::read(&path).map_err(|e| {
+            format!(
+                "Trusted operator keys must be provisioned at {}: {e}",
+                path.display()
+            )
+        })?;
+        let keys: Vec<String> = serde_json::from_slice(&content)
+            .map_err(|e| format!("Invalid trusted operator key list: {e}"))?;
+        if keys.is_empty() {
+            return Err("Trusted operator key list must not be empty".into());
+        }
+        Ok(keys)
+    }
+
+    fn require_external_authority(root: &Path, path: &Path) -> Result<(), String> {
+        let root = root
+            .canonicalize()
+            .map_err(|e| format!("Invalid workspace root: {e}"))?;
+        let parent = path
+            .parent()
+            .ok_or("Operator authority path has no parent")?;
+        // Resolve the parent, including symlinks, before trusting an operator-controlled path.
+        let config_root = parent
+            .canonicalize()
+            .map_err(|e| format!("Operator configuration directory unavailable: {e}"))?;
+        if config_root.starts_with(&root) {
+            return Err(
+                "Operator authority is inside the scanned workspace; refusing self-approval".into(),
+            );
+        }
+        match fs::symlink_metadata(path) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                return Err("Operator authority file must not be a symlink".into());
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(format!("Cannot inspect operator authority file: {e}")),
+        }
+        Ok(())
+    }
+
+    /// Explicit trust injection for isolated test hosts and separately authenticated integrations.
+    /// CLI remediation always uses `verify_approval_receipt` and the external pinned store.
+    pub fn verify_approval_receipt_with_trusted_keys(
+        root: &Path,
+        receipt: &ApprovalReceipt,
+        current_plan_checksum: &str,
+        trusted_keys: &[String],
+    ) -> Result<(), String> {
         // 1. Check plan integrity
         if receipt.plan_checksum != current_plan_checksum {
             return Err(format!(
@@ -249,20 +323,24 @@ impl ApprovalManager {
             ));
         }
 
-        // 5. Reject privilege escalation: signature minted by scanner agent identity without operator authority
-        if let Ok(agent_id) = AgentIdentity::get_or_create(root) {
-            if let Some(ref op_pub) = receipt.operator_public_key {
-                if op_pub == &agent_id.public_key_hex() {
-                    return Err(
-                        "Privilege Escalation Rejected: Approval receipt was signed with scanner agent identity, not operator authority".to_string()
-                    );
-                }
+        // 5. An asserted signer never establishes its own authority.
+        let operator_public_key = receipt
+            .operator_public_key
+            .as_ref()
+            .ok_or("Approval receipt is missing mandatory operator public key")?;
+        if !trusted_keys.iter().any(|key| key == operator_public_key) {
+            return Err("Untrusted operator signing key: not pinned by independent policy".into());
+        }
+        if root.join(".aegis/agent_identity.key").exists() {
+            let agent_id = AgentIdentity::load_existing(root)
+                .map_err(|e| format!("Cannot verify scanner identity separation: {e}"))?;
+            if operator_public_key == &agent_id.public_key_hex() {
+                return Err(
+                    "Privilege Escalation Rejected: scanner agent identity is not an operator"
+                        .into(),
+                );
             }
         }
-
-        // 6. Cryptographically verify signature using operator authority
-        let operator = OperatorIdentity::get_or_create(root)
-            .map_err(|e| format!("Failed to access operator identity key: {}", e))?;
 
         let bound_payload = Self::compute_receipt_payload(
             &receipt.plan_id,
@@ -274,20 +352,12 @@ impl ApprovalManager {
             &receipt.nonce,
         );
 
-        let verify_result = operator.verify_bytes(bound_payload.as_bytes(), &receipt.signature);
-        if let Err(err) = verify_result {
-            // Check legacy 4-tuple format for backwards compatibility if operator signed it
-            let legacy_payload = format!(
-                "{}:{}:{}:{}",
-                receipt.plan_id, receipt.plan_checksum, receipt.approver, receipt.valid_until
-            );
-            if operator
-                .verify_bytes(legacy_payload.as_bytes(), &receipt.signature)
-                .is_err()
-            {
-                return Err(format!("Cryptographic Verification Failed: {}", err));
-            }
-        }
+        OperatorIdentity::verify_signature(
+            operator_public_key,
+            bound_payload.as_bytes(),
+            &receipt.signature,
+        )
+        .map_err(|err| format!("Cryptographic Verification Failed: {err}"))?;
 
         Ok(())
     }
@@ -298,8 +368,24 @@ impl ApprovalManager {
         receipt: &ApprovalReceipt,
         actions: &[PatchAction],
     ) -> Result<(BackupManifest, usize), String> {
+        let keys = Self::trusted_operator_keys(root)?;
+        Self::execute_supervised_healing_with_trusted_keys(root, receipt, actions, &keys)
+    }
+
+    /// Injected independent trust policy for test harnesses and embedding hosts.
+    pub fn execute_supervised_healing_with_trusted_keys(
+        root: &Path,
+        receipt: &ApprovalReceipt,
+        actions: &[PatchAction],
+        trusted_keys: &[String],
+    ) -> Result<(BackupManifest, usize), String> {
         let current_checksum = Self::compute_plan_checksum(actions);
-        Self::verify_approval_receipt(root, receipt, &current_checksum)?;
+        Self::verify_approval_receipt_with_trusted_keys(
+            root,
+            receipt,
+            &current_checksum,
+            trusted_keys,
+        )?;
 
         // Record nonce to prevent replay
         Self::record_used_nonce(root, &receipt.nonce)?;

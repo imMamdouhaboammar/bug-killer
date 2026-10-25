@@ -1,10 +1,62 @@
 use bug_killer::healer::AutopilotHealer;
 use bug_killer::healer::approval::ApprovalManager;
+use bug_killer::healer::approval::ApprovalReceipt;
 use bug_killer::healer::rollback::RollbackManager;
+use bug_killer::identity::OperatorIdentity;
 use bug_killer::scanner::FleetScanner;
 use bug_killer::types::*;
 use std::fs;
+use std::path::Path;
 use tempfile::tempdir;
+
+fn test_receipt(
+    root: &Path,
+    id: &str,
+    checksum: &str,
+    approver: &str,
+    mins: i64,
+) -> Result<ApprovalReceipt, String> {
+    let operator = OperatorIdentity::get_or_create(root).map_err(|e| e.to_string())?;
+    ApprovalManager::create_approval_receipt_with_operator(
+        &operator,
+        root,
+        id,
+        checksum,
+        approver,
+        mins,
+        "PrivilegedRemediation",
+    )
+}
+
+fn test_keys(root: &Path) -> Vec<String> {
+    vec![
+        OperatorIdentity::get_or_create(root)
+            .unwrap()
+            .public_key_hex(),
+    ]
+}
+
+fn test_verify(root: &Path, receipt: &ApprovalReceipt, checksum: &str) -> Result<(), String> {
+    ApprovalManager::verify_approval_receipt_with_trusted_keys(
+        root,
+        receipt,
+        checksum,
+        &test_keys(root),
+    )
+}
+
+fn test_execute(
+    root: &Path,
+    receipt: &ApprovalReceipt,
+    actions: &[PatchAction],
+) -> Result<(BackupManifest, usize), String> {
+    ApprovalManager::execute_supervised_healing_with_trusted_keys(
+        root,
+        receipt,
+        actions,
+        &test_keys(root),
+    )
+}
 
 #[test]
 fn test_m6_plan_checksum_determinism_and_tamper_detection() {
@@ -39,7 +91,7 @@ fn test_m6_operator_approval_receipt_verification_and_expiry() {
     let approver = "secops-lead@company.internal";
 
     // 1. Create valid approval receipt
-    let receipt = ApprovalManager::create_approval_receipt(
+    let receipt = test_receipt(
         dir.path(),
         plan_id,
         plan_checksum,
@@ -53,7 +105,7 @@ fn test_m6_operator_approval_receipt_verification_and_expiry() {
     assert!(!receipt.signature.is_empty());
 
     // 2. Successful verification
-    let verify_res = ApprovalManager::verify_approval_receipt(dir.path(), &receipt, plan_checksum);
+    let verify_res = test_verify(dir.path(), &receipt, plan_checksum);
     assert!(
         verify_res.is_ok(),
         "Valid receipt should pass verification: {:?}",
@@ -61,7 +113,7 @@ fn test_m6_operator_approval_receipt_verification_and_expiry() {
     );
 
     // 3. Plan checksum mismatch (tampered plan) fails closed
-    let mismatch_res = ApprovalManager::verify_approval_receipt(
+    let mismatch_res = test_verify(
         dir.path(),
         &receipt,
         "1111111111111111111111111111111111111111111111111111111111111111",
@@ -72,16 +124,14 @@ fn test_m6_operator_approval_receipt_verification_and_expiry() {
     // 4. Expired receipt fails closed
     let mut expired_receipt = receipt.clone();
     expired_receipt.valid_until = "2020-01-01T00:00:00+00:00".into();
-    let expired_res =
-        ApprovalManager::verify_approval_receipt(dir.path(), &expired_receipt, plan_checksum);
+    let expired_res = test_verify(dir.path(), &expired_receipt, plan_checksum);
     assert!(expired_res.is_err());
     assert!(expired_res.unwrap_err().contains("Approval Expired"));
 
     // 5. Tampered signature fails closed
     let mut forged_receipt = receipt;
     forged_receipt.signature = "0".repeat(128);
-    let forged_res =
-        ApprovalManager::verify_approval_receipt(dir.path(), &forged_receipt, plan_checksum);
+    let forged_res = test_verify(dir.path(), &forged_receipt, plan_checksum);
     assert!(forged_res.is_err());
     assert!(forged_res.unwrap_err().contains("Verification Failed"));
 }
@@ -125,7 +175,7 @@ fn test_m6_end_to_end_supervised_l4_incident_drill() {
     // Phase 4: Compute plan checksum and issue operator approval receipt
     let plan_checksum = ApprovalManager::compute_plan_checksum(&plan);
     let plan_id = "incident-drill-plan-001";
-    let receipt = ApprovalManager::create_approval_receipt(
+    let receipt = test_receipt(
         dir.path(),
         plan_id,
         &plan_checksum,
@@ -136,8 +186,7 @@ fn test_m6_end_to_end_supervised_l4_incident_drill() {
 
     // Phase 5: Supervised execution with post-verification
     let (manifest, count) =
-        ApprovalManager::execute_supervised_healing(dir.path(), &receipt, &plan)
-            .expect("Supervised healing failed");
+        test_execute(dir.path(), &receipt, &plan).expect("Supervised healing failed");
 
     assert_eq!(count, 1);
     assert!(!manifest.backup_id.is_empty());
@@ -200,7 +249,7 @@ fn test_m6_fault_injection_post_verification_triggers_automatic_rollback() {
 
     let actions = vec![flawed_action];
     let plan_checksum = ApprovalManager::compute_plan_checksum(&actions);
-    let receipt = ApprovalManager::create_approval_receipt(
+    let receipt = test_receipt(
         dir.path(),
         "flawed-plan",
         &plan_checksum,
@@ -210,7 +259,7 @@ fn test_m6_fault_injection_post_verification_triggers_automatic_rollback() {
     .unwrap();
 
     // Execute supervised healing: should catch unresolved critical finding in post-scan and roll back!
-    let exec_res = ApprovalManager::execute_supervised_healing(dir.path(), &receipt, &actions);
+    let exec_res = test_execute(dir.path(), &receipt, &actions);
 
     assert!(
         exec_res.is_err(),

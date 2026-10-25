@@ -10,7 +10,57 @@ use bug_killer::scanner::ai_agent::AgentSecurityScanner;
 use bug_killer::types::*;
 use chrono::{Duration, Utc};
 use std::fs;
+use std::path::Path;
 use tempfile::tempdir;
+
+fn test_receipt(
+    root: &Path,
+    id: &str,
+    checksum: &str,
+    approver: &str,
+    mins: i64,
+) -> Result<ApprovalReceipt, String> {
+    let operator = OperatorIdentity::get_or_create(root).map_err(|e| e.to_string())?;
+    ApprovalManager::create_approval_receipt_with_operator(
+        &operator,
+        root,
+        id,
+        checksum,
+        approver,
+        mins,
+        "PrivilegedRemediation",
+    )
+}
+
+fn test_keys(root: &Path) -> Vec<String> {
+    vec![
+        OperatorIdentity::get_or_create(root)
+            .unwrap()
+            .public_key_hex(),
+    ]
+}
+
+fn test_verify(root: &Path, receipt: &ApprovalReceipt, checksum: &str) -> Result<(), String> {
+    ApprovalManager::verify_approval_receipt_with_trusted_keys(
+        root,
+        receipt,
+        checksum,
+        &test_keys(root),
+    )
+}
+
+fn test_execute(
+    root: &Path,
+    receipt: &ApprovalReceipt,
+    actions: &[PatchAction],
+) -> Result<(BackupManifest, usize), String> {
+    ApprovalManager::execute_supervised_healing_with_trusted_keys(
+        root,
+        receipt,
+        actions,
+        &test_keys(root),
+    )
+}
 
 // =========================================================================
 // ISSUE #15: Separate operator authority from scanner agent identity
@@ -63,14 +113,14 @@ fn test_issue_15_operator_authority_separated_from_agent_key() {
         signature: agent_signature,
     };
 
-    let verify_res = ApprovalManager::verify_approval_receipt(root, &forged_receipt, plan_checksum);
+    let verify_res = test_verify(root, &forged_receipt, plan_checksum);
     assert!(
         verify_res.is_err(),
         "Receipt signed with agent key must NOT pass operator verification"
     );
 
     // 3. Receipt minted with proper operator authority succeeds
-    let valid_receipt = ApprovalManager::create_approval_receipt(
+    let valid_receipt = test_receipt(
         root,
         plan_id,
         plan_checksum,
@@ -79,7 +129,7 @@ fn test_issue_15_operator_authority_separated_from_agent_key() {
     )
     .expect("Failed to create valid operator receipt");
 
-    let verify_ok = ApprovalManager::verify_approval_receipt(root, &valid_receipt, plan_checksum);
+    let verify_ok = test_verify(root, &valid_receipt, plan_checksum);
     assert!(
         verify_ok.is_ok(),
         "Receipt signed with operator authority must pass: {:?}",
@@ -95,7 +145,7 @@ fn test_issue_15_receipt_bindings_and_tamper_rejection() {
 
     let plan_id = "remediation-plan-auth";
     let plan_checksum = "a1b2c3d4e5f67890123456789012345678901234567890123456789012345678";
-    let receipt = ApprovalManager::create_approval_receipt(
+    let receipt = test_receipt(
         root,
         plan_id,
         plan_checksum,
@@ -114,8 +164,7 @@ fn test_issue_15_receipt_bindings_and_tamper_rejection() {
     assert!(!receipt.nonce.is_empty());
 
     // 1. Wrong workspace root: receipt created for `root` verified against `other_dir`
-    let wrong_root_res =
-        ApprovalManager::verify_approval_receipt(other_dir.path(), &receipt, plan_checksum);
+    let wrong_root_res = test_verify(other_dir.path(), &receipt, plan_checksum);
     assert!(
         wrong_root_res.is_err(),
         "Receipt verified against wrong workspace root must be rejected"
@@ -128,7 +177,7 @@ fn test_issue_15_receipt_bindings_and_tamper_rejection() {
     );
 
     // 2. Tampered plan checksum
-    let tampered_checksum_res = ApprovalManager::verify_approval_receipt(
+    let tampered_checksum_res = test_verify(
         root,
         &receipt,
         "0000000000000000000000000000000000000000000000000000000000000000",
@@ -143,14 +192,14 @@ fn test_issue_15_receipt_bindings_and_tamper_rejection() {
     // 3. Expired receipt
     let mut expired = receipt.clone();
     expired.valid_until = "2020-01-01T00:00:00Z".into();
-    let expired_res = ApprovalManager::verify_approval_receipt(root, &expired, plan_checksum);
+    let expired_res = test_verify(root, &expired, plan_checksum);
     assert!(expired_res.is_err());
     assert!(expired_res.unwrap_err().contains("Approval Expired"));
 
     // 4. Tampered nonce
     let mut tampered_nonce = receipt.clone();
     tampered_nonce.nonce = "tampered-nonce-value".into();
-    let nonce_res = ApprovalManager::verify_approval_receipt(root, &tampered_nonce, plan_checksum);
+    let nonce_res = test_verify(root, &tampered_nonce, plan_checksum);
     assert!(nonce_res.is_err());
     assert!(nonce_res.unwrap_err().contains("Verification Failed"));
 }
@@ -174,7 +223,7 @@ fn test_issue_15_receipt_replay_rejection() {
     assert!(!plan.is_empty(), "Expected prospective patch plan");
 
     let plan_checksum = ApprovalManager::compute_plan_checksum(&plan);
-    let receipt = ApprovalManager::create_approval_receipt(
+    let receipt = test_receipt(
         root,
         "replay-test-plan",
         &plan_checksum,
@@ -184,7 +233,7 @@ fn test_issue_15_receipt_replay_rejection() {
     .expect("Failed to issue receipt");
 
     // First execution: should succeed
-    let exec1 = ApprovalManager::execute_supervised_healing(root, &receipt, &plan);
+    let exec1 = test_execute(root, &receipt, &plan);
     assert!(
         exec1.is_ok(),
         "First execution of approved plan must succeed: {:?}",
@@ -192,7 +241,7 @@ fn test_issue_15_receipt_replay_rejection() {
     );
 
     // Second execution with SAME receipt: replay MUST be rejected
-    let exec2 = ApprovalManager::execute_supervised_healing(root, &receipt, &plan);
+    let exec2 = test_execute(root, &receipt, &plan);
     assert!(
         exec2.is_err(),
         "Replaying the same approval receipt must be rejected!"
@@ -205,7 +254,7 @@ fn test_issue_15_receipt_replay_rejection() {
     );
 
     // Direct verification of replayed receipt must also fail closed
-    let direct_verify = ApprovalManager::verify_approval_receipt(root, &receipt, &plan_checksum);
+    let direct_verify = test_verify(root, &receipt, &plan_checksum);
     assert!(
         direct_verify.is_err(),
         "Direct verification of used nonce must fail closed"

@@ -1,4 +1,3 @@
-use crate::healer::AutopilotHealer;
 use crate::scanner::FleetScanner;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -12,13 +11,19 @@ pub struct WatcherEngine;
 impl WatcherEngine {
     /// Runs a surveillance loop over target_dir, checking for changes every `interval_secs`.
     /// When changes are detected, a full scan is triggered.
-    /// If `auto_heal` is true, safe patches are automatically applied and recorded.
+    /// Automatic changes require independent operator approval; this loop is scan-only.
     pub fn watch(
         target_dir: &Path,
         interval_secs: u64,
         auto_heal: bool,
         shutdown_signal: Option<Arc<AtomicBool>>,
     ) {
+        if auto_heal {
+            eprintln!(
+                "Watcher does not accept unapproved auto-healing. Use operator-signed approve/apply."
+            );
+            return;
+        }
         println!("=======================================================");
         println!("  👁️  BUG KILLER: LIVE SURVEILLANCE & WATCHER ENGINE");
         println!("=======================================================");
@@ -83,23 +88,9 @@ impl WatcherEngine {
                         );
                     }
 
-                    if auto_heal {
-                        let plan = AutopilotHealer::plan_healing(&report);
-                        if !plan.is_empty() {
-                            println!("🩹 Applying {} autopilot healing patches...", plan.len());
-                            match AutopilotHealer::execute_healing(target_dir, &plan) {
-                                Ok((manifest, count)) => {
-                                    println!(
-                                        "✅ Successfully applied {} healing patches! Snapshot ID: {}",
-                                        count, manifest.backup_id
-                                    );
-                                    // Update state to include healed files
-                                    file_state = Self::snapshot_mtimes(target_dir);
-                                }
-                                Err(e) => eprintln!("❌ Healing failed: {}", e),
-                            }
-                        }
-                    }
+                    println!(
+                        "Proposed fixes require independent operator approval before execution."
+                    );
                 } else {
                     println!("✅ All targets secure. Zero unmitigated exposures.");
                 }

@@ -26,6 +26,24 @@ fn from_hex(s: &str) -> Result<Vec<u8>, &'static str> {
 }
 
 impl AgentIdentity {
+    /// Reads an existing agent key without generating an identity during verification.
+    pub fn load_existing(root: &Path) -> Result<Self, std::io::Error> {
+        let bytes = fs::read(root.join(".aegis/agent_identity.key"))?;
+        if bytes.len() != 32 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid agent key length",
+            ));
+        }
+        let mut key_bytes = [0u8; 32];
+        key_bytes.copy_from_slice(&bytes);
+        let signing_key = SigningKey::from_bytes(&key_bytes);
+        let verifying_key = signing_key.verifying_key();
+        Ok(Self {
+            signing_key,
+            verifying_key,
+        })
+    }
     /// Loads the agent identity from the user's home directory (~/.aegis or ~/.bug-killer).
     #[allow(dead_code)]
     pub fn load_default() -> Result<Self, std::io::Error> {
@@ -227,15 +245,42 @@ pub struct OperatorIdentity {
 }
 
 impl OperatorIdentity {
-    /// Loads the operator identity from the user's home directory (~/.aegis).
-    #[allow(dead_code)]
-    pub fn load_default() -> Result<Self, std::io::Error> {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-        Self::get_or_create(Path::new(&home))
+    /// Returns the external operator-owned configuration directory, never a project path.
+    pub fn config_dir() -> Result<std::path::PathBuf, std::io::Error> {
+        let base = if let Some(xdg) = std::env::var_os("XDG_CONFIG_HOME") {
+            std::path::PathBuf::from(xdg)
+        } else {
+            let home = std::env::var_os("HOME").ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "HOME is required for operator authority",
+                )
+            })?;
+            std::path::PathBuf::from(home).join(".config")
+        };
+        Ok(base.join("bug-killer"))
     }
 
-    /// Loads the operator's persistent Ed25519 identity key, or generates a fresh one if missing.
-    /// Uses distinct file `operator_identity.key` from `agent_identity.key`.
+    /// Loads only an existing operator-managed private key. Never generates a key.
+    pub fn load_default() -> Result<Self, std::io::Error> {
+        Self::load_key(&Self::config_dir()?.join("operator_identity.key"))
+    }
+
+    pub fn load_key(key_path: &Path) -> Result<Self, std::io::Error> {
+        let bytes = fs::read(key_path)?;
+        if bytes.len() != 32 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid operator key length",
+            ));
+        }
+        let mut key_bytes = [0u8; 32];
+        key_bytes.copy_from_slice(&bytes);
+        Ok(Self::from_bytes(&key_bytes))
+    }
+
+    /// Explicit provisioning helper. Never use workspace-generated keys for production approvals.
+    #[allow(dead_code)] // Used by isolated integration tests and explicit operator provisioning.
     pub fn get_or_create(root: &Path) -> Result<Self, std::io::Error> {
         let identity_dir = root.join(".aegis");
         fs::create_dir_all(&identity_dir)?;
@@ -320,6 +365,7 @@ impl OperatorIdentity {
     }
 
     /// Verifies Ed25519 signature in hex format against operator's public key.
+    #[allow(dead_code)] // Compatibility with isolated test callers; production uses pinned public key verification.
     pub fn verify_bytes(&self, data: &[u8], sig_hex: &str) -> Result<(), String> {
         let sig_bytes = from_hex(sig_hex).map_err(|e| format!("Invalid hex signature: {}", e))?;
         if sig_bytes.len() != 64 {
