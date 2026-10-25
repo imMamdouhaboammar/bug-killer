@@ -4,6 +4,7 @@ services/inspector/target
 */.DS_Store
 .aegis
 .bug-killer
+.bugkiller
 coverage-ledger.json
 findings.json
 test-ledger.json

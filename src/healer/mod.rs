@@ -214,12 +214,27 @@ impl AutopilotHealer {
         if let Some(err) = apply_error {
             // Multi-file Transaction Safety: Rollback any partially applied changes
             if applied_count > 0 {
-                let _ =
-                    crate::healer::rollback::RollbackManager::rollback(root, &manifest.backup_id);
+                return match crate::healer::rollback::RollbackManager::rollback(
+                    root,
+                    &manifest.backup_id,
+                ) {
+                    Ok(restored) if restored >= applied_count => Err(format!(
+                        "Multi-file healing transaction aborted: {}. Restored {} changed files from backup {}.",
+                        err, restored, manifest.backup_id
+                    )),
+                    Ok(restored) => Err(format!(
+                        "Multi-file healing transaction aborted: {}. PARTIAL ROLLBACK: restored {} of {} applied files. Manual recovery required; backup ID: {}.",
+                        err, restored, applied_count, manifest.backup_id
+                    )),
+                    Err(rollback_error) => Err(format!(
+                        "Multi-file healing transaction aborted: {}. ROLLBACK FAILED: {}. {} files may remain modified. Manual recovery required; backup ID: {}.",
+                        err, rollback_error, applied_count, manifest.backup_id
+                    )),
+                };
             }
             return Err(format!(
-                "Multi-file healing transaction aborted: {}. All {} intermediate changes safely rolled back.",
-                err, applied_count
+                "Multi-file healing transaction aborted before any changes were applied: {}.",
+                err
             ));
         }
 

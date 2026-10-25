@@ -103,7 +103,7 @@ impl ContainerScanner {
                                 format!("container-secret-exposure-{}-L{}", &file_digest[..8], line_num),
                                 CveId::Custom {
                                     id: "BK-CONTAINER-003".to_string(),
-                                    title: "Hardcoded Secret / Credential Exposure in Container Layer".to_string(),
+                                    title: "Secrets Embedded in Dockerfile Layer or Container Arguments".to_string(),
                                 },
                                 Severity::Critical,
                                 TargetKind::Dockerfile,
@@ -116,6 +116,7 @@ impl ContainerScanner {
                             );
                             finding.detector_id = "container-scanner".to_string();
                             finding.category = "credential-leakage".to_string();
+                            finding.advisory_ids.push("BK-AI-INF-007".to_string());
                             finding.affectedness = Affectedness::ConfirmedAffected;
                             finding.reachability = Reachability::ConfirmedReachable;
                             finding.confidence = Confidence::High;
@@ -127,6 +128,39 @@ impl ContainerScanner {
                         }
                     }
                 }
+            }
+
+            // 4. Insecure 0.0.0.0 binding exposure (BK-AI-INF-001)
+            if trimmed.contains("0.0.0.0")
+                && (trimmed.starts_with("EXPOSE ")
+                    || trimmed.starts_with("CMD ")
+                    || trimmed.starts_with("ENTRYPOINT ")
+                    || trimmed.contains("--bind")
+                    || trimmed.contains("--host"))
+            {
+                let mut finding = Finding::new(
+                    format!("container-bind-all-{}-L{}", &file_digest[..8], line_num),
+                    CveId::Custom {
+                        id: "BK-AI-INF-001".to_string(),
+                        title: "Service Exposed on 0.0.0.0 (Public Interface Binding)".to_string(),
+                    },
+                    Severity::Medium,
+                    TargetKind::Dockerfile,
+                    Some(path.to_path_buf()),
+                    Some(line_num),
+                    trimmed.to_string(),
+                    "Bind internal services to loopback 127.0.0.1 or rely on container overlay networking".to_string(),
+                    "Binding directly to 0.0.0.0 exposes administrative, debugging, or internal application endpoints to all available network interfaces without firewall isolation.".to_string(),
+                    "Change service binding from 0.0.0.0 to 127.0.0.1 for local services, or enforce ingress security policies.".to_string(),
+                );
+                finding.detector_id = "container-scanner".to_string();
+                finding.category = "container-hardening".to_string();
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::PotentiallyReachable;
+                finding.confidence = Confidence::High;
+                finding.supported_checks = vec!["dockerfile_bind_all_check".to_string()];
+                finding.compute_dedupe_fingerprint();
+                findings.push(finding);
             }
 
             // 4. Docker daemon socket exposure or dangerous mounts
@@ -155,6 +189,98 @@ impl ContainerScanner {
                 finding.supported_checks = vec!["dockerfile_daemon_socket_check".to_string()];
                 finding.compute_dedupe_fingerprint();
                 findings.push(finding);
+            }
+
+            // 5. Insecure TLS / Certificate validation disabled (BK-AI-INF-008)
+            let is_exec_instruction = trimmed.starts_with("RUN ")
+                || trimmed.starts_with("RUN\t")
+                || trimmed.starts_with("ENTRYPOINT ")
+                || trimmed.starts_with("ENTRYPOINT\t")
+                || trimmed.starts_with("ENTRYPOINT[")
+                || trimmed.starts_with("CMD ")
+                || trimmed.starts_with("CMD\t")
+                || trimmed.starts_with("CMD[");
+
+            if is_exec_instruction
+                && (trimmed.contains("--insecure") || trimmed.contains("--no-tls"))
+            {
+                let mut finding = Finding::new(
+                    format!("container-insecure-tls-{}-L{}", &file_digest[..8], line_num),
+                    CveId::Custom {
+                        id: "BK-AI-INF-008".to_string(),
+                        title: "Insecure TLS Configuration or Certificate Validation Disabled".to_string(),
+                    },
+                    Severity::High,
+                    TargetKind::Dockerfile,
+                    Some(path.to_path_buf()),
+                    Some(line_num),
+                    trimmed.to_string(),
+                    "Remove --insecure or --no-tls flags and enforce valid TLS certificate verification".to_string(),
+                    "Disabling TLS verification in container runtime or build commands exposes traffic to interception, MITM tampering, and malicious package injection.".to_string(),
+                    "Configure proper CA certificates within the container image and remove flags that bypass TLS certificate validation.".to_string(),
+                );
+                finding.detector_id = "container-scanner".to_string();
+                finding.category = "container-hardening".to_string();
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::ConfirmedReachable;
+                finding.confidence = Confidence::High;
+                finding.supported_checks = vec!["dockerfile_tls_verification_check".to_string()];
+                finding.compute_dedupe_fingerprint();
+                findings.push(finding);
+            }
+
+            // 6. Debug / metrics port exposure (BK-AI-INF-010)
+            if trimmed.starts_with("EXPOSE ") || trimmed.starts_with("EXPOSE\t") {
+                let ports_part = if let Some(rest) = trimmed.strip_prefix("EXPOSE ") {
+                    rest
+                } else {
+                    trimmed.strip_prefix("EXPOSE\t").unwrap_or_default()
+                };
+
+                let debug_ports = ["9090", "2112", "6060"];
+                for token in ports_part.split_whitespace() {
+                    let port = token.split('/').next().unwrap_or(token);
+                    if debug_ports.contains(&port) {
+                        let mut finding = Finding::new(
+                            format!(
+                                "container-debug-port-{}-{}-L{}",
+                                &file_digest[..8],
+                                port,
+                                line_num
+                            ),
+                            CveId::Custom {
+                                id: "BK-AI-INF-010".to_string(),
+                                title: format!("Internal Debug or Metrics Port Exposed ({})", port),
+                            },
+                            Severity::High,
+                            TargetKind::Dockerfile,
+                            Some(path.to_path_buf()),
+                            Some(line_num),
+                            trimmed.to_string(),
+                            format!(
+                                "Do not expose internal debug/metrics port {} publicly",
+                                port
+                            ),
+                            format!(
+                                "Port {} is commonly used for internal metrics or debugging (Prometheus, pprof). Exposing it can lead to information disclosure or Denial of Service.",
+                                port
+                            ),
+                            format!(
+                                "Remove EXPOSE {} from Dockerfile. Keep administrative/metrics interfaces on private overlay networks or localhost.",
+                                port
+                            ),
+                        );
+                        finding.detector_id = "container-scanner".to_string();
+                        finding.category = "container-hardening".to_string();
+                        finding.affectedness = Affectedness::ConfirmedAffected;
+                        finding.reachability = Reachability::ConfirmedReachable;
+                        finding.confidence = Confidence::High;
+                        finding.supported_checks =
+                            vec!["dockerfile_debug_port_exposure_check".to_string()];
+                        finding.compute_dedupe_fingerprint();
+                        findings.push(finding);
+                    }
+                }
             }
         }
 

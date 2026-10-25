@@ -3,6 +3,7 @@ package waf
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -23,8 +24,48 @@ func NewWafInjector() *WafInjector {
 	return &WafInjector{}
 }
 
+func readConfig(configPath string) (string, []byte, error) {
+	canonical, err := filepath.EvalSymlinks(configPath)
+	if err != nil {
+		return "", nil, err
+	}
+	data, err := os.ReadFile(canonical)
+	return canonical, data, err
+}
+
+func writeConfigAtomically(canonical string, content []byte) error {
+	info, err := os.Stat(canonical)
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("refusing to patch non-regular configuration file: %s", canonical)
+	}
+	temp, err := os.CreateTemp(filepath.Dir(canonical), ".bug-killer-waf-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temp.Name())
+	if err := temp.Chmod(info.Mode().Perm()); err != nil {
+		_ = temp.Close()
+		return err
+	}
+	_, writeErr := temp.Write(content)
+	if writeErr == nil {
+		writeErr = temp.Sync()
+	}
+	closeErr := temp.Close()
+	if writeErr == nil {
+		writeErr = closeErr
+	}
+	if writeErr != nil {
+		return writeErr
+	}
+	return os.Rename(temp.Name(), canonical)
+}
+
 func (w *WafInjector) InjectNginx(configPath string) (bool, error) {
-	data, err := os.ReadFile(configPath)
+	canonical, data, err := readConfig(configPath)
 	if err != nil {
 		return false, err
 	}
@@ -59,12 +100,12 @@ func (w *WafInjector) InjectNginx(configPath string) (bool, error) {
 		modified = content + "\n" + patch
 	}
 
-	err = os.WriteFile(configPath, []byte(modified), 0644)
+	err = writeConfigAtomically(canonical, []byte(modified))
 	return err == nil, err
 }
 
 func (w *WafInjector) InjectHAProxy(configPath string) (bool, error) {
-	data, err := os.ReadFile(configPath)
+	canonical, data, err := readConfig(configPath)
 	if err != nil {
 		return false, err
 	}
@@ -91,12 +132,12 @@ func (w *WafInjector) InjectHAProxy(configPath string) (bool, error) {
 		modified = content + "\n" + patch
 	}
 
-	err = os.WriteFile(configPath, []byte(modified), 0644)
+	err = writeConfigAtomically(canonical, []byte(modified))
 	return err == nil, err
 }
 
 func (w *WafInjector) InjectApache(configPath string) (bool, error) {
-	data, err := os.ReadFile(configPath)
+	canonical, data, err := readConfig(configPath)
 	if err != nil {
 		return false, err
 	}
@@ -119,6 +160,6 @@ func (w *WafInjector) InjectApache(configPath string) (bool, error) {
 `, ApacheMarkerStart, ApacheMarkerEnd)
 
 	modified := content + "\n" + patch
-	err = os.WriteFile(configPath, []byte(modified), 0644)
+	err = writeConfigAtomically(canonical, []byte(modified))
 	return err == nil, err
 }

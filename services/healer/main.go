@@ -33,7 +33,7 @@ type AuditReportInput struct {
 
 func main() {
 	udsSocket := flag.String("uds", "", "Start as UDS gRPC server on socket path (e.g. /tmp/omni_healer.sock)")
-	backupDir := flag.String("backup-dir", "/tmp/.omni_backups", "Directory to store Ed25519 signed backups")
+	backupDir := flag.String("backup-dir", "", "Directory to store Ed25519 signed backups (default: ~/.bug-killer/backups)")
 	findingsPath := flag.String("findings", "findings.json", "Path to findings.json from inspector")
 	nginxConf := flag.String("nginx", "", "Path to Nginx config to inject virtual patch")
 	haproxyConf := flag.String("haproxy", "", "Path to HAProxy config to inject guard")

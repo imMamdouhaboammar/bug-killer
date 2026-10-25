@@ -3,6 +3,7 @@ use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand::rngs::OsRng;
 use sha2::{Digest, Sha256};
 use std::fs;
+use std::io::{self, Write};
 use std::path::Path;
 
 pub struct AgentIdentity {
@@ -40,16 +41,20 @@ impl AgentIdentity {
 
         if key_path.exists() {
             let bytes = fs::read(&key_path)?;
-            if bytes.len() == 32 {
-                let mut key_bytes = [0u8; 32];
-                key_bytes.copy_from_slice(&bytes);
-                let signing_key = SigningKey::from_bytes(&key_bytes);
-                let verifying_key = signing_key.verifying_key();
-                return Ok(Self {
-                    signing_key,
-                    verifying_key,
-                });
+            if bytes.len() != 32 {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Existing Ed25519 identity key is corrupt; refusing to replace trust root",
+                ));
             }
+            let mut key_bytes = [0u8; 32];
+            key_bytes.copy_from_slice(&bytes);
+            let signing_key = SigningKey::from_bytes(&key_bytes);
+            let verifying_key = signing_key.verifying_key();
+            return Ok(Self {
+                signing_key,
+                verifying_key,
+            });
         }
 
         // Generate fresh cryptographic keypair using OS entropy
@@ -57,14 +62,24 @@ impl AgentIdentity {
         let signing_key = SigningKey::generate(&mut csprng);
         let verifying_key = signing_key.verifying_key();
 
-        // Write with restricted permissions
+        // Publish the complete key atomically and never replace an existing key.
         let key_bytes = signing_key.to_bytes();
-        fs::write(&key_path, key_bytes)?;
+        let mut temp = tempfile::NamedTempFile::new_in(&identity_dir)?;
 
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let _ = fs::set_permissions(&key_path, fs::Permissions::from_mode(0o600));
+            temp.as_file_mut()
+                .set_permissions(fs::Permissions::from_mode(0o600))?;
+        }
+        temp.write_all(&key_bytes)?;
+        temp.as_file_mut().sync_all()?;
+        match temp.persist_noclobber(&key_path) {
+            Ok(_) => {}
+            Err(error) if error.error.kind() == io::ErrorKind::AlreadyExists => {
+                return Self::get_or_create(root);
+            }
+            Err(error) => return Err(error.error),
         }
 
         Ok(Self {

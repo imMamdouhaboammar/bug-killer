@@ -1,6 +1,6 @@
 use crate::types::*;
 use regex::Regex;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -124,7 +124,6 @@ impl TaintEngine {
 
         // Map tainted variable -> (source_kind, source_line, source_snippet)
         let mut tainted_vars: HashMap<String, (TaintSourceKind, usize, String)> = HashMap::new();
-        let mut sanitized_vars: HashSet<String> = HashSet::new();
 
         // Regex patterns for Source extraction
         let re_js_source = Regex::new(r#"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:req\.(?:query|body|params|headers)|request\.(?:query|body|params))"#).unwrap();
@@ -138,21 +137,10 @@ impl TaintEngine {
             r#"([a-zA-Z0-9_]+)\s*:=\s*r\.(?:URL\.Query\(\)\.Get|FormValue|PostFormValue)\("#,
         )
         .unwrap();
-
-        // Sanitizer patterns
-        let sanitizers = [
-            "escape",
-            "quote",
-            "parseInt",
-            "Number(",
-            "encodeURIComponent",
-            "htmlspecialchars",
-            "htmlentities",
-            "filepath.Clean",
-            "int(",
-            "float(",
-            "sanitize",
-        ];
+        let re_go_containment_guard = Regex::new(
+            r#"^if\s+!strings\.HasPrefix\(([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\+\s*string\(os\.PathSeparator\)\)\s*\{$"#,
+        )
+        .unwrap();
 
         let lines: Vec<&str> = content.lines().collect();
 
@@ -164,19 +152,7 @@ impl TaintEngine {
                 continue;
             }
 
-            // 1. Check for Sanitization on already tainted variables
-            for s in &sanitizers {
-                if trimmed.contains(s) {
-                    for var in tainted_vars.keys().cloned().collect::<Vec<_>>() {
-                        if trimmed.contains(&var) {
-                            sanitized_vars.insert(var.clone());
-                            tainted_vars.remove(&var);
-                        }
-                    }
-                }
-            }
-
-            // 2. Discover primary sources
+            // Discover primary sources before following assignments and sinks.
             if let Some(caps) = re_js_source.captures(trimmed) {
                 let var = caps[1].to_string();
                 tainted_vars.insert(
@@ -227,11 +203,59 @@ impl TaintEngine {
                     && !target_var.contains('(')
                     && !target_var.contains('[')
                 {
+                    // A successful numeric conversion yields a numeric value, but only
+                    // the assigned result is safe for SQL concatenation. The input
+                    // remains tainted; URL/HTML escaping is not SQL sanitization.
+                    if ["parseInt(", "Number(", "int(", "float(", "intval("]
+                        .iter()
+                        .any(|prefix| right_part.starts_with(prefix))
+                    {
+                        tainted_vars.remove(target_var);
+                        continue;
+                    }
                     for (source_var, source_info) in tainted_vars.clone() {
                         if right_part.contains(&source_var) && target_var != source_var {
                             tainted_vars.insert(target_var.to_string(), source_info);
                             break;
                         }
+                    }
+                }
+            }
+
+            // Recognize the narrow Go path-containment proof only when the
+            // cleaned path is rejected with an unconditional early return.
+            // A plain filepath.Clean() is NOT a path traversal sanitizer.
+            if path.extension().is_some_and(|ext| ext == "go") {
+                if let Some(caps) = re_go_containment_guard.captures(trimmed) {
+                    let candidate = caps[1].to_string();
+                    let base_dir = caps[2].to_string();
+                    let source_was_cleaned = lines[..idx].iter().rev().take(30).any(|previous| {
+                        let previous = previous.trim();
+                        previous.starts_with(&format!(
+                            "{candidate} := filepath.Clean(filepath.Join({base_dir},"
+                        ))
+                    });
+                    let base_is_constant = lines[..idx].iter().any(|previous| {
+                        previous.trim().starts_with(&format!("const {base_dir} ="))
+                    });
+                    let mut saw_return = false;
+                    let mut closed_block = false;
+                    for body_line in lines[idx + 1..].iter().take(10) {
+                        let body_line = body_line.trim();
+                        if body_line == "}" {
+                            closed_block = true;
+                            break;
+                        }
+                        // Nested control flow cannot establish an unconditional denial.
+                        if body_line.contains('{') || body_line.starts_with("//") {
+                            break;
+                        }
+                        if body_line == "return" {
+                            saw_return = true;
+                        }
+                    }
+                    if source_was_cleaned && base_is_constant && saw_return && closed_block {
+                        tainted_vars.remove(&candidate);
                     }
                 }
             }

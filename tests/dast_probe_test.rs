@@ -35,6 +35,8 @@ fn test_dast_probe_against_mock_server() {
     });
 
     let config = DastScopeConfig {
+        authorized: true,
+        allow_private_targets: false,
         allow_sensitive_paths: true,
         timeout_seconds: 5,
         max_response_bytes: 1024 * 1024,

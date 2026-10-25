@@ -32,6 +32,26 @@ fn guarded_fix_respects_separate_project_policy() {
 }
 
 #[test]
+fn initialization_refuses_to_replace_a_corrupt_identity_key() {
+    let dir = tempdir().unwrap();
+    let key_dir = dir.path().join(".aegis");
+    fs::create_dir_all(&key_dir).unwrap();
+    let key_path = key_dir.join("agent_identity.key");
+    fs::write(&key_path, b"broken-key").unwrap();
+
+    let result = SecurityGuard::init(dir.path(), false);
+    assert!(
+        result.is_err(),
+        "Initialization must fail closed on a corrupted signing key"
+    );
+    assert_eq!(
+        fs::read(&key_path).unwrap(),
+        b"broken-key",
+        "Initialization must never silently rotate an existing signing identity"
+    );
+}
+
+#[test]
 fn unsupported_image_and_non_js_secret_fixes_are_advisory_only() {
     let dir = tempdir().unwrap();
     let root = dir.path();
@@ -75,6 +95,66 @@ fn changed_files_include_unstaged_modifications() {
     fs::write(root.join("file.js"), "const safe = false;\n").unwrap();
     let changed = SecurityGuard::discover_changed_files(root).unwrap();
     assert!(changed.contains(&root.join("file.js")));
+}
+
+#[test]
+fn staged_security_scan_uses_index_blobs_instead_of_working_tree() {
+    use std::process::Command;
+    let dir = tempdir().unwrap();
+    let root = dir.path();
+    assert!(
+        Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(root)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let dockerfile = root.join("Dockerfile");
+    fs::write(&dockerfile, "FROM alpine:3.18\nUSER root\n").unwrap();
+    assert!(
+        Command::new("git")
+            .args(["add", "Dockerfile"])
+            .current_dir(root)
+            .status()
+            .unwrap()
+            .success()
+    );
+    fs::write(&dockerfile, "FROM alpine:3.18\nUSER app\n").unwrap();
+
+    let report = SecurityGuard::scan_staged(root, ScanProfile::Quick).unwrap();
+    assert!(
+        report
+            .findings
+            .iter()
+            .any(|finding| { finding.cve.as_str() == "BK-AI-INF-003" }),
+        "Unsafe staged file must not be hidden by safe unstaged edits"
+    );
+    assert!(report.findings.iter().all(|finding| {
+        finding.file_path.as_deref() != Some(dockerfile.as_path())
+            || finding.cve.as_str() == "BK-AI-INF-003"
+    }));
+}
+
+#[test]
+fn existing_git_hook_runs_security_gate_before_previous_early_exit() {
+    use std::process::Command;
+    let dir = tempdir().unwrap();
+    let root = dir.path();
+    assert!(
+        Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(root)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let hook = root.join(".git/hooks/pre-commit");
+    fs::write(&hook, "#!/bin/sh\nexit 0\n").unwrap();
+    assert!(SecurityGuard::install_pre_commit_hook(root).unwrap());
+    let script = fs::read_to_string(&hook).unwrap();
+    assert!(script.find("--staged --fail-on high").unwrap() < script.find("exit 0").unwrap());
+    assert!(script.contains("Security gate unavailable"));
 }
 
 #[test]

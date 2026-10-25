@@ -15,6 +15,7 @@ use crate::types::*;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InitReceipt {
@@ -130,7 +131,8 @@ impl SecurityGuard {
         }
 
         // Initialize agent cryptographic trust anchor
-        let _ = AgentIdentity::get_or_create(root);
+        AgentIdentity::get_or_create(root)
+            .map_err(|e| format!("Failed to initialize signing identity: {e}"))?;
 
         // Run baseline security assessment
         let baseline_report = registry.execute_guard_scan(root, config.scan_profile, None, false);
@@ -175,23 +177,52 @@ impl SecurityGuard {
         let hook_file = hooks_dir.join("pre-commit");
         let marker = "# BUG_KILLER_SECURITY_GATE_START";
         let hook_content = r#"# BUG_KILLER_SECURITY_GATE_START
-# Run Bug Killer quick security scan on staged/changed files
-if command -v bug-killer >/dev/null 2>&1; then
-    bug-killer security scan --profile quick --changed-only || {
-        echo "❌ [Bug Killer] Security Gate Failed. Fix critical findings or update policy before committing."
-        exit 1
-    }
+# Scan the staged Git index, not the potentially different working tree.
+if ! command -v bug-killer >/dev/null 2>&1; then
+    echo "[Bug Killer] Security gate unavailable: install bug-killer before committing." >&2
+    exit 1
 fi
+bug-killer security scan --profile quick --staged --fail-on high || {
+    echo "[Bug Killer] Staged security gate failed. Review the findings before committing." >&2
+    exit 1
+}
 # BUG_KILLER_SECURITY_GATE_END
 "#;
 
         if hook_file.exists() {
             let existing = fs::read_to_string(&hook_file).unwrap_or_default();
-            if existing.contains(marker) {
-                return Ok(true); // already installed idempotently
-            }
-            // Append hook
-            let combined = format!("{}\n\n{}", existing.trim_end(), hook_content);
+            // Keep the shebang first, then run our guard before any prior hook
+            // can exit early. Replace older Bug Killer blocks in-place.
+            let without_old = if let Some(start) = existing.find(marker) {
+                let end_marker = "# BUG_KILLER_SECURITY_GATE_END";
+                if let Some(end) = existing[start..].find(end_marker) {
+                    format!(
+                        "{}{}",
+                        &existing[..start],
+                        &existing[start + end + end_marker.len()..]
+                    )
+                } else {
+                    return Err(
+                        "Existing Bug Killer hook marker is incomplete; manual repair needed"
+                            .into(),
+                    );
+                }
+            } else {
+                existing
+            };
+            let combined = if let Some(rest) = without_old.strip_prefix("#!/bin/sh") {
+                format!(
+                    "#!/bin/sh\n{}\n{}",
+                    hook_content,
+                    rest.trim_start_matches('\n')
+                )
+            } else if without_old.starts_with("#!") {
+                return Err(
+                    "Existing Git hook uses a non-shell interpreter; refusing to rewrite it".into(),
+                );
+            } else {
+                format!("#!/bin/sh\n{}\n{}", hook_content, without_old)
+            };
             fs::write(&hook_file, combined)
                 .map_err(|e| format!("Failed to update pre-commit hook: {}", e))?;
         } else {
@@ -259,6 +290,108 @@ fi
         };
 
         registry.execute_guard_scan(root, profile, changed_files, enable_network_osv)
+    }
+
+    /// Scan the exact Git index snapshot that the next commit would contain.
+    /// This must not use working-tree contents: staged code may differ from disk.
+    pub fn scan_staged(root: &Path, profile: ScanProfile) -> Result<SecurityGuardReport, String> {
+        fn git_output(root: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
+            let output = Command::new("git")
+                .arg("-C")
+                .arg(root)
+                .args(args)
+                .output()
+                .map_err(|e| format!("Git index inspection unavailable: {e}"))?;
+            if !output.status.success() {
+                return Err(format!(
+                    "Git index inspection failed: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ));
+            }
+            Ok(output.stdout)
+        }
+
+        let names = git_output(
+            root,
+            &[
+                "diff",
+                "--cached",
+                "--name-only",
+                "--diff-filter=ACMR",
+                "-z",
+            ],
+        )?;
+        let changed: Vec<&str> = names
+            .split(|byte| *byte == 0)
+            .filter(|bytes| !bytes.is_empty())
+            .map(|bytes| {
+                std::str::from_utf8(bytes)
+                    .map_err(|_| "Non-UTF8 staged paths cannot be safely inspected".to_string())
+            })
+            .collect::<Result<_, _>>()?;
+        let snapshot =
+            tempfile::tempdir().map_err(|e| format!("Cannot create index snapshot: {e}"))?;
+        let listed = git_output(root, &["ls-files", "--cached", "--stage", "-z"])?;
+        for record in listed
+            .split(|byte| *byte == 0)
+            .filter(|bytes| !bytes.is_empty())
+        {
+            let separator = record
+                .iter()
+                .position(|byte| *byte == b'\t')
+                .ok_or_else(|| "Unexpected Git index entry".to_string())?;
+            let (metadata, with_tab) = record.split_at(separator);
+            let name = &with_tab[1..];
+            let mode = metadata
+                .split(|byte| *byte == b' ')
+                .next()
+                .unwrap_or_default();
+            let relative = std::str::from_utf8(name)
+                .map_err(|_| "Non-UTF8 tracked paths cannot be safely inspected".to_string())?;
+            let path = Path::new(relative);
+            if path.is_absolute()
+                || path
+                    .components()
+                    .any(|part| !matches!(part, std::path::Component::Normal(_)))
+            {
+                return Err(format!("Unsafe staged path: {relative}"));
+            }
+            if mode != b"100644" && mode != b"100755" {
+                if changed.contains(&relative) {
+                    return Err(format!(
+                        "Changed non-regular Git index entry requires review: {relative}"
+                    ));
+                }
+                continue;
+            }
+            let output = git_output(root, &["show", &format!(":{relative}")])?;
+            let destination = snapshot.path().join(path);
+            if let Some(parent) = destination.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("Cannot create snapshot directory: {e}"))?;
+            }
+            fs::write(destination, output)
+                .map_err(|e| format!("Cannot materialize staged blob {relative}: {e}"))?;
+        }
+        let selected: Vec<PathBuf> = changed
+            .iter()
+            .map(|name| snapshot.path().join(name))
+            .collect();
+        let mut report = DetectorRegistry::default().execute_guard_scan(
+            snapshot.path(),
+            profile,
+            Some(selected),
+            false,
+        );
+        report.workspace_root = root.to_path_buf();
+        for finding in &mut report.findings {
+            if let Some(path) = finding.file_path.as_mut() {
+                if let Ok(relative) = path.strip_prefix(snapshot.path()) {
+                    *path = root.join(relative);
+                }
+            }
+        }
+        Ok(report)
     }
 
     /// Discovers changed files in git repository if git is present.

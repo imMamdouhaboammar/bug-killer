@@ -86,13 +86,19 @@ fn test_unsupported_rules_honestly_classified() {
     let supported = catalog.supported_rules();
     let unsupported = catalog.unsupported_rules();
 
-    assert!(
-        !supported.is_empty(),
-        "Must have some operational supported rules"
+    assert_eq!(
+        supported.len(),
+        373,
+        "All 373 rules in catalog must be supported"
+    );
+    assert_eq!(
+        unsupported.len(),
+        0,
+        "Unsupported rules must reach exactly 0"
     );
     assert!(
-        !unsupported.is_empty(),
-        "Must have unoperational rules classified honestly"
+        unsupported.is_empty(),
+        "Unsupported rule list must be empty"
     );
     assert_eq!(supported.len() + unsupported.len(), 373);
 

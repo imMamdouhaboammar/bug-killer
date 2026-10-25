@@ -37,7 +37,7 @@
       "FLOW",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -87,7 +87,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -111,7 +111,7 @@
     "required_evidence": [
       "FLOW"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -189,7 +189,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -214,7 +214,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -239,7 +239,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -265,7 +265,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -290,7 +290,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -316,7 +316,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -341,7 +341,7 @@
       "FLOW",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -366,8 +366,11 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
+      "javascript",
+      "typescript",
+      "python",
       "rust"
     ],
     "supported_targets": [
@@ -391,7 +394,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -416,7 +419,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -441,7 +444,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -466,7 +469,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -491,7 +494,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -515,7 +518,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -540,7 +543,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -565,7 +568,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -590,7 +593,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -615,7 +618,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -640,7 +643,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -666,7 +669,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -691,7 +694,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -716,7 +719,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -741,7 +744,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -766,7 +769,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -791,7 +794,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -816,7 +819,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -841,7 +844,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -865,7 +868,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -890,7 +893,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -917,7 +920,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -942,7 +945,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -968,7 +971,7 @@
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -993,7 +996,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1018,7 +1021,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1043,7 +1046,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1069,7 +1072,7 @@
       "AST",
       "TEST"
     ],
-    "status": "SUPPORTED_DYNAMIC",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1093,7 +1096,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1117,7 +1120,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -1143,7 +1146,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1169,7 +1172,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1195,7 +1198,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1220,7 +1223,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1245,7 +1248,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -1270,7 +1273,7 @@
       "FLOW",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1295,7 +1298,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1320,7 +1323,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1344,7 +1347,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1369,7 +1372,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1394,7 +1397,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1419,7 +1422,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1444,7 +1447,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1470,7 +1473,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1495,7 +1498,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1520,7 +1523,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1546,7 +1549,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1572,7 +1575,7 @@
       "CONFIG",
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1600,7 +1603,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1625,7 +1628,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1651,7 +1654,7 @@
       "FLOW",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1675,7 +1678,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1700,7 +1703,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1726,7 +1729,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1751,7 +1754,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1776,7 +1779,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1826,7 +1829,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1851,7 +1854,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1876,7 +1879,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -1901,7 +1904,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1927,7 +1930,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -1952,7 +1955,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -1977,7 +1980,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2002,7 +2005,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -2028,7 +2031,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2053,7 +2056,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -2077,7 +2080,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -2151,7 +2154,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -2177,7 +2180,7 @@
       "TEST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2202,7 +2205,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -2227,7 +2230,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2251,7 +2254,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2301,7 +2304,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -2327,7 +2330,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2352,7 +2355,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2376,7 +2379,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2401,7 +2404,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2426,7 +2429,7 @@
       "TEST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -2452,7 +2455,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2476,7 +2479,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2500,7 +2503,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2525,7 +2528,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2550,7 +2553,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2575,7 +2578,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2600,7 +2603,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2625,7 +2628,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -2650,7 +2653,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2675,7 +2678,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2700,7 +2703,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2725,7 +2728,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2750,9 +2753,12 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
-      "yaml"
+      "javascript",
+      "typescript",
+      "python",
+      "generic"
     ],
     "supported_targets": [
       "CI/CD Workflows"
@@ -2775,7 +2781,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -2800,7 +2806,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2825,7 +2831,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2850,7 +2856,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2875,7 +2881,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -2901,7 +2907,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2926,7 +2932,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -2952,7 +2958,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -2977,7 +2983,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -3051,7 +3057,7 @@
       "SECRET",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3101,7 +3107,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3126,7 +3132,7 @@
       "FLOW",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3150,7 +3156,7 @@
     "required_evidence": [
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3174,7 +3180,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -3199,7 +3205,7 @@
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -3225,7 +3231,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3250,7 +3256,7 @@
       "FLOW",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3275,7 +3281,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -3302,7 +3308,7 @@
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3327,7 +3333,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3352,7 +3358,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3377,7 +3383,7 @@
       "AST",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -3402,7 +3408,7 @@
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3426,7 +3432,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3450,7 +3456,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3475,7 +3481,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -3501,7 +3507,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -3527,7 +3533,7 @@
       "FLOW",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3552,7 +3558,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3577,7 +3583,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3602,7 +3608,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "python",
       "rust"
@@ -3628,7 +3634,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -3656,7 +3662,7 @@
       "FLOW",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -3683,7 +3689,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -3708,7 +3714,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -3735,7 +3741,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -3760,7 +3766,7 @@
       "TEST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3784,7 +3790,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3809,7 +3815,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3834,7 +3840,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -3859,7 +3865,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3884,7 +3890,7 @@
       "FUZZ",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -3953,12 +3959,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Package name hallucinated by AI, nonexistent or typo-squatted",
     "cwe": "CWE-829",
-    "detection_method": "SCA+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -3979,12 +3985,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Dependency confusion via ambiguous public/private package source",
     "cwe": "CWE-427",
-    "detection_method": "SCA+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4031,12 +4037,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Git URL, branch, floating tag or unpinned remote source used as dependency",
     "cwe": "CWE-829",
-    "detection_method": "SCA+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4056,12 +4062,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Lockfile missing/stale or differs from manifest resolution",
     "cwe": "CWE-1104",
-    "detection_method": "SCA+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4081,11 +4087,11 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Transitive dependency ignored or exact dependency graph unknown",
     "cwe": "CWE-1104",
-    "detection_method": "SCA",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4105,12 +4111,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Advisory reported from the wrong OS/distro/library ecosystem",
     "cwe": null,
-    "detection_method": "SCA+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4130,12 +4136,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Report assumes no CVEs after OSV/NVD/network lookup failure",
     "cwe": null,
-    "detection_method": "SCA+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4155,12 +4161,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "SBOM missing dependencies that appear in shipped binaries/images",
     "cwe": "CWE-1104",
-    "detection_method": "SCA+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -4181,12 +4187,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Vendored or copied code never checked because absent from manifest",
     "cwe": "CWE-1104",
-    "detection_method": "SCA+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4206,12 +4212,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "Unreviewed model, dataset, prompt pack, IDE extension or MCP server dependency",
     "cwe": "CWE-829",
-    "detection_method": "SCA+AGENT",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4232,12 +4238,12 @@
     "category": "2.13 Packages, dependency resolution and software supply chain",
     "description": "License/provenance/source integrity checks omitted for added security-critical dependency",
     "cwe": "CWE-829",
-    "detection_method": "CONFIG+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4312,7 +4318,7 @@
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -4337,7 +4343,7 @@
       "FLOW",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -4359,12 +4365,12 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Build/test executes downloaded untrusted shell script without verification",
     "cwe": "CWE-829",
-    "detection_method": "CONFIG+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -4389,7 +4395,7 @@
       "SECRET",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -4412,12 +4418,12 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Unsafe artifact/cache reuse between untrusted PR and release job",
     "cwe": "CWE-829",
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -4437,11 +4443,11 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Deployment triggered without branch/environment approval controls",
     "cwe": "CWE-284",
-    "detection_method": "CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4461,12 +4467,12 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Release generated from a different commit than tested/reviewed",
     "cwe": "CWE-494",
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4486,12 +4492,12 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Test/security jobs optional, skipped or configured with `continue-on-error` while reported green",
     "cwe": null,
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4511,11 +4517,11 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Package scripts execute with privileged token, network and filesystem by default",
     "cwe": "CWE-250",
-    "detection_method": "CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -4536,12 +4542,12 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Artifact signing/attestation missing where project trust contract requires it",
     "cwe": "CWE-494",
-    "detection_method": "CONFIG+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -4561,12 +4567,12 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "PR bot auto-merges without review of changed security boundaries",
     "cwe": "CWE-863",
-    "detection_method": "AGENT+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4586,12 +4592,12 @@
     "category": "2.14 CI/CD, build pipelines and repository automation",
     "description": "Workflow writes to repo based on arbitrary external issue/comment content",
     "cwe": "CWE-78",
-    "detection_method": "FLOW+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "FLOW",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -4636,11 +4642,11 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Storage bucket/container/DB endpoint accidentally public",
     "cwe": "CWE-732",
-    "detection_method": "CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "dockerfile",
       "yaml"
@@ -4666,7 +4672,7 @@
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "dockerfile"
     ],
@@ -4710,12 +4716,12 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "IAM policy permits `*` actions/resources or broad role assumption",
     "cwe": "CWE-269",
-    "detection_method": "CONFIG+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -4736,11 +4742,11 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Security group/network rule opens management/database port to the internet",
     "cwe": "CWE-284",
-    "detection_method": "CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4765,7 +4771,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -4793,7 +4799,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4813,12 +4819,12 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Database/queue/Redis/Elasticsearch has no authentication in reachable environment",
     "cwe": "CWE-306",
-    "detection_method": "CONFIG+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4844,7 +4850,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4864,12 +4870,12 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Default credentials, sample tokens or test users active after deployment",
     "cwe": "CWE-798",
-    "detection_method": "SECRET+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4889,12 +4895,12 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Container image uses unverified base tag with stale vulnerable OS packages",
     "cwe": "CWE-1104",
-    "detection_method": "SCA+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "dockerfile"
     ],
@@ -4915,11 +4921,11 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Infrastructure logs/audit disabled for security-critical asset",
     "cwe": "CWE-778",
-    "detection_method": "CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4939,11 +4945,11 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "K8s workloads lack required securityContext / privilege confinement",
     "cwe": "CWE-250",
-    "detection_method": "CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -4963,12 +4969,12 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Cloud metadata service accessible from untrusted fetch path",
     "cwe": "CWE-918",
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -4988,12 +4994,12 @@
     "category": "2.15 Containers, cloud, infrastructure and runtime defaults",
     "description": "Backups are unencrypted/public/unrestorable or deletion unsafe",
     "cwe": "CWE-552",
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5018,7 +5024,7 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5043,7 +5049,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5068,7 +5074,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5093,7 +5099,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5117,7 +5123,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5142,7 +5148,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5167,7 +5173,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5191,7 +5197,7 @@
     "required_evidence": [
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5216,7 +5222,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5240,7 +5246,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -5264,7 +5270,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5288,7 +5294,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -5309,12 +5315,12 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "TOCTOU on path, URL, credentials or permissions",
     "cwe": "CWE-367",
-    "detection_method": "REVIEW+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5334,11 +5340,11 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Double-submit/double-charge due to non-idempotent retries",
     "cwe": "CWE-362",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5358,11 +5364,11 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Token refresh/rotation race permits replay",
     "cwe": "CWE-362",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -5383,12 +5389,12 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Shared mutable state used without synchronization",
     "cwe": "CWE-362",
-    "detection_method": "AST+FUZZ",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5408,12 +5414,12 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Queue message acknowledged before durable and authorized transaction",
     "cwe": "CWE-662",
-    "detection_method": "REVIEW+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5433,11 +5439,11 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Stale cache permission survives user removal/role downgrade",
     "cwe": "CWE-613",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5457,11 +5463,11 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Optimistic update race bypasses inventory/limit/policy check",
     "cwe": "CWE-362",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5481,12 +5487,12 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Distributed lease/lock expires during privileged operation",
     "cwe": "CWE-362",
-    "detection_method": "REVIEW+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5506,11 +5512,11 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Background cleanup races with file upload or healing transaction",
     "cwe": "CWE-367",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5530,12 +5536,12 @@
     "category": "2.17 Concurrency, workflow state and race conditions",
     "description": "Concurrent agents act on same target without serialization/ownership",
     "cwe": "CWE-362",
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -5638,7 +5644,7 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5663,7 +5669,7 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5688,7 +5694,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -5713,7 +5719,7 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5738,7 +5744,7 @@
       "CONFIG",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -5763,7 +5769,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go",
       "rust"
@@ -5788,7 +5794,7 @@
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5813,7 +5819,7 @@
       "FUZZ",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -5837,7 +5843,7 @@
     "required_evidence": [
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -5864,7 +5870,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5888,7 +5894,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -5913,7 +5919,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -5939,7 +5945,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -5964,7 +5970,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -5990,7 +5996,7 @@
     "required_evidence": [
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -6015,7 +6021,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6039,7 +6045,7 @@
     "required_evidence": [
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6064,7 +6070,7 @@
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6088,7 +6094,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6112,7 +6118,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -6140,7 +6146,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6160,12 +6166,12 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Payment amount, discount, currency or recipient trusted from client",
     "cwe": "CWE-602",
-    "detection_method": "TEST+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust",
       "yaml"
@@ -6187,11 +6193,11 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "User can reuse coupon/credit/refund/redeem token beyond permitted count",
     "cwe": "CWE-840",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6211,12 +6217,12 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "State-changing workflow can skip required step or approval",
     "cwe": "CWE-841",
-    "detection_method": "REVIEW+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -6236,11 +6242,11 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Role change/invite/ownership transfer lacks proper authorization and notice",
     "cwe": "CWE-862",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6260,11 +6266,11 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Idempotency key not actor-bound or expires incorrectly",
     "cwe": "CWE-362",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6284,12 +6290,12 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Order completion performed without verified settlement/fulfilment state",
     "cwe": "CWE-841",
-    "detection_method": "REVIEW+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6309,11 +6315,11 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Reused webhook event alters account more than once",
     "cwe": "CWE-841",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6333,11 +6339,11 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Account deletion/transfer misses shared resources or leaves active keys",
     "cwe": "CWE-613",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6357,11 +6363,11 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Multi-tenant report aggregates privileged records before access filtering",
     "cwe": "CWE-200",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6381,12 +6387,12 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Feature flag/admin backdoor bypasses required policy in production",
     "cwe": "CWE-862",
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6406,12 +6412,12 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Sequence of individually permitted API calls defeats a global quota",
     "cwe": "CWE-840",
-    "detection_method": "REVIEW+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6432,11 +6438,11 @@
     "category": "2.20 Business logic, workflows and monetary/privileged effects",
     "description": "Approval decision can be forged/reused for another action or target",
     "cwe": "CWE-345",
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -6456,12 +6462,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Agent removes access control, CSRF check, TLS verification or validation to make tests pass",
     "cwe": "CWE-693",
-    "detection_method": "AST+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6482,12 +6488,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Agent replaces real logic with hardcoded success response, dummy user, fixed token or no-op",
     "cwe": "CWE-693",
-    "detection_method": "AST+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6507,11 +6513,11 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Generated tests only assert happy path and have no unauthorized/invalid inputs",
     "cwe": null,
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6536,7 +6542,7 @@
     "required_evidence": [
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6557,12 +6563,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Agent invents nonexistent package/API/security option and assumes it works",
     "cwe": null,
-    "detection_method": "SCA+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6584,12 +6590,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "AI suggests outdated insecure code copied from old framework docs",
     "cwe": "CWE-1104",
-    "detection_method": "SCA+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6611,12 +6617,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Generated migration/config changes break existing secure production defaults",
     "cwe": "CWE-16",
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6637,12 +6643,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Agent edits outside approved scope or unexpectedly changes permission-critical files",
     "cwe": "CWE-284",
-    "detection_method": "AGENT+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "REVIEW",
       "AGENT"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6664,12 +6670,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Generated example secrets and `TODO: add authentication later` reach production",
     "cwe": "CWE-798",
-    "detection_method": "SECRET+AST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "AST",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6690,12 +6696,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Generated comments claim \"safe\", \"encrypted\", \"validated\" without matching executable control",
     "cwe": null,
-    "detection_method": "TEST+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6716,12 +6722,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Agent silently bypasses failing scanner/CI or treats tool unavailable as zero issues",
     "cwe": null,
-    "detection_method": "TEST+AGENT",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -6745,12 +6751,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Agent uses broad `chmod 777`, wildcard IAM, open CORS or no sandbox to fix functional issue",
     "cwe": "CWE-732",
-    "detection_method": "CONFIG+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6770,12 +6776,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Agent adds broad exception handler that logs and continues privileged execution",
     "cwe": "CWE-754",
-    "detection_method": "AST+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6795,12 +6801,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "Generated fix changes data type, unit, signature, ownership or contract and breaks downstream enforcement",
     "cwe": "CWE-841",
-    "detection_method": "TEST+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6820,12 +6826,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "AI-produced security recommendation cites nonexistent advisory/CVE or mismatches package",
     "cwe": null,
-    "detection_method": "SCA+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SCA",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -6846,12 +6852,12 @@
     "category": "2.21 AI coding assistant-specific engineering traps",
     "description": "AI reports \"fixed\" based only on edited code without running functional and security tests",
     "cwe": null,
-    "detection_method": "TEST+AGENT",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -6899,12 +6905,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Prompt content alone used to authorize file, network, SQL, shell or deployment actions",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6929,7 +6935,7 @@
       "FLOW",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6954,7 +6960,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6974,12 +6980,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "External tool result carries injected instructions that can affect unrelated future tool calls",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -6999,12 +7005,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Tool/MCP capability available to agent exceeds task identity and scope",
     "cwe": null,
-    "detection_method": "AGENT+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7024,12 +7030,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Agent with read-only user intent can invoke mutation-capable tool by prompt alone",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7049,7 +7055,7 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "MCP server/tool response hides exfiltration URL or secret in metadata",
     "cwe": null,
-    "detection_method": "AGENT+SECRET",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SECRET",
       "AGENT"
@@ -7074,12 +7080,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Untrusted skill/plugin/agent instruction file gains precedence over system policy",
     "cwe": null,
-    "detection_method": "AGENT+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -7100,12 +7106,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Model/skill/tool update silently changes permissions or introduces new capability",
     "cwe": null,
-    "detection_method": "AGENT+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "REVIEW",
       "AGENT"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7125,11 +7131,11 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Retrieved RAG chunks cross tenant/user document ACL",
     "cwe": null,
-    "detection_method": "TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7149,12 +7155,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Vector index/embedding cache leaks another tenant's sensitive content",
     "cwe": null,
-    "detection_method": "TEST+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7174,12 +7180,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Model memory persists poisoned instruction or attacker-controlled long-term state",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7201,7 +7207,7 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Conversation/history/context gets silently included in another user's prompt",
     "cwe": null,
-    "detection_method": "FLOW+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "FLOW",
       "TEST"
@@ -7227,12 +7233,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "System prompts, API credentials or hidden context presented as authentication secret",
     "cwe": null,
-    "detection_method": "REVIEW+AGENT",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "REVIEW",
       "AGENT"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7254,12 +7260,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Model-supplied citation/source treated as verified fact or security patch evidence",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -7285,7 +7291,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7305,12 +7311,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Multi-agent messages lack trusted sender identity, authenticated channel or action scope",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -7336,7 +7342,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7356,12 +7362,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Human approval prompt omits actual target, diff, impact or command being approved",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7388,7 +7394,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7408,12 +7414,12 @@
     "category": "2.22 LLM, RAG, autonomous agent and MCP application flaws",
     "description": "Model/tool endpoint sends proprietary code, secrets or PII to unapproved external provider",
     "cwe": null,
-    "detection_method": "FLOW+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "FLOW",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7434,12 +7440,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Model weights downloaded from unknown or mutable origin",
     "cwe": null,
-    "detection_method": "SCA+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7461,12 +7467,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Model format or loader can execute attacker-controlled code in trusted process",
     "cwe": null,
-    "detection_method": "CONFIG+REVIEW",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -7486,12 +7492,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Prompt templates from package/registry allowed to include tool-use instruction without review",
     "cwe": null,
-    "detection_method": "AGENT+CONFIG",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7511,12 +7517,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Skills/MCP tool descriptions embed instructions to overstep authority",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7536,12 +7542,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Remote tool endpoints/transport not authenticated or pinned to expected trust domain",
     "cwe": null,
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -7563,12 +7569,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Agent configuration hot reload widens tool grants without reapproval",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7590,12 +7596,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Credentials copied into agent prompts, state dumps or debugging traces",
     "cwe": null,
-    "detection_method": "SECRET+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "SECRET",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7616,12 +7622,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Agent can use network fetcher to reach cloud metadata/internal-only systems",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7641,12 +7647,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Unsigned/unreviewed policy files dynamically loaded from repository branch",
     "cwe": null,
-    "detection_method": "CONFIG+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7666,12 +7672,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Approval result can be fabricated by another agent/tool response",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7691,12 +7697,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Retry after partial tool execution duplicates privileged action",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7716,12 +7722,12 @@
     "category": "2.23 Model, plugin and agent supply-chain integrity",
     "description": "Nested tool invocation delegates greater permissions than initiating actor owns",
     "cwe": null,
-    "detection_method": "AGENT+TEST",
+    "detection_method": "static_analysis",
     "required_evidence": [
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7746,7 +7752,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "php"
     ],
@@ -7770,7 +7776,7 @@
     "required_evidence": [
       "FLOW"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "php"
     ],
@@ -7795,7 +7801,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "php"
     ],
@@ -7820,7 +7826,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "php"
     ],
@@ -7846,7 +7852,7 @@
       "CONFIG",
       "DAST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "php"
     ],
@@ -7871,7 +7877,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7897,7 +7903,7 @@
       "FLOW",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -7924,7 +7930,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -7950,7 +7956,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -7974,7 +7980,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8000,7 +8006,7 @@
       "CONFIG",
       "SCA"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -8028,7 +8034,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "python",
       "rust"
@@ -8054,7 +8060,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "python",
       "rust",
@@ -8082,7 +8088,7 @@
       "AST",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -8107,7 +8113,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -8133,7 +8139,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript",
@@ -8160,7 +8166,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -8185,7 +8191,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -8211,7 +8217,7 @@
       "FUZZ",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -8236,7 +8242,7 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -8261,7 +8267,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -8286,7 +8292,7 @@
       "FLOW",
       "CONFIG"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8311,7 +8317,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8336,7 +8342,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust",
       "yaml"
@@ -8363,7 +8369,7 @@
       "AST",
       "FUZZ"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8388,7 +8394,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8414,7 +8420,7 @@
       "CONFIG",
       "SECRET"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8439,7 +8445,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8464,7 +8470,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8489,7 +8495,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8515,7 +8521,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8541,7 +8547,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8566,7 +8572,7 @@
       "AST",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -8591,7 +8597,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8616,7 +8622,7 @@
       "CONFIG",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "rust"
     ],
@@ -8641,7 +8647,7 @@
       "AST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8666,7 +8672,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8692,7 +8698,7 @@
       "SCA",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8719,7 +8725,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go"
     ],
@@ -8745,7 +8751,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8769,7 +8775,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8794,7 +8800,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8820,7 +8826,7 @@
       "SECRET",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8844,7 +8850,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8869,7 +8875,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8893,7 +8899,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8917,7 +8923,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8942,7 +8948,7 @@
       "CONFIG",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -8969,7 +8975,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -8994,7 +9000,7 @@
       "FLOW",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9019,7 +9025,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "go",
       "rust",
@@ -9047,7 +9053,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -9073,7 +9079,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9098,7 +9104,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9122,7 +9128,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -9146,7 +9152,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9170,7 +9176,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9194,7 +9200,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9218,7 +9224,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -9242,7 +9248,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
@@ -9267,7 +9273,7 @@
     "required_evidence": [
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9291,7 +9297,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9316,7 +9322,7 @@
       "CONFIG",
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -9340,7 +9346,7 @@
     "required_evidence": [
       "TEST"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "yaml"
     ],
@@ -9365,7 +9371,7 @@
       "TEST",
       "AGENT"
     ],
-    "status": "CATALOGED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "generic"
     ],
@@ -9390,7 +9396,7 @@
       "TEST",
       "REVIEW"
     ],
-    "status": "REVIEW_REQUIRED",
+    "status": "SUPPORTED_STATIC",
     "applicable_languages": [
       "javascript",
       "typescript"
