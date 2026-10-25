@@ -78,7 +78,8 @@ impl FleetScanner {
                     || name == "node_modules"
                     || name == "vendor"
                     || name == "target"
-                    || name == ".aegis";
+                    || name == ".aegis"
+                    || name == ".bugkiller";
                 if skip {
                     files_excluded.fetch_add(1, Ordering::Relaxed);
                     return false;
@@ -137,6 +138,14 @@ impl FleetScanner {
             if is_candidate {
                 match std::fs::read_to_string(path) {
                     Err(e) => {
+                        // Packaged .skill bundles are binary zip archives, not text files.
+                        if file_name.ends_with(".skill") {
+                            if let Ok(bytes) = std::fs::read(path) {
+                                if bytes.starts_with(b"PK") {
+                                    continue;
+                                }
+                            }
+                        }
                         parser_failures.push(ParserFailure {
                             path: path.to_path_buf(),
                             reason: format!("I/O or UTF-8 read failure: {}", e),

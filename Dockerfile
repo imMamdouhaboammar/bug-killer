@@ -23,14 +23,19 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bug-killer-healer .
 
 # Final Stage: Minimal Runner
 FROM alpine:3.20 AS final
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata && \
+    addgroup -g 10001 -S app && \
+    adduser -u 10001 -S app -G app
 WORKDIR /app
 
 COPY --from=rust-builder /workspace/target/release/bug-killer /app/bug-killer
 COPY --from=rust-builder /workspace/services/inspector/target/release/bug-killer-inspector /app/bug-killer-inspector
 COPY --from=go-builder /bug-killer-orchestrator /app/bug-killer-orchestrator
 COPY --from=go-builder /bug-killer-healer /app/bug-killer-healer
-RUN ln -s /app/bug-killer /app/bk
+RUN ln -s /app/bug-killer /app/bk && \
+    chown -R app:app /app
+
+USER app
 
 ENTRYPOINT ["/app/bug-killer"]
 CMD ["scan", "."]
