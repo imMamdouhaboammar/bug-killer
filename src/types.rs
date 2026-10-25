@@ -222,10 +222,15 @@ fn default_operator_status() -> OperatorStatus {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EvidenceCertainty {
+    #[serde(alias = "CONFIRMED")]
     Confirmed,
+    #[serde(alias = "STRONGLY_SUPPORTED")]
     StronglySupported,
+    #[serde(alias = "SUSPECTED")]
     Suspected,
+    #[serde(alias = "PATTERN_INDICATOR")]
     PatternIndicator,
+    #[serde(alias = "UNKNOWN")]
     Unknown,
 }
 
@@ -651,6 +656,7 @@ pub enum ScanProfile {
     Project,
     Ci,
     Deep,
+    Research,
 }
 
 #[allow(dead_code)]
@@ -661,6 +667,7 @@ impl ScanProfile {
             ScanProfile::Project => "PROJECT",
             ScanProfile::Ci => "CI",
             ScanProfile::Deep => "DEEP",
+            ScanProfile::Research => "RESEARCH",
         }
     }
 }
