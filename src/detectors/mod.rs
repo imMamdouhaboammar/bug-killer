@@ -174,14 +174,39 @@ impl SecurityDetector for SecretDetector {
             .iter()
             .map(|s| s.to_string())
             .collect();
+        let errors: Vec<String> = report
+            .coverage
+            .parser_failures
+            .iter()
+            .map(|failure| format!("{}: {}", failure.path.display(), failure.reason))
+            .collect();
+        let complete = report.coverage.is_complete();
         let receipt = CoverageReceipt {
             scanner_id: self.id().to_string(),
             scanner_version: env!("CARGO_PKG_VERSION").to_string(),
             target_id: ctx.root.display().to_string(),
-            status: CoverageStatus::Complete,
+            status: if complete {
+                CoverageStatus::Complete
+            } else {
+                CoverageStatus::Partial
+            },
             items_examined: report.total_files_scanned as u64,
-            skipped_reasons: Vec::new(),
-            errors: Vec::new(),
+            skipped_reasons: if report.coverage.files_excluded > 0 {
+                vec![format!(
+                    "{} files excluded from scan",
+                    report.coverage.files_excluded
+                )]
+            } else {
+                Vec::new()
+            },
+            errors: if !complete && errors.is_empty() {
+                vec![format!(
+                    "Underlying scan coverage is {:?}",
+                    report.coverage.coverage_status
+                )]
+            } else {
+                errors
+            },
             completed_at: Utc::now().to_rfc3339(),
         };
 
@@ -2194,7 +2219,13 @@ impl DetectorRegistry {
     }
 
     /// Discovers if workspace contains dependency manifests or lockfiles.
+    /// An inaccessible subtree must not be mistaken for the absence of a manifest.
     pub fn workspace_has_package_manifests(&self, root: &Path) -> bool {
+        self.try_workspace_has_package_manifests(root)
+            .unwrap_or(true)
+    }
+
+    pub fn try_workspace_has_package_manifests(&self, root: &Path) -> Result<bool, String> {
         let manifest_names = [
             "package.json",
             "package-lock.json",
@@ -2215,7 +2246,6 @@ impl DetectorRegistry {
         ];
 
         for entry in walkdir::WalkDir::new(root)
-            .max_depth(5)
             .into_iter()
             .filter_entry(|entry| {
                 entry.depth() == 0
@@ -2226,16 +2256,17 @@ impl DetectorRegistry {
                         )
                     )
             })
-            .filter_map(Result::ok)
         {
+            let entry =
+                entry.map_err(|e| format!("Dependency manifest traversal incomplete: {e}"))?;
             if entry.file_type().is_file() {
                 let name = entry.file_name().to_string_lossy();
                 if manifest_names.iter().any(|m| name == *m) || name.ends_with(".csproj") {
-                    return true;
+                    return Ok(true);
                 }
             }
         }
-        false
+        Ok(false)
     }
 
     /// Executes complete security guard scan producing an honest, typed `SecurityGuardReport`.
@@ -2250,7 +2281,9 @@ impl DetectorRegistry {
         let catalog = SecurityCatalog::global();
         let detected_languages = self.discover_workspace_languages(root);
         let supported_rule_set = self.supported_rule_ids();
-        let has_manifests = self.workspace_has_package_manifests(root);
+        let manifest_discovery = self.try_workspace_has_package_manifests(root);
+        // On discovery error we cannot prove an SCA rule is inapplicable.
+        let has_manifests = manifest_discovery.as_ref().copied().unwrap_or(true);
 
         // 1. Classify applicable rules from catalog vs unsupported rules
         let mut applicable_rules = Vec::new();
@@ -2338,7 +2371,10 @@ impl DetectorRegistry {
 
             let is_applicable = is_lang_applicable && (!is_sca || has_manifests);
 
-            if !is_applicable {
+            if manifest_discovery.is_err() && is_sca && is_lang_applicable {
+                rule_coverage.insert(rule.rule_id.clone(), RuleCoverageStatus::Error);
+                rules_evaluated.remove(&rule.rule_id);
+            } else if !is_applicable {
                 rule_coverage.insert(rule.rule_id.clone(), RuleCoverageStatus::NotApplicable);
                 rules_evaluated.remove(&rule.rule_id);
             } else if !supported_rule_set.contains(&rule.rule_id) {
@@ -2397,7 +2433,9 @@ impl DetectorRegistry {
                     || *r_status == RuleCoverageStatus::Error)
         });
 
-        let status = if has_receipt_errors
+        let status = if !unsupported_rules.is_empty()
+            || manifest_discovery.is_err()
+            || has_receipt_errors
             || has_parser_failures
             || has_errored_rules
             || has_skipped_applicable
@@ -2412,6 +2450,9 @@ impl DetectorRegistry {
                 "{} applicable catalog rules remain unsupported by active automated detectors",
                 unsupported_rules.len()
             ));
+        }
+        if let Err(reason) = &manifest_discovery {
+            unexamined_reasons.push(reason.clone());
         }
 
         // Severity is impact, not proof. A critical lexical match remains suspected.

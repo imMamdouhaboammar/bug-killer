@@ -6,6 +6,13 @@ use std::fs;
 use std::path::PathBuf;
 use tempfile::tempdir;
 
+fn directory_rejects_tempfiles(path: &std::path::Path) -> bool {
+    matches!(
+        tempfile::NamedTempFile::new_in(path),
+        Err(ref error) if error.kind() == std::io::ErrorKind::PermissionDenied
+    )
+}
+
 #[test]
 fn test_m1_untrusted_signer_fails_closed() {
     let dir = tempdir().unwrap();
@@ -175,6 +182,10 @@ fn test_m1_path_traversal_fails_closed() {
 
 #[test]
 fn test_m1_multi_file_transaction_rollback_on_failure() {
+    if !cfg!(unix) {
+        eprintln!("skipped: Unix directory mode required to force second write failure");
+        return;
+    }
     let dir = tempdir().unwrap();
     let root = dir.path();
 
@@ -194,6 +205,11 @@ fn test_m1_multi_file_transaction_rollback_on_failure() {
         use std::os::unix::fs::PermissionsExt;
         // 0o500 allows stat and read (so preflight passes), but denies writing/creating tempfiles
         fs::set_permissions(&sub_dir, fs::Permissions::from_mode(0o500)).unwrap();
+        if !directory_rejects_tempfiles(&sub_dir) {
+            fs::set_permissions(&sub_dir, fs::Permissions::from_mode(0o700)).unwrap();
+            eprintln!("skipped: current privilege bypasses read-only directory restrictions");
+            return;
+        }
     }
 
     let actions = vec![
@@ -525,6 +541,10 @@ fn test_m1_post_heal_drift_detection() {
 
 #[test]
 fn test_m1_partial_rollback_structured_reporting() {
+    if !cfg!(unix) {
+        eprintln!("skipped: Unix directory mode required to force rollback failure");
+        return;
+    }
     let dir = tempdir().unwrap();
     let root = dir.path();
 
@@ -564,6 +584,11 @@ fn test_m1_partial_rollback_structured_reporting() {
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(&sub, fs::Permissions::from_mode(0o500)).unwrap();
+        if !directory_rejects_tempfiles(&sub) {
+            fs::set_permissions(&sub, fs::Permissions::from_mode(0o700)).unwrap();
+            eprintln!("skipped: current privilege bypasses read-only directory restrictions");
+            return;
+        }
     }
 
     let res = RollbackManager::rollback(root, &manifest.backup_id);

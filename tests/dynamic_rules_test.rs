@@ -59,14 +59,8 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
     let rules_json = serde_json::to_string_pretty(&vec![rule_pytorch, rule_nginx]).unwrap();
     fs::write(&rules_file, rules_json).unwrap();
 
-    // Pin rules as operator-approved in workspace configuration
-    let dot_bk = root.join(".bug-killer");
-    fs::create_dir_all(&dot_bk).unwrap();
-    fs::write(
-        dot_bk.join("trusted_rules.json"),
-        r#"["CVE-2024-5480", "CVE-2023-44487"]"#,
-    )
-    .unwrap();
+    // Workspace rule files are untrusted. This test intentionally grants
+    // explicit consent to their remediation at plan generation.
 
     // Verify rules are loaded automatically
     let loaded_rules = RuleEngine::load_rules(None, root);
@@ -101,7 +95,7 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
     assert!(cve_ids.contains(&"CVE-2023-44487".to_string()));
 
     // 4. Plan and execute healing
-    let plan = AutopilotHealer::plan_healing(&report);
+    let plan = AutopilotHealer::plan_healing_with_rules_and_approval(&report, &loaded_rules, true);
     assert_eq!(plan.len(), 2);
 
     let (manifest, applied_count) =

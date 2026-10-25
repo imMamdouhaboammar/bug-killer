@@ -7,6 +7,8 @@ use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,33 +82,62 @@ impl ApprovalManager {
     }
 
     /// Checks if a nonce has already been consumed in this workspace.
-    pub fn is_nonce_used(root: &Path, nonce: &str) -> bool {
+    pub fn is_nonce_used(root: &Path, nonce: &str) -> Result<bool, String> {
         let path = Self::used_nonces_path(root);
-        if let Ok(content) = fs::read_to_string(path) {
-            if let Ok(nonces) = serde_json::from_str::<std::collections::HashSet<String>>(&content)
-            {
-                return nonces.contains(nonce);
+        // Preserve previously consumed receipts from the legacy ledger. A damaged
+        // ledger is not evidence that a receipt is fresh.
+        if path.exists() {
+            let content = fs::read_to_string(&path)
+                .map_err(|e| format!("Failed to read nonce ledger: {e}"))?;
+            let nonces: std::collections::HashSet<String> =
+                serde_json::from_str(&content).map_err(|e| format!("Corrupt nonce ledger: {e}"))?;
+            if nonces.contains(nonce) {
+                return Ok(true);
             }
         }
-        false
+        let marker = Self::nonce_marker_path(root, nonce);
+        match fs::metadata(marker) {
+            Ok(_) => Ok(true),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(e) => Err(format!("Cannot inspect nonce state: {e}")),
+        }
+    }
+
+    fn nonce_marker_path(root: &Path, nonce: &str) -> PathBuf {
+        let digest = format!("{:x}", Sha256::digest(nonce.as_bytes()));
+        root.join(".bug-killer")
+            .join("approvals")
+            .join("used_nonces")
+            .join(digest)
     }
 
     /// Records a consumed nonce to prevent replay attacks.
     pub fn record_used_nonce(root: &Path, nonce: &str) -> Result<(), String> {
-        let path = Self::used_nonces_path(root);
-        if let Some(parent) = path.parent() {
-            let _ = fs::create_dir_all(parent);
+        if nonce.is_empty() {
+            return Err("Approval nonce is required".into());
         }
-        let mut nonces: std::collections::HashSet<String> =
-            if let Ok(content) = fs::read_to_string(&path) {
-                serde_json::from_str(&content).unwrap_or_default()
-            } else {
-                std::collections::HashSet::new()
-            };
-        nonces.insert(nonce.to_string());
-        let serialized = serde_json::to_string_pretty(&nonces)
-            .map_err(|e| format!("Failed to serialize used nonces: {}", e))?;
-        fs::write(&path, serialized).map_err(|e| format!("Failed to write used nonces: {}", e))?;
+        if Self::is_nonce_used(root, nonce)? {
+            return Err("Receipt Replay Detected: nonce already consumed".into());
+        }
+        let marker = Self::nonce_marker_path(root, nonce);
+        let parent = marker.parent().expect("nonce marker always has parent");
+        fs::create_dir_all(parent).map_err(|e| format!("Cannot create nonce store: {e}"))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(parent, fs::Permissions::from_mode(0o700))
+                .map_err(|e| format!("Cannot protect nonce store: {e}"))?;
+        }
+        // O_EXCL-style publication is the consumption point. Only one of two
+        // concurrent executions may create the marker.
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(marker)
+            .map_err(|e| format!("Cannot atomically consume approval nonce: {e}"))?;
+        file.write_all(b"consumed\n")
+            .and_then(|_| file.sync_all())
+            .map_err(|e| format!("Cannot durably consume approval nonce: {e}"))?;
         Ok(())
     }
 
@@ -208,7 +239,10 @@ impl ApprovalManager {
         }
 
         // 4. Replay prevention check
-        if !receipt.nonce.is_empty() && Self::is_nonce_used(root, &receipt.nonce) {
+        if receipt.nonce.is_empty() {
+            return Err("Approval receipt is missing mandatory replay nonce".into());
+        }
+        if Self::is_nonce_used(root, &receipt.nonce)? {
             return Err(format!(
                 "Receipt Replay Detected: nonce '{}' has already been used",
                 receipt.nonce
@@ -268,9 +302,7 @@ impl ApprovalManager {
         Self::verify_approval_receipt(root, receipt, &current_checksum)?;
 
         // Record nonce to prevent replay
-        if !receipt.nonce.is_empty() {
-            let _ = Self::record_used_nonce(root, &receipt.nonce);
-        }
+        Self::record_used_nonce(root, &receipt.nonce)?;
 
         // 1. Execute atomic multi-file healing
         let (manifest, applied_count) = AutopilotHealer::execute_healing(root, actions)?;

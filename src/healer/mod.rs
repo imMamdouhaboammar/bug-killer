@@ -337,8 +337,21 @@ impl AutopilotHealer {
         let canonical_targets = Self::preflight_plan(root, actions)?;
 
         // 2. Collision-proof backup with atomic staging
-        let manifest = BackupManager::create_backup_for_actions(root, actions)
-            .map_err(|e| format!("Failed to create safety backup: {}", e))?;
+        let canonical_root = root
+            .canonicalize()
+            .map_err(|e| format!("Failed to canonicalize workspace root for backup: {e}"))?;
+        let canonical_actions: Vec<PatchAction> = actions
+            .iter()
+            .zip(canonical_targets.iter())
+            .map(|(action, target)| {
+                let mut checked = action.clone();
+                checked.target_file = target.clone();
+                checked
+            })
+            .collect();
+        let manifest =
+            BackupManager::create_backup_for_actions(&canonical_root, &canonical_actions)
+                .map_err(|e| format!("Failed to create safety backup: {}", e))?;
 
         let mut applied_count = 0;
         let mut apply_error = None;

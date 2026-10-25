@@ -344,21 +344,23 @@ fn test_issue_23_workspace_dynamic_rules_trusted_when_pinned() {
     let target_file = root.join("service.py");
     fs::write(&target_file, "insecure_call()\n").unwrap();
 
-    // 3. Verify rule is now marked OperatorApproved and trusted
+    // A project-local pin cannot authorize a modified rule: the trust store
+    // belongs to the operator outside the workspace.
     let loaded = RuleEngine::load_rules(None, root);
     assert_eq!(loaded.len(), 1);
     assert!(
-        loaded[0].is_trusted(),
-        "Pinned rule must be recognized as trusted"
+        !loaded[0].is_trusted(),
+        "Workspace-controlled trust pins must not grant remediation authority"
     );
-    assert_eq!(loaded[0].provenance, RuleProvenance::OperatorApproved);
+    assert_eq!(loaded[0].provenance, RuleProvenance::UntrustedWorkspace);
 
     let report = FleetScanner::scan_directory_with_rules(root, false, &loaded);
-    let plan = AutopilotHealer::plan_healing(&report);
+    assert!(AutopilotHealer::plan_healing(&report).is_empty());
+    let plan = AutopilotHealer::plan_healing_with_rules_and_approval(&report, &loaded, true);
     assert_eq!(
         plan.len(),
         1,
-        "Pinned trusted rules must be permitted to plan automated patches"
+        "Explicit operator consent must permit a plan from untrusted rules"
     );
 }
 

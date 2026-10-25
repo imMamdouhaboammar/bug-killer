@@ -2,6 +2,7 @@ use crate::types::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -105,26 +106,41 @@ pub enum RemediationStrategy {
 pub struct RuleEngine;
 
 impl RuleEngine {
-    fn load_pinned_trusted_rules(root: &Path) -> std::collections::HashSet<String> {
-        let mut pinned = std::collections::HashSet::new();
-        for candidate in &[
-            root.join(".bug-killer").join("trusted_rules.json"),
-            root.join(".aegis").join("trusted_rules.json"),
-        ] {
-            if candidate.exists() {
-                if let Ok(content) = fs::read_to_string(candidate) {
-                    if let Ok(ids) = serde_json::from_str::<Vec<String>>(&content) {
-                        pinned.extend(ids);
-                    }
-                }
-            }
+    /// Digest only the rule's behavior, ignoring attacker-controlled trust labels.
+    pub fn content_digest(rule: &VulnerabilityRule) -> String {
+        let mut normalized = rule.clone();
+        normalized.provenance = RuleProvenance::UntrustedWorkspace;
+        normalized.trusted = false;
+        let bytes = serde_json::to_vec(&normalized).expect("rule serialization is infallible");
+        format!("{:x}", Sha256::digest(&bytes))
+    }
+
+    fn load_pinned_trusted_rules(root: &Path) -> HashMap<String, String> {
+        // Project-local files are scan inputs, not an operator trust store.
+        // Trust pins must be maintained outside the scanned workspace.
+        let Some(home) = std::env::var_os("HOME") else {
+            return HashMap::new();
+        };
+        let candidate = Path::new(&home).join(".config/bug-killer/trusted_rules.json");
+        let Ok(store) = candidate.canonicalize() else {
+            return HashMap::new();
+        };
+        if root
+            .canonicalize()
+            .is_ok_and(|work| store.starts_with(work))
+        {
+            return HashMap::new();
         }
-        pinned
+        fs::read_to_string(store)
+            .ok()
+            .and_then(|s| serde_json::from_str::<HashMap<String, String>>(&s).ok())
+            .unwrap_or_default()
     }
 
     /// Loads vulnerability rules from an optional explicit directory or file,
     /// as well as scanning `root/rules/` and `~/.bug-killer/rules/`.
-    /// Workspace rules default to UntrustedWorkspace unless pinned in trusted_rules.json.
+    /// Workspace rules default to UntrustedWorkspace unless their exact content
+    /// is pinned in the operator's separate config store.
     pub fn load_rules(custom_path: Option<&Path>, root: &Path) -> Vec<VulnerabilityRule> {
         Self::load_rules_with_options(custom_path, root, false)
     }
@@ -155,7 +171,9 @@ impl RuleEngine {
             let mut ws_rules = Vec::new();
             Self::collect_rules_from_path(&local_rules, &mut ws_rules);
             for mut r in ws_rules {
-                if trust_all_workspace_rules || pinned_trusted.contains(&r.id) {
+                if trust_all_workspace_rules
+                    || pinned_trusted.get(&r.id) == Some(&Self::content_digest(&r))
+                {
                     r.provenance = RuleProvenance::OperatorApproved;
                     r.trusted = true;
                 } else {
@@ -172,7 +190,9 @@ impl RuleEngine {
             let mut dot_ws_rules = Vec::new();
             Self::collect_rules_from_path(&dot_rules, &mut dot_ws_rules);
             for mut r in dot_ws_rules {
-                if trust_all_workspace_rules || pinned_trusted.contains(&r.id) {
+                if trust_all_workspace_rules
+                    || pinned_trusted.get(&r.id) == Some(&Self::content_digest(&r))
+                {
                     r.provenance = RuleProvenance::OperatorApproved;
                     r.trusted = true;
                 } else {
