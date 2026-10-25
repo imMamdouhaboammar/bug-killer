@@ -90,6 +90,7 @@ impl AnalyzerAdapter for AstGrepAdapter {
             ScanProfile::Ci,
             ScanProfile::Deep,
             ScanProfile::Research,
+            ScanProfile::Audit,
         ]
     }
 

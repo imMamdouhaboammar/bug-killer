@@ -657,6 +657,7 @@ pub enum ScanProfile {
     Ci,
     Deep,
     Research,
+    Audit,
 }
 
 #[allow(dead_code)]
@@ -668,6 +669,7 @@ impl ScanProfile {
             ScanProfile::Ci => "CI",
             ScanProfile::Deep => "DEEP",
             ScanProfile::Research => "RESEARCH",
+            ScanProfile::Audit => "AUDIT",
         }
     }
 }

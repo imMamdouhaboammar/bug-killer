@@ -40,6 +40,7 @@ impl AnalyzerAdapter for BuiltinScannerAdapter {
             ScanProfile::Ci,
             ScanProfile::Deep,
             ScanProfile::Research,
+            ScanProfile::Audit,
         ]
     }
 

@@ -1612,6 +1612,7 @@ fn main() {
                     "ci" => ScanProfile::Ci,
                     "deep" => ScanProfile::Deep,
                     "research" => ScanProfile::Research,
+                    "audit" => ScanProfile::Audit,
                     _ => ScanProfile::Quick,
                 };
                 let report = if staged {
