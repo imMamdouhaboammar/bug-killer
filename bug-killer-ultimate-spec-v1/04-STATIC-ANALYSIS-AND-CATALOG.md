@@ -4,6 +4,8 @@
 
 Treat the 373 existing catalog rules as a requirement set; evaluate applicable rules against actual targets with typed receipts. Improve analysis incrementally through Tree-sitter, ast-grep and optional deep flows, while preserving fast developer checks.
 
+**Selection preference:** map each catalog requirement to a proven installed analyzer and verified ruleset first, where applicable; keep native checks for existing compatibility, speed or demonstrated uncovered behavior. The catalog is a weakness taxonomy and expected-work ledger, **not a reason to reinvent hundreds of mature SAST rules**. Use the capability/coverage distinction from Sections 06 and 14; compare actual rule lineage before claiming independent corroboration.
+
 ## Engine selection
 
 1. **Tree-sitter**: AST/CST extraction, language grammar errors and incremental parse cache; the parser alone does not prove dataflow, reachability or security properties.

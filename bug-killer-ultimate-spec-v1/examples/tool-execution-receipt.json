@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "sample-missing-1",
+  "plan_id": "sample-plan-1",
+  "run_id": "sample-run-1",
+  "tool_id": "example-local-sast-adapter",
+  "adapter_version": "0.1-test",
+  "engine_version": null,
+  "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "target_ids": ["fixture/project"],
+  "check_ids": ["EXAMPLE-CHECK-1"],
+  "status": "NOT_RUN",
+  "reason_code": "ENGINE_MISSING",
+  "authorization_ref": null,
+  "resources": {
+    "duration_ms": 0,
+    "peak_memory_bytes": null,
+    "cost_estimate_usd": null,
+    "cost_actual_usd": null
+  },
+  "artifacts": [],
+  "started_at": "2026-10-25T00:00:00Z",
+  "completed_at": "2026-10-25T00:00:00Z"
+}

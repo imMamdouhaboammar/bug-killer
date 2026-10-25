@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tool-capability.schema.json",
+  "title": "Bug Killer Tool Capability v1 (PROPOSED)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tool_id", "adapter_version", "installation", "capabilities", "execution", "governance", "verified_at"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "tool_id": { "type": "string", "minLength": 1 },
+    "adapter_version": { "type": "string", "minLength": 1 },
+    "engine_version": { "type": ["string", "null"] },
+    "binary_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "installation": {
+      "type": "string",
+      "enum": ["AVAILABLE", "MISSING", "INCOMPATIBLE", "UNLICENSED", "UNHEALTHY", "DISABLED"]
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kinds", "languages", "asset_types", "check_ids", "output_formats", "evidence_limit"],
+      "properties": {
+        "kinds": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": { "enum": ["SAST", "SCA", "SBOM", "SECRETS", "IAC", "DAST", "FUZZ", "SYMBOLIC", "RUNTIME", "REPAIR", "ADVISORY", "CONTEXT"] }
+        },
+        "languages": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "asset_types": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "check_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "output_formats": { "type": "array", "uniqueItems": true, "items": { "enum": ["JSON", "SARIF", "TEXT", "CRASH", "SBOM"] } },
+        "evidence_limit": { "enum": ["UNKNOWN", "PATTERN_INDICATOR", "SUSPECTED", "STRONGLY_SUPPORTED", "CONFIRMED"] }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "local", "network_required", "scoped_permission_classes"],
+      "properties": {
+        "transport": { "enum": ["LIBRARY", "CLI", "CONTAINER", "MCP", "CI", "VENDOR_API"] },
+        "local": { "type": "boolean" },
+        "network_required": { "type": "boolean" },
+        "scoped_permission_classes": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "platforms": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["license_review", "entitlement_verified", "source_export_required", "cost_model"],
+      "properties": {
+        "license_review": { "enum": ["APPROVED", "PENDING", "REJECTED", "NOT_APPLICABLE"] },
+        "entitlement_verified": { "type": "boolean" },
+        "source_export_required": { "type": "boolean" },
+        "cost_model": { "enum": ["LOCAL_RESOURCES", "PER_INVOCATION", "SUBSCRIPTION", "UNKNOWN"] },
+        "restrictions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verified_at": { "type": "string", "format": "date-time" },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "description": "Discovery observation only. A capability assertion does not prove execution, accuracy, license eligibility or applicability."
+}

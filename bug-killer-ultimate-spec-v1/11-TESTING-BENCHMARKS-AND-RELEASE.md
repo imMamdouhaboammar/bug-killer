@@ -14,6 +14,7 @@
 | Unit | Deterministic rule and parser behavior | Rust `cargo test`, Go `go test`; good/bad/evasion |
 | Contract | Schema versioning, errors and receipts | JSON Schema + compatibility golden files |
 | Integration | Rust/Go/MCP/adapter interoperability | Temp projects, fake OSV, offline tools |
+| Orchestration | Tool choice, preflight, immutable plan, approval, host receipts, budget/cancel and evidence correlation | Mock adapters, fake local binaries, pinned compatible tools where available |
 | Adversarial | Parser and trust boundary resilience | Property-based tests, fuzz input, symlink/permission fixtures |
 | End-to-end | Authorization → repair → verify/rollback | Ephemeral workspace, controlled fake services |
 | Benchmark | Detection precision/recall and speed | OWASP Benchmark, NIST SARD, internally labeled synthetic reproductions of real-world bug patterns |
@@ -90,6 +91,12 @@ Also execute `cargo fmt --all -- --check` and Inspector checks as appropriate. T
 - Trusted scoped DNS resolution resists rebinding and redirects on actual connection.
 - Partial OSV inventory with no findings is not complete security assurance.
 - Joern absence or crash reports `NOT_RUN/ERROR` when required, not silent success.
+- Installed engine claim with missing/unverified binary or unauthorized vendor entitlement cannot pass preflight.
+- Required tool missing/unlicensed/over budget blocks required checks; optional tool missing is a disclosed gap, never an invented `EVALUATED` receipt.
+- Tool calls record a host-issued `ToolExecutionReceipt` for denied, skipped, successful, cancelled and timed-out paths. No self-issued coverage credit.
+- A hostile adapter cannot inflate its evidence cap, leak source to an unauthorized vendor, alter the snapshot/run ID or grant itself permissions.
+- Two analyzers using an identical upstream ruleset or advisory feed are not counted as independent security confirmation. Conflicting findings remain inspectable, with a third-party verification task if policy requires.
+- Rechecking a patched snapshot with the same cached stale engine result cannot certify repair; new snapshot and independent proof required.
 - Property-based scanner/parser input cannot cause uncontrolled panic, hang, OOM or host write.
 - All repair verification failures leave an honest failed/partial state and rollback proof.
 - Disclosure draft contains no secrets, and no external report is sent without fresh user approval.
@@ -97,6 +104,8 @@ Also execute `cargo fmt --all -- --check` and Inspector checks as appropriate. T
 ## Performance budgets
 
 Establish baseline on fixed repositories of 1k, 10k and 100k files; pin machine/OS; measure cold and incremental paths. Acceptance thresholds are data-driven. Quick mode must not require Java, Python, Node, network or graph DB and must remain viable in local pre-commit. Deep and Research may be more expensive, but must enforce user-configured maximum time, RAM and concurrency.
+
+The orchestrator also records tool availability, startup cost, remote service charges and rate caps. An agent-generated plan that exceeds hard budget or requests an unapproved data export **must fail before execution**. Metrics must compare the *composed* operation against individual tool baselines, with separate counts for unique findings, duplicated findings, conflicting signals and verified remediation.
 
 ## Release channels
 

@@ -2,15 +2,15 @@
 
 ## Integration principle
 
-**One independently reviewable objective per PR** with TDD red/green and a measured integration gate. Never create a large monolithic branch for all three engines or a quota of arbitrary commits. At each card, rebase on latest master, revalidate assumptions, preserve dirty work, and document unreached acceptance explicitly.
+**One independently reviewable objective per PR** with TDD red/green and a measured integration gate. **Deliver the agentic control plane and working adapters to existing tools first; new proprietary detection algorithms are the exception and require gap evidence.** Never create a large monolithic branch for all product missions or a quota of arbitrary commits. At each card, rebase on latest master, revalidate assumptions, preserve dirty work, and document unreached acceptance explicitly. Section 14 defines the product and acceptance contract.
 
 ```mermaid
 flowchart TD
     A["M0: Safety + truthful coverage"] --> B["M1: Engine ABI + baseline corpus"]
-    B --> C["M2: Tree-sitter + ast-grep"]
-    B --> D["M3: Advisory intelligence"]
-    C --> E["M4: Deep analysis adapter"]
-    D --> F["M5: Research hypothesis runner"]
+    B --> C["M1.3/1.4: Planner + mature adapters"]
+    C --> D["M2/M4: Optional specialist depth"]
+    C --> E["M3: Advisory intelligence"]
+    C --> F["M5: Research tool runner"]
     E --> F
     F --> G["M6: Private disclosure workflow"]
 ```
@@ -44,10 +44,10 @@ flowchart TD
 ### Card M1.1: Versioned engine registry + fixture baseline
 
 - **Why:** R-006/R-008/R-009/R-012.
-- **Owns:** `AnalyzerAdapter`, capability negotiation, sandbox process launcher, normalized Finding v1 / CoverageReceipt v1, parser result to old type converter.
+- **Owns:** `AnalyzerAdapter`, capability discovery/preflight, sandbox process launcher, normalized Finding v1 / CoverageReceipt v1, ToolCapability/ToolExecutionReceipt v1, parser result to old type converter.
 - **Depends:** M0.2 receipt contract.
 - **Must not change:** existing CLI behavior or healing.
-- **Acceptance:** synthetic successful, timeout, malformed JSON, unsupported language, cancellation and partial engine produce typed test outputs. Golden compatibility tests unchanged.
+- **Acceptance:** synthetic successful, timeout, malformed JSON, unsupported language, cancellation and partial engine produce typed test outputs. Missing/unlicensed/incompatible tool is explicit and policy-required absence blocks. A skipped tool has execution receipt but no evaluated coverage. Golden compatibility tests unchanged.
 - **Rollback:** new registry behind feature flag, legacy detector path unaffected.
 - **Integration owner:** Rust core, one owner for schema+converters.
 
@@ -61,7 +61,29 @@ flowchart TD
 - **Rollback:** standalone test harness, no runtime impact.
 - **Integration owner:** security QA.
 
-## Milestone M2: Structural engine
+### Card M1.3: Agentic security room planner + execution ledger
+
+- **Why:** R-015/R-016/R-017/R-019; mature tools need a trusted scheduler and observable handoffs.
+- **Depends:** M0 authorization/coverage and M1.1 contracts; M1.2 fixture corpus supplies tool comparison data.
+- **Owns:** inventory-based capability matching, immutable plan IDs, selected/skipped rationale, engine health and entitlement checks, resource/cost ceilings, dependency DAG, per-invocation host receipt and cancellation. A plan is advisory until every relevant scope and permission condition passes.
+- **Must not change:** read-only Quick startup, existing CLI/MCP schemas, automatic public disclosure, external credentials without explicit configuration.
+- **Acceptance:** two mocked tools with overlapping capability select correctly; unlicensed/missing required tool blocks with exact reason; optional tool is skipped visibly; unsupported target is never claimed evaluated; invalid tool metadata, unsafe arguments, over-budget plan, forged approval and unauthorized source egress are denied. Cancellation produces a terminal receipt without processes left running.
+- **Rollback:** planner behind additive versioned API; existing scan remains.
+- **Integration owner:** Rust orchestration/trust boundary owner.
+
+### Card M1.4: First mature external tool adapters and evidence correlation
+
+- **Why:** R-015/R-018; validate the real product value before spending months on new detector implementation.
+- **Depends:** M1.1/M1.2/M1.3.
+- **Owns:** at least two independent, externally installed open-source analyzer integrations chosen from evaluated candidates (for example Semgrep CE and Trivy on applicable fixtures), JSON/SARIF normalizers, raw artifact digest preservation, overlapping/contradicting result correlation and independent verification selection.
+- **Must not change:** vendor binaries/licenses, unapproved private-code export or low-latency Quick budgets.
+- **Acceptance:** reproducible pinned fixture with actual installed tools where available; fallback/missing tool fixtures are deterministic offline; normalized results retain original IDs and distinct source spans; two reports from the same shared rule do not count as independent proof. Show real measured coverage, cost and tool limits. No fake successful integration if binaries unavailable.
+- **Rollback:** individual adapters feature-gated; keep original findings and run ledger.
+- **Integration owner:** integrations + security QA.
+
+## Milestone M2: Structural and source-analyzer composition
+
+The following native structure components are **optional measured additions** alongside mature adapters, not prerequisite reinventions before the operations room can deliver value. The M1.4 adapter work can ship before M2.1/M2.2 if controls and benchmark gates pass.
 
 ### Card M2.1: Tree-sitter ingestion and source hash cache
 
@@ -82,6 +104,8 @@ flowchart TD
 - **Acceptance:** red/green parity for selected rules, no comments-only finding, fixed source spans, benchmark improvement or documented precision tradeoff, fallback status truthful.
 - **Rollback:** per-rule feature flag, compare shadow results.
 - **Integration owner:** detector registry owner.
+
+**Build decision check:** before extending bespoke AST/taint features, compare mature tool adapters for the same labels, language support, cost and precision. Reuse an external engine where adequate; custom rules address documented residual gaps only.
 
 ## Milestone M3: Known advisory intelligence
 
@@ -104,7 +128,7 @@ flowchart TD
 - **Rollback:** plan-only mode.
 - **Integration owner:** healer + package intelligence.
 
-## Milestone M4: Deep graph and taint
+## Milestone M4: Deep graph and taint through specialist tools
 
 ### Card M4.1: Joern sandboxed adapter and flow proof
 
@@ -130,18 +154,18 @@ flowchart TD
 ### Card M5.1: Hypothesis and sandbox contracts
 
 - **Why:** R-010.
-- **Depends:** M0.1/M0.2, M1.1/M1.2, M4.1; known advisory correlation M3.1 required for novelty check.
+- **Depends:** M0.1/M0.2, M1.1/M1.2/M1.3 and selected tested research adapters; known advisory correlation M3.1 required for novelty check. **M4.1 Joern is optional** unless a specific research task requires its proven capabilities.
 - **Owns:** candidate state machine, allowed experiment types, sandbox budgets, private artifact store and cancellation.
 - **Must not change:** default scan/pre-commit, upstream live services.
 - **Acceptance:** speculative LLM result not confirmed; sandbox escape/egress forbidden; tests produce deterministic triage and minimized evidence.
 - **Rollback:** research feature disabled without touching developer scanning.
 - **Integration owner:** security research owner and independent security reviewer.
 
-### Card M5.2: Bounded fuzz and differential proof
+### Card M5.2: Existing fuzzers, bounded experimentation and differential proof
 
 - **Why:** produce defensible new findings.
 - **Depends:** M5.1 and existing #21.
-- **Owns:** language-specific harmless fuzz harnesses, property invariants, reproducibility and crash dedupe.
+- **Owns:** adapters for eligible existing language-native/LLVM/AFL++ fuzzers, language-specific harmless fuzz harnesses, property invariants, reproducibility and crash dedupe. Evaluate OSS-Fuzz/ClusterFuzzLite and AIxCC projects as infrastructure/specialist integration candidates; do not start by cloning their orchestration and vulnerability algorithms.
 - **Acceptance:** synthetic unknown fault reproduces in fresh workspace, benign behavior change is discarded, no real external target hit, deterministic bounded CI smoke test.
 - **Rollback:** stop sandbox jobs, archive only sanitized reproducible artifacts.
 - **Integration owner:** security QA plus research maintainer.
@@ -162,6 +186,7 @@ flowchart TD
 
 **Gate A:** M0 complete before any unattended privileged healing.  
 **Gate B:** M1 metrics established before declaring improved detection.  
+**Gate B2:** capability broker and execution ledger prove real tool selection, denial and correlation; one vendor-reported scan does not certify workspace security.
 **Gate C:** M2 structural path compares favorably on good/bad/evasion corpus before rule migration expansion.  
 **Gate D:** M3 advisory path correct under offline and ambiguous dependency fixtures.  
 **Gate E:** M4 extra depth demonstrated, Quick remains lightweight.  

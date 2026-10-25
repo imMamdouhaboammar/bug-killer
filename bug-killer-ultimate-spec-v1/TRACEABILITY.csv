@@ -13,3 +13,8 @@ R-011,12-DISCLOSURE-AND-GOVERNANCE.md,M6.1,"Private draft no send without approv
 R-012,11-TESTING-BENCHMARKS-AND-RELEASE.md,M1.2,"Labelled precision recall and FPR metrics",P1
 R-013,08-CLI-MCP-AND-UX.md,M1.1,"Backward-compatible versioned JSON MCP",P0
 R-014,07-REMEDIATION-AND-TRUST.md,M3.2,"Approved repair and independent recheck",P0
+R-015,14-AGENTIC-SECURITY-OPERATIONS-ROOM.md,M1.4,"Two real mature external tools via adapters and measured incremental value",P0
+R-016,14-AGENTIC-SECURITY-OPERATIONS-ROOM.md,M1.1,"Missing unlicensed unhealthy required engine does not silently pass",P0
+R-017,14-AGENTIC-SECURITY-OPERATIONS-ROOM.md,M1.3,"Immutable plan budget permission and all-status execution receipt",P0
+R-018,06-EVIDENCE-AND-VERIFICATION.md,M1.4,"Shared rule dedup disagreement and independent recheck",P1
+R-019,14-AGENTIC-SECURITY-OPERATIONS-ROOM.md,M1.3,"Malicious adapter cannot export private source or escalate scope",P0

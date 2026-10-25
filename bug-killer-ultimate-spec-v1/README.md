@@ -1,10 +1,10 @@
 # Bug Killer: Ultimate Security Discovery & Repair Specification
 
-**Version:** 1.0.0 (architecture specification)  
+**Version:** 1.1.0 (orchestration-first architecture specification)
 **Date:** 2026-10-25  
 **Owner:** Mamdouh Aboammar  
 **Repository:** https://github.com/imMamdouhaboammar/bug-killer  
-**Baseline:** `master` following merged PR #25, merge commit `636887a76dc1654d51005af6210c605b7e556ecb`  
+**Baseline:** Original source audit following merged PR #25 (`636887a76dc1654d51005af6210c605b7e556ecb`); orchestration amendment prepared against `master` `1baad810e90cfd65aac8eb9ca60cc4f7cfafd5b2`. Revalidate code/issue state before implementation.
 **Status:** Proposed architecture, implementation contracts, and execution plan. **Not a claim that these capabilities already exist.**
 
 ## الملخص التنفيذي
@@ -15,7 +15,7 @@
 2. اكتشاف الأخطاء والأنماط الأمنية الشائعة، ومنها كتالوج القواعد الـ373، وإصلاحها بعد التحقق.
 3. البحث المنهجي عن ثغرات غير معروفة أو غير مبلغ عنها، وبناء دليل قابل لإعادة الإنتاج، ثم المساعدة في الإبلاغ المسؤول عنها.
 
-**القرار:** نحتفظ بـRust Core، وندمج Tree-sitter وast-grep في مسار التحليل الأساسي، مع Joern كـDeep Analysis Sidecar، وSemgrep CE كـAdapter اختياري، وCodeQL كـAdapter مرخص حسب الأهلية. نطور OSV الحالي، ونضيف Evidence Gate وResearch Sandbox وRemediation Verification. لا نعيد بناء AST Parser من الصفر.
+**القرار الأساسي:** Bug Killer هو **غرفة عمليات أمن سيبراني Agentic** بداخلها محركات وأدوات مثبتة يتم اختيارها وتشغيلها من Orchestrator مركزي موثوق. نحن نبني التنسيق، وحماية الصلاحيات، وتخطيط العمل، وتوحيد الأدلة، والتحقق المستقل، وإدارة الإصلاحات؛ لا نعيد بناء Semgrep أو CodeQL أو Trivy أو fuzzers لمجرد أنها جزء من المنظومة. نحتفظ بـRust Core كقائد التشغيل، ونستخدم Tree-sitter وast-grep كأدوات بنيوية مناسبة، وJoern ومحركات أخرى عبر Adapters مستقلة حسب الحاجة والترخيص والتوافر. **المنتج ثلاث رحلات أمنية عبر نفس غرفة العمليات، وليس ثلاث ماسحات مكتوبة من الصفر.**
 
 **حدود الوعد:** لا يمكن اعتبار اكتمال تسجيل 373 قاعدة إثباتًا لاكتشاف جميع الثغرات. يعرض النظام أدلة التغطية ودرجة اليقين وما لم يُفحص. لا يطلق تلقائيًا ادعاءات Zero-Day أو تقارير ثغرات عامة.
 
@@ -39,9 +39,10 @@ Read in the following order. Each document is independently usable and cross-ref
 | [11-TESTING-BENCHMARKS-AND-RELEASE.md](11-TESTING-BENCHMARKS-AND-RELEASE.md) | Red/green tests, quality benchmarks, CI matrices and release gates |
 | [12-DISCLOSURE-AND-GOVERNANCE.md](12-DISCLOSURE-AND-GOVERNANCE.md) | Private reporting, retention, provenance, security feeds and operations |
 | [13-OPEN-DECISIONS-AND-RISKS.md](13-OPEN-DECISIONS-AND-RISKS.md) | Explicit decisions, uncertainties, risks and exit criteria |
+| [14-AGENTIC-SECURITY-OPERATIONS-ROOM.md](14-AGENTIC-SECURITY-OPERATIONS-ROOM.md) | **Core product thesis:** mature tool orchestration, capability broker, secure execution, evidence correlation, agentic room and acceptance |
 | [AGENT-EXECUTION-BRIEF.md](AGENT-EXECUTION-BRIEF.md) | Ready-to-use brief for coding agents; read after architecture |
-| [schemas/](schemas/) | Versioned JSON Schemas for analyzer requests/results, findings, coverage and repairs |
-| [examples/](examples/) | Example policy and research-candidate payload |
+| [schemas/](schemas/) | Versioned JSON Schemas, including **tool capability discovery** and **actual execution receipts** |
+| [examples/](examples/) | Policy, research candidate and honest missing-tool/NOT_RUN examples |
 | [TRACEABILITY.csv](TRACEABILITY.csv) | Requirement-to-work-package-to-test mapping |
 | [scripts/validate-spec.sh](scripts/validate-spec.sh) | Offline packaging and syntax checks for this specification |
 
@@ -52,6 +53,7 @@ Read in the following order. Each document is independently usable and cross-ref
 - Intended work is strictly defensive and authorized: no public exploit automation, attacks on third-party live services, credential extraction, or unapproved external vulnerability publication.
 - Snippets, schemas, config paths and commands marked **PROPOSED** are not guaranteed to exist in the present code.
 - Dependencies must be pinned, license-scanned, reproducibly built and independently evaluated before adoption.
+- **Orchestration amendment:** Sections 00, 02, 05, 09, 10, 11 and 14 must be read together. External engine names are candidate integrations, **not a claim they are installed, working or redistributable**. The safest useful capability should be reused where feasible; write new scanner algorithms only for justified, measured gaps.
 
 ## Delivery definition
 

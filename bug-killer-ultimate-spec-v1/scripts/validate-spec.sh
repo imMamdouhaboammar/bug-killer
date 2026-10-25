@@ -22,7 +22,7 @@ for filename in "$spec_root"/*.md; do
   }
 done
 
-for name in finding coverage-receipt repair-plan analysis-request analysis-response; do
+for name in finding coverage-receipt repair-plan analysis-request analysis-response tool-capability tool-execution-receipt; do
   test -s "$spec_root/schemas/$name.schema.json"
 done
 
@@ -30,8 +30,21 @@ jq -e '.kind == "RESEARCH_CANDIDATE" and .status == "SUSPECTED" and .evidence_ce
   "$spec_root/examples/research-candidate.json" >/dev/null
 jq -e '.status == "COMPLETED" and (.findings | length) == 0 and (.receipts | length) == 1 and .receipts[0].status == "EVALUATED"' \
   "$spec_root/examples/analysis-response.json" >/dev/null
+jq -e '.installation == "MISSING" and .governance.license_review == "PENDING"' \
+  "$spec_root/examples/tool-capability.json" >/dev/null
+jq -e '.status == "NOT_RUN" and .reason_code == "ENGINE_MISSING" and (.artifacts | length) == 0' \
+  "$spec_root/examples/tool-execution-receipt.json" >/dev/null
+
+# Deliberately narrow offline checks: required top-level fields and unexpected
+# top-level properties in the two new examples; not a full JSON Schema validator.
+for record in tool-capability tool-execution-receipt; do
+  jq -e --slurpfile contract "$spec_root/schemas/$record.schema.json" \
+    '([ $contract[0].required[] ] - keys | length) == 0 and ((keys - ($contract[0].properties | keys)) | length) == 0' \
+    "$spec_root/examples/$record.json" >/dev/null
+done
 
 test -s "$spec_root/TRACEABILITY.csv"
 test -s "$spec_root/AGENT-EXECUTION-BRIEF.md"
+test -s "$spec_root/14-AGENTIC-SECURITY-OPERATIONS-ROOM.md"
 
 printf 'Specification packaging and syntax smoke checks passed.\n'

@@ -2,11 +2,13 @@
 
 ## Problem and final outcome
 
-Bug Killer evolves from a predominantly pattern-based developer security scanner into a **local-first, evidence-driven platform for known vulnerability response, code security prevention, and novel vulnerability research**. Its outputs must help a user determine what is affected, what is known, what is merely suspected, what was actually assessed, which repair can be safely applied, and whether a resulting fix was verified.
+Bug Killer evolves from a predominantly pattern-based developer security scanner into a **local-first, evidence-driven, agentic cybersecurity operations room** for known vulnerability response, code security prevention, and novel vulnerability research. **Its core product is the orchestrator over trustworthy, mature security tools**, rather than a mandate to recreate every scanner, fuzzer, dataflow engine or repair engine. Its outputs must help a user determine what is affected, what is known, what is merely suspected, what was actually assessed, which repair can be safely applied, and whether a resulting fix was verified. See the governing product architecture in [Section 14](14-AGENTIC-SECURITY-OPERATIONS-ROOM.md).
 
 User segments: (a) beginners and vibe coders who need guided findings and safe defaults, (b) professional software developers who need precise machine-readable CI/MCP output, (c) AppSec engineers needing traces and proof, and (d) authorized vulnerability researchers needing reproducible, bounded experiments and private reporting.
 
-## Three product engines
+## Three product missions, one orchestration room
+
+The three `BK-*` domains are **workflows** composed from existing engines and targeted native capabilities, not three independent reimplementations. Every workflow uses shared capability discovery, scoped execution, provenance, correlation, approval and verification.
 
 ### BK-1: Known Vulnerability Response
 
@@ -50,6 +52,11 @@ User segments: (a) beginners and vibe coders who need guided findings and safe d
 | R-012 | Benchmarked recall/precision/false-positive and coverage rates | P1 |
 | R-013 | Backwards-compatible CLI/MCP schemas and migration tooling | P0 |
 | R-014 | Deterministic supervised patch, test, re-scan, rollback lifecycle | P0 |
+| R-015 | Orchestration-first engine selection: reuse validated mature tools before building new detection algorithms | P0 |
+| R-016 | Tool capability discovery, availability/license/entitlement preflight and explicit required-vs-optional policy | P0 |
+| R-017 | Agentic security-room plan, auditable execution lifecycle, resource/cost caps and execution receipts | P0 |
+| R-018 | Cross-tool evidence correlation, independent verification, disagreement and shared-signal detection | P1 |
+| R-019 | Replaceable external tool adapters that cannot expand permissions or silently export source/evidence | P0 |
 
 ## Modes
 
@@ -70,9 +77,11 @@ Success is not "373/373" alone. Report (1) applicable supported rules, (2) actua
 - Mathematical proof of absence of all vulnerabilities.
 - Universal zero-day discovery, automated CVE assignment, exploit kits, or unapproved internet-wide probing.
 - Recreating Tree-sitter, a compiler frontend, or general-purpose graph search from scratch.
+- Cloning mature SAST, SCA, fuzzers, AIxCC research systems or vendor platforms without a measured functional gap and legally viable basis.
 - Replacing existing Rust/Go services in a single breaking migration.
 - Calling LLM-generated text a verified vulnerability, approved rule or successful fix without deterministic evidence.
 - Making every optional engine, Python service, JVM or Node runtime mandatory for an ordinary installation.
+- Claiming to prevent every coding agent mistake or discover unknown vulnerabilities universally just because multiple tools are connected.
 
 ## Constraints and scope
 

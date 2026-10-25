@@ -47,6 +47,7 @@ Never treat "the user has enabled deep scanning" as consent to publish or notify
 ## Privacy and storage
 
 - Source files remain local by default; optional engine and AI access are explicit and logged.
+- **Vendor/cloud adapters:** run preflight on endpoint ownership, agreement, entitlement, data residency, source/artifact classes, upload and retention terms; require a specific operator grant for any private code or vulnerability evidence leaving the approved local boundary. Tool availability does not imply upload consent.
 - Finding evidence is minimized and content-addressed. Store secret references or redacted summaries rather than raw credentials.
 - Private research candidates are isolated from ordinary aggregated usage metrics and user reports.
 - Define configurable retention per class: scan summaries, raw traces, crash artifacts, backups, approval receipts, advisory cache.
@@ -63,6 +64,7 @@ Signed rule-pack lifecycle: author identity -> review -> static validation -> co
 ## Operations
 
 - Health: provider freshness, engine version drift, cache validity, unfinished jobs, partial inventory, auth failures, backup consistency.
+- Orchestration desk: capability health, license/entitlement drift, actual skipped/running/cancelled receipts, vendor quota/cost and tool output lineage; never interpret a missing engine as a clean scan.
 - Reliability: bounded retries, exponential backoff for feeds, cancellation propagation, per-job resource quotas and idempotent job IDs.
 - Observability: structured local logs with redaction; metrics by mode/language/engine, not user code content.
 - Incident response: disable bad adapter/rule pack, halt mutation, preserve tamper-evident logs, restore approved snapshot, inform operator.

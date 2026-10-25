@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "tool_id": "example-local-sast-adapter",
+  "adapter_version": "0.1-test",
+  "engine_version": null,
+  "binary_sha256": null,
+  "installation": "MISSING",
+  "capabilities": {
+    "kinds": ["SAST"],
+    "languages": ["python"],
+    "asset_types": ["source"],
+    "check_ids": ["EXAMPLE-CHECK-1"],
+    "output_formats": ["JSON"],
+    "evidence_limit": "UNKNOWN"
+  },
+  "execution": {
+    "transport": "CLI",
+    "local": true,
+    "network_required": false,
+    "scoped_permission_classes": ["workspace:read"],
+    "platforms": ["linux-amd64"]
+  },
+  "governance": {
+    "license_review": "PENDING",
+    "entitlement_verified": false,
+    "source_export_required": false,
+    "cost_model": "LOCAL_RESOURCES",
+    "restrictions": ["Fixture only; not installed or benchmarked"]
+  },
+  "verified_at": "2026-10-25T00:00:00Z",
+  "notes": ["Demonstrates honest missing-tool reporting; no engine was executed"]
+}
