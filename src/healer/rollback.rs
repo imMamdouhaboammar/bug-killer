@@ -138,11 +138,18 @@ impl RollbackManager {
 
                 // If it already matches original_sha256, no drift conflict
                 if current_sha256 != record.original_sha256 {
-                    if let Some(ref expected_post) = record.post_heal_sha256 {
-                        if &current_sha256 != expected_post {
+                    match &record.post_heal_sha256 {
+                        Some(expected_post) if &current_sha256 == expected_post => {}
+                        Some(expected_post) => {
                             return Err(format!(
                                 "Post-heal drift detected in {:?}: current hash {} matches neither expected post-heal hash {} nor original backup {}. Refusing to overwrite without explicit force.",
                                 target_file, current_sha256, expected_post, record.original_sha256
+                            ));
+                        }
+                        None => {
+                            return Err(format!(
+                                "Cannot verify post-heal drift in {:?}: backup lacks a post-heal checksum; refusing to overwrite without explicit force.",
+                                target_file
                             ));
                         }
                     }

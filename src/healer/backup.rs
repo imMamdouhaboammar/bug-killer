@@ -25,6 +25,7 @@ impl BackupManager {
     }
 
     /// Creates an atomic backup of target files before modifying them.
+    #[allow(dead_code)] // Retained for consumers restoring pre-existing snapshots in integration tests.
     pub fn create_backup(root: &Path, files: &[PathBuf]) -> std::io::Result<BackupManifest> {
         Self::create_backup_with_post_heals(root, files, &[])
     }

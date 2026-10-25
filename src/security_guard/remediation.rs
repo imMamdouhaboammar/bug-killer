@@ -201,10 +201,24 @@ impl RemediationEngine {
             ));
         }
 
+        // Bind privileged remediation to a single durable approval consumption.
+        if proposal.required_level == RemediationLevel::PrivilegedRemediation {
+            let token = approval_receipt.ok_or("Missing operator approval receipt")?;
+            let receipt: crate::healer::approval::ApprovalReceipt = serde_json::from_str(token)
+                .map_err(|e| format!("Invalid operator approval receipt: {e}"))?;
+            ApprovalManager::record_used_nonce(root, &receipt.nonce)?;
+        }
+
         // 4. Create atomic signed backup
-        let manifest =
-            BackupManager::create_backup(root, std::slice::from_ref(&proposal.target_file))
-                .map_err(|e| format!("Backup creation failed: {}", e))?;
+        let action = PatchAction {
+            target_file: canonical_target.clone(),
+            original_checksum: proposal.original_sha256.clone(),
+            replacement_content: proposal.replacement_content.clone(),
+            action_type: PatchActionType::GenericReplace,
+            diff_description: proposal.diff_preview.clone(),
+        };
+        let manifest = BackupManager::create_backup_for_actions(&canonical_root, &[action])
+            .map_err(|e| format!("Backup creation failed: {}", e))?;
         let backup_id = manifest.backup_id.clone();
 
         // 5. Apply patch
