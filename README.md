@@ -70,6 +70,8 @@ flowchart TD
 
 ## Core Product Invariants
 
+Privileged file mutation requires an independently pinned operator signing key. See [Operator approval setup](docs/OPERATOR-APPROVAL.md) before attempting supervised remediation.
+
 1. **Discover Broadly:** Inventory runtime binaries, shared libraries, container layers, and package manifests without premature filtering.
 2. **Verify Carefully:** Version strings alone never constitute vulnerability proof; require verified symbol presence or mapped `/proc` memory evidence.
 3. **Evidence-First Explanations:** Every finding cites exact byte offsets, symbol signatures (`BrotliDecoderContext`, `zend_hash_destroy`), or line-level configurations.

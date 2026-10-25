@@ -37,12 +37,12 @@ var (
 	packetLimit   int
 
 	// Heal flags
-	findingsPath  string
-	nginxConf     string
-	haproxyConf   string
-	apacheConf    string
-	upgradePkg    string
-	dryRun        bool
+	findingsPath string
+	nginxConf    string
+	haproxyConf  string
+	apacheConf   string
+	upgradePkg   string
+	dryRun       bool
 )
 
 // RootCmd represents the base command when called without any subcommands.
@@ -82,11 +82,14 @@ var scanCmd = &cobra.Command{
 			CollectBinary: scanBinaries,
 		})
 
-		fsAssets := fc.Crawl()
-		fmt.Printf("[+] Filesystem Crawler: Discovered %d runtime/config assets\n", len(fsAssets))
+		crawlRes := fc.Crawl()
+		fsAssets := crawlRes.Assets
+		fmt.Printf("[+] Filesystem Crawler: Discovered %d runtime/config assets (Status: %s, Skipped: %d, Errors: %d)\n",
+			len(fsAssets), crawlRes.Status, len(crawlRes.SkippedDirs), len(crawlRes.TraversalErrors))
 		for _, a := range fsAssets {
 			covLedger.AddAsset(a)
 		}
+		covLedger.RecordCrawlSummary(crawlRes.Status, crawlRes.SkippedDirs, crawlRes.TraversalErrors)
 
 		// 2. Active Process Map
 		if scanProcs {
@@ -181,7 +184,11 @@ var scanCmd = &cobra.Command{
 			return fmt.Errorf("failed to write coverage ledger: %w", err)
 		}
 
-		fmt.Printf("[✓] Scan successfully completed. Coverage Ledger written to %s (Elapsed: %s)\n",
+		if crawlRes.Status != crawler.CrawlStatusComplete {
+			return fmt.Errorf("scan incomplete (crawl status %s): %d skipped paths, %d traversal errors; coverage ledger saved to %s",
+				crawlRes.Status, len(crawlRes.SkippedDirs), len(crawlRes.TraversalErrors), outputPath)
+		}
+		fmt.Printf("[✓] Scan completed. Coverage Ledger written to %s (Elapsed: %s)\n",
 			outputPath, covLedger.ScanDuration)
 		return nil
 	},

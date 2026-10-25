@@ -49,8 +49,9 @@ fn test_dast_sensitive_paths_use_authorized_origin_not_url_path_or_query() {
             let line = String::from_utf8_lossy(&buf[..count]);
             paths.push(line.lines().next().unwrap().to_string());
             stream
-                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                 .unwrap();
+            drop(stream);
         }
         paths
     });

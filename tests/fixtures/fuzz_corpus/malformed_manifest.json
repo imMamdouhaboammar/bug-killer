@@ -1,0 +1,4 @@
+{
+  "backup_id": "corrupted",
+  "nested": {
+    "unclosed": [1, 2, "broken

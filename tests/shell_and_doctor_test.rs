@@ -66,6 +66,8 @@ fn test_agent_identity_signature_and_tamper_detection() {
             relative_target_path: "server.js".into(),
             original_sha256: "abcdef123456".into(),
             backup_file_name: "0_server.js".into(),
+            mode: None,
+            post_heal_sha256: None,
         }],
         signer_public_key: None,
         signature: None,

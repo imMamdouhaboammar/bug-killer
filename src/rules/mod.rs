@@ -2,8 +2,29 @@ use crate::types::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RuleProvenance {
+    BuiltIn,
+    OperatorApproved,
+    UntrustedWorkspace,
+}
+
+fn default_rule_provenance() -> RuleProvenance {
+    RuleProvenance::UntrustedWorkspace
+}
+
+impl RuleProvenance {
+    pub fn is_trusted(&self) -> bool {
+        matches!(
+            self,
+            RuleProvenance::BuiltIn | RuleProvenance::OperatorApproved
+        )
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VulnerabilityRule {
@@ -18,6 +39,16 @@ pub struct VulnerabilityRule {
     pub detection: DetectionMatcher,
     #[serde(default)]
     pub remediation: Option<RemediationStrategy>,
+    #[serde(default = "default_rule_provenance")]
+    pub provenance: RuleProvenance,
+    #[serde(default)]
+    pub trusted: bool,
+}
+
+impl VulnerabilityRule {
+    pub fn is_trusted(&self) -> bool {
+        self.trusted || self.provenance.is_trusted()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,26 +106,101 @@ pub enum RemediationStrategy {
 pub struct RuleEngine;
 
 impl RuleEngine {
+    /// Digest only the rule's behavior, ignoring attacker-controlled trust labels.
+    pub fn content_digest(rule: &VulnerabilityRule) -> String {
+        let mut normalized = rule.clone();
+        normalized.provenance = RuleProvenance::UntrustedWorkspace;
+        normalized.trusted = false;
+        let bytes = serde_json::to_vec(&normalized).expect("rule serialization is infallible");
+        format!("{:x}", Sha256::digest(&bytes))
+    }
+
+    fn load_pinned_trusted_rules(root: &Path) -> HashMap<String, String> {
+        // Project-local files are scan inputs, not an operator trust store.
+        // Trust pins must be maintained outside the scanned workspace.
+        let Some(home) = std::env::var_os("HOME") else {
+            return HashMap::new();
+        };
+        let candidate = Path::new(&home).join(".config/bug-killer/trusted_rules.json");
+        let Ok(store) = candidate.canonicalize() else {
+            return HashMap::new();
+        };
+        if root
+            .canonicalize()
+            .is_ok_and(|work| store.starts_with(work))
+        {
+            return HashMap::new();
+        }
+        fs::read_to_string(store)
+            .ok()
+            .and_then(|s| serde_json::from_str::<HashMap<String, String>>(&s).ok())
+            .unwrap_or_default()
+    }
+
     /// Loads vulnerability rules from an optional explicit directory or file,
     /// as well as scanning `root/rules/` and `~/.bug-killer/rules/`.
+    /// Workspace rules default to UntrustedWorkspace unless their exact content
+    /// is pinned in the operator's separate config store.
     pub fn load_rules(custom_path: Option<&Path>, root: &Path) -> Vec<VulnerabilityRule> {
-        let mut rules = Vec::new();
+        Self::load_rules_with_options(custom_path, root, false)
+    }
 
-        // 1. If explicit path specified
+    /// Loads vulnerability rules with option to trust workspace rules.
+    pub fn load_rules_with_options(
+        custom_path: Option<&Path>,
+        root: &Path,
+        trust_all_workspace_rules: bool,
+    ) -> Vec<VulnerabilityRule> {
+        let mut rules = Vec::new();
+        let pinned_trusted = Self::load_pinned_trusted_rules(root);
+
+        // 1. If explicit path specified by operator
         if let Some(path) = custom_path {
-            Self::collect_rules_from_path(path, &mut rules);
+            let mut custom_rules = Vec::new();
+            Self::collect_rules_from_path(path, &mut custom_rules);
+            for mut r in custom_rules {
+                r.provenance = RuleProvenance::OperatorApproved;
+                r.trusted = true;
+                rules.push(r);
+            }
         }
 
         // 2. Discover in workspace root `rules/`
         let local_rules = root.join("rules");
         if local_rules.exists() {
-            Self::collect_rules_from_path(&local_rules, &mut rules);
+            let mut ws_rules = Vec::new();
+            Self::collect_rules_from_path(&local_rules, &mut ws_rules);
+            for mut r in ws_rules {
+                if trust_all_workspace_rules
+                    || pinned_trusted.get(&r.id) == Some(&Self::content_digest(&r))
+                {
+                    r.provenance = RuleProvenance::OperatorApproved;
+                    r.trusted = true;
+                } else {
+                    r.provenance = RuleProvenance::UntrustedWorkspace;
+                    r.trusted = false;
+                }
+                rules.push(r);
+            }
         }
 
         // 3. Discover in `.bug-killer/rules/`
         let dot_rules = root.join(".bug-killer").join("rules");
         if dot_rules.exists() {
-            Self::collect_rules_from_path(&dot_rules, &mut rules);
+            let mut dot_ws_rules = Vec::new();
+            Self::collect_rules_from_path(&dot_rules, &mut dot_ws_rules);
+            for mut r in dot_ws_rules {
+                if trust_all_workspace_rules
+                    || pinned_trusted.get(&r.id) == Some(&Self::content_digest(&r))
+                {
+                    r.provenance = RuleProvenance::OperatorApproved;
+                    r.trusted = true;
+                } else {
+                    r.provenance = RuleProvenance::UntrustedWorkspace;
+                    r.trusted = false;
+                }
+                rules.push(r);
+            }
         }
 
         // Deduplicate rules by ID

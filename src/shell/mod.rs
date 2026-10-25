@@ -314,26 +314,15 @@ impl ShellEngine {
         if dry_run {
             println!("Dry-run mode: {} patches would be applied.", plan.len());
             self.show_plan();
-            println!("To apply live, run 'heal'.");
+            println!(
+                "Use 'bug-killer approve' and 'bug-killer apply' after operator authorization."
+            );
             return;
         }
 
-        println!("Applying {} healing patches atomically...", plan.len());
-        match AutopilotHealer::execute_healing(&self.current_dir, &plan) {
-            Ok((manifest, count)) => {
-                println!("✅ Successfully applied {} healing patches!", count);
-                println!("📦 Backup Snapshot ID: {}", manifest.backup_id);
-                if let Some(ref pk) = manifest.signer_public_key {
-                    let pk_short = if pk.len() >= 12 { &pk[..12] } else { pk };
-                    println!("🔑 Ed25519 Signed by Agent Identity: {}", pk_short);
-                }
-                println!("   To rollback if needed: rollback {}", manifest.backup_id);
-
-                // Auto-refresh report and plan
-                self.execute_scan(&[]);
-            }
-            Err(e) => eprintln!("❌ Healing failed: {}", e),
-        }
+        println!(
+            "Independent operator approval is required. Use 'bug-killer approve' and 'bug-killer apply' from the CLI."
+        );
     }
 
     fn execute_verify(&mut self) {

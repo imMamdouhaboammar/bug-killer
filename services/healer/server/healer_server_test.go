@@ -12,6 +12,13 @@ import (
 	omniv1 "github.com/aegis/healer/omniv1"
 )
 
+func useSyntheticWafSyntaxChecker(srv *StatefulHealerServer) {
+	srv.wafInjector.ExternalValidator = func(kind, staged string) error {
+		_, err := os.ReadFile(staged)
+		return err
+	}
+}
+
 func TestStatefulHealerDoesNotReplaceCorruptSigningKey(t *testing.T) {
 	backupDir := filepath.Join(t.TempDir(), "backups")
 	if err := os.MkdirAll(backupDir, 0700); err != nil {
@@ -99,6 +106,7 @@ func TestStatefulHealerExecutionAndRollback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to initialize StatefulHealerServer: %v", err)
 	}
+	useSyntheticWafSyntaxChecker(server)
 
 	// 1. Execute Remediation (WAF Virtual Patch)
 	dir := &omniv1.HealingDirective{
@@ -154,6 +162,7 @@ func TestStatefulHealerTamperedRollbackFailsClosed(t *testing.T) {
 
 	backupDir := filepath.Join(tmpDir, "backups")
 	server, _ := NewStatefulHealerServer(backupDir)
+	useSyntheticWafSyntaxChecker(server)
 
 	res, _ := server.ExecuteRemediation(context.Background(), &omniv1.HealingDirective{
 		DirectiveId:     "tamper-test",
@@ -195,6 +204,7 @@ func TestRollbackRejectsDifferentTargetThanSignedBackup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	useSyntheticWafSyntaxChecker(srv)
 	created, err := srv.ExecuteRemediation(context.Background(), &omniv1.HealingDirective{
 		DirectiveId: "binding-test", RemediationType: omniv1.RemediationType_REMEDIATION_VIRTUAL_PATCH_WAF, TargetFilePath: original,
 	})

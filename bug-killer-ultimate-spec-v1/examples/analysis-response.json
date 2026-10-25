@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "run_id": "demo-run-002",
+  "engine_id": "ast-grep-adapter",
+  "engine_version": "0.0-demo",
+  "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "COMPLETED",
+  "findings": [],
+  "receipts": [
+    {
+      "schema_version": "1.0",
+      "receipt_id": "receipt-demo-002",
+      "run_id": "demo-run-002",
+      "engine_id": "ast-grep-adapter",
+      "engine_version": "0.0-demo",
+      "check_id": "BK-AI-EXAMPLE",
+      "target_id": "synthetic-test-file",
+      "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": "EVALUATED",
+      "counts": {
+        "items_discovered": 1,
+        "items_examined": 1,
+        "items_excluded": 0,
+        "items_skipped": 0
+      },
+      "reason_codes": [],
+      "details": [],
+      "started_at": "2026-10-25T00:00:00Z",
+      "completed_at": "2026-10-25T00:00:01Z",
+      "required_by_policy": false,
+      "artifact_digests": []
+    }
+  ],
+  "diagnostics": [],
+  "resources": {
+    "duration_ms": 1000,
+    "peak_memory_bytes": 1048576
+  },
+  "completed_at": "2026-10-25T00:00:01Z"
+}

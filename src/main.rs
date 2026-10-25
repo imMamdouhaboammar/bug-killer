@@ -31,6 +31,7 @@ use healer::AutopilotHealer;
 use healer::approval::ApprovalManager;
 use healer::backup::BackupManager;
 use healer::rollback::RollbackManager;
+use identity::OperatorIdentity;
 use mcp::{HostConfigGenerator, McpServer};
 use osv::OsvClient;
 use rules::RuleEngine;
@@ -171,11 +172,11 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
 
-        /// Apply planned safe patches to filesystem (Default: false, plan-only mode)
+        /// Deprecated unsafe shortcut; rejected in favor of operator-signed approval
         #[arg(long, default_value_t = false)]
         apply: bool,
 
-        /// Automatically apply all safe patches (Alias for --apply, Default: false)
+        /// Deprecated unsafe shortcut; rejected in favor of operator-signed approval
         #[arg(long, default_value_t = false)]
         auto_apply: bool,
 
@@ -186,6 +187,10 @@ enum Commands {
         /// Include OSV open vulnerability database findings in healing
         #[arg(long, default_value_t = false)]
         osv: bool,
+
+        /// Allow untrusted workspace dynamic rules to be planned and auto-applied
+        #[arg(long, default_value_t = false)]
+        allow_untrusted_rules: bool,
     },
 
     /// Roll back an applied healing session using a backup ID
@@ -264,6 +269,9 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+
+    /// Display the public key derived from a separately provisioned operator signing key
+    OperatorPublicKey,
 
     /// Apply an approved prospective remediation plan with operator approval verification
     Apply {
@@ -578,6 +586,12 @@ fn main() {
             auto_heal,
             rules: _,
         } => {
+            if auto_heal {
+                eprintln!(
+                    "Independent operator approval is required; watch --auto-heal cannot execute unapproved patches. Use 'approve' and 'apply'."
+                );
+                std::process::exit(4);
+            }
             WatcherEngine::watch(&path, interval, auto_heal, None);
         }
 
@@ -847,7 +861,14 @@ fn main() {
             auto_apply,
             rules,
             osv,
+            allow_untrusted_rules,
         } => {
+            if apply || auto_apply {
+                eprintln!(
+                    "Independent operator approval is required; heal --apply/--auto-apply cannot bypass signed approval. Use 'approve' and 'apply'."
+                );
+                std::process::exit(4);
+            }
             let active_rules = RuleEngine::load_rules(rules.as_deref(), &path);
             let mut report = FleetScanner::scan_directory_with_rules(&path, false, &active_rules);
 
@@ -861,7 +882,11 @@ fn main() {
                 }
             }
 
-            let plan = AutopilotHealer::plan_healing_with_rules(&report, &active_rules);
+            let plan = AutopilotHealer::plan_healing_with_rules_and_approval(
+                &report,
+                &active_rules,
+                allow_untrusted_rules,
+            );
 
             println!("\n=======================================================");
             println!("  🎯  BUG KILLER: AUTOPILOT HEALER");
@@ -901,27 +926,12 @@ fn main() {
                     "🔒 Plan-Only Default: No filesystem mutations applied without explicit operator flag."
                 );
                 println!("To apply these changes with cryptographic non-repudiation:");
-                println!("  bug-killer heal {} --apply", path.display());
+                println!("  bug-killer approve <finding-id> {}", path.display());
                 return;
             }
 
-            match AutopilotHealer::execute_healing(&path, &plan) {
-                Ok((manifest, count)) => {
-                    println!(
-                        "✅ Successfully applied {} automated healing patches!",
-                        count
-                    );
-                    println!("📦 Backup Snapshot Created: {}", manifest.backup_id);
-                    println!(
-                        "   To rollback if needed: bug-killer rollback {}",
-                        manifest.backup_id
-                    );
-                }
-                Err(e) => {
-                    eprintln!("❌ Healing execution failed: {}", e);
-                    std::process::exit(1);
-                }
-            }
+            eprintln!("Independent operator approval is required. Use 'approve' and 'apply'.");
+            std::process::exit(4);
         }
 
         Commands::Rollback { backup_id, path } => {
@@ -1311,6 +1321,14 @@ fn main() {
             }
         }
 
+        Commands::OperatorPublicKey => match OperatorIdentity::load_default() {
+            Ok(identity) => println!("{}", identity.public_key_hex()),
+            Err(error) => {
+                eprintln!("Operator signing key is not provisioned: {error}");
+                std::process::exit(4);
+            }
+        },
+
         Commands::Approve {
             plan_id,
             path,
@@ -1330,8 +1348,14 @@ fn main() {
                     ..scan_report
                 };
                 AutopilotHealer::plan_healing(&single_report)
-            } else {
+            } else if plan_id == "all" {
                 AutopilotHealer::plan_healing(&scan_report)
+            } else {
+                eprintln!(
+                    "Finding '{}' not found. Use 'all' to explicitly approve the entire proposed plan.",
+                    plan_id
+                );
+                std::process::exit(2);
             };
 
             if plan.is_empty() {
@@ -1407,6 +1431,14 @@ fn main() {
                 }
             };
 
+            if receipt.plan_id != plan_id {
+                eprintln!(
+                    "Approval receipt plan ID does not match requested plan '{}'; refusing execution.",
+                    plan_id
+                );
+                std::process::exit(4);
+            }
+
             let scan_report = FleetScanner::scan_directory(&path, true);
             let target_finding = scan_report
                 .findings
@@ -1419,8 +1451,14 @@ fn main() {
                     ..scan_report
                 };
                 AutopilotHealer::plan_healing(&single_report)
-            } else {
+            } else if plan_id == "all" {
                 AutopilotHealer::plan_healing(&scan_report)
+            } else {
+                eprintln!(
+                    "Finding '{}' not found. Use 'all' to explicitly request an entire workspace plan.",
+                    plan_id
+                );
+                std::process::exit(2);
             };
 
             match ApprovalManager::execute_supervised_healing(&path, &receipt, &plan) {

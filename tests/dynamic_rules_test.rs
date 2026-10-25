@@ -1,6 +1,8 @@
 use bug_killer::healer::AutopilotHealer;
 use bug_killer::healer::rollback::RollbackManager;
-use bug_killer::rules::{DetectionMatcher, RemediationStrategy, RuleEngine, VulnerabilityRule};
+use bug_killer::rules::{
+    DetectionMatcher, RemediationStrategy, RuleEngine, RuleProvenance, VulnerabilityRule,
+};
 use bug_killer::scanner::FleetScanner;
 use bug_killer::types::*;
 use std::fs;
@@ -31,6 +33,8 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
             replace: "torch.load($1, weights_only=True)".into(),
             description: "Enforce weights_only=True in torch.load calls".into(),
         }),
+        provenance: RuleProvenance::OperatorApproved,
+        trusted: true,
     };
 
     let rule_nginx = VulnerabilityRule {
@@ -47,11 +51,16 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
             snippet: "limit_req_zone $binary_remote_addr zone=bk_ratelimit:10m rate=100r/s;\nlimit_req zone=bk_ratelimit burst=150 nodelay;".into(),
             description: "Inject HTTP/2 rate limit directives".into(),
         }),
+        provenance: RuleProvenance::OperatorApproved,
+        trusted: true,
     };
 
     let rules_file = rules_dir.join("community_rules.json");
     let rules_json = serde_json::to_string_pretty(&vec![rule_pytorch, rule_nginx]).unwrap();
     fs::write(&rules_file, rules_json).unwrap();
+
+    // Workspace rule files are untrusted. This test intentionally grants
+    // explicit consent to their remediation at plan generation.
 
     // Verify rules are loaded automatically
     let loaded_rules = RuleEngine::load_rules(None, root);
@@ -86,7 +95,7 @@ fn test_dynamic_rules_scan_heal_and_rollback() {
     assert!(cve_ids.contains(&"CVE-2023-44487".to_string()));
 
     // 4. Plan and execute healing
-    let plan = AutopilotHealer::plan_healing(&report);
+    let plan = AutopilotHealer::plan_healing_with_rules_and_approval(&report, &loaded_rules, true);
     assert_eq!(plan.len(), 2);
 
     let (manifest, applied_count) =

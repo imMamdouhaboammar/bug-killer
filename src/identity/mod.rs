@@ -26,6 +26,24 @@ fn from_hex(s: &str) -> Result<Vec<u8>, &'static str> {
 }
 
 impl AgentIdentity {
+    /// Reads an existing agent key without generating an identity during verification.
+    pub fn load_existing(root: &Path) -> Result<Self, std::io::Error> {
+        let bytes = fs::read(root.join(".aegis/agent_identity.key"))?;
+        if bytes.len() != 32 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid agent key length",
+            ));
+        }
+        let mut key_bytes = [0u8; 32];
+        key_bytes.copy_from_slice(&bytes);
+        let signing_key = SigningKey::from_bytes(&key_bytes);
+        let verifying_key = signing_key.verifying_key();
+        Ok(Self {
+            signing_key,
+            verifying_key,
+        })
+    }
     /// Loads the agent identity from the user's home directory (~/.aegis or ~/.bug-killer).
     #[allow(dead_code)]
     pub fn load_default() -> Result<Self, std::io::Error> {
@@ -93,12 +111,14 @@ impl AgentIdentity {
     }
 
     /// Cryptographically signs arbitrary byte slice with agent's Ed25519 private key.
+    #[allow(dead_code)]
     pub fn sign_bytes(&self, data: &[u8]) -> String {
         let sig: Signature = self.signing_key.sign(data);
         to_hex(&sig.to_bytes())
     }
 
     /// Verifies Ed25519 signature in hex format against agent's public key.
+    #[allow(dead_code)]
     pub fn verify_bytes(&self, data: &[u8], sig_hex: &str) -> Result<(), String> {
         let sig_bytes = from_hex(sig_hex).map_err(|e| format!("Invalid hex signature: {}", e))?;
         if sig_bytes.len() != 64 {
@@ -122,6 +142,12 @@ impl AgentIdentity {
             hasher.update(rec.relative_target_path.as_bytes());
             hasher.update(rec.original_sha256.as_bytes());
             hasher.update(rec.backup_file_name.as_bytes());
+            if let Some(mode) = rec.mode {
+                hasher.update(mode.to_le_bytes());
+            }
+            if let Some(ref post_sha) = rec.post_heal_sha256 {
+                hasher.update(post_sha.as_bytes());
+            }
         }
         hasher.finalize().to_vec()
     }
@@ -210,5 +236,171 @@ impl AgentIdentity {
         )?;
 
         Ok(())
+    }
+}
+
+pub struct OperatorIdentity {
+    signing_key: SigningKey,
+    verifying_key: VerifyingKey,
+}
+
+impl OperatorIdentity {
+    /// Returns the external operator-owned configuration directory, never a project path.
+    pub fn config_dir() -> Result<std::path::PathBuf, std::io::Error> {
+        let base = if let Some(xdg) = std::env::var_os("XDG_CONFIG_HOME") {
+            std::path::PathBuf::from(xdg)
+        } else {
+            let home = std::env::var_os("HOME").ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "HOME is required for operator authority",
+                )
+            })?;
+            std::path::PathBuf::from(home).join(".config")
+        };
+        Ok(base.join("bug-killer"))
+    }
+
+    /// Loads only an existing operator-managed private key. Never generates a key.
+    pub fn load_default() -> Result<Self, std::io::Error> {
+        Self::load_key(&Self::config_dir()?.join("operator_identity.key"))
+    }
+
+    pub fn load_key(key_path: &Path) -> Result<Self, std::io::Error> {
+        let bytes = fs::read(key_path)?;
+        if bytes.len() != 32 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid operator key length",
+            ));
+        }
+        let mut key_bytes = [0u8; 32];
+        key_bytes.copy_from_slice(&bytes);
+        Ok(Self::from_bytes(&key_bytes))
+    }
+
+    /// Explicit provisioning helper. Never use workspace-generated keys for production approvals.
+    #[allow(dead_code)] // Used by isolated integration tests and explicit operator provisioning.
+    pub fn get_or_create(root: &Path) -> Result<Self, std::io::Error> {
+        let identity_dir = root.join(".aegis");
+        fs::create_dir_all(&identity_dir)?;
+        let key_path = identity_dir.join("operator_identity.key");
+
+        if key_path.exists() {
+            let bytes = fs::read(&key_path)?;
+            if bytes.len() != 32 {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Existing Ed25519 operator identity key is corrupt; refusing to replace trust root",
+                ));
+            }
+            let mut key_bytes = [0u8; 32];
+            key_bytes.copy_from_slice(&bytes);
+            let signing_key = SigningKey::from_bytes(&key_bytes);
+            let verifying_key = signing_key.verifying_key();
+            return Ok(Self {
+                signing_key,
+                verifying_key,
+            });
+        }
+
+        // Generate fresh cryptographic keypair using OS entropy
+        let mut csprng = OsRng;
+        let signing_key = SigningKey::generate(&mut csprng);
+        let verifying_key = signing_key.verifying_key();
+
+        // Publish the complete key atomically and never replace an existing key.
+        let key_bytes = signing_key.to_bytes();
+        let mut temp = tempfile::NamedTempFile::new_in(&identity_dir)?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            temp.as_file_mut()
+                .set_permissions(fs::Permissions::from_mode(0o600))?;
+        }
+        temp.write_all(&key_bytes)?;
+        temp.as_file_mut().sync_all()?;
+        match temp.persist_noclobber(&key_path) {
+            Ok(_) => {}
+            Err(error) if error.error.kind() == io::ErrorKind::AlreadyExists => {
+                return Self::get_or_create(root);
+            }
+            Err(error) => return Err(error.error),
+        }
+
+        Ok(Self {
+            signing_key,
+            verifying_key,
+        })
+    }
+
+    #[allow(dead_code)]
+    pub fn from_signing_key(signing_key: SigningKey) -> Self {
+        let verifying_key = signing_key.verifying_key();
+        Self {
+            signing_key,
+            verifying_key,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn from_bytes(bytes: &[u8; 32]) -> Self {
+        let signing_key = SigningKey::from_bytes(bytes);
+        let verifying_key = signing_key.verifying_key();
+        Self {
+            signing_key,
+            verifying_key,
+        }
+    }
+
+    pub fn public_key_hex(&self) -> String {
+        to_hex(&self.verifying_key.to_bytes())
+    }
+
+    /// Cryptographically signs arbitrary byte slice with operator's Ed25519 private key.
+    pub fn sign_bytes(&self, data: &[u8]) -> String {
+        let sig: Signature = self.signing_key.sign(data);
+        to_hex(&sig.to_bytes())
+    }
+
+    /// Verifies Ed25519 signature in hex format against operator's public key.
+    #[allow(dead_code)] // Compatibility with isolated test callers; production uses pinned public key verification.
+    pub fn verify_bytes(&self, data: &[u8], sig_hex: &str) -> Result<(), String> {
+        let sig_bytes = from_hex(sig_hex).map_err(|e| format!("Invalid hex signature: {}", e))?;
+        if sig_bytes.len() != 64 {
+            return Err("Invalid Ed25519 signature length (expected 64 bytes)".into());
+        }
+        let mut fixed_sig = [0u8; 64];
+        fixed_sig.copy_from_slice(&sig_bytes);
+        let sig = Signature::from_bytes(&fixed_sig);
+        self.verifying_key
+            .verify(data, &sig)
+            .map_err(|e| format!("Signature verification failed: {}", e))
+    }
+
+    /// Verifies Ed25519 signature against an arbitrary operator public key in hex format.
+    #[allow(dead_code)]
+    pub fn verify_signature(pub_key_hex: &str, data: &[u8], sig_hex: &str) -> Result<(), String> {
+        let pub_bytes =
+            from_hex(pub_key_hex).map_err(|e| format!("Invalid public key encoding: {}", e))?;
+        if pub_bytes.len() != 32 {
+            return Err("Invalid public key length (expected 32 bytes)".into());
+        }
+        let mut pk_array = [0u8; 32];
+        pk_array.copy_from_slice(&pub_bytes);
+        let verifying_key = VerifyingKey::from_bytes(&pk_array)
+            .map_err(|e| format!("Malformed Ed25519 public key: {}", e))?;
+
+        let sig_bytes = from_hex(sig_hex).map_err(|e| format!("Invalid hex signature: {}", e))?;
+        if sig_bytes.len() != 64 {
+            return Err("Invalid Ed25519 signature length (expected 64 bytes)".into());
+        }
+        let mut fixed_sig = [0u8; 64];
+        fixed_sig.copy_from_slice(&sig_bytes);
+        let sig = Signature::from_bytes(&fixed_sig);
+        verifying_key
+            .verify(data, &sig)
+            .map_err(|e| format!("Signature verification failed: {}", e))
     }
 }

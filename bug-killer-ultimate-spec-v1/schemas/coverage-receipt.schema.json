@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "coverage-receipt.schema.json",
+  "title": "Bug Killer Coverage Receipt v1 (PROPOSED)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "run_id",
+    "engine_id",
+    "engine_version",
+    "check_id",
+    "target_id",
+    "snapshot_sha256",
+    "status",
+    "counts",
+    "started_at",
+    "completed_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "receipt_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "engine_id": { "type": "string", "minLength": 1 },
+    "engine_version": { "type": "string", "minLength": 1 },
+    "check_id": { "type": "string", "minLength": 1 },
+    "target_id": { "type": "string", "minLength": 1 },
+    "snapshot_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "status": {
+      "type": "string",
+      "enum": ["EVALUATED", "PARTIAL", "NOT_RUN", "UNSUPPORTED", "NOT_APPLICABLE", "ERROR"]
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items_discovered", "items_examined", "items_excluded", "items_skipped"],
+      "properties": {
+        "items_discovered": { "type": "integer", "minimum": 0 },
+        "items_examined": { "type": "integer", "minimum": 0 },
+        "items_excluded": { "type": "integer", "minimum": 0 },
+        "items_skipped": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["TIMEOUT", "PARSE_ERROR", "READ_ERROR", "BUDGET_EXCEEDED", "ENGINE_MISSING", "UNSUPPORTED_LANGUAGE", "NOT_APPLICABLE", "AUTH_BLOCKED", "NETWORK_DISABLED", "CANCELLED", "OTHER"]
+      }
+    },
+    "details": { "type": "array", "items": { "type": "string" } },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "required_by_policy": { "type": "boolean" },
+    "artifact_digests": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+      "uniqueItems": true
+    },
+    "previous_receipt_id": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "enum": ["PARTIAL", "NOT_RUN", "UNSUPPORTED", "ERROR"] } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["reason_codes"],
+        "properties": { "reason_codes": { "minItems": 1 } }
+      }
+    }
+  ],
+  "description": "Execution state is derived from actual engine execution. The consuming application must enforce cross-field count reconciliation and integrity beyond JSON Schema."
+}

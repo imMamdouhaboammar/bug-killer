@@ -174,14 +174,39 @@ impl SecurityDetector for SecretDetector {
             .iter()
             .map(|s| s.to_string())
             .collect();
+        let errors: Vec<String> = report
+            .coverage
+            .parser_failures
+            .iter()
+            .map(|failure| format!("{}: {}", failure.path.display(), failure.reason))
+            .collect();
+        let complete = report.coverage.is_complete();
         let receipt = CoverageReceipt {
             scanner_id: self.id().to_string(),
             scanner_version: env!("CARGO_PKG_VERSION").to_string(),
             target_id: ctx.root.display().to_string(),
-            status: CoverageStatus::Complete,
+            status: if complete {
+                CoverageStatus::Complete
+            } else {
+                CoverageStatus::Partial
+            },
             items_examined: report.total_files_scanned as u64,
-            skipped_reasons: Vec::new(),
-            errors: Vec::new(),
+            skipped_reasons: if report.coverage.files_excluded > 0 {
+                vec![format!(
+                    "{} files excluded from scan",
+                    report.coverage.files_excluded
+                )]
+            } else {
+                Vec::new()
+            },
+            errors: if !complete && errors.is_empty() {
+                vec![format!(
+                    "Underlying scan coverage is {:?}",
+                    report.coverage.coverage_status
+                )]
+            } else {
+                errors
+            },
             completed_at: Utc::now().to_rfc3339(),
         };
 
@@ -2193,6 +2218,57 @@ impl DetectorRegistry {
         langs
     }
 
+    /// Discovers if workspace contains dependency manifests or lockfiles.
+    /// An inaccessible subtree must not be mistaken for the absence of a manifest.
+    pub fn workspace_has_package_manifests(&self, root: &Path) -> bool {
+        self.try_workspace_has_package_manifests(root)
+            .unwrap_or(true)
+    }
+
+    pub fn try_workspace_has_package_manifests(&self, root: &Path) -> Result<bool, String> {
+        let manifest_names = [
+            "package.json",
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+            "composer.json",
+            "composer.lock",
+            "Cargo.toml",
+            "Cargo.lock",
+            "go.mod",
+            "go.sum",
+            "pom.xml",
+            "requirements.txt",
+            "pyproject.toml",
+            "Pipfile",
+            "Gemfile",
+            "Gemfile.lock",
+        ];
+
+        for entry in walkdir::WalkDir::new(root)
+            .into_iter()
+            .filter_entry(|entry| {
+                entry.depth() == 0
+                    || !matches!(
+                        entry.file_name().to_str(),
+                        Some(
+                            ".git" | "node_modules" | "vendor" | "target" | ".aegis" | ".bugkiller"
+                        )
+                    )
+            })
+        {
+            let entry =
+                entry.map_err(|e| format!("Dependency manifest traversal incomplete: {e}"))?;
+            if entry.file_type().is_file() {
+                let name = entry.file_name().to_string_lossy();
+                if manifest_names.iter().any(|m| name == *m) || name.ends_with(".csproj") {
+                    return Ok(true);
+                }
+            }
+        }
+        Ok(false)
+    }
+
     /// Executes complete security guard scan producing an honest, typed `SecurityGuardReport`.
     pub fn execute_guard_scan(
         &self,
@@ -2205,16 +2281,26 @@ impl DetectorRegistry {
         let catalog = SecurityCatalog::global();
         let detected_languages = self.discover_workspace_languages(root);
         let supported_rule_set = self.supported_rule_ids();
+        let manifest_discovery = self.try_workspace_has_package_manifests(root);
+        // On discovery error we cannot prove an SCA rule is inapplicable.
+        let has_manifests = manifest_discovery.as_ref().copied().unwrap_or(true);
 
         // 1. Classify applicable rules from catalog vs unsupported rules
         let mut applicable_rules = Vec::new();
         let mut unsupported_rules = Vec::new();
 
         for rule in catalog.all_rules() {
-            let is_applicable = rule
+            let is_lang_applicable = rule
                 .applicable_languages
                 .iter()
                 .any(|l| detected_languages.contains(l));
+
+            let is_sca = rule
+                .required_evidence
+                .contains(&crate::catalog::EvidenceKind::Sca)
+                || rule.rule_id.contains("-SCA-");
+
+            let is_applicable = is_lang_applicable && (!is_sca || has_manifests);
 
             if is_applicable {
                 applicable_rules.push(rule.rule_id.clone());
@@ -2243,16 +2329,62 @@ impl DetectorRegistry {
         let mut rules_evaluated = HashSet::new();
         let mut receipts = Vec::new();
         let mut unexamined_reasons = Vec::new();
+        let mut rule_coverage: std::collections::BTreeMap<String, RuleCoverageStatus> =
+            std::collections::BTreeMap::new();
 
         all_findings.extend(base_report.findings.clone());
 
         for detector in &self.detectors {
             let result = detector.run(&ctx);
-            for r in result.rules_run {
-                rules_evaluated.insert(r);
+            let has_errors =
+                !result.receipt.errors.is_empty() || result.receipt.status == CoverageStatus::Error;
+            let is_not_run = result.receipt.status == CoverageStatus::NotRun;
+
+            for r in &result.rules_run {
+                if has_errors {
+                    rule_coverage.insert(r.clone(), RuleCoverageStatus::Error);
+                } else if is_not_run {
+                    rule_coverage.insert(r.clone(), RuleCoverageStatus::NotRun);
+                } else if result.receipt.status == CoverageStatus::Complete {
+                    rule_coverage.insert(r.clone(), RuleCoverageStatus::SupportedAndEvaluated);
+                    rules_evaluated.insert(r.clone());
+                } else {
+                    rule_coverage.insert(r.clone(), RuleCoverageStatus::NotRun);
+                }
             }
+
             all_findings.extend(result.findings);
             receipts.push(result.receipt);
+        }
+
+        // Truthful catalog coverage: map every catalog rule to its concrete evaluation status
+        for rule in catalog.all_rules() {
+            let is_lang_applicable = rule
+                .applicable_languages
+                .iter()
+                .any(|l| detected_languages.contains(l));
+
+            let is_sca = rule
+                .required_evidence
+                .contains(&crate::catalog::EvidenceKind::Sca)
+                || rule.rule_id.contains("-SCA-");
+
+            let is_applicable = is_lang_applicable && (!is_sca || has_manifests);
+
+            if manifest_discovery.is_err() && is_sca && is_lang_applicable {
+                rule_coverage.insert(rule.rule_id.clone(), RuleCoverageStatus::Error);
+                rules_evaluated.remove(&rule.rule_id);
+            } else if !is_applicable {
+                rule_coverage.insert(rule.rule_id.clone(), RuleCoverageStatus::NotApplicable);
+                rules_evaluated.remove(&rule.rule_id);
+            } else if !supported_rule_set.contains(&rule.rule_id) {
+                rule_coverage.insert(rule.rule_id.clone(), RuleCoverageStatus::Unsupported);
+                rules_evaluated.remove(&rule.rule_id);
+            } else {
+                rule_coverage
+                    .entry(rule.rule_id.clone())
+                    .or_insert(RuleCoverageStatus::NotRun);
+            }
         }
 
         // Deduplicate findings
@@ -2288,9 +2420,26 @@ impl DetectorRegistry {
 
         // 3. Compute status and classification
         let has_parser_failures = !base_report.coverage.parser_failures.is_empty();
-        let has_receipt_errors = receipts.iter().any(|r| !r.errors.is_empty());
+        let has_receipt_errors = receipts
+            .iter()
+            .any(|r| !r.errors.is_empty() || r.status == CoverageStatus::Error);
+        let has_errored_rules = rule_coverage
+            .values()
+            .any(|s| *s == RuleCoverageStatus::Error);
 
-        let status = if has_receipt_errors || has_parser_failures {
+        let has_skipped_applicable = rule_coverage.iter().any(|(id, r_status)| {
+            applicable_rules.contains(id)
+                && (*r_status == RuleCoverageStatus::NotRun
+                    || *r_status == RuleCoverageStatus::Error)
+        });
+
+        let status = if !unsupported_rules.is_empty()
+            || manifest_discovery.is_err()
+            || has_receipt_errors
+            || has_parser_failures
+            || has_errored_rules
+            || has_skipped_applicable
+        {
             ScanStatus::Partial
         } else {
             ScanStatus::Completed
@@ -2301,6 +2450,9 @@ impl DetectorRegistry {
                 "{} applicable catalog rules remain unsupported by active automated detectors",
                 unsupported_rules.len()
             ));
+        }
+        if let Err(reason) = &manifest_discovery {
+            unexamined_reasons.push(reason.clone());
         }
 
         // Severity is impact, not proof. A critical lexical match remains suspected.
@@ -2313,7 +2465,11 @@ impl DetectorRegistry {
             ResultClassification::Confirmed
         } else if !all_findings.is_empty() {
             ResultClassification::Suspected
-        } else if status == ScanStatus::Completed && base_report.coverage.is_complete() {
+        } else if status == ScanStatus::Completed
+            && base_report.coverage.is_complete()
+            && !has_skipped_applicable
+            && unsupported_rules.is_empty()
+        {
             ResultClassification::NoFindingInCoverage
         } else {
             ResultClassification::NotAssessed
@@ -2339,6 +2495,7 @@ impl DetectorRegistry {
             coverage: base_report.coverage.clone(),
             receipts,
             unexamined_reasons,
+            rule_coverage,
         }
     }
 }

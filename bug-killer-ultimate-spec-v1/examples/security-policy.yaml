@@ -1,0 +1,40 @@
+# Proposed policy example; not an implemented config schema.
+spec_version: "1.0"
+workspace:
+  root: "."
+  follow_symlinks: false
+  allow_external_mounts: false
+scan:
+  default_profile: quick
+  fail_on_incomplete_mandatory: true
+  advisory_online_refresh: false
+  max_files: 50000
+  max_depth: 32
+  max_file_size_mb: 5
+  quick_timeout_seconds: 60
+  deep_timeout_seconds: 600
+  required_engines:
+    quick: [builtin, tree-sitter, ast-grep]
+    ci: [builtin, tree-sitter, ast-grep]
+    deep: [builtin, tree-sitter, ast-grep, joern]
+healing:
+  plan_only_by_default: true
+  allow_unattended_privileged_apply: false
+  require_preimage_digest: true
+  require_operator_approval_for: [PACKAGE_UPGRADE, WAF_RULE, SERVICE_RESTART, HOST_FILE_WRITE]
+  independent_identity_required: true
+research:
+  enabled: false
+  network_allowed: false
+  isolate_source_snapshot: true
+  max_cpu_seconds: 300
+  max_memory_mb: 2048
+  max_fuzz_input_bytes: 1048576
+  max_concurrent_jobs: 2
+disclosure:
+  allow_public_autopublish: false
+  require_explicit_recipient_approval: true
+  redact_secrets: true
+privacy:
+  upload_source_code: false
+  telemetry_include_private_evidence: false
