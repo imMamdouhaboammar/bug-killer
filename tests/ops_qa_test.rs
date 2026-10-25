@@ -21,6 +21,14 @@ function verifyUserSession(token) {
 "#;
     let path = Path::new("src/auth/session.js");
     let findings = OpsQaScanner::scan_source(path, vuln_code);
+    assert_eq!(
+        findings
+            .iter()
+            .filter(|f| f.cve.as_str() == "BK-AI-OPS-001")
+            .count(),
+        1,
+        "One swallowed catch should produce one finding, not one per neighboring line"
+    );
     let f = findings
         .iter()
         .find(|f| f.cve.as_str() == "BK-AI-OPS-001")

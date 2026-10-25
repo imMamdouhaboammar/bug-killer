@@ -207,7 +207,11 @@ impl DataPrivacyScanner {
                 && !matched_str.contains("anonymize")
                 && !matched_str.contains("sanitize")
             {
-                let line_no = content[..mat.start()].lines().count().max(1);
+                let line_no = content[..mat.start()]
+                    .bytes()
+                    .filter(|byte| *byte == b'\n')
+                    .count()
+                    + 1;
                 if seen.insert(("BK-AI-SEC-011", line_no)) {
                     let snippet = matched_str.lines().next().unwrap_or(matched_str);
                     findings.push(Self::create_finding(
@@ -230,7 +234,11 @@ impl DataPrivacyScanner {
 
         // BK-AI-DAT-003: Memory-based tenant filtering after unbounded query
         for mat in RE_DAT_003_IN_MEMORY_FILTER.find_iter(content) {
-            let line_no = content[..mat.start()].lines().count().max(1);
+            let line_no = content[..mat.start()]
+                .bytes()
+                .filter(|byte| *byte == b'\n')
+                .count()
+                + 1;
             if seen.insert(("BK-AI-DAT-003", line_no)) {
                 let snippet = mat.as_str().lines().next().unwrap_or(mat.as_str());
                 findings.push(Self::create_finding(
@@ -251,7 +259,11 @@ impl DataPrivacyScanner {
         }
 
         for mat in RE_DAT_003_VAR_THEN_FILTER.find_iter(content) {
-            let line_no = content[..mat.start()].lines().count().max(1);
+            let line_no = content[..mat.start()]
+                .bytes()
+                .filter(|byte| *byte == b'\n')
+                .count()
+                + 1;
             if seen.insert(("BK-AI-DAT-003", line_no)) {
                 let snippet = mat.as_str().lines().next().unwrap_or(mat.as_str());
                 findings.push(Self::create_finding(
@@ -273,7 +285,11 @@ impl DataPrivacyScanner {
 
         // BK-AI-DAT-004: DB schema/seed inserts default admin credentials (multi-line ORM)
         for mat in RE_DAT_004_ORM_DEFAULT_ADMIN.find_iter(content) {
-            let line_no = content[..mat.start()].lines().count().max(1);
+            let line_no = content[..mat.start()]
+                .bytes()
+                .filter(|byte| *byte == b'\n')
+                .count()
+                + 1;
             if seen.insert(("BK-AI-DAT-004", line_no)) {
                 let snippet = mat.as_str().lines().next().unwrap_or(mat.as_str());
                 findings.push(Self::create_finding(
@@ -306,7 +322,11 @@ impl DataPrivacyScanner {
                 && !context.contains("LOCK.UPDATE")
                 && !context.contains("decrement")
             {
-                let line_no = content[..start_offset].lines().count().max(1);
+                let line_no = content[..start_offset]
+                    .bytes()
+                    .filter(|byte| *byte == b'\n')
+                    .count()
+                    + 1;
                 if seen.insert(("BK-AI-DAT-006", line_no)) {
                     let snippet = matched_str.lines().next().unwrap_or(matched_str);
                     findings.push(Self::create_finding(
@@ -331,7 +351,11 @@ impl DataPrivacyScanner {
         for mat in RE_DAT_007_VECTOR_QUERY.find_iter(content) {
             let matched_str = mat.as_str();
             if !matched_str.contains("filter:") && !matched_str.contains("filter :") {
-                let line_no = content[..mat.start()].lines().count().max(1);
+                let line_no = content[..mat.start()]
+                    .bytes()
+                    .filter(|byte| *byte == b'\n')
+                    .count()
+                    + 1;
                 if seen.insert(("BK-AI-DAT-007", line_no)) {
                     let snippet = matched_str.lines().next().unwrap_or(matched_str);
                     findings.push(Self::create_finding(
@@ -354,7 +378,11 @@ impl DataPrivacyScanner {
 
         // BK-AI-DAT-007: Unchecked cache retrieval returned directly
         for mat in RE_DAT_007_CACHE_UNCHECKED.find_iter(content) {
-            let line_no = content[..mat.start()].lines().count().max(1);
+            let line_no = content[..mat.start()]
+                .bytes()
+                .filter(|byte| *byte == b'\n')
+                .count()
+                + 1;
             if seen.insert(("BK-AI-DAT-007", line_no)) {
                 let snippet = mat.as_str().lines().next().unwrap_or(mat.as_str());
                 findings.push(Self::create_finding(
@@ -382,7 +410,11 @@ impl DataPrivacyScanner {
                 && !matched_str.contains("invalidate")
                 && !matched_str.contains("purge")
             {
-                let line_no = content[..mat.start()].lines().count().max(1);
+                let line_no = content[..mat.start()]
+                    .bytes()
+                    .filter(|byte| *byte == b'\n')
+                    .count()
+                    + 1;
                 if seen.insert(("BK-AI-DAT-012", line_no)) {
                     let snippet = matched_str.lines().next().unwrap_or(matched_str);
                     findings.push(Self::create_finding(

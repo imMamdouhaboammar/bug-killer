@@ -294,6 +294,15 @@ impl FleetScanner {
                 || file_name.ends_with(".go")
                 || file_name.ends_with(".php");
 
+            let is_native_source = [
+                ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".rs", ".zig", ".swift", ".kt", ".java",
+                ".m", ".mm",
+            ]
+            .iter()
+            .any(|extension| file_name.ends_with(extension))
+                || file_name == "AndroidManifest.xml"
+                || file_name == "CMakeLists.txt";
+
             let is_test_file = path.to_string_lossy().contains("/tests/")
                 || path.to_string_lossy().starts_with("tests/")
                 || file_name.ends_with("_test.rs")
@@ -348,6 +357,18 @@ impl FleetScanner {
                     ));
                     raw_findings.extend(self::ops_qa::OpsQaScanner::scan_source(path, &content));
                     raw_findings.extend(self::bkh_safety::BkhSafetyScanner::scan_source(
+                        path, &content,
+                    ));
+                    raw_findings
+                        .extend(self::mem_temp::MemTempScanner::scan_source(path, &content));
+                }
+            }
+
+            // Native-memory detectors must also receive native languages and
+            // native build/manifest files, not only JS/Python/Go scripts.
+            if is_native_source && !is_test_file {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    raw_findings.extend(self::native_desktop::NativeDesktopScanner::scan_source(
                         path, &content,
                     ));
                     raw_findings

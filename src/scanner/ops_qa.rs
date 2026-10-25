@@ -298,8 +298,16 @@ impl OpsQaScanner {
             // ===============================================================
 
             // 1. BK-AI-OPS-001 (CWE-390): Security exception swallowed
+            let match_start: usize = lines[window_start..idx]
+                .iter()
+                .map(|previous| previous.len() + 1)
+                .sum();
+            let starts_on_current_line = RE_OPS_001_SWALLOW_CATCH
+                .find_iter(&context_window)
+                .any(|hit| hit.start() >= match_start && hit.start() < match_start + line.len());
+
             let is_ops_001 = ((RE_OPS_001_SWALLOW_CATCH.is_match(trimmed)
-                || RE_OPS_001_SWALLOW_CATCH.is_match(&context_window))
+                || starts_on_current_line)
                 && RE_OPS_001_SECURITY_CONTEXT.is_match(&context_window)
                 && !RE_OPS_001_GUARD.is_match(&context_window))
                 || (RE_OPS_001_UNWRAP_DEFAULT.is_match(trimmed)

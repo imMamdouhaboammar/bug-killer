@@ -285,7 +285,7 @@ fn test_web_005_clean() {
 #[test]
 fn test_web_006_frontend_secret_detection() {
     let snippet = r#"
-        NEXT_PUBLIC_STRIPE_SECRET_KEY=sk_live_948271038192
+        NEXT_PUBLIC_STRIPE_SECRET_KEY=example-placeholder
         REACT_APP_API_SECRET=super_secret_jwt_key
     "#;
     let path = Path::new(".env.production");

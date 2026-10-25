@@ -62,9 +62,9 @@ flowchart TD
 | Service | Binary | Language | Core Competency & Justification |
 |---|---|---|---|
 | **Core CLI Engine** | `bug-killer` (`bk`) | **Rust (2024)** | Unified standalone scanner, AST patch planner, atomic transactional file mutator (`tempfile::persist`), and SHA-256 rollback manager. |
-| **Service A: Orchestrator** | `bug-killer-orchestrator` | **Go (1.23)** | High-throughput concurrent filesystem crawler via bounded Goroutines; direct raw Unix socket communication with `/var/run/docker.sock` without third-party dependencies. |
+| **Service A: Orchestrator** | `bug-killer-orchestrator` | **Go (1.26)** | Concurrent filesystem inventory, Docker socket inspection, and packet analysis using libpcap. |
 | **Service B: Deep Inspector** | `bug-killer-inspector` | **Rust (2024)** | Zero-copy memory mapping (`memmap2`) and binary disassembling (`goblin`) for ELF, Mach-O, and PE targets with compile-time memory safety. |
-| **Service C: Autopilot Healer** | `bug-killer-healer` | **Go (1.23)** | Idempotent reverse proxy WAF rule injection (Nginx, HAProxy), package manager invocation (`apt`, `apk`, `dnf`), and systemd process supervision. |
+| **Service C: Autopilot Healer** | `bug-killer-healer` | **Go (1.26)** | Idempotent reverse proxy WAF rule injection (Nginx, HAProxy), package manager invocation (`apt`, `apk`, `dnf`), and systemd process supervision. |
 
 ---
 
@@ -86,9 +86,10 @@ flowchart TD
 ## Installation & Build
 
 ### Prerequisites
-- Rust 1.85+ (`cargo`)
-- Go 1.22+
+- Rust 1.99+ (`cargo`)
+- Go 1.26.5+
 - Make
+- `protobuf-compiler` and `libpcap-dev` for Inspector and Orchestrator builds
 
 ### Local Compilation
 ```bash
@@ -108,6 +109,14 @@ This compiles and installs:
 ```bash
 docker build -t bug-killer:latest .
 ```
+
+To start the Orchestrator and Inspector with Compose on a Linux Docker host:
+
+```bash
+DOCKER_GID=$(stat -c '%g' /var/run/docker.sock) docker compose up --build
+```
+
+The operator must authorize access to the host filesystem and Docker daemon. Mounting `docker.sock` as `:ro` does **not** restrict the Docker API to read-only operations. Use only on trusted, explicitly approved hosts.
 
 ---
 

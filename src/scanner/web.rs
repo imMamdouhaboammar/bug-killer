@@ -447,7 +447,7 @@ impl WebSecurityScanner {
                 // Safe if it's a fixed relative path starting with '/'
                 let is_static_relative = (target_expr.starts_with("\"/")
                     && target_expr.ends_with('"'))
-                    || (target_expr.starts_with("'/'") && target_expr.ends_with('\''))
+                    || (target_expr.starts_with("'/") && target_expr.ends_with('\''))
                     || (target_expr.starts_with("`/")
                         && target_expr.ends_with('`')
                         && !target_expr.contains("${"));

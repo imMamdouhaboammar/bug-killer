@@ -1,30 +1,33 @@
-version: '3.8'
-
 services:
   bug-killer-orchestrator:
     build:
       context: .
       dockerfile: Dockerfile
-      target: orchestrator
+      target: final
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /:/host:ro
       - bug-killer-shared:/var/bug-killer
     environment:
       - HOST_ROOT=/host
-    command: ["/app/bug-killer-orchestrator", "-path", "/host", "-out", "/var/bug-killer/coverage-ledger.json"]
+    # Docker socket group varies by host. Set DOCKER_GID to the socket's group ID.
+    group_add:
+      - "${DOCKER_GID:?Set DOCKER_GID to the numeric group of /var/run/docker.sock}"
+    entrypoint: ["/app/bug-killer-orchestrator"]
+    command: ["-path", "/host", "-out", "/var/bug-killer/coverage-ledger.json"]
 
   bug-killer-inspector:
     build:
       context: .
       dockerfile: Dockerfile
-      target: inspector
+      target: final
     volumes:
       - /:/host:ro
       - bug-killer-shared:/var/bug-killer
     depends_on:
       - bug-killer-orchestrator
-    command: ["/app/bug-killer-inspector", "--ledger", "/var/bug-killer/coverage-ledger.json", "--out", "/var/bug-killer/findings.json"]
+    entrypoint: ["/app/bug-killer-inspector"]
+    command: ["--ledger", "/var/bug-killer/coverage-ledger.json", "--out", "/var/bug-killer/findings.json"]
 
 volumes:
   bug-killer-shared:

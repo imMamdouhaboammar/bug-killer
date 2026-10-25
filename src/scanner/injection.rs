@@ -19,7 +19,7 @@ static RE_YAML_PIPE_LOOKUP: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static RE_JS_DYNAMIC_REGEXP: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"(?:new\s+RegExp|RegExp)\s*\(\s*([^,\)\s]+)"#).unwrap());
+    LazyLock::new(|| Regex::new(r#"\b(?:new\s+RegExp|RegExp)\s*\(\s*([^,\)\s]+)"#).unwrap());
 
 static RE_PY_DYNAMIC_COMPILE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"re\.compile\s*\(\s*([^,\)\s]+)"#).unwrap());

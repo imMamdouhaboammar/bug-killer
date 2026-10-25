@@ -102,7 +102,7 @@ static RE_CRY_004_UNAUTH_ENCRYPTION: LazyLock<Regex> = LazyLock::new(|| {
 
 // BK-AI-CRY-005 (CWE-329): Static nonce / IV reuse
 static RE_CRY_005_STATIC_NONCE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:\b(?:nonce|iv|static_nonce|static_iv|fixed_nonce|fixed_iv)\s*=\s*(?:b?["'][0-9a-fA-F]{12,32}["']|b?["']000000000000["']|bytes\s*\(\s*\d+\s*\)|b["']\\x00["']\s*\*\s*\d+|\[0\]\s*\*\s*\d+|Buffer\.alloc\s*\(\s*\d+\s*(?:,\s*0\s*)?\))|\bconst\s+(?:NONCE|IV|STATIC_NONCE|STATIC_IV|FIXED_IV|FIXED_NONCE)\s*=\s*|//.*(?:static\s+nonce|nonce\s+reuse|fixed\s+iv))"#)
+    Regex::new(r#"(?i)(?:\b(?:nonce|iv|static_nonce|static_iv|fixed_nonce|fixed_iv)\s*=\s*(?:b?["'][0-9a-fA-F]{12,32}["']|b?["']000000000000["']|bytes\s*\(\s*\d+\s*\)|b["']\\x00["']\s*\*\s*\d+|\[0\]\s*\*\s*\d+|Buffer\.alloc\s*\(\s*\d+\s*(?:,\s*0\s*)?\))|//.*(?:static\s+nonce|nonce\s+reuse|fixed\s+iv))"#)
         .unwrap()
 });
 

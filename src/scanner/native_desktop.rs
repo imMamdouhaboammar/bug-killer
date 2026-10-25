@@ -12,7 +12,7 @@ use std::sync::LazyLock;
 
 /// BK-AI-MEM-004 (CWE-476): Null/dangling pointer dereference reachable from malformed input
 static RE_MEM_004_NULL_DEREF: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:unsafe\s*\{[^\}]*\*|^\*[a-zA-Z0-9_]+|=\s*\*[a-zA-Z0-9_]+|\(\*[a-zA-Z0-9_]+\)|\bchar\s*\*\s*[a-zA-Z0-9_]+\s*=\s*(?:malloc|calloc|fopen|getenv)\s*\([^)]*\)\s*;(?:\s*\*|\s*[a-zA-Z0-9_]+\s*->)|\*[a-zA-Z0-9_]+\s*=\s*.*//.*deref|//.*(?:null\s+pointer\s+dereference|dangling\s+pointer|\*ptr\s+without\s+null|unchecked\s+pointer\s+deref))"#).unwrap()
+    Regex::new(r#"(?i)(?:unsafe\s*\{[^\}]*\*|^\*[a-zA-Z0-9_]+|=\s*\*[a-zA-Z0-9_]+|\bchar\s*\*\s*[a-zA-Z0-9_]+\s*=\s*(?:malloc|calloc|fopen|getenv)\s*\([^)]*\)\s*;(?:\s*\*|\s*[a-zA-Z0-9_]+\s*->)|\*[a-zA-Z0-9_]+\s*=\s*.*//.*deref|//.*(?:null\s+pointer\s+dereference|dangling\s+pointer|\*ptr\s+without\s+null|unchecked\s+pointer\s+deref))"#).unwrap()
 });
 static RE_MEM_004_GUARD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:if\s*\([^)]*==\s*(?:NULL|nullptr)|if\s*\([^)]*!=\s*(?:NULL|nullptr)|if\s*\(\s*![a-zA-Z0-9_]+\s*\)|if\s*\(\s*[a-zA-Z0-9_]+\s*\)|assert\s*\([^)]*!=\s*(?:NULL|nullptr)|\.is_null\(\)|assert!\s*\(![a-zA-Z0-9_]+\.is_null\(\)|NonNull::new|Option<)"#).unwrap()

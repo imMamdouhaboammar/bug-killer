@@ -125,7 +125,12 @@ impl CicdScanner {
             };
 
             if let Some(action_ref) = uses_target {
-                let clean_ref = action_ref.trim_matches(|c| c == '\'' || c == '"');
+                // YAML allows inline version comments after immutable action SHAs.
+                let clean_ref = action_ref
+                    .split_once(" #")
+                    .map_or(action_ref, |(reference, _)| reference)
+                    .trim()
+                    .trim_matches(|c| c == '\'' || c == '"');
                 if !clean_ref.starts_with("./") && !clean_ref.starts_with("docker://") {
                     if let Some((action_name, version_tag)) = clean_ref.split_once('@') {
                         let is_pinned_sha = version_tag.len() == 40

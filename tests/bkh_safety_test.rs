@@ -26,6 +26,14 @@ fn run_scan(target: &str) -> Result<Report, ScanError> {
 "#;
     let path = Path::new("src/scanner/runner.rs");
     let findings = BkhSafetyScanner::scan_source(path, vuln_code);
+    assert_eq!(
+        findings
+            .iter()
+            .filter(|f| f.cve.as_str() == "BK-AI-BKH-001")
+            .count(),
+        1,
+        "One unsafe return must generate one finding, not a finding for surrounding lines"
+    );
     let f = findings
         .iter()
         .find(|f| f.cve.as_str() == "BK-AI-BKH-001")

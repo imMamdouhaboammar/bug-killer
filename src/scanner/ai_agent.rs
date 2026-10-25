@@ -371,7 +371,10 @@ impl AgentSecurityScanner {
                     || obj.contains_key("budget")
                     || obj.contains_key("max_tokens")
                     || obj.contains_key("cost_budget")
-                    || path.to_string_lossy().to_lowercase().contains("agent");
+                    || path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.to_lowercase().contains("agent"));
 
                 if is_agent { vec![obj] } else { Vec::new() }
             } else {

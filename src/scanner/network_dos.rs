@@ -69,7 +69,7 @@ static RE_NET_006_PROXY_BYPASS: LazyLock<Regex> = LazyLock::new(|| {
 
 /// BK-AI-NET-007 (CWE-295): TLS certificate verification disabled
 static RE_NET_007_TLS_DISABLE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)\b(?:rejectUnauthorized\s*:\s*false|rejectUnauthorized\s*=\s*false|InsecureSkipVerify\s*:\s*true|InsecureSkipVerify\s*=\s*true|verify\s*=\s*False\b|verify\s*:\s*false\b|NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]0['"]|CURLOPT_SSL_VERIFYPEER\s*,\s*(?:false|0)|CURLOPT_SSL_VERIFYHOST\s*,\s*0|ssl_verify\s*=\s*False\b|ssl_verify\s*:\s*false\b)\b"#).unwrap()
+    Regex::new(r#"(?i)\b(?:rejectUnauthorized\s*:\s*false|rejectUnauthorized\s*=\s*false|InsecureSkipVerify\s*:\s*true|InsecureSkipVerify\s*=\s*true|verify\s*=\s*False\b|verify\s*:\s*false\b|NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]0['"]|CURLOPT_SSL_VERIFYPEER\s*,\s*(?:false|0)|CURLOPT_SSL_VERIFYHOST\s*,\s*0|ssl_verify\s*=\s*False\b|ssl_verify\s*:\s*false\b)"#).unwrap()
 });
 
 /// BK-AI-NET-008 (CWE-295): Hardcoded accept-all certificate callback
