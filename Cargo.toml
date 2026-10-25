@@ -27,3 +27,6 @@ tempfile = "3.17"
 ureq = { version = "3.5.0", features = ["json"] }
 goblin = "0.9"
 memmap2 = "0.9"
+ast-grep-core = "0.51"
+ast-grep-language = { version = "0.51", default-features = false, features = ["tree-sitter-python", "tree-sitter-javascript", "tree-sitter-typescript", "tree-sitter-php", "tree-sitter-go", "tree-sitter-rust"] }
+tree-sitter = "0.27"
