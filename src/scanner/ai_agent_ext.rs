@@ -10,6 +10,15 @@ use std::sync::LazyLock;
 // Category 22: LLM, RAG, Autonomous Agent & MCP Application Flaws
 // ============================================================================
 
+/// BK-AI-LLM-001: Untrusted web/file/tool text treated as executable agent instruction
+static RE_LLM_001_UNTRUSTED_INSTRUCTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?i)(?:(?:system_prompt|system_instructions|system_message|instruction|systemPrompt)\s*=\s*.*(?:requests\.get|fetch|read_file|web_content|page_text|external_text|untrusted_text|html_content|file_content)|(?:system_prompt|system_instructions|instruction)\s*\+=\s*.*(?:web_content|page_text|external_text|downloaded_text|html_text)|messages\.(?:append|push)\s*\(\s*\{[^\}]*['"]role['"]\s*:\s*['"]system['"][^\}]*['"]content['"]\s*:\s*(?:web_content|page_text|file_content|untrusted_text)|//.*untrusted\s+(?:web|file|tool)\s+text\s+treated\s+as\s+executable\s+agent\s+instruction)"#).unwrap()
+});
+
+static RE_LLM_001_GUARD: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?i)(?:untrusted="true"|<untrusted_content>|<external_data>|sanitize_prompt|escape_instructions|role['"]?\s*:\s*['"]user['"])"#).unwrap()
+});
+
 /// BK-AI-LLM-002: Prompt content alone used to authorize file, network, SQL, shell or deployment actions
 static RE_LLM_002_PROMPT_AUTH: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:if\s+['"](?:approve|confirmed?|authorized?|allow(?:ed)?|grant(?:ed)?|permit(?:ted)?|proceed)[\r\n'"]*\s+in\s+[a-zA-Z0-9_.]*(?:prompt|user_input|user_msg|input_text|instruction|query|message)(?:\.(?:lower|strip)\(\))?|if\s+[a-zA-Z0-9_.]*(?:prompt|user_input|user_msg|input_text|query|message)(?:\.(?:lower|strip)\(\))?\.(?:includes|contains|startswith)\s*\(\s*['"](?:approve|confirmed?|authorized?|allow(?:ed)?|grant(?:ed)?|permit(?:ted)?|proceed)['"]\s*\)|/(?:approve|confirmed?|authorized?|allow|grant)/i\s*\.\s*test\s*\(\s*[a-zA-Z0-9_.]*(?:prompt|user_input|input)\s*\)|(?:prompt|user_input|input_text)\s*===?\s*['"](?:approved?|confirmed?|authorized?)['"]|//.*prompt\s+content\s+alone\s+used\s+to\s+authorize)"#).unwrap()
@@ -17,6 +26,15 @@ static RE_LLM_002_PROMPT_AUTH: LazyLock<Regex> = LazyLock::new(|| {
 
 static RE_LLM_002_GUARD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)(?:verify_signature|has_permission|has_role|session\.user|rbac|approval_service|jwt|signed_token|is_authenticated|verify_token)"#).unwrap()
+});
+
+/// BK-AI-LLM-003: Model response directly executed as code or shell command
+static RE_LLM_003_MODEL_EXEC: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?i)(?:(?:eval|exec|os\.system|os\.popen|subprocess\.(?:run|call|Popen|check_output)|child_process\.(?:exec|execSync|spawn|spawnSync)|shlex\.split)\s*\(\s*(?:response(?:\.text|\.content|\.data)?|model_output|llm_output|ai_output|completion|generation|model_response|llm_response|llmResponse|result\.content|result\.text)[^)]*\)|//.*model\s+response\s+directly\s+executed\s+as\s+code\s+or\s+shell\s+command)"#).unwrap()
+});
+
+static RE_LLM_003_GUARD: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?i)(?:sandbox|ast\.parse|validate_ast|allowlist|verify_code|approval_required|is_safe_code|require_operator_approval)"#).unwrap()
 });
 
 /// BK-AI-LLM-005: External tool result injected into agent context without delimiter sanitization
@@ -379,6 +397,50 @@ impl AiAgentExtScanner {
             // ===============================================================
             // Category 22: LLM, RAG, Autonomous Agent & MCP Application Flaws
             // ===============================================================
+
+            // 0a. BK-AI-LLM-001: Untrusted web/file/tool text treated as executable agent instruction
+            if RE_LLM_001_UNTRUSTED_INSTRUCTION.is_match(trimmed)
+                && !RE_LLM_001_GUARD.is_match(&context_window)
+            {
+                Self::push_finding(
+                    &mut findings,
+                    &mut seen,
+                    "BK-AI-LLM-001",
+                    "None",
+                    "Untrusted web/file/tool text treated as executable agent instruction",
+                    Severity::High,
+                    "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+                    path,
+                    &target_kind,
+                    line_no,
+                    trimmed,
+                    "Untrusted web or file content must be fenced into untrusted data blocks and never concatenated into privileged system instructions.",
+                    "Untrusted external text is concatenated directly into system instructions, enabling indirect prompt injection.",
+                    "Pass untrusted external data as user messages or delimited data tags (<untrusted_content>), separating data from system instructions.",
+                );
+            }
+
+            // 0b. BK-AI-LLM-003: Model response directly executed as code or shell command
+            if RE_LLM_003_MODEL_EXEC.is_match(trimmed)
+                && !RE_LLM_003_GUARD.is_match(&context_window)
+            {
+                Self::push_finding(
+                    &mut findings,
+                    &mut seen,
+                    "BK-AI-LLM-003",
+                    "None",
+                    "Model response directly executed as code or shell command",
+                    Severity::Critical,
+                    "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+                    path,
+                    &target_kind,
+                    line_no,
+                    trimmed,
+                    "Model generated code or shell commands must undergo sandboxing, AST validation, and operator approval before execution.",
+                    "Model output is passed directly to execution sinks (eval, exec, system, subprocess) without validation or sandboxing.",
+                    "Execute untrusted model output inside an isolated sandbox with strict resource limits and require human-in-the-loop approval.",
+                );
+            }
 
             // 1. BK-AI-LLM-002: Prompt content used to authorize action
             if RE_LLM_002_PROMPT_AUTH.is_match(trimmed)

@@ -232,3 +232,154 @@ impl ResearchCandidate {
         self.updated_at = Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
     }
 }
+
+/// Status of an individual coverage unit in the Cloudflare-style audit coverage ledger.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CoverageUnitStatus {
+    Planned,
+    InProgress,
+    Completed,
+    Blocked,
+    Exempt,
+}
+
+impl CoverageUnitStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CoverageUnitStatus::Planned => "Planned",
+            CoverageUnitStatus::InProgress => "InProgress",
+            CoverageUnitStatus::Completed => "Completed",
+            CoverageUnitStatus::Blocked => "Blocked",
+            CoverageUnitStatus::Exempt => "Exempt",
+        }
+    }
+}
+
+/// A structured, auditable unit of attack surface coverage mapped across boundaries and attack classes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CoverageUnit {
+    pub coverage_id: String,
+    pub surface: String,
+    pub boundary: String,
+    pub subsystem: String,
+    pub attack_class: String,
+    #[serde(default)]
+    pub starting_paths: Vec<String>,
+    #[serde(default)]
+    pub reviewed_paths: Vec<String>,
+    #[serde(default)]
+    pub local_checks: Vec<String>,
+    pub status: CoverageUnitStatus,
+    #[serde(default)]
+    pub result_fingerprints: Vec<String>,
+    #[serde(default)]
+    pub evidence_digest: Option<String>,
+}
+
+impl CoverageUnit {
+    pub fn new(
+        surface: impl Into<String>,
+        boundary: impl Into<String>,
+        subsystem: impl Into<String>,
+        attack_class: impl Into<String>,
+    ) -> Self {
+        let s = surface.into();
+        let b = boundary.into();
+        let sub = subsystem.into();
+        let ac = attack_class.into();
+        let coverage_id = format!("{}:{}:{}:{}", s, b, sub, ac);
+
+        Self {
+            coverage_id,
+            surface: s,
+            boundary: b,
+            subsystem: sub,
+            attack_class: ac,
+            starting_paths: Vec::new(),
+            reviewed_paths: Vec::new(),
+            local_checks: Vec::new(),
+            status: CoverageUnitStatus::Planned,
+            result_fingerprints: Vec::new(),
+            evidence_digest: None,
+        }
+    }
+}
+
+/// A tamper-evident ledger tracking verifiable vulnerability audit coverage across the codebase.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CoverageLedger {
+    pub ledger_version: String,
+    pub target_root: String,
+    pub units: Vec<CoverageUnit>,
+}
+
+impl CoverageLedger {
+    pub fn new(target_root: impl Into<String>) -> Self {
+        Self {
+            ledger_version: "1.0.0".to_string(),
+            target_root: target_root.into(),
+            units: Vec::new(),
+        }
+    }
+
+    pub fn add_unit(&mut self, unit: CoverageUnit) -> Result<(), String> {
+        if self.units.len() >= 10_000 {
+            return Err("Coverage ledger exceeds maximum unit limit of 10,000".to_string());
+        }
+        if self.units.iter().any(|u| u.coverage_id == unit.coverage_id) {
+            return Err(format!("Duplicate coverage unit ID '{}'", unit.coverage_id));
+        }
+        self.units.push(unit);
+        Ok(())
+    }
+
+    /// Validates ledger integrity: bounds, canonical coverage_id format, non-empty fields,
+    /// and ensures Completed units have reviewed paths or local checks.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.units.is_empty() {
+            return Err(
+                "Coverage ledger is empty: at least one coverage unit is required".to_string(),
+            );
+        }
+        if self.units.len() > 10_000 {
+            return Err("Coverage ledger exceeds maximum allowed units (10,000)".to_string());
+        }
+
+        let mut seen_ids = std::collections::HashSet::new();
+        for (idx, unit) in self.units.iter().enumerate() {
+            if unit.coverage_id.is_empty() {
+                return Err(format!("Unit at index {} has empty coverage_id", idx));
+            }
+            if !seen_ids.insert(&unit.coverage_id) {
+                return Err(format!("Duplicate coverage_id '{}'", unit.coverage_id));
+            }
+            let colon_count = unit.coverage_id.chars().filter(|&c| c == ':').count();
+            if colon_count < 3 {
+                return Err(format!(
+                    "Invalid coverage_id format '{}', expected 'surface:boundary:subsystem:attack_class'",
+                    unit.coverage_id
+                ));
+            }
+
+            if unit.status == CoverageUnitStatus::Completed
+                && unit.reviewed_paths.is_empty()
+                && unit.local_checks.is_empty()
+            {
+                return Err(format!(
+                    "Completed coverage unit '{}' must declare reviewed_paths or local_checks",
+                    unit.coverage_id
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Computes deterministic SHA-256 digest of canonical serialized coverage ledger.
+    pub fn compute_digest(&self) -> String {
+        let serialized = serde_json::to_string(&self.units).unwrap_or_default();
+        let mut hasher = Sha256::new();
+        hasher.update(serialized.as_bytes());
+        crate::to_hex(hasher.finalize())
+    }
+}

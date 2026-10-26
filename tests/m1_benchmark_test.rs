@@ -429,3 +429,51 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     }
     Ok(())
 }
+
+// ============================================================================
+// Test: Adversarial Benchmark Suite Stress-Testing & Mitigation Verification
+// ============================================================================
+
+#[test]
+fn test_adversarial_suite_mitigation_evaluation() {
+    let mut shannon_suite = AdversarialBenchmarkRunner::new(AdversarialFrameworkKind::Shannon);
+    shannon_suite.add_vector(AdversarialAttackVector {
+        vector_id: "shannon-cve-2024-5480".to_string(),
+        framework: AdversarialFrameworkKind::Shannon,
+        target_subsystem: "python_runtime".to_string(),
+        payload_signature: "torch.load('exploit.pt')".to_string(),
+        simulated_threat: "Arbitrary code execution via pickle payload".to_string(),
+    });
+    shannon_suite.add_vector(AdversarialAttackVector {
+        vector_id: "shannon-http2-rapid-reset".to_string(),
+        framework: AdversarialFrameworkKind::Shannon,
+        target_subsystem: "nginx_gateway".to_string(),
+        payload_signature: "RST_STREAM flood".to_string(),
+        simulated_threat: "DDoS via stream cancellation".to_string(),
+    });
+    shannon_suite.add_vector(AdversarialAttackVector {
+        vector_id: "shannon-zero-day-bypass".to_string(),
+        framework: AdversarialFrameworkKind::Shannon,
+        target_subsystem: "unknown_service".to_string(),
+        payload_signature: "novel_polyglot_payload".to_string(),
+        simulated_threat: "Uncategorized polyglot payload".to_string(),
+    });
+
+    // Defense evaluator: Virtual patches and rate limiters block known CVEs
+    let report = shannon_suite.evaluate(|vec| {
+        if vec.payload_signature.contains("torch.load") {
+            (true, Some("virtual-patch:weights_only_guard".to_string()))
+        } else if vec.payload_signature.contains("RST_STREAM") {
+            (true, Some("waf:rate_limit_zone".to_string()))
+        } else {
+            (false, None)
+        }
+    });
+
+    assert_eq!(report.framework, AdversarialFrameworkKind::Shannon);
+    assert_eq!(report.total_vectors, 3);
+    assert_eq!(report.blocked_count, 2);
+    assert_eq!(report.bypassed_count, 1);
+    assert!((report.mitigation_rate - 0.6666).abs() < 0.01);
+    assert!(!report.report_id.is_empty());
+}

@@ -1,0 +1,66 @@
+rules:
+  - id: bk-semgrep-sqli-formatted-string
+    patterns:
+      - pattern-either:
+          - pattern: $DB.query(f"... {$VAR} ...")
+          - pattern: $DB.execute(f"... {$VAR} ...")
+          - pattern: $DB.query("..." + $VAR + "...")
+          - pattern: $DB.execute("..." + $VAR + "...")
+          - pattern: $DB.query(`... ${$VAR} ...`)
+          - pattern: $DB.execute(`... ${$VAR} ...`)
+    message: "SQL query string concatenation or template literal detected without parameterized statements."
+    languages: [python, javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      category: "security"
+      confidence: HIGH
+
+  - id: bk-semgrep-rce-child-process-exec
+    patterns:
+      - pattern-either:
+          - pattern: child_process.exec($CMD, ...)
+          - pattern: child_process.execSync($CMD, ...)
+          - pattern: subprocess.Popen($CMD, ..., shell=True)
+          - pattern: subprocess.run($CMD, ..., shell=True)
+          - pattern: os.system($CMD)
+    message: "Command execution sink invoked with shell=True or dynamic exec string."
+    languages: [javascript, typescript, python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-78"
+      category: "security"
+      confidence: HIGH
+
+  - id: bk-semgrep-insecure-deserialization-pickle
+    patterns:
+      - pattern-either:
+          - pattern: pickle.loads(...)
+          - pattern: pickle.load(...)
+          - pattern: _pickle.loads(...)
+          - pattern: torch.load($PATH)
+    pattern-not: torch.load($PATH, weights_only=True)
+    message: "Insecure deserialization via pickle or unconstrained torch.load allows arbitrary remote code execution."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-502"
+      category: "security"
+      confidence: HIGH
+
+  - id: bk-semgrep-ssrf-unvalidated-fetch
+    patterns:
+      - pattern-either:
+          - pattern: fetch($REQ.query.$URL, ...)
+          - pattern: fetch($REQ.body.$URL, ...)
+          - pattern: axios.get($REQ.query.$URL, ...)
+          - pattern: axios.get($REQ.body.$URL, ...)
+          - pattern: requests.get(request.args.get($URL), ...)
+          - pattern: requests.get(request.json[$URL], ...)
+    message: "Server-side request made directly to user-controlled destination without egress IP allowlist or private IP filtering."
+    languages: [javascript, typescript, python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-918"
+      category: "security"
+      confidence: HIGH

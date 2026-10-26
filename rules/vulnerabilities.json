@@ -72,5 +72,43 @@
       "replace": "ast.literal_eval($1$2)",
       "description": "Replace insecure eval() with safe ast.literal_eval()"
     }
+  },
+  {
+    "id": "SEC-003-CIS-UBUNTU-ROOT-SSH",
+    "title": "CIS Benchmark 5.2.10: Root SSH Login Permitted",
+    "severity": "High",
+    "description": "PermitRootLogin configured as 'yes' allows direct administrative SSH authentication. Prohibited by CIS Ubuntu Benchmark.",
+    "target_kind": "GenericConfigFile",
+    "file_patterns": ["sshd_config", "*.conf"],
+    "detection": {
+      "type": "regex",
+      "pattern": "^\\s*PermitRootLogin\\s+yes",
+      "not_matching": "^\\s*#|prohibit-password|no"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "(?m)^\\s*PermitRootLogin\\s+yes",
+      "replace": "PermitRootLogin no",
+      "description": "Disable direct root SSH login per CIS Benchmark"
+    }
+  },
+  {
+    "id": "SEC-004-CIS-DOCKER-PRIVILEGED",
+    "title": "CIS Docker Benchmark 5.4: Container Running with Privileged Flag",
+    "severity": "High",
+    "description": "Running containers with privileged=true grants all Linux capabilities and bypasses host cgroup/namespace boundaries.",
+    "target_kind": "Dockerfile",
+    "file_patterns": ["Dockerfile", "docker-compose*.yml", "docker-compose*.yaml"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(privileged:\\s*true|--privileged)",
+      "not_matching": "#.*privileged|privileged:\\s*false"
+    },
+    "remediation": {
+      "type": "string_replace",
+      "search": "privileged: true",
+      "replace": "privileged: false",
+      "description": "Drop privileged mode and enforce unprivileged container execution"
+    }
   }
 ]

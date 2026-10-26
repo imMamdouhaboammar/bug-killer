@@ -508,3 +508,47 @@ fn test_m5_verified_finding_synthesis_with_reproduction_artifact() {
         )
     );
 }
+
+// ============================================================================
+// Test 6: Cloudflare-Style Audit Coverage Ledger & Validation Gate
+// ============================================================================
+
+#[test]
+fn test_m5_coverage_ledger_validation_and_integrity() {
+    use bug_killer::hunter::{CoverageLedger, CoverageUnit, CoverageUnitStatus};
+
+    let mut ledger = CoverageLedger::new("/workspace");
+
+    // Unit 1: Planned
+    let u1 = CoverageUnit::new("web", "ingress", "api_gateway", "injection");
+    assert_eq!(u1.coverage_id, "web:ingress:api_gateway:injection");
+    assert_eq!(u1.status, CoverageUnitStatus::Planned);
+    ledger.add_unit(u1).unwrap();
+
+    // Unit 2: Completed with reviewed paths
+    let mut u2 = CoverageUnit::new("runtime", "kernel", "memory_allocator", "buffer_overflow");
+    u2.status = CoverageUnitStatus::Completed;
+    u2.reviewed_paths = vec!["src/alloc/heap.rs".to_string()];
+    u2.local_checks = vec!["bounds_check".to_string()];
+    ledger.add_unit(u2).unwrap();
+
+    // Valid ledger passes validation
+    assert!(ledger.validate().is_ok());
+
+    // Digest computation is deterministic
+    let d1 = ledger.compute_digest();
+    let d2 = ledger.compute_digest();
+    assert_eq!(d1, d2);
+    assert_eq!(d1.len(), 64);
+
+    // Duplicate unit ID is rejected
+    let duplicate_u1 = CoverageUnit::new("web", "ingress", "api_gateway", "injection");
+    assert!(ledger.add_unit(duplicate_u1).is_err());
+
+    // Completed unit without reviewed paths or local checks fails validation
+    let mut invalid_ledger = CoverageLedger::new("/workspace");
+    let mut incomplete_u = CoverageUnit::new("cloud", "iam", "authz", "privilege_escalation");
+    incomplete_u.status = CoverageUnitStatus::Completed;
+    invalid_ledger.add_unit(incomplete_u).unwrap();
+    assert!(invalid_ledger.validate().is_err());
+}

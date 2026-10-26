@@ -36,22 +36,34 @@ impl SemgrepAdapter {
     pub fn new() -> Self {
         let broker = ToolCapabilityBroker::new();
         let binary_path = broker.find_binary("semgrep");
+        let default_rules = Path::new("rules/semgrep");
+        let rules = if default_rules.is_dir() {
+            vec![default_rules.to_string_lossy().to_string()]
+        } else {
+            Vec::new()
+        };
         Self {
             engine_id: "semgrep-ce-adapter".to_string(),
             engine_version: "0.1.0".to_string(),
             binary_path,
-            rules: Vec::new(),
+            rules,
         }
     }
 
     /// Creates an adapter with an explicit binary path.
     pub fn with_binary_path(path: impl Into<PathBuf>) -> Self {
         let path = path.into();
+        let default_rules = Path::new("rules/semgrep");
+        let rules = if default_rules.is_dir() {
+            vec![default_rules.to_string_lossy().to_string()]
+        } else {
+            Vec::new()
+        };
         Self {
             engine_id: "semgrep-ce-adapter".to_string(),
             engine_version: "0.1.0".to_string(),
             binary_path: if path.is_file() { Some(path) } else { None },
-            rules: Vec::new(),
+            rules,
         }
     }
 

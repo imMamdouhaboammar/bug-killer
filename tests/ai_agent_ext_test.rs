@@ -11,6 +11,66 @@ use ai_agent_ext::AiAgentExtScanner;
 // ============================================================================
 
 #[test]
+fn test_llm_001_untrusted_instruction_vulnerable() {
+    let snippet = r#"
+def process_web_agent(url):
+    page_text = requests.get(url).text
+    system_prompt += "\n" + page_text
+    response = client.complete(system_prompt)
+"#;
+    let findings = AiAgentExtScanner::scan_source(Path::new("agent.py"), snippet);
+    let f = findings
+        .iter()
+        .find(|f| f.cve.as_str() == "BK-AI-LLM-001")
+        .expect("Must detect untrusted web text concatenated to system instructions");
+    assert_eq!(f.severity, Severity::High);
+    assert_eq!(f.detector_id, "ai-agent-ext");
+}
+
+#[test]
+fn test_llm_001_untrusted_instruction_safe() {
+    let snippet = r#"
+def process_web_agent(url):
+    page_text = requests.get(url).text
+    messages = [
+        {"role": "system", "content": "You are a web summarizer"},
+        {"role": "user", "content": f"<untrusted_content>{page_text}</untrusted_content>"}
+    ]
+    response = client.complete(messages)
+"#;
+    let findings = AiAgentExtScanner::scan_source(Path::new("agent.py"), snippet);
+    assert!(findings.iter().all(|f| f.cve.as_str() != "BK-AI-LLM-001"));
+}
+
+#[test]
+fn test_llm_003_model_exec_vulnerable() {
+    let snippet = r#"
+def run_assistant(prompt):
+    model_output = client.generate(prompt)
+    subprocess.run(model_output, shell=True)
+"#;
+    let findings = AiAgentExtScanner::scan_source(Path::new("agent.py"), snippet);
+    let f = findings
+        .iter()
+        .find(|f| f.cve.as_str() == "BK-AI-LLM-003")
+        .expect("Must detect model output passed directly into subprocess");
+    assert_eq!(f.severity, Severity::Critical);
+    assert_eq!(f.detector_id, "ai-agent-ext");
+}
+
+#[test]
+fn test_llm_003_model_exec_safe() {
+    let snippet = r#"
+def run_assistant(prompt):
+    model_output = client.generate(prompt)
+    if validate_ast(model_output) and require_operator_approval(model_output):
+        sandbox.execute(model_output)
+"#;
+    let findings = AiAgentExtScanner::scan_source(Path::new("agent.py"), snippet);
+    assert!(findings.iter().all(|f| f.cve.as_str() != "BK-AI-LLM-003"));
+}
+
+#[test]
 fn test_llm_002_prompt_auth_vulnerable() {
     let snippet = r#"
 def handle_action(user_prompt):

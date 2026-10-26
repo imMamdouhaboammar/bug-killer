@@ -1565,7 +1565,9 @@ impl SecurityDetector for AiAgentExtDetector {
 
     fn supported_rule_ids(&self) -> &[&'static str] {
         &[
+            "BK-AI-LLM-001",
             "BK-AI-LLM-002",
+            "BK-AI-LLM-003",
             "BK-AI-LLM-005",
             "BK-AI-LLM-006",
             "BK-AI-LLM-007",

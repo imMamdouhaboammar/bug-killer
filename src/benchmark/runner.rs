@@ -292,3 +292,128 @@ impl BenchmarkRunner {
         })
     }
 }
+
+/// Kind of external adversarial red-team framework used to stress-test defensive postures.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AdversarialFrameworkKind {
+    Shannon,
+    Strix,
+    DeepAudit,
+    Drakben,
+    Xalgorix,
+    Custom,
+}
+
+impl AdversarialFrameworkKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AdversarialFrameworkKind::Shannon => "Shannon",
+            AdversarialFrameworkKind::Strix => "Strix",
+            AdversarialFrameworkKind::DeepAudit => "DeepAudit",
+            AdversarialFrameworkKind::Drakben => "Drakben",
+            AdversarialFrameworkKind::Xalgorix => "Xalgorix",
+            AdversarialFrameworkKind::Custom => "Custom",
+        }
+    }
+}
+
+/// An evaluation case representing an adversarial exploit candidate or attack vector.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdversarialAttackVector {
+    pub vector_id: String,
+    pub framework: AdversarialFrameworkKind,
+    pub target_subsystem: String,
+    pub payload_signature: String,
+    pub simulated_threat: String,
+}
+
+/// Result of evaluating an adversarial attack vector against defensive virtual patching / detection.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdversarialEvaluationResult {
+    pub vector_id: String,
+    pub blocked: bool,
+    pub mitigated_by: Option<String>,
+    pub defense_latency_ms: u64,
+}
+
+/// A structured evaluation report quantifying defensive posture against red-team attack vectors.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdversarialBenchmarkReport {
+    pub report_id: String,
+    pub framework: AdversarialFrameworkKind,
+    pub timestamp: String,
+    pub total_vectors: usize,
+    pub blocked_count: usize,
+    pub bypassed_count: usize,
+    pub mitigation_rate: f64,
+    pub results: Vec<AdversarialEvaluationResult>,
+}
+
+/// Defensive test runner for adversarial benchmark suites.
+pub struct AdversarialBenchmarkRunner {
+    pub framework: AdversarialFrameworkKind,
+    pub vectors: Vec<AdversarialAttackVector>,
+}
+
+impl AdversarialBenchmarkRunner {
+    pub fn new(framework: AdversarialFrameworkKind) -> Self {
+        Self {
+            framework,
+            vectors: Vec::new(),
+        }
+    }
+
+    pub fn add_vector(&mut self, vector: AdversarialAttackVector) {
+        self.vectors.push(vector);
+    }
+
+    /// Evaluates all attack vectors against a defensive gate or virtual patch evaluator.
+    pub fn evaluate<F>(&self, defense_evaluator: F) -> AdversarialBenchmarkReport
+    where
+        F: Fn(&AdversarialAttackVector) -> (bool, Option<String>),
+    {
+        let mut results = Vec::new();
+        let mut blocked_count = 0;
+
+        for vec in &self.vectors {
+            let start = Instant::now();
+            let (blocked, mitigated_by) = defense_evaluator(vec);
+            let elapsed = start.elapsed().as_millis() as u64;
+
+            if blocked {
+                blocked_count += 1;
+            }
+
+            results.push(AdversarialEvaluationResult {
+                vector_id: vec.vector_id.clone(),
+                blocked,
+                mitigated_by,
+                defense_latency_ms: elapsed,
+            });
+        }
+
+        let total = self.vectors.len();
+        let bypassed = total.saturating_sub(blocked_count);
+        let rate = if total > 0 {
+            (blocked_count as f64) / (total as f64)
+        } else {
+            1.0
+        };
+
+        let mut hasher = Sha256::new();
+        hasher.update(self.framework.as_str().as_bytes());
+        hasher.update(total.to_string().as_bytes());
+        let report_id = format!("adv-{}", &crate::to_hex(hasher.finalize())[..16]);
+
+        AdversarialBenchmarkReport {
+            report_id,
+            framework: self.framework,
+            timestamp: Utc::now().to_rfc3339(),
+            total_vectors: total,
+            blocked_count,
+            bypassed_count: bypassed,
+            mitigation_rate: rate,
+            results,
+        }
+    }
+}

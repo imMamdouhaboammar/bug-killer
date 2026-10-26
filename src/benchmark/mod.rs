@@ -14,6 +14,7 @@ pub use corpus::{
 };
 pub use metrics::{BenchmarkMetrics, CaseEvaluation, ClassificationKind, ConfusionMatrix};
 pub use runner::{
-    BenchmarkClassifier, BenchmarkPrediction, BenchmarkReport, BenchmarkRunner, FnClassifier,
-    ReproducibilityManifest,
+    AdversarialAttackVector, AdversarialBenchmarkReport, AdversarialBenchmarkRunner,
+    AdversarialEvaluationResult, AdversarialFrameworkKind, BenchmarkClassifier,
+    BenchmarkPrediction, BenchmarkReport, BenchmarkRunner, FnClassifier, ReproducibilityManifest,
 };
