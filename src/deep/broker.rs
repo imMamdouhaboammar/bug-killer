@@ -542,9 +542,10 @@ impl ToolCapabilityBroker {
             "privacy-engine" | "privacy-adapter" | "bk-privacy" | "data-protection" => {
                 "privacy-engine"
             }
-            "threatswarm" | "threatswarm-deep-adapter" | "threatswarm-adapter" | "bk-threatswarm" => {
-                "threatswarm"
-            }
+            "threatswarm"
+            | "threatswarm-deep-adapter"
+            | "threatswarm-adapter"
+            | "bk-threatswarm" => "threatswarm",
             other => other,
         };
 
@@ -632,7 +633,8 @@ impl ToolCapabilityBroker {
         &self,
         check_id: &str,
     ) -> Vec<&'static crate::deep::privacy::PrivacySkill> {
-        crate::deep::privacy::PrivacySkillsRegistry::default_embedded().recommend_for_check(check_id)
+        crate::deep::privacy::PrivacySkillsRegistry::default_embedded()
+            .recommend_for_check(check_id)
     }
 
     /// Register or override a tool capability.

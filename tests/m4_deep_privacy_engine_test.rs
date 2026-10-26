@@ -44,7 +44,10 @@ fn test_privacy_skills_embedded_registry_metrics() {
 
     // Verify LINDDUN coverage
     let linddun_skills = registry.find_by_linddun("L");
-    assert!(!linddun_skills.is_empty(), "LINDDUN linkability must have procedures");
+    assert!(
+        !linddun_skills.is_empty(),
+        "LINDDUN linkability must have procedures"
+    );
 }
 
 #[test]
@@ -97,7 +100,8 @@ export async function processUserPrompt(req: any, res: any) {
         run_id: "run-priv-pos-001".to_string(),
         engine_id: "privacy-engine-adapter".to_string(),
         snapshot_ref: temp.path().display().to_string(),
-        snapshot_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string(),
+        snapshot_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            .to_string(),
         profile: ScanProfile::Deep,
         check_ids: vec!["BK-AI-PRIV-002".to_string()],
         target_ids: vec![test_file.display().to_string()],
@@ -108,11 +112,16 @@ export async function processUserPrompt(req: any, res: any) {
     };
 
     let cancel = CancellationToken::new();
-    let response = adapter.analyze(&request, &cancel).expect("Analysis must complete");
+    let response = adapter
+        .analyze(&request, &cancel)
+        .expect("Analysis must complete");
 
     assert_eq!(response.status, EngineStatus::Completed);
     assert_eq!(response.run_id, "run-priv-pos-001");
-    assert!(!response.findings.is_empty(), "Must detect unredacted PII to AI API");
+    assert!(
+        !response.findings.is_empty(),
+        "Must detect unredacted PII to AI API"
+    );
 
     let finding = response
         .findings
@@ -157,7 +166,8 @@ export async function processUserPrompt(req: any, res: any) {
         run_id: "run-priv-neg-001".to_string(),
         engine_id: "privacy-engine-adapter".to_string(),
         snapshot_ref: temp.path().display().to_string(),
-        snapshot_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string(),
+        snapshot_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            .to_string(),
         profile: ScanProfile::Deep,
         check_ids: vec!["BK-AI-PRIV-002".to_string()],
         target_ids: vec![test_file.display().to_string()],
@@ -168,7 +178,9 @@ export async function processUserPrompt(req: any, res: any) {
     };
 
     let cancel = CancellationToken::new();
-    let response = adapter.analyze(&request, &cancel).expect("Analysis must complete");
+    let response = adapter
+        .analyze(&request, &cancel)
+        .expect("Analysis must complete");
 
     assert_eq!(response.status, EngineStatus::Completed);
     // Sanitizer breaks taint chain; zero findings
@@ -183,7 +195,10 @@ export async function processUserPrompt(req: any, res: any) {
         "Sanitized PII flow must not generate false positive finding"
     );
     assert_eq!(response.receipts.len(), 1);
-    assert_eq!(response.receipts[0].status, CoverageReceiptStatus::Evaluated);
+    assert_eq!(
+        response.receipts[0].status,
+        CoverageReceiptStatus::Evaluated
+    );
     assert!(response.validate().is_ok());
 }
 
@@ -198,8 +213,18 @@ fn test_tool_capability_broker_privacy_discovery() {
         .expect("Privacy engine adapter must be discovered");
 
     assert_eq!(priv_cap.installation, Installation::Available);
-    assert!(priv_cap.capabilities.check_ids.contains(&"BK-AI-PRIV-001".to_string()));
-    assert!(priv_cap.capabilities.check_ids.contains(&"BK-AI-PRIV-010".to_string()));
+    assert!(
+        priv_cap
+            .capabilities
+            .check_ids
+            .contains(&"BK-AI-PRIV-001".to_string())
+    );
+    assert!(
+        priv_cap
+            .capabilities
+            .check_ids
+            .contains(&"BK-AI-PRIV-010".to_string())
+    );
 
     // Verify recommendations through broker
     let recommended = broker.recommend_privacy_skills("BK-AI-PRIV-004");
@@ -220,7 +245,8 @@ fn test_engine_registry_deep_profile_routing() {
         run_id: "run-priv-quick-001".to_string(),
         engine_id: "privacy-engine-adapter".to_string(),
         snapshot_ref: temp.path().display().to_string(),
-        snapshot_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string(),
+        snapshot_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            .to_string(),
         profile: ScanProfile::Quick,
         check_ids: vec!["BK-AI-PRIV-001".to_string()],
         target_ids: vec![temp.path().display().to_string()],
@@ -243,5 +269,8 @@ fn test_engine_registry_deep_profile_routing() {
         ..quick_request
     };
     let deep_res = registry.dispatch(&deep_request, &cancel);
-    assert!(deep_res.is_ok(), "Privacy engine must accept ScanProfile::Deep");
+    assert!(
+        deep_res.is_ok(),
+        "Privacy engine must accept ScanProfile::Deep"
+    );
 }

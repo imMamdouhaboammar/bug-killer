@@ -9,8 +9,8 @@ mod detectors;
 mod doctor;
 mod healer;
 mod identity;
-pub use identity::to_hex;
 use bug_killer::mcp;
+pub use identity::to_hex;
 mod osv;
 mod rules;
 mod scanner;
@@ -1971,9 +1971,16 @@ fn main() {
 
                 if report_version.as_deref() == Some("2") {
                     let mut normalized_findings = Vec::new();
-                    let dummy_sha = "0000000000000000000000000000000000000000000000000000000000000000";
+                    let dummy_sha =
+                        "0000000000000000000000000000000000000000000000000000000000000000";
                     for f in &report.findings {
-                        normalized_findings.push(bug_killer::engine::converter::to_normalized_finding(f, "bug-killer-guard", dummy_sha));
+                        normalized_findings.push(
+                            bug_killer::engine::converter::to_normalized_finding(
+                                f,
+                                "bug-killer-guard",
+                                dummy_sha,
+                            ),
+                        );
                     }
                     let v2_report = serde_json::json!({
                         "contract_version": "2.0",
@@ -1997,7 +2004,10 @@ fn main() {
                         println!("🛡️  Bug Killer Security Guard V2 Report");
                         println!("   Target: {}", report.workspace_root.display());
                         println!("   Contract: 2.0 | Profile: {:?}", report.scan_profile);
-                        println!("   Gate Decision: {}", v2_report["gate_decision"].as_str().unwrap());
+                        println!(
+                            "   Gate Decision: {}",
+                            v2_report["gate_decision"].as_str().unwrap()
+                        );
                         println!("   Findings: {}", report.findings.len());
                         if report.is_clean() {
                             println!("✅ Workspace is verified clean within evaluated coverage.");
@@ -2037,12 +2047,19 @@ fn main() {
                 if exit_contract.as_deref() == Some("v2") {
                     if has_threshold_findings {
                         if !json {
-                            eprintln!("❌ [Exit Contract v2] Security findings meet configured threshold (code 10).");
+                            eprintln!(
+                                "❌ [Exit Contract v2] Security findings meet configured threshold (code 10)."
+                            );
                         }
                         std::process::exit(10);
-                    } else if !report.coverage.is_complete() || report.files_assessed == 0 || report.status != types::ScanStatus::Completed {
+                    } else if !report.coverage.is_complete()
+                        || report.files_assessed == 0
+                        || report.status != types::ScanStatus::Completed
+                    {
                         if !json {
-                            eprintln!("⚠️ [Exit Contract v2] Scan coverage is incomplete or unassessed (code 11).");
+                            eprintln!(
+                                "⚠️ [Exit Contract v2] Scan coverage is incomplete or unassessed (code 11)."
+                            );
                         }
                         std::process::exit(11);
                     } else {
@@ -2294,7 +2311,11 @@ fn main() {
                 }
             }
 
-            SecurityAction::Coverage { path, per_rule, json } => {
+            SecurityAction::Coverage {
+                path,
+                per_rule,
+                json,
+            } => {
                 let report = SecurityGuard::scan(&path, ScanProfile::Quick, false, false);
                 let coverage_info = serde_json::json!({
                     "workspace": path.display().to_string(),
@@ -2320,12 +2341,18 @@ fn main() {
                     println!("Applicable Rules:    {}", report.applicable_rules.len());
                     println!("Unsupported Rules:   {}", report.unsupported_rules.len());
                     if per_rule {
-                        println!("\nPer-Rule Coverage Status ({} rules):", report.rule_coverage.len());
+                        println!(
+                            "\nPer-Rule Coverage Status ({} rules):",
+                            report.rule_coverage.len()
+                        );
                         for (rule_id, status) in report.rule_coverage.iter().take(25) {
                             println!("  • {:<20} -> {:?}", rule_id, status);
                         }
                         if report.rule_coverage.len() > 25 {
-                            println!("  ... and {} more rules (use --json to see all)", report.rule_coverage.len() - 25);
+                            println!(
+                                "  ... and {} more rules (use --json to see all)",
+                                report.rule_coverage.len() - 25
+                            );
                         }
                     }
                 }
@@ -2364,15 +2391,30 @@ fn main() {
                 println!("\nDeep Cybersecurity Skills Knowledge Engine:");
                 println!("  • Total Skills Indexed:     {}", metrics.total_skills);
                 println!("  • Technical Subdomains:     {}", metrics.subdomains_count);
-                println!("  • MITRE ATT&CK Techniques:  {}", metrics.mitre_techniques_count);
-                println!("  • NIST CSF Controls:        {}", metrics.nist_controls_count);
+                println!(
+                    "  • MITRE ATT&CK Techniques:  {}",
+                    metrics.mitre_techniques_count
+                );
+                println!(
+                    "  • NIST CSF Controls:        {}",
+                    metrics.nist_controls_count
+                );
                 println!(
                     "  • Defensive Classification: Detection ({}), Hardening ({}), Virtual Patching ({}), Forensics ({}), Audit ({})",
                     metrics.defensive_classes.get("DETECTION").unwrap_or(&0),
                     metrics.defensive_classes.get("HARDENING").unwrap_or(&0),
-                    metrics.defensive_classes.get("VIRTUAL_PATCHING").unwrap_or(&0),
-                    metrics.defensive_classes.get("FORENSICS_TRIAGE").unwrap_or(&0),
-                    metrics.defensive_classes.get("AUDIT_COMPLIANCE").unwrap_or(&0),
+                    metrics
+                        .defensive_classes
+                        .get("VIRTUAL_PATCHING")
+                        .unwrap_or(&0),
+                    metrics
+                        .defensive_classes
+                        .get("FORENSICS_TRIAGE")
+                        .unwrap_or(&0),
+                    metrics
+                        .defensive_classes
+                        .get("AUDIT_COMPLIANCE")
+                        .unwrap_or(&0),
                 );
             }
 
@@ -2397,11 +2439,7 @@ fn main() {
                 }
             }
 
-            EngineCommands::Explain {
-                goal,
-                target,
-                json,
-            } => {
+            EngineCommands::Explain { goal, target, json } => {
                 let mut broker = deep::ToolCapabilityBroker::discover_default_tools();
                 let tools = broker.discover_all();
                 let matches: Vec<_> = tools
@@ -2409,17 +2447,25 @@ fn main() {
                     .filter(|t| match goal.to_lowercase().as_str() {
                         "known" => {
                             t.capabilities.kinds.contains(&deep::CapabilityKind::Sca)
-                                || t.capabilities.kinds.contains(&deep::CapabilityKind::Advisory)
+                                || t.capabilities
+                                    .kinds
+                                    .contains(&deep::CapabilityKind::Advisory)
                         }
                         "prevention" => {
                             t.capabilities.kinds.contains(&deep::CapabilityKind::Sast)
-                                || t.capabilities.kinds.contains(&deep::CapabilityKind::Secrets)
+                                || t.capabilities
+                                    .kinds
+                                    .contains(&deep::CapabilityKind::Secrets)
                                 || t.capabilities.kinds.contains(&deep::CapabilityKind::Iac)
                         }
                         "research" => {
                             t.capabilities.kinds.contains(&deep::CapabilityKind::Fuzz)
-                                || t.capabilities.kinds.contains(&deep::CapabilityKind::Symbolic)
-                                || t.capabilities.kinds.contains(&deep::CapabilityKind::Runtime)
+                                || t.capabilities
+                                    .kinds
+                                    .contains(&deep::CapabilityKind::Symbolic)
+                                || t.capabilities
+                                    .kinds
+                                    .contains(&deep::CapabilityKind::Runtime)
                         }
                         _ => true,
                     })
@@ -2776,7 +2822,11 @@ fn main() {
                     println!("Workspace:        {}", path.display());
                     println!("Total Hypotheses: {}", hypotheses.len());
                     for h in &hypotheses {
-                        println!("  • {:<24} (CWE: {})", h["family"].as_str().unwrap_or(""), h["cwe"].as_str().unwrap_or(""));
+                        println!(
+                            "  • {:<24} (CWE: {})",
+                            h["family"].as_str().unwrap_or(""),
+                            h["cwe"].as_str().unwrap_or("")
+                        );
                     }
                 }
             }
@@ -2800,11 +2850,7 @@ fn main() {
                 }
             }
 
-            HunterCommands::Candidate {
-                id,
-                evidence,
-                json,
-            } => {
+            HunterCommands::Candidate { id, evidence, json } => {
                 let cand_id = id.unwrap_or_else(|| "cand-cwe787-001".to_string());
                 let candidate = hunter::ResearchCandidate::new(
                     &cand_id,
@@ -2820,15 +2866,14 @@ fn main() {
                 if json {
                     println!("{}", serde_json::to_string_pretty(&out).unwrap());
                 } else {
-                    println!("Research Candidate [{}]: {:?}", candidate.candidate_id, candidate.state);
+                    println!(
+                        "Research Candidate [{}]: {:?}",
+                        candidate.candidate_id, candidate.state
+                    );
                 }
             }
 
-            HunterCommands::Verify {
-                id,
-                offline,
-                json,
-            } => {
+            HunterCommands::Verify { id, offline, json } => {
                 let out = serde_json::json!({
                     "candidate_id": id,
                     "verified": true,
@@ -2853,11 +2898,18 @@ fn main() {
                 json,
             } => {
                 let report = FleetScanner::scan_directory(&path, false);
-                let matching = report.findings.iter().find(|f| f.id == finding_id || f.cve.as_str() == finding_id);
+                let matching = report
+                    .findings
+                    .iter()
+                    .find(|f| f.id == finding_id || f.cve.as_str() == finding_id);
                 use sha2::{Digest, Sha256};
                 let dummy_sha = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
                 let packet_res = if let Some(f) = matching {
-                    let f_v1 = engine::converter::to_normalized_finding(f, "run-cli-disclosure", dummy_sha);
+                    let f_v1 = engine::converter::to_normalized_finding(
+                        f,
+                        "run-cli-disclosure",
+                        dummy_sha,
+                    );
                     disclosure::DisclosureDraftBuilder::from_finding(&f_v1)
                         .contact_channel(disclosure::draft::ContactChannel {
                             channel_type: "email".to_string(),
@@ -2868,7 +2920,8 @@ fn main() {
                             test_type: "offline_regression_test".to_string(),
                             harness_code: format!("// Defensive test for {}", f.cve.as_str()),
                             sanitized_input: "defensive_verification_payload".to_string(),
-                            expected_behavior: "Safe handling under defensive security policy".to_string(),
+                            expected_behavior: "Safe handling under defensive security policy"
+                                .to_string(),
                             observed_behavior: f.description.clone(),
                         })
                         .build()
@@ -2906,7 +2959,11 @@ fn main() {
                         let markdown = packet.to_github_pvr_markdown();
                         if let Some(ref out_path) = output {
                             if let Err(e) = std::fs::write(out_path, &markdown) {
-                                eprintln!("❌ Failed to write disclosure draft to {}: {}", out_path.display(), e);
+                                eprintln!(
+                                    "❌ Failed to write disclosure draft to {}: {}",
+                                    out_path.display(),
+                                    e
+                                );
                                 std::process::exit(1);
                             }
                             println!("✅ Disclosure draft written to: {}", out_path.display());
@@ -2931,7 +2988,8 @@ fn main() {
                 sources,
                 json,
             } => {
-                let cache_dir = offline_cache.unwrap_or_else(|| PathBuf::from(".bug-killer/advisory-cache"));
+                let cache_dir =
+                    offline_cache.unwrap_or_else(|| PathBuf::from(".bug-killer/advisory-cache"));
                 let out = serde_json::json!({
                     "status": "SYNCED",
                     "cache_directory": cache_dir.display().to_string(),
@@ -2942,7 +3000,10 @@ fn main() {
                 if json {
                     println!("{}", serde_json::to_string_pretty(&out).unwrap());
                 } else {
-                    println!("Advisory feeds synced successfully (cache: {}).", cache_dir.display());
+                    println!(
+                        "Advisory feeds synced successfully (cache: {}).",
+                        cache_dir.display()
+                    );
                 }
             }
 
@@ -2957,7 +3018,11 @@ fn main() {
                 if json {
                     println!("{}", serde_json::to_string_pretty(&out).unwrap());
                 } else {
-                    println!("Advisory cache is FRESH for workspace: {} ({} packages indexed)", path.display(), packages.len());
+                    println!(
+                        "Advisory cache is FRESH for workspace: {} ({} packages indexed)",
+                        path.display(),
+                        packages.len()
+                    );
                 }
             }
         },
@@ -2996,7 +3061,10 @@ fn main() {
                     println!("  • {:<20} {} ({})", p.name, p.version, p.ecosystem);
                 }
                 if packages.len() > 20 {
-                    println!("  ... and {} more packages (use --json to view all)", packages.len() - 20);
+                    println!(
+                        "  ... and {} more packages (use --json to view all)",
+                        packages.len() - 20
+                    );
                 }
             }
         }
@@ -3023,19 +3091,30 @@ fn handle_hunt_command(path: PathBuf, max_hypotheses: usize, json: bool) {
                 println!("=======================================================");
                 println!("Target Workspace:      {}", report.target_path);
                 println!("Execution Duration:    {} ms", report.scan_duration_ms);
-                println!("Attack Surfaces:       {}", report.attack_surface_entries_discovered);
+                println!(
+                    "Attack Surfaces:       {}",
+                    report.attack_surface_entries_discovered
+                );
                 println!("Hypotheses Generated:  {}", report.hypotheses_synthesized);
                 println!("Triaged Out / Known:   {}", report.hypotheses_triaged_out);
                 println!("Reproduced Invariants: {}", report.candidates_reproduced);
                 println!("Verified Discoveries:  {}", report.candidates_verified);
-                println!("Signed Receipts:       {} (Ed25519)", report.research_receipts.len());
+                println!(
+                    "Signed Receipts:       {} (Ed25519)",
+                    report.research_receipts.len()
+                );
                 println!("Private PVR Drafts:    {}", report.pvr_drafts.len());
                 println!("-------------------------------------------------------");
                 if report.verified_findings.is_empty() {
                     println!("No novel reproducible invariant violations discovered.");
                 } else {
                     for f in &report.verified_findings {
-                        println!("  [CONFIRMED] {} ({}) - {}", f.id, f.cve.as_str(), f.description);
+                        println!(
+                            "  [CONFIRMED] {} ({}) - {}",
+                            f.id,
+                            f.cve.as_str(),
+                            f.description
+                        );
                         if let Some(target) = &f.file_path {
                             println!("    Target:     {}", target.display());
                         }

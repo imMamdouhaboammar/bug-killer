@@ -37,6 +37,7 @@ pub use skills::{
 };
 pub use threatswarm::{
     AttackComplexity, AttackVector, CvssVector, FindingSyncSummary, ImpactMetric, MitreTechnique,
-    PrivilegesRequired, Scope, ScopeEntry, ScopeViolation, ThreatswarmAdapter, ThreatswarmCvssEngine,
-    ThreatswarmFindingSync, ThreatswarmMitreCatalog, ThreatswarmScopeEnforcer,
+    PrivilegesRequired, Scope, ScopeEntry, ScopeViolation, ThreatswarmAdapter,
+    ThreatswarmCvssEngine, ThreatswarmFindingSync, ThreatswarmMitreCatalog,
+    ThreatswarmScopeEnforcer,
 };

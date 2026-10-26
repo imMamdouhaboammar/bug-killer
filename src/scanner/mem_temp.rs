@@ -266,117 +266,53 @@ impl MemTempScanner {
             // ----------------------------------------------------------------
             if !matches!(target_kind, TargetKind::NodeSourceFile) {
                 if let Some(caps) = RE_MEM_002_FREE_CALL.captures(trimmed) {
-                let freed_var = caps
-                    .get(1)
-                    .or_else(|| caps.get(2))
-                    .or_else(|| caps.get(3))
-                    .or_else(|| caps.get(4))
-                    .map(|m| m.as_str());
+                    let freed_var = caps
+                        .get(1)
+                        .or_else(|| caps.get(2))
+                        .or_else(|| caps.get(3))
+                        .or_else(|| caps.get(4))
+                        .map(|m| m.as_str());
 
-                if let Some(var) = freed_var {
-                    let re_escaped = regex::escape(var);
-                    let re_null_reassign = Regex::new(&format!(
+                    if let Some(var) = freed_var {
+                        let re_escaped = regex::escape(var);
+                        let re_null_reassign = Regex::new(&format!(
                         r#"(?i)(?:^|[^\w\*]){}\s*=\s*(?:NULL|nullptr|0|None|malloc|calloc|realloc|new\b)"#,
                         re_escaped
                     ))
                     .ok();
-                    let re_double_free = Regex::new(&format!(
-                        r#"\b(?:free|delete|g_free|kfree)\s*(?:\(\s*)?(?:\[\]\s*)?{}\b"#,
-                        re_escaped
-                    ))
-                    .ok();
-                    let re_uaf = Regex::new(&format!(
+                        let re_double_free = Regex::new(&format!(
+                            r#"\b(?:free|delete|g_free|kfree)\s*(?:\(\s*)?(?:\[\]\s*)?{}\b"#,
+                            re_escaped
+                        ))
+                        .ok();
+                        let re_uaf = Regex::new(&format!(
                         r#"(?:\*\s*{var}\b|\b{var}\s*->|\b{var}\s*\[|\b(?:printf|use|process|read|write)\s*\([^)]*\b{var}\b)"#,
                         var = re_escaped
                     ))
                     .ok();
 
-                    // Check lookahead lines
-                    let lookahead_limit = (idx + 15).min(total_lines);
-                    let mut defect_found = false;
+                        // Check lookahead lines
+                        let lookahead_limit = (idx + 15).min(total_lines);
+                        let mut defect_found = false;
 
-                    for (sub_idx, sub_line) in
-                        lines.iter().enumerate().take(lookahead_limit).skip(idx + 1)
-                    {
-                        let sub_trimmed = sub_line.trim();
-                        if sub_trimmed.is_empty() {
-                            continue;
-                        }
-
-                        // If variable was nullified or reallocated, safe!
-                        if let Some(ref re_null) = re_null_reassign {
-                            if re_null.is_match(sub_trimmed) {
-                                break;
+                        for (sub_idx, sub_line) in
+                            lines.iter().enumerate().take(lookahead_limit).skip(idx + 1)
+                        {
+                            let sub_trimmed = sub_line.trim();
+                            if sub_trimmed.is_empty() {
+                                continue;
                             }
-                        }
 
-                        // Check double free
-                        if let Some(ref re_df) = re_double_free {
-                            if re_df.is_match(sub_trimmed)
-                                && !RE_MEM_002_GUARD.is_match(&context_window)
-                            {
-                                Self::push_finding(
-                                    &mut findings,
-                                    &mut seen,
-                                    "BK-AI-MEM-002",
-                                    &["CWE-416", "CWE-415"],
-                                    "Use-after-free, double-free or invalid lifetime across callbacks",
-                                    Severity::Critical,
-                                    "2.18 Native code, FFI and memory safety",
-                                    path,
-                                    &target_kind,
-                                    sub_idx + 1,
-                                    sub_trimmed,
-                                    "Ensure pointers are nullified post-deallocation, avoid duplicate frees, and enforce valid lifetimes across execution callbacks",
-                                    "Double-free detected: pointer is freed multiple times without intermediate reallocation.",
-                                    "Nullify pointer immediately upon deallocation (ptr = NULL) or manage memory through RAII smart pointers.",
-                                );
-                                defect_found = true;
-                                break;
+                            // If variable was nullified or reallocated, safe!
+                            if let Some(ref re_null) = re_null_reassign {
+                                if re_null.is_match(sub_trimmed) {
+                                    break;
+                                }
                             }
-                        }
 
-                        // Check use after free
-                        if let Some(ref re_use) = re_uaf {
-                            if re_use.is_match(sub_trimmed)
-                                && !RE_MEM_002_GUARD.is_match(&context_window)
-                            {
-                                Self::push_finding(
-                                    &mut findings,
-                                    &mut seen,
-                                    "BK-AI-MEM-002",
-                                    &["CWE-416", "CWE-415"],
-                                    "Use-after-free, double-free or invalid lifetime across callbacks",
-                                    Severity::Critical,
-                                    "2.18 Native code, FFI and memory safety",
-                                    path,
-                                    &target_kind,
-                                    sub_idx + 1,
-                                    sub_trimmed,
-                                    "Ensure pointers are nullified post-deallocation, avoid duplicate frees, and enforce valid lifetimes across execution callbacks",
-                                    "Use-after-free detected: memory is freed and subsequently accessed or dereferenced.",
-                                    "Nullify pointer immediately upon deallocation (ptr = NULL) and eliminate post-free references.",
-                                );
-                                defect_found = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    // Also check if double-free or UAF exists on the same line after the initial free
-                    if !defect_found {
-                        if let Some(match_pos) = trimmed.find(var) {
-                            let remainder = &trimmed[match_pos + var.len()..];
-                            let has_null = re_null_reassign
-                                .as_ref()
-                                .is_some_and(|re| re.is_match(remainder));
-                            if !has_null {
-                                let has_df = re_double_free
-                                    .as_ref()
-                                    .is_some_and(|re| re.is_match(remainder));
-                                let has_uaf =
-                                    re_uaf.as_ref().is_some_and(|re| re.is_match(remainder));
-                                if (has_df || has_uaf)
+                            // Check double free
+                            if let Some(ref re_df) = re_double_free {
+                                if re_df.is_match(sub_trimmed)
                                     && !RE_MEM_002_GUARD.is_match(&context_window)
                                 {
                                     Self::push_finding(
@@ -389,18 +325,82 @@ impl MemTempScanner {
                                         "2.18 Native code, FFI and memory safety",
                                         path,
                                         &target_kind,
-                                        line_no,
-                                        trimmed,
+                                        sub_idx + 1,
+                                        sub_trimmed,
                                         "Ensure pointers are nullified post-deallocation, avoid duplicate frees, and enforce valid lifetimes across execution callbacks",
-                                        "Use-after-free or double-free detected on same statement line.",
-                                        "Nullify pointer immediately upon deallocation and avoid reusing freed pointer references.",
+                                        "Double-free detected: pointer is freed multiple times without intermediate reallocation.",
+                                        "Nullify pointer immediately upon deallocation (ptr = NULL) or manage memory through RAII smart pointers.",
                                     );
+                                    defect_found = true;
+                                    break;
+                                }
+                            }
+
+                            // Check use after free
+                            if let Some(ref re_use) = re_uaf {
+                                if re_use.is_match(sub_trimmed)
+                                    && !RE_MEM_002_GUARD.is_match(&context_window)
+                                {
+                                    Self::push_finding(
+                                        &mut findings,
+                                        &mut seen,
+                                        "BK-AI-MEM-002",
+                                        &["CWE-416", "CWE-415"],
+                                        "Use-after-free, double-free or invalid lifetime across callbacks",
+                                        Severity::Critical,
+                                        "2.18 Native code, FFI and memory safety",
+                                        path,
+                                        &target_kind,
+                                        sub_idx + 1,
+                                        sub_trimmed,
+                                        "Ensure pointers are nullified post-deallocation, avoid duplicate frees, and enforce valid lifetimes across execution callbacks",
+                                        "Use-after-free detected: memory is freed and subsequently accessed or dereferenced.",
+                                        "Nullify pointer immediately upon deallocation (ptr = NULL) and eliminate post-free references.",
+                                    );
+                                    defect_found = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Also check if double-free or UAF exists on the same line after the initial free
+                        if !defect_found {
+                            if let Some(match_pos) = trimmed.find(var) {
+                                let remainder = &trimmed[match_pos + var.len()..];
+                                let has_null = re_null_reassign
+                                    .as_ref()
+                                    .is_some_and(|re| re.is_match(remainder));
+                                if !has_null {
+                                    let has_df = re_double_free
+                                        .as_ref()
+                                        .is_some_and(|re| re.is_match(remainder));
+                                    let has_uaf =
+                                        re_uaf.as_ref().is_some_and(|re| re.is_match(remainder));
+                                    if (has_df || has_uaf)
+                                        && !RE_MEM_002_GUARD.is_match(&context_window)
+                                    {
+                                        Self::push_finding(
+                                            &mut findings,
+                                            &mut seen,
+                                            "BK-AI-MEM-002",
+                                            &["CWE-416", "CWE-415"],
+                                            "Use-after-free, double-free or invalid lifetime across callbacks",
+                                            Severity::Critical,
+                                            "2.18 Native code, FFI and memory safety",
+                                            path,
+                                            &target_kind,
+                                            line_no,
+                                            trimmed,
+                                            "Ensure pointers are nullified post-deallocation, avoid duplicate frees, and enforce valid lifetimes across execution callbacks",
+                                            "Use-after-free or double-free detected on same statement line.",
+                                            "Nullify pointer immediately upon deallocation and avoid reusing freed pointer references.",
+                                        );
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
             }
 
             // ----------------------------------------------------------------

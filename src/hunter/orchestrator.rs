@@ -8,8 +8,7 @@ use crate::disclosure::draft::{DisclosureDraftBuilder, DisclosurePacket};
 use crate::hunter::candidate::ReproductionArtifact;
 use crate::hunter::fuzzer::{DifferentialFuzzer, FuzzOutcome, InvariantKind};
 use crate::hunter::hypothesis::{
-    CandidateDismissReason, ExperimentKind, HypothesisCandidate,
-    ThreatHypothesisFamily,
+    CandidateDismissReason, ExperimentKind, HypothesisCandidate, ThreatHypothesisFamily,
 };
 use crate::hunter::novelty::NoveltyChecker;
 use crate::hunter::sandbox::{SandboxConfig, SandboxRunner, SandboxStatus};
@@ -119,7 +118,11 @@ impl AttackSurfaceScanner {
                 let mut block_lines = Vec::new();
                 for l in &lines[idx..] {
                     block_lines.push(*l);
-                    if block_lines.len() > 1 && (l.trim().starts_with("});") || l.contains("app.") || l.contains("router.")) {
+                    if block_lines.len() > 1
+                        && (l.trim().starts_with("});")
+                            || l.contains("app.")
+                            || l.contains("router."))
+                    {
                         break;
                     }
                 }
@@ -175,8 +178,8 @@ impl AttackSurfaceScanner {
                 let block_end = std::cmp::min(idx + 12, lines.len());
                 let block_text = lines[idx..block_end].join("\n").to_lowercase();
 
-                let has_auth =
-                    block_text.contains("depends(get_current_user") || block_text.contains("security(");
+                let has_auth = block_text.contains("depends(get_current_user")
+                    || block_text.contains("security(");
                 let has_input = block_text.contains("body") || block_text.contains("payload");
 
                 let lower_trimmed = trimmed.to_lowercase();
@@ -191,7 +194,8 @@ impl AttackSurfaceScanner {
                     },
                     has_auth_guard: has_auth,
                     has_untrusted_input: has_input,
-                    uses_dynamic_parser: block_text.contains("json.loads") || block_text.contains("yaml.load"),
+                    uses_dynamic_parser: block_text.contains("json.loads")
+                        || block_text.contains("yaml.load"),
                     code_snippet: trimmed.to_string(),
                 });
             }
@@ -235,7 +239,10 @@ impl AttackSurfaceScanner {
 
         for (idx, line) in content.lines().enumerate() {
             let trimmed = line.trim();
-            if trimmed.contains(".GET(") || trimmed.contains(".POST(") || trimmed.contains("HandleFunc(") {
+            if trimmed.contains(".GET(")
+                || trimmed.contains(".POST(")
+                || trimmed.contains("HandleFunc(")
+            {
                 let lower = trimmed.to_lowercase();
                 entries.push(AttackSurfaceEntry {
                     file_path: path.to_string_lossy().to_string(),
@@ -322,14 +329,19 @@ impl AutonomousHunter {
     }
 
     /// Synthesizes structured, falsifiable research hypotheses from discovered attack surface entries.
-    pub fn synthesize_hypotheses(&self, entries: &[AttackSurfaceEntry]) -> Vec<HypothesisCandidate> {
+    pub fn synthesize_hypotheses(
+        &self,
+        entries: &[AttackSurfaceEntry],
+    ) -> Vec<HypothesisCandidate> {
         let mut hypotheses = Vec::new();
 
         for (idx, entry) in entries.iter().enumerate() {
             let candidate_id = format!("cand-hunt-{:03}", idx + 1);
 
             // 1. Missing Authorization on mutating or entry routes
-            if !entry.has_auth_guard && (entry.method == "POST" || entry.method == "DELETE" || entry.method == "PUT") {
+            if !entry.has_auth_guard
+                && (entry.method == "POST" || entry.method == "DELETE" || entry.method == "PUT")
+            {
                 hypotheses.push(HypothesisCandidate::new(
                     &candidate_id,
                     ThreatHypothesisFamily::AuthAuthz,
@@ -363,7 +375,10 @@ impl AutonomousHunter {
                 hypotheses.push(HypothesisCandidate::new(
                     &candidate_id,
                     ThreatHypothesisFamily::TrustBoundary,
-                    format!("Untrusted input reaches sensitive sink in {}", entry.route_or_entry),
+                    format!(
+                        "Untrusted input reaches sensitive sink in {}",
+                        entry.route_or_entry
+                    ),
                     "parameter-flow",
                     "trust-boundary",
                     "unvalidated-parameter",
@@ -380,7 +395,11 @@ impl AutonomousHunter {
     }
 
     /// Executes the full autonomous research pipeline on a target workspace directory.
-    pub fn hunt(&self, target_path: &Path, max_hypotheses: usize) -> Result<AutonomousHuntReport, String> {
+    pub fn hunt(
+        &self,
+        target_path: &Path,
+        max_hypotheses: usize,
+    ) -> Result<AutonomousHuntReport, String> {
         let start_time = std::time::Instant::now();
         let target_str = target_path.to_string_lossy().to_string();
 
@@ -421,7 +440,8 @@ impl AutonomousHunter {
                 let _ = candidate.mark_reproduced(&artifact.artifact_id);
 
                 // C: Independent 3-Pass Verification Gate
-                let verification_confirmed = self.verify_candidate_three_pass(&runner, candidate, &artifact);
+                let verification_confirmed =
+                    self.verify_candidate_three_pass(&runner, candidate, &artifact);
                 if verification_confirmed {
                     let receipt_id = format!("receipt-hunter-{}", &artifact.artifact_sha256[..16]);
                     let _ = candidate.mark_verified(&receipt_id);
@@ -452,7 +472,9 @@ impl AutonomousHunter {
 
                     // Synthesize private responsible disclosure packet (PVR Draft)
                     let run_id = format!("run-hunter-{}", &artifact.artifact_sha256[..8]);
-                    if let Ok(finding_v1) = candidate.synthesize_finding_v1(&run_id, &artifact.artifact_sha256) {
+                    if let Ok(finding_v1) =
+                        candidate.synthesize_finding_v1(&run_id, &artifact.artifact_sha256)
+                    {
                         let draft_res = DisclosureDraftBuilder::from_finding(&finding_v1)
                             .draft_id(format!("pvr-{}", candidate.candidate_id))
                             .build();
@@ -461,7 +483,8 @@ impl AutonomousHunter {
                         }
                     }
                 } else {
-                    let _ = candidate.mark_inconclusive("Failed 3-pass independent reproduction verification");
+                    let _ = candidate
+                        .mark_inconclusive("Failed 3-pass independent reproduction verification");
                 }
             } else {
                 let _ = candidate.dismiss(CandidateDismissReason::NotReproducible);
@@ -513,14 +536,20 @@ impl AutonomousHunter {
                     // Test simulated invariant boundaries:
                     if invariant == InvariantKind::AuthPreconditionHold {
                         if !input.is_empty() && !input.windows(4).any(|w| w == b"auth") {
-                            return Err("Privileged state mutation executed without authentication context".to_string());
+                            return Err(
+                                "Privileged state mutation executed without authentication context"
+                                    .to_string(),
+                            );
                         }
                         return Ok(());
                     }
 
                     if invariant == InvariantKind::NoPanic {
                         if input.starts_with(b"CRASH") || input.contains(&0xff) {
-                            return Err("Parser memory corruption or panic on malformed byte pattern".to_string());
+                            return Err(
+                                "Parser memory corruption or panic on malformed byte pattern"
+                                    .to_string(),
+                            );
                         }
                         return Ok(());
                     }
