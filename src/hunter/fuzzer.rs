@@ -465,19 +465,19 @@ impl DifferentialFuzzer {
         } else {
             let mut hasher = Sha256::new();
             hasher.update(snapshot_sha256.as_bytes());
-            format!("{:x}", hasher.finalize())
+            crate::to_hex(hasher.finalize())
         };
 
         // Artifact SHA-256 for minimized reproduction trigger
         let mut payload_hasher = Sha256::new();
         payload_hasher.update(minimized_input);
-        let artifact_sha256 = format!("{:x}", payload_hasher.finalize());
+        let artifact_sha256 = crate::to_hex(payload_hasher.finalize());
 
         // Artifact SHA-256 for execution trace
         let trace_joined = trace.join("\n");
         let mut trace_hasher = Sha256::new();
         trace_hasher.update(trace_joined.as_bytes());
-        let trace_sha256 = format!("{:x}", trace_hasher.finalize());
+        let trace_sha256 = crate::to_hex(trace_hasher.finalize());
 
         // Map ThreatHypothesisFamily to standard CWE weakness ID
         let weakness_id = match candidate.family {

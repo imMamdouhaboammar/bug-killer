@@ -65,7 +65,7 @@ impl RollbackManager {
 
             let backup_content = fs::read(&backup_file)
                 .map_err(|e| format!("Failed to read backup payload {:?}: {}", backup_file, e))?;
-            let backup_sha256 = format!("{:x}", Sha256::digest(&backup_content));
+            let backup_sha256 = crate::to_hex(Sha256::digest(&backup_content));
 
             if backup_sha256 != record.original_sha256 {
                 return Err(format!(
@@ -134,7 +134,7 @@ impl RollbackManager {
                         target_file, e
                     )
                 })?;
-                let current_sha256 = format!("{:x}", Sha256::digest(&current_content));
+                let current_sha256 = crate::to_hex(Sha256::digest(&current_content));
 
                 // If it already matches original_sha256, no drift conflict
                 if current_sha256 != record.original_sha256 {

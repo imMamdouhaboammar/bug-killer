@@ -112,7 +112,7 @@ impl RuleEngine {
         normalized.provenance = RuleProvenance::UntrustedWorkspace;
         normalized.trusted = false;
         let bytes = serde_json::to_vec(&normalized).expect("rule serialization is infallible");
-        format!("{:x}", Sha256::digest(&bytes))
+        crate::to_hex(Sha256::digest(&bytes))
     }
 
     fn load_pinned_trusted_rules(root: &Path) -> HashMap<String, String> {
@@ -508,7 +508,7 @@ impl RuleEngine {
         let original_checksum = {
             let mut hasher = Sha256::new();
             hasher.update(content.as_bytes());
-            format!("{:x}", hasher.finalize())
+            crate::to_hex(hasher.finalize())
         };
 
         match remediation {

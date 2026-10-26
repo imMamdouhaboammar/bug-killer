@@ -750,7 +750,7 @@ impl DisclosureDraftBuilder {
             let mut hasher = Sha256::new();
             hasher.update(finding_id.as_bytes());
             hasher.update(draft_id.as_bytes());
-            format!("packet-{}", &format!("{:x}", hasher.finalize())[..16])
+            format!("packet-{}", &crate::to_hex(hasher.finalize())[..16])
         });
 
         let lifecycle_state = self

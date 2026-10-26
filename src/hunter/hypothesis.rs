@@ -495,7 +495,7 @@ impl HypothesisCandidate {
                 use sha2::{Digest, Sha256};
                 let mut hasher = Sha256::new();
                 hasher.update(receipt_id.as_bytes());
-                format!("{:x}", hasher.finalize())
+                crate::to_hex(hasher.finalize())
             };
 
         let evidence_item = EvidenceItemV1 {

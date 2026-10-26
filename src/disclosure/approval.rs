@@ -32,7 +32,7 @@ impl DisclosureApprovalManager {
     pub fn compute_draft_checksum(draft_json: &str) -> String {
         let mut hasher = Sha256::new();
         hasher.update(draft_json.as_bytes());
-        format!("{:x}", hasher.finalize())
+        crate::to_hex(hasher.finalize())
     }
 
     /// Resolves canonical path string for workspace root binding.

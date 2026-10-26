@@ -24,7 +24,7 @@ impl ReproductionArtifact {
     pub fn new(raw_payload: Vec<u8>, minimized_trigger: Vec<u8>, error_message: &str) -> Self {
         let mut hasher = Sha256::new();
         hasher.update(&minimized_trigger);
-        let artifact_sha256 = format!("{:x}", hasher.finalize());
+        let artifact_sha256 = crate::to_hex(hasher.finalize());
         let artifact_id = format!("artifact-{}", &artifact_sha256[..16]);
 
         Self {

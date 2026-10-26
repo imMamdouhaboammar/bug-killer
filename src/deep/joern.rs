@@ -230,7 +230,7 @@ impl JoernAdapter {
     fn compute_sha256(bytes: &[u8]) -> String {
         let mut hasher = Sha256::new();
         hasher.update(bytes);
-        format!("{:x}", hasher.finalize())
+        crate::to_hex(hasher.finalize())
     }
 
     /// Runs external Joern binary with sandbox isolation and deadline enforcement.

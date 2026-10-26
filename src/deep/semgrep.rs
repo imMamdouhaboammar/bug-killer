@@ -227,7 +227,7 @@ impl SemgrepAdapter {
                             h.update(rule_id.as_bytes());
                             h.update(file_path.as_bytes());
                             h.update(start_line.to_be_bytes());
-                            format!("{:x}", h.finalize())
+                            crate::to_hex(h.finalize())
                         };
 
                         let title = if message.len() > 200 {
@@ -453,7 +453,7 @@ impl SemgrepAdapter {
                     h.update(check_id.as_bytes());
                     h.update(path.as_bytes());
                     h.update(start_line.to_be_bytes());
-                    format!("{:x}", h.finalize())
+                    crate::to_hex(h.finalize())
                 };
 
                 let title = if message.len() > 200 {

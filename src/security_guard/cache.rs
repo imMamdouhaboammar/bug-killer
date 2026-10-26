@@ -42,7 +42,7 @@ impl CacheEngine {
     pub fn compute_sha256(content: &str) -> String {
         let mut hasher = Sha256::new();
         hasher.update(content.as_bytes());
-        format!("{:x}", hasher.finalize())
+        crate::to_hex(hasher.finalize())
     }
 
     /// Loads cache from `.bugkiller/cache.json`, returning empty cache if missing or invalid.

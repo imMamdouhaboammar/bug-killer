@@ -110,7 +110,7 @@ impl InvestigationSupervisor {
     pub fn run_investigation(&mut self, target: &Path) -> Result<InvestigationReport, String> {
         let inv_id = format!(
             "inv-{}",
-            &format!("{:x}", Sha256::digest(target.to_string_lossy().as_bytes()))[..10]
+            &crate::to_hex(Sha256::digest(target.to_string_lossy().as_bytes()))[..10]
         );
         let mut steps = Vec::new();
         let mut vetoes = Vec::new();
@@ -258,7 +258,7 @@ impl InvestigationSupervisor {
         for p in &plans {
             hasher.update(p.as_bytes());
         }
-        let audit_digest = format!("{:x}", hasher.finalize());
+        let audit_digest = crate::to_hex(hasher.finalize());
 
         Ok(InvestigationReport {
             investigation_id: inv_id,

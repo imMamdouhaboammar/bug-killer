@@ -24,7 +24,7 @@ fn hash_directory_files(root: &Path) -> HashMap<String, String> {
             let content = fs::read(entry.path()).unwrap();
             let mut hasher = Sha256::new();
             hasher.update(&content);
-            file_hashes.insert(rel_path, format!("{:x}", hasher.finalize()));
+            file_hashes.insert(rel_path, bug_killer::to_hex(hasher.finalize()));
         }
     }
     file_hashes

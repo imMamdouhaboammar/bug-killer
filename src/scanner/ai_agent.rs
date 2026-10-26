@@ -160,7 +160,7 @@ impl AgentSecurityScanner {
             Err(_) => return findings,
         };
 
-        let file_digest = format!("{:x}", Sha256::digest(path.to_string_lossy().as_bytes()));
+        let file_digest = crate::to_hex(Sha256::digest(path.to_string_lossy().as_bytes()));
 
         for (idx, line) in content.lines().enumerate() {
             let line_num = idx + 1;
@@ -251,7 +251,7 @@ impl AgentSecurityScanner {
     #[allow(dead_code)]
     pub fn scan_model_output_execution(path: &Path, content: &str) -> Vec<Finding> {
         let mut findings = Vec::new();
-        let file_digest = format!("{:x}", Sha256::digest(path.to_string_lossy().as_bytes()));
+        let file_digest = crate::to_hex(Sha256::digest(path.to_string_lossy().as_bytes()));
         let mut tainted_vars = HashSet::new();
 
         for (idx, line) in content.lines().enumerate() {
@@ -360,7 +360,7 @@ impl AgentSecurityScanner {
             Err(_) => return findings,
         };
 
-        let file_digest = format!("{:x}", Sha256::digest(path.to_string_lossy().as_bytes()));
+        let file_digest = crate::to_hex(Sha256::digest(path.to_string_lossy().as_bytes()));
 
         let agent_objs: Vec<&serde_json::Map<String, Value>> =
             if let Some(agents_arr) = val.get("agents").and_then(|a| a.as_array()) {

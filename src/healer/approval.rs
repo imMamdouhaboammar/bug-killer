@@ -40,7 +40,7 @@ impl ApprovalManager {
             hasher.update(action.original_checksum.as_bytes());
             hasher.update(action.replacement_content.as_bytes());
         }
-        format!("{:x}", hasher.finalize())
+        crate::to_hex(hasher.finalize())
     }
 
     /// Computes canonical workspace root path string.
@@ -111,7 +111,7 @@ impl ApprovalManager {
     }
 
     fn nonce_marker_path(root: &Path, nonce: &str) -> PathBuf {
-        let digest = format!("{:x}", Sha256::digest(nonce.as_bytes()));
+        let digest = crate::to_hex(Sha256::digest(nonce.as_bytes()));
         root.join(".bug-killer")
             .join("approvals")
             .join("used_nonces")
