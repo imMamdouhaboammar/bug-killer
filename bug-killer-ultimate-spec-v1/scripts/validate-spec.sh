@@ -22,7 +22,7 @@ for filename in "$spec_root"/*.md; do
   }
 done
 
-for name in finding coverage-receipt repair-plan analysis-request analysis-response tool-capability tool-execution-receipt; do
+for name in finding coverage-receipt repair-plan analysis-request analysis-response tool-capability tool-execution-receipt disclosure-packet; do
   test -s "$spec_root/schemas/$name.schema.json"
 done
 
@@ -37,7 +37,7 @@ jq -e '.status == "NOT_RUN" and .reason_code == "ENGINE_MISSING" and (.artifacts
 
 # Deliberately narrow offline checks: required top-level fields and unexpected
 # top-level properties in the two new examples; not a full JSON Schema validator.
-for record in tool-capability tool-execution-receipt; do
+for record in tool-capability tool-execution-receipt disclosure-packet; do
   jq -e --slurpfile contract "$spec_root/schemas/$record.schema.json" \
     '([ $contract[0].required[] ] - keys | length) == 0 and ((keys - ($contract[0].properties | keys)) | length) == 0' \
     "$spec_root/examples/$record.json" >/dev/null
