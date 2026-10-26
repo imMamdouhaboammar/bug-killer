@@ -1346,8 +1346,14 @@ impl ToolCapabilityBroker {
     }
 
     fn build_cve_mcp_capability(&self, binary_path: Option<&Path>, now: &str) -> ToolCapability {
-        let adapter = crate::deep::cve_mcp::CveMcpAdapter::new();
-        let installed = adapter.is_installed() || binary_path.is_some();
+        let server_dir = crate::deep::cve_mcp::CveMcpAdapter::discover_server_dir();
+        let installed = server_dir
+            .as_ref()
+            .map(|p| p.join("src/cve_mcp/server.py").is_file())
+            .unwrap_or(false)
+            || binary_path.is_some()
+            || self.find_binary("python3").is_some()
+            || self.find_binary("uv").is_some();
         let installation = if installed {
             Installation::Available
         } else {

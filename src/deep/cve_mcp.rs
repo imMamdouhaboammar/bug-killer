@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::deep::broker::{Installation, InstallationState, ToolCapabilityBroker};
+use crate::deep::broker::{Installation, InstallationState};
 use crate::engine::adapter::{AdapterCapabilities, AnalyzerAdapter};
 use crate::engine::protocol::{
     AnalysisRequest, AnalysisResponse, CoverageReceiptStatus, CoverageReceiptV1, DiagnosticV1,
@@ -109,7 +109,7 @@ impl CveMcpAdapter {
         self
     }
 
-    fn discover_server_dir() -> Option<PathBuf> {
+    pub fn discover_server_dir() -> Option<PathBuf> {
         let candidates = [
             PathBuf::from("services/cve-mcp-server"),
             PathBuf::from("../services/cve-mcp-server"),
@@ -140,12 +140,15 @@ impl CveMcpAdapter {
             }
         }
 
-        let broker = ToolCapabilityBroker::new();
-        if let Some(p) = broker.find_binary("uv") {
-            return Some(p);
-        }
-        if let Some(p) = broker.find_binary("python3") {
-            return Some(p);
+        if let Some(path_os) = std::env::var_os("PATH") {
+            for dir in std::env::split_paths(&path_os) {
+                for name in &["uv", "python3", "python"] {
+                    let candidate = dir.join(name);
+                    if candidate.is_file() {
+                        return Some(candidate);
+                    }
+                }
+            }
         }
 
         None
