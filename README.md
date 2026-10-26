@@ -117,7 +117,7 @@ bk mcp config --host claude
 bk mcp serve --transport stdio .
 ```
 
-The configuration command prints host-specific examples. The MCP server communicates over standard input and output; it does not expose a network listener by default. See the [operator guide](docs/OPERATOR_GUIDE.md) for scope and permission details.
+The configuration command prints host-specific examples. The MCP server communicates over standard input and output; it does not expose a network listener by default. See the [operator guide](docs/OPERATOR_GUIDE.md) for scope and permission details, and the [sibling tools specification](docs/SIBLING_TOOLS.md) for external engine broker coordination.
 
 ## Microservices architecture
 
