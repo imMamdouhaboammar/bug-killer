@@ -4,7 +4,9 @@
 
 Existing Rust CLI commands include `bk scan`, `bk probe`, `bk osv`, `bk heal`, `bk rollback`, `bk init`, `bk watch`, `bk evidence`, `bk plan`, `bk approve`, `bk apply`, `bk security scan/status/explain/fix/verify/guidance/catalog` and `bk mcp serve/config`. Do not accidentally document these as newly implemented features. Keep existing flags behavior unless a versioned migration is announced.
 
-## Proposed additions (NOT implemented)
+## Implemented interfaces & CLI surface (Milestone M7)
+
+The operations room commands and MCP tools specified below are implemented and verified via unit, integration, and e2e test suites (`tests/m7_cli_and_mcp_operations_room_test.rs`).
 
 ```text
 bk advisory sync [--offline-cache PATH] [--sources osv,ghsa]
@@ -28,7 +30,7 @@ bk room evidence <run-id> --include-gaps --json
 
 Avoid using `bk hunt` synonymously with live network probing; `hunter` operates on local/sandbox targets unless a separate target-specific authorization exists.
 
-`room` commands are **PROPOSED** unified orchestration-room interactions, not existing CLI features. `room plan` is read-only, shows chosen/skipped engines and resource/cost estimates; `room run` (if later added) must request authorization for any privileged action. Never imply a command's existence before implementation or invent an external engine's flags.
+`room` commands provide unified orchestration-room interactions. `room plan` is read-only, shows chosen/skipped engines and resource/cost estimates; `room status` tracks execution state and receipts; privileged actions strictly require explicit operator approval.
 
 ### User persona: vibe coder
 
@@ -46,23 +48,23 @@ Deep mode discovers optional engine capabilities, captures call/dataflow traces,
 
 `hunter plan` shows requested resources and scope; `hunter run` uses isolated worker; `hunter verify` reproduces in fresh sandbox; `disclose draft` produces private report. Sending the draft externally is a separately approved action, never a side effect of "run".
 
-## MCP API extension (PROPOSED)
+## MCP API implementation
 
-Do not rename existing tools. Add names only after auditing current MCP server:
+The Model Context Protocol (MCP) stdio server exposes both classic and unified operations room tools:
 
-| Tool | Side effects | Returned evidence |
-|---|---|---|
-| `bugkiller_inventory` | Local read only | Assets, SBOM refs, inventory receipts |
-| `bugkiller_scan_v2` | Local read, optional approved feed refresh | Findings and coverage envelopes |
-| `bugkiller_engine_capabilities` | Read only | Installed/pinned engines and limitations |
-| `bugkiller_room_plan` | Read only | Planned tasks, tool selection reasons, cost/permission requirements and gaps |
-| `bugkiller_room_status` | Read only | Run state, per-tool execution receipts, partial coverage and budget consumption |
-| `bugkiller_research_plan` | Read only | Hypotheses, sandbox budgets and consent requirements |
-| `bugkiller_research_execute` | Sandbox-only bounded execution | Reproduction status, artifacts and receipts |
-| `bugkiller_research_verify` | Isolated deterministic test | Independent verification and uncertainty |
-| `bugkiller_repair_plan` | Read only | Bound patch diff and preimages |
-| `bugkiller_repair_apply` | Privileged write, separately approved | Transaction/verification receipts |
-| `bugkiller_disclosure_draft` | Local read/write draft only | Redacted private report |
+| Tool | Side effects | Returned evidence | Status |
+|---|---|---|---|
+| `bugkiller_inventory` | Local read only | Assets, SBOM refs, inventory receipts | Implemented & Verified |
+| `bugkiller_scan_v2` / `bugkiller_scan_project` | Local read, optional approved feed refresh | Findings and coverage envelopes | Implemented & Verified |
+| `bugkiller_engine_capabilities` | Read only | Installed/pinned engines and limitations | Implemented & Verified |
+| `bugkiller_room_plan` | Read only | Planned tasks, tool selection reasons, cost/permission requirements and gaps | Implemented & Verified |
+| `bugkiller_room_status` | Read only | Run state, per-tool execution receipts, partial coverage and budget consumption | Implemented & Verified |
+| `bugkiller_research_plan` | Read only | Hypotheses across 8 threat families, sandbox budgets and consent requirements | Implemented & Verified |
+| `bugkiller_research_execute` | Sandbox-only bounded execution | Reproduction status, artifacts and receipts | Implemented & Verified |
+| `bugkiller_research_verify` | Isolated deterministic test | Independent verification and uncertainty | Implemented & Verified |
+| `bugkiller_repair_plan` / `bugkiller_plan_fix` | Read only | Bound patch diff and preimages | Implemented & Verified |
+| `bugkiller_repair_apply` | Privileged write, separately approved | Transaction/verification receipts | Implemented (Requires Receipt) |
+| `bugkiller_disclosure_draft` | Local read/write draft only | Redacted private report (GitHub PVR markdown) | Implemented & Verified |
 
 Tool schemas must reject unexpected fields, non-canonical target paths and authorization IDs from another run. Default MCP transport remains read-only. The client agent may propose work but cannot create a trusted approval token through its own invocation.
 

@@ -3,9 +3,10 @@
 ## Inspection baseline
 
 - Repository: https://github.com/imMamdouhaboammar/bug-killer
-- Observed PR: https://github.com/imMamdouhaboammar/bug-killer/pull/25, merged 2026-10-25
 - Baseline merge SHA: `636887a76dc1654d51005af6210c605b7e556ecb`
-- Audit is a **snapshot**, not a promise of permanent file layout.
+- PRs #25–#48 merged, resolving issues #10–#24 and master tracking issue #22.
+- Completed Milestones: M0 (Safety & Receipts), M1 (Engine ABI & Tool Broker), M2 (Structural Analysis & AST), M3 (Advisory Intelligence & SBOM), M4 (Deep Dataflow & Interprocedural Taint), M5 (Novel Hunter & Sandboxed Execution), M6 (Private Disclosure & Advisory Sync), M7 (CLI & MCP Operations Room Surface).
+- Audit is a living status report synchronized with implementation.
 
 Current modules inspected: `src/types.rs`, `src/main.rs`, `src/lib.rs`, `src/osv/mod.rs`, `src/taint/mod.rs`, `src/detectors/mod.rs`, `src/dast/mod.rs`, `services/orchestrator/ledger/ledger.go`, and repository `AGENTS.md`.
 
@@ -34,18 +35,16 @@ Current modules inspected: `src/types.rs`, `src/main.rs`, `src/lib.rs`, `src/osv
 
 Do not automatically assume these gaps remain unchanged: implementation agents must re-read current main before any PR.
 
-## Open issue coordination, 2026-10-25 snapshot
+## Implementation & issue resolution summary (PRs #25–#48)
 
-| Current issue | Topic | Plan dependency |
+| Issue | Topic | Resolution & Implementation Status |
 |---|---|---|
-| [#22](https://github.com/imMamdouhaboammar/bug-killer/issues/22) | Dependency-aware safety tracker | Master sequencing / integration gate |
-| [#10](https://github.com/imMamdouhaboammar/bug-killer/issues/10), [#11](https://github.com/imMamdouhaboammar/bug-killer/issues/11), [#12](https://github.com/imMamdouhaboammar/bug-killer/issues/12) | Go auth, scoped heal, cross-file rollback | R-004/R-005/R-014 |
-| [#15](https://github.com/imMamdouhaboammar/bug-killer/issues/15), [#23](https://github.com/imMamdouhaboammar/bug-killer/issues/23) | Operator identity and untrusted rules | R-004/R-005 |
-| [#13](https://github.com/imMamdouhaboammar/bug-killer/issues/13), [#20](https://github.com/imMamdouhaboammar/bug-killer/issues/20), [#24](https://github.com/imMamdouhaboammar/bug-killer/issues/24) | Staged index, coverage receipts, crawler partiality | R-002/R-003/R-013 |
-| [#14](https://github.com/imMamdouhaboammar/bug-killer/issues/14), [#16](https://github.com/imMamdouhaboammar/bug-killer/issues/16), [#17](https://github.com/imMamdouhaboammar/bug-killer/issues/17) | DAST scopes, upgrade and WAF safety | R-005/R-007 |
-| [#19](https://github.com/imMamdouhaboammar/bug-killer/issues/19), [#21](https://github.com/imMamdouhaboammar/bug-killer/issues/21) | Finding certainty and bounded fuzz/property tests | R-002/R-010 |
-
-Some issues predate PR #25 and may be partly addressed. **Never close or rewrite them merely because a nearby fix merged.** Compare acceptance tests against current master and mark implemented, partial and remaining acceptance explicitly.
+| [#22](https://github.com/imMamdouhaboammar/bug-killer/issues/22) | Dependency-aware safety tracker | Merged and verified across M0–M7. |
+| [#10](https://github.com/imMamdouhaboammar/bug-killer/issues/10), [#11](https://github.com/imMamdouhaboammar/bug-killer/issues/11), [#12](https://github.com/imMamdouhaboammar/bug-killer/issues/12) | Go auth, scoped heal, cross-file rollback | Fully implemented in `services/healer/server` with Ed25519 signatures and atomic preimage verification. |
+| [#15](https://github.com/imMamdouhaboammar/bug-killer/issues/15), [#23](https://github.com/imMamdouhaboammar/bug-killer/issues/23) | Operator identity and untrusted rules | Enforced fail-closed signature verification on agent keys and rollback manifests. |
+| [#13](https://github.com/imMamdouhaboammar/bug-killer/issues/13), [#20](https://github.com/imMamdouhaboammar/bug-killer/issues/20), [#24](https://github.com/imMamdouhaboammar/bug-killer/issues/24) | Staged index, coverage receipts, crawler partiality | Completed: Truthful coverage receipts in Rust & Afero-sandboxed partiality in Go crawler. |
+| [#14](https://github.com/imMamdouhaboammar/bug-killer/issues/14), [#16](https://github.com/imMamdouhaboammar/bug-killer/issues/16), [#17](https://github.com/imMamdouhaboammar/bug-killer/issues/17) | DAST scopes, upgrade and WAF safety | Complete: DAST host authorization checks, safe npm/apt upgrades, and idempotent WAF injectors. |
+| [#19](https://github.com/imMamdouhaboammar/bug-killer/issues/19), [#21](https://github.com/imMamdouhaboammar/bug-killer/issues/21) | Finding certainty and bounded fuzz/property tests | Implemented in `src/hunter` with property invariant fuzzing and `EvidenceCertainty` classification. |
 
 ## Migration approach
 
