@@ -15,7 +15,7 @@ COPY proto/ /workspace/proto/
 RUN cargo build --release
 
 # Stage 2: Build Go Binaries
-FROM golang:1.26.5-bookworm AS go-builder
+FROM golang:1.27.3-bookworm AS go-builder
 RUN apt-get update && apt-get install -y --no-install-recommends libpcap-dev && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace/services/orchestrator
