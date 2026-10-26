@@ -53,9 +53,8 @@ impl ApprovalManager {
 
     /// Generates a cryptographically secure 16-byte random hex nonce.
     pub fn generate_nonce() -> String {
-        use rand::RngCore;
         let mut bytes = [0u8; 16];
-        rand::rngs::OsRng.fill_bytes(&mut bytes);
+        rand::fill(&mut bytes);
         bytes.iter().map(|b| format!("{:02x}", b)).collect()
     }
 

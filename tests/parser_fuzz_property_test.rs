@@ -2,7 +2,7 @@ use bug_killer::dast::DastProber;
 use bug_killer::osv::OsvClient;
 use bug_killer::scanner::binary::BinaryScanner;
 use bug_killer::types::*;
-use rand::{Rng, RngCore, SeedableRng, rngs::StdRng};
+use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 use std::fs;
 use std::path::Path;
 use tempfile::tempdir;
@@ -30,7 +30,7 @@ impl FuzzRng {
     }
 
     fn choose<'a, T>(&mut self, slice: &'a [T]) -> &'a T {
-        let idx = self.rng.gen_range(0..slice.len());
+        let idx = self.rng.random_range(0..slice.len());
         &slice[idx]
     }
 }
