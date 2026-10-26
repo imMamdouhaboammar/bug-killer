@@ -631,9 +631,28 @@
         font-weight: 600;
         border-radius: 4px;
       }
-      .skip-link:focus {
+      .skip-link:focus,
+      .skip-link:focus-visible {
         top: 8px;
         left: 8px;
+        outline: 3px solid #2563eb;
+        outline-offset: 2px;
+      }
+      .view-tab:focus-visible,
+      .nav-btn:focus-visible,
+      .done-btn:focus-visible,
+      .done-card button:focus-visible {
+        outline: 2px solid var(--accent, #2563eb);
+        outline-offset: 2px;
+      }
+      .feedback-textarea:focus-visible {
+        outline: 2px solid var(--accent, #2563eb);
+        outline-offset: 1px;
+        border-color: var(--accent, #2563eb);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+      }
+      main:focus {
+        outline: none;
       }
     </style>
   </head>
@@ -663,7 +682,7 @@
       </nav>
 
       <!-- Primary interactive content landmark -->
-      <main id="main-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <main id="main-content" tabindex="-1" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
         <!-- Outputs panel (qualitative review) -->
         <div class="view-panel active" id="panel-outputs">
           <div class="main">
