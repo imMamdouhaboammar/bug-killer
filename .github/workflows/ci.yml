@@ -39,7 +39,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libpcap-dev protobuf-compiler
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.23'
+          go-version-file: services/orchestrator/go.mod
+          cache-dependency-path: |
+            services/orchestrator/go.sum
+            services/healer/go.sum
       - name: Test Orchestrator
         run: |
           cd services/orchestrator
@@ -60,7 +63,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.23'
+          go-version-file: services/orchestrator/go.mod
+          cache-dependency-path: |
+            services/orchestrator/go.sum
+            services/healer/go.sum
       - name: Install System Dependencies
         run: sudo apt-get update && sudo apt-get install -y libpcap-dev protobuf-compiler
       - name: Full System Build
