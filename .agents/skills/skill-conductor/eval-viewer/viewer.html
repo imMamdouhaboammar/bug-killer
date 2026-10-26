@@ -618,9 +618,27 @@
           transition: none !important;
         }
       }
+      .skip-link {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        background: #000000;
+        color: #ffffff;
+        padding: 8px 16px;
+        z-index: 10000;
+        text-decoration: none;
+        font-family: inherit;
+        font-weight: 600;
+        border-radius: 4px;
+      }
+      .skip-link:focus {
+        top: 8px;
+        left: 8px;
+      }
     </style>
   </head>
   <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="app" style="height: 100vh; display: flex; flex-direction: column">
       <header class="header">
         <div>
