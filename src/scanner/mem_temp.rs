@@ -264,7 +264,8 @@ impl MemTempScanner {
             // ----------------------------------------------------------------
             // 2. BK-AI-MEM-002: Use-after-free or double-free
             // ----------------------------------------------------------------
-            if let Some(caps) = RE_MEM_002_FREE_CALL.captures(trimmed) {
+            if !matches!(target_kind, TargetKind::NodeSourceFile) {
+                if let Some(caps) = RE_MEM_002_FREE_CALL.captures(trimmed) {
                 let freed_var = caps
                     .get(1)
                     .or_else(|| caps.get(2))
@@ -399,6 +400,7 @@ impl MemTempScanner {
                         }
                     }
                 }
+            }
             }
 
             // ----------------------------------------------------------------

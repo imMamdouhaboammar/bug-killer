@@ -219,6 +219,25 @@ void destroy_node_raii(std::unique_ptr<Node> node) {
     );
 }
 
+#[test]
+fn test_mem_002_typescript_delete_property_not_flagged() {
+    let js_code = r#"
+export function cleanHeaders(headers: Record<string, string>) {
+    delete headers['cookie'];
+    delete headers['x-admin-secret'];
+    return headers;
+}
+"#;
+    let path = Path::new("lib/security/headers.ts");
+    let findings = MemTempScanner::scan_source(path, js_code);
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.cve.as_str() != "BK-AI-MEM-002"),
+        "JavaScript / TypeScript delete operator on object properties must not be flagged as C/C++ memory double-free"
+    );
+}
+
 // ============================================================================
 // 3. BK-AI-MEM-003: Integer overflow in allocation
 // ============================================================================
