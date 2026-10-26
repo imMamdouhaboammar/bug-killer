@@ -1,6 +1,7 @@
 # Version-update policy for the maintained Bug Killer components.
-# Security updates are intentionally ungrouped, never ignored, and require review.
-# Enabling Dependabot alerts/security updates is a separate repository setting.
+# Security updates are intentionally ungrouped and never ignored by this file.
+# Review approval, alert triage, and security-update toggles are repository settings;
+# this configuration cannot enforce approval or enable those settings.
 version: 2
 updates:
   - package-ecosystem: "cargo"
