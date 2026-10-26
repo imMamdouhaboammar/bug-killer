@@ -1,6 +1,5 @@
 use crate::types::*;
 use chrono::Utc;
-use rand::RngCore;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -19,7 +18,7 @@ impl BackupManager {
     /// Generates a collision-proof unique backup ID.
     pub fn generate_backup_id() -> String {
         let mut nonce = [0u8; 8];
-        rand::thread_rng().fill_bytes(&mut nonce);
+        rand::fill(&mut nonce);
         let nonce_hex: String = nonce.iter().map(|b| format!("{:02x}", b)).collect();
         format!("{}_{}", Utc::now().format("%Y%m%d_%H%M%S"), nonce_hex)
     }

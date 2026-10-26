@@ -1,5 +1,4 @@
 use chrono::Utc;
-use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -52,7 +51,7 @@ impl DisclosureAuditEvent {
         metadata: serde_json::Value,
     ) -> Self {
         let mut rand_bytes = [0u8; 8];
-        rand::rngs::OsRng.fill_bytes(&mut rand_bytes);
+        rand::fill(&mut rand_bytes);
         let event_id = format!(
             "event-{}",
             rand_bytes

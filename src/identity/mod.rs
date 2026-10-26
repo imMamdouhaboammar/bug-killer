@@ -1,6 +1,5 @@
 use crate::types::BackupManifest;
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
-use rand::rngs::OsRng;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::io::{self, Write};
@@ -84,8 +83,9 @@ impl AgentIdentity {
         }
 
         // Generate fresh cryptographic keypair using OS entropy
-        let mut csprng = OsRng;
-        let signing_key = SigningKey::generate(&mut csprng);
+        let mut key_bytes = [0u8; 32];
+        rand::fill(&mut key_bytes);
+        let signing_key = SigningKey::from_bytes(&key_bytes);
         let verifying_key = signing_key.verifying_key();
 
         // Publish the complete key atomically and never replace an existing key.
@@ -313,8 +313,9 @@ impl OperatorIdentity {
         }
 
         // Generate fresh cryptographic keypair using OS entropy
-        let mut csprng = OsRng;
-        let signing_key = SigningKey::generate(&mut csprng);
+        let mut key_bytes = [0u8; 32];
+        rand::fill(&mut key_bytes);
+        let signing_key = SigningKey::from_bytes(&key_bytes);
         let verifying_key = signing_key.verifying_key();
 
         // Publish the complete key atomically and never replace an existing key.

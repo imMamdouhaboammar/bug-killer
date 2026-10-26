@@ -1,6 +1,5 @@
 use crate::identity::{AgentIdentity, OperatorIdentity};
 use chrono::{Duration, Utc};
-use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
@@ -46,7 +45,7 @@ impl DisclosureApprovalManager {
     /// Generates a cryptographically secure 16-byte random hex nonce.
     pub fn generate_nonce() -> String {
         let mut bytes = [0u8; 16];
-        rand::rngs::OsRng.fill_bytes(&mut bytes);
+        rand::fill(&mut bytes);
         bytes.iter().map(|b| format!("{:02x}", b)).collect()
     }
 

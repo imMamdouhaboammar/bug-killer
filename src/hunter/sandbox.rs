@@ -646,9 +646,8 @@ fn build_receipt(
 }
 
 fn nanoid_simple() -> String {
-    use rand::RngCore;
     let mut bytes = [0u8; 8];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::fill(&mut bytes);
     let mut out = String::with_capacity(16);
     for b in bytes {
         out.push_str(&format!("{:02x}", b));
