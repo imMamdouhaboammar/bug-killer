@@ -324,9 +324,38 @@ impl SandboxRunner {
             .tempdir()?;
 
         let sandbox_id = format!("sbx-cmd-{}", nanoid_simple());
+
+        // Zero network egress policy preflight check
+        if !self.config.allow_network {
+            let prog_lower = program.to_lowercase();
+            if prog_lower.ends_with("curl")
+                || prog_lower.ends_with("wget")
+                || prog_lower == "nc"
+                || prog_lower == "ncat"
+            {
+                for arg in args {
+                    if arg.starts_with("http://")
+                        || arg.starts_with("https://")
+                        || arg.starts_with("ftp://")
+                    {
+                        return Err(SandboxError::IsolationViolation(format!(
+                            "Outbound network request to '{}' blocked by sandbox policy (zero egress permitted)",
+                            arg
+                        )));
+                    }
+                }
+            }
+        }
+
         let mut cmd = Command::new(program);
         cmd.args(args);
         cmd.current_dir(temp_dir.path());
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            cmd.process_group(0);
+        }
 
         // Sanitization: Strip ambient environment if enabled
         if self.config.strip_ambient_env {
@@ -354,7 +383,7 @@ impl SandboxRunner {
             cmd.env("TMPDIR", temp_dir.path());
         }
 
-        // Network isolation invariant: null-route proxy environment variables
+        // Network isolation invariant: null-route proxy environment variables and TLS certificates
         if !self.config.allow_network {
             cmd.env("http_proxy", "http://127.0.0.1:0");
             cmd.env("https_proxy", "http://127.0.0.1:0");
@@ -363,6 +392,9 @@ impl SandboxRunner {
             cmd.env("HTTPS_PROXY", "http://127.0.0.1:0");
             cmd.env("ALL_PROXY", "http://127.0.0.1:0");
             cmd.env("NO_PROXY", "");
+            cmd.env("SSL_CERT_FILE", "/dev/null");
+            cmd.env("SSL_CERT_DIR", "/dev/null");
+            cmd.env("NODE_EXTRA_CA_CERTS", "/dev/null");
         }
 
         cmd.stdin(if stdin_input.is_some() {
@@ -423,16 +455,14 @@ impl SandboxRunner {
         loop {
             // Check cancellation token
             if self.cancellation_token.is_cancelled() {
-                let _ = child.kill();
-                let _ = child.wait();
+                terminate_process_tree(&mut child);
                 status = SandboxStatus::Killed;
                 break;
             }
 
             // Check timeout budget
             if start_time.elapsed() >= timeout {
-                let _ = child.kill();
-                let _ = child.wait();
+                terminate_process_tree(&mut child);
                 status = SandboxStatus::TimedOut;
                 break;
             }
@@ -451,8 +481,7 @@ impl SandboxRunner {
                 Err(e) => {
                     status = SandboxStatus::Error;
                     exit_code = None;
-                    let _ = child.kill();
-                    let _ = child.wait();
+                    terminate_process_tree(&mut child);
                     eprintln!("Warning: child.try_wait error: {}", e);
                     break;
                 }
@@ -653,4 +682,19 @@ fn nanoid_simple() -> String {
         out.push_str(&format!("{:02x}", b));
     }
     out
+}
+
+/// Atomically terminates the process and its entire descendant process tree via PGID SIGKILL on Unix.
+fn terminate_process_tree(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    {
+        let pid = child.id() as i32;
+        if pid > 1 {
+            unsafe {
+                libc::kill(-pid, libc::SIGKILL);
+            }
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }

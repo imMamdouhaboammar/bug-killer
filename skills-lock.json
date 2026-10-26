@@ -13,6 +13,12 @@
       "skillPath": ".agents/skills/bk-scanner/SKILL.md",
       "computedHash": "ab5bf2fbec62f7831fd971b50360a5b821639548f698d3ed00b1ec117fc88037"
     },
+    "bk-privacy": {
+      "source": "imMamdouhaboammar/bug-killer",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/bk-privacy/SKILL.md",
+      "computedHash": "866240969c1f54221b21dd8cbe94f72ef79af424de1031ec08a2a4e79ddbb8ab"
+    },
     "bk-security": {
       "source": "imMamdouhaboammar/bug-killer",
       "sourceType": "local",

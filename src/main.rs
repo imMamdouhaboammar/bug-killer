@@ -327,6 +327,21 @@ enum Commands {
     #[command(subcommand)]
     Hunter(HunterCommands),
 
+    /// Autonomous novel vulnerability hunter on target project (full end-to-end research loop)
+    Hunt {
+        /// Target project directory (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Maximum hypotheses to evaluate (default: 10)
+        #[arg(long, default_value_t = 10)]
+        max_hypotheses: usize,
+
+        /// Output diagnostic report as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Responsible private disclosure & PVR draft generation (draft)
     #[command(subcommand)]
     Disclose(DiscloseCommands),
@@ -611,6 +626,37 @@ enum EngineCommands {
         #[arg(long)]
         json: bool,
     },
+
+    /// Query, inspect, and recommend deep cybersecurity skills and MITRE/NIST mappings
+    Skills {
+        /// Subcommand action: list, show, search, recommend, stats
+        #[arg(default_value = "list")]
+        action: String,
+
+        /// Filter by subdomain, tag, or MITRE technique ID
+        #[arg(long)]
+        filter: Option<String>,
+
+        /// Skill identifier for 'show' action
+        #[arg(long)]
+        id: Option<String>,
+
+        /// Target CVE ID or mission goal for 'recommend' action
+        #[arg(long)]
+        cve: Option<String>,
+
+        /// Query string for 'search' action
+        #[arg(long)]
+        query: Option<String>,
+
+        /// Maximum results to display (default: 25)
+        #[arg(long, default_value_t = 25)]
+        limit: usize,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -665,6 +711,21 @@ enum RoomCommands {
 
 #[derive(Subcommand, Debug)]
 enum HunterCommands {
+    /// Run autonomous end-to-end novel vulnerability hunt loop on target project
+    Hunt {
+        /// Target project directory (default: current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Maximum hypotheses to evaluate (default: 10)
+        #[arg(long, default_value_t = 10)]
+        max_hypotheses: usize,
+
+        /// Output results as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Generate bounded research hypotheses for unknown weakness exploration
     Plan {
         /// Target directory path (default: current directory)
@@ -2275,12 +2336,14 @@ fn main() {
             EngineCommands::Doctor { path, json } => {
                 let mut broker = deep::ToolCapabilityBroker::discover_default_tools();
                 let tools = broker.discover_all();
+                let skills_reg = deep::CybersecuritySkillsRegistry::default_embedded();
+                let metrics = skills_reg.metrics();
                 if json {
                     println!("{}", serde_json::to_string_pretty(&tools).unwrap());
                     return;
                 }
                 println!("\n=======================================================");
-                println!("  🔧  BUG KILLER SIBLING ENGINE DOCTOR");
+                println!("  🔧  BUG KILLER SIBLING ENGINE & SKILLS DOCTOR");
                 println!("=======================================================");
                 println!("Target Workspace:   {}", path.display());
                 println!("Registered Engines: {}\n", tools.len());
@@ -2298,6 +2361,19 @@ fn main() {
                         t.engine_version.as_deref().unwrap_or("none")
                     );
                 }
+                println!("\nDeep Cybersecurity Skills Knowledge Engine:");
+                println!("  • Total Skills Indexed:     {}", metrics.total_skills);
+                println!("  • Technical Subdomains:     {}", metrics.subdomains_count);
+                println!("  • MITRE ATT&CK Techniques:  {}", metrics.mitre_techniques_count);
+                println!("  • NIST CSF Controls:        {}", metrics.nist_controls_count);
+                println!(
+                    "  • Defensive Classification: Detection ({}), Hardening ({}), Virtual Patching ({}), Forensics ({}), Audit ({})",
+                    metrics.defensive_classes.get("DETECTION").unwrap_or(&0),
+                    metrics.defensive_classes.get("HARDENING").unwrap_or(&0),
+                    metrics.defensive_classes.get("VIRTUAL_PATCHING").unwrap_or(&0),
+                    metrics.defensive_classes.get("FORENSICS_TRIAGE").unwrap_or(&0),
+                    metrics.defensive_classes.get("AUDIT_COMPLIANCE").unwrap_or(&0),
+                );
             }
 
             EngineCommands::List { json } => {
@@ -2348,8 +2424,20 @@ fn main() {
                         _ => true,
                     })
                     .collect();
+                let skills_reg = deep::CybersecuritySkillsRegistry::default_embedded();
+                let matching_skills = skills_reg.recommend_for_goal(&goal);
+
                 if json {
-                    println!("{}", serde_json::to_string_pretty(&matches).unwrap());
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "goal": goal,
+                            "target": target.display().to_string(),
+                            "sibling_tools": matches,
+                            "cybersecurity_skills": matching_skills,
+                        }))
+                        .unwrap()
+                    );
                     return;
                 }
                 println!(
@@ -2363,6 +2451,180 @@ fn main() {
                         "  - {} ({:?}): {:?}",
                         m.tool_id, m.installation, m.capabilities.kinds
                     );
+                }
+                println!(
+                    "\nDeep Cybersecurity Skills (showing top 10 of {}):",
+                    matching_skills.len()
+                );
+                for s in matching_skills.iter().take(10) {
+                    println!(
+                        "  • {:<40} [{}] (subdomain: {})",
+                        s.id,
+                        s.defensive_class.as_str(),
+                        s.subdomain
+                    );
+                }
+            }
+
+            EngineCommands::Skills {
+                action,
+                filter,
+                id,
+                cve,
+                query,
+                limit,
+                json,
+            } => {
+                let skills_reg = deep::CybersecuritySkillsRegistry::default_embedded();
+                match action.to_lowercase().trim() {
+                    "stats" | "metrics" => {
+                        let metrics = skills_reg.metrics();
+                        if json {
+                            println!("{}", serde_json::to_string_pretty(&metrics).unwrap());
+                        } else {
+                            println!("\n=======================================================");
+                            println!("  🛡️  DEEP CYBERSECURITY SKILLS REGISTRY METRICS");
+                            println!("=======================================================");
+                            println!("Total Indexed Skills:        {}", metrics.total_skills);
+                            println!("Subdomains Count:            {}", metrics.subdomains_count);
+                            println!("MITRE ATT&CK Techniques:     {}", metrics.mitre_techniques_count);
+                            println!("NIST CSF Controls:           {}", metrics.nist_controls_count);
+                            println!("\nDefensive Posture Distribution:");
+                            for (cls, cnt) in &metrics.defensive_classes {
+                                println!("  • {:<24}: {}", cls, cnt);
+                            }
+                            println!("\nTop 10 Technical Subdomains:");
+                            for (sub, cnt) in metrics.top_subdomains.iter().take(10) {
+                                println!("  • {:<30}: {}", sub, cnt);
+                            }
+                        }
+                    }
+
+                    "show" | "info" => {
+                        let skill_id = id
+                            .or(query)
+                            .or(filter)
+                            .unwrap_or_else(|| "analyzing-active-directory-acl-abuse".to_string());
+                        let skill = skills_reg.get(&skill_id);
+                        if let Some(s) = skill {
+                            if json {
+                                println!("{}", serde_json::to_string_pretty(s).unwrap());
+                            } else {
+                                println!("\n=======================================================");
+                                println!("  🛡️  SKILL: {}", s.id);
+                                println!("=======================================================");
+                                println!("Title:            {}", s.name);
+                                println!("Subdomain:        {}", s.subdomain);
+                                println!("Defensive Class:  {}", s.defensive_class.as_str());
+                                println!("Version / Author: {} / {}", s.version, s.author);
+                                println!("Tags:             {}", s.tags.join(", "));
+                                println!("MITRE ATT&CK:     {}", s.mitre_attack.join(", "));
+                                println!("NIST CSF:         {}", s.nist_csf.join(", "));
+                                println!("Path:             {}", s.path);
+                                println!("\nOperational Description:\n{}", s.description);
+                            }
+                        } else {
+                            eprintln!("Error: Cybersecurity skill '{}' not found in registry.", skill_id);
+                            std::process::exit(1);
+                        }
+                    }
+
+                    "search" => {
+                        let q = query.or(filter).unwrap_or_default();
+                        let results = skills_reg.search(&q);
+                        if json {
+                            println!("{}", serde_json::to_string_pretty(&results).unwrap());
+                        } else {
+                            println!(
+                                "\nFound {} skills matching search query '{}' (showing top {}):",
+                                results.len(),
+                                q,
+                                limit.min(results.len())
+                            );
+                            for s in results.iter().take(limit) {
+                                println!(
+                                    "  • {:<40} [{}] ({})",
+                                    s.id,
+                                    s.defensive_class.as_str(),
+                                    s.subdomain
+                                );
+                            }
+                        }
+                    }
+
+                    "recommend" => {
+                        let results = if let Some(ref cve_id) = cve {
+                            skills_reg.recommend_for_cve(cve_id)
+                        } else if let Some(ref q) = query {
+                            skills_reg.recommend_for_goal(q)
+                        } else if let Some(ref filt) = filter {
+                            skills_reg.recommend_for_goal(filt)
+                        } else {
+                            skills_reg.recommend_for_goal("prevention")
+                        };
+
+                        if json {
+                            println!("{}", serde_json::to_string_pretty(&results).unwrap());
+                        } else {
+                            let label = cve.as_deref().unwrap_or("prevention");
+                            println!(
+                                "\nRecommended {} deep skills for '{}' (showing top {}):",
+                                results.len(),
+                                label,
+                                limit.min(results.len())
+                            );
+                            for s in results.iter().take(limit) {
+                                println!(
+                                    "  • {:<40} [{}] ({})",
+                                    s.id,
+                                    s.defensive_class.as_str(),
+                                    s.subdomain
+                                );
+                            }
+                        }
+                    }
+
+                    _ /* "list" */ => {
+                        let filtered: Vec<&deep::CybersecuritySkill> = if let Some(ref f) = filter {
+                            let f_lower = f.to_lowercase();
+                            skills_reg
+                                .all()
+                                .iter()
+                                .filter(|s| {
+                                    s.subdomain.to_lowercase().contains(&f_lower)
+                                        || s.tags.iter().any(|t| t.to_lowercase().contains(&f_lower))
+                                        || s.has_mitre_technique(f)
+                                        || s.has_nist_control(f)
+                                })
+                                .collect()
+                        } else {
+                            skills_reg.all().iter().collect()
+                        };
+
+                        if json {
+                            println!("{}", serde_json::to_string_pretty(&filtered).unwrap());
+                        } else {
+                            println!(
+                                "\nIndexed Cybersecurity Skills: {} total (showing top {}):",
+                                filtered.len(),
+                                limit.min(filtered.len())
+                            );
+                            for s in filtered.iter().take(limit) {
+                                println!(
+                                    "  • {:<40} [{}] ({})",
+                                    s.id,
+                                    s.defensive_class.as_str(),
+                                    s.subdomain
+                                );
+                            }
+                            if filtered.len() > limit {
+                                println!(
+                                    "  ... and {} more skills (use --limit <n> or --json to inspect all)",
+                                    filtered.len() - limit
+                                );
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -2472,6 +2734,14 @@ fn main() {
         },
 
         Commands::Hunter(hunter_cmd) => match hunter_cmd {
+            HunterCommands::Hunt {
+                path,
+                max_hypotheses,
+                json,
+            } => {
+                handle_hunt_command(path, max_hypotheses, json);
+            }
+
             HunterCommands::Plan {
                 path,
                 policy: _,
@@ -2729,6 +2999,54 @@ fn main() {
                     println!("  ... and {} more packages (use --json to view all)", packages.len() - 20);
                 }
             }
+        }
+
+        Commands::Hunt {
+            path,
+            max_hypotheses,
+            json,
+        } => {
+            handle_hunt_command(path, max_hypotheses, json);
+        }
+    }
+}
+
+fn handle_hunt_command(path: PathBuf, max_hypotheses: usize, json: bool) {
+    let hunter = hunter::AutonomousHunter::default();
+    match hunter.hunt(&path, max_hypotheses) {
+        Ok(report) => {
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!("\n=======================================================");
+                println!("  🏹  AUTONOMOUS NOVEL VULNERABILITY HUNTER");
+                println!("=======================================================");
+                println!("Target Workspace:      {}", report.target_path);
+                println!("Execution Duration:    {} ms", report.scan_duration_ms);
+                println!("Attack Surfaces:       {}", report.attack_surface_entries_discovered);
+                println!("Hypotheses Generated:  {}", report.hypotheses_synthesized);
+                println!("Triaged Out / Known:   {}", report.hypotheses_triaged_out);
+                println!("Reproduced Invariants: {}", report.candidates_reproduced);
+                println!("Verified Discoveries:  {}", report.candidates_verified);
+                println!("Signed Receipts:       {} (Ed25519)", report.research_receipts.len());
+                println!("Private PVR Drafts:    {}", report.pvr_drafts.len());
+                println!("-------------------------------------------------------");
+                if report.verified_findings.is_empty() {
+                    println!("No novel reproducible invariant violations discovered.");
+                } else {
+                    for f in &report.verified_findings {
+                        println!("  [CONFIRMED] {} ({}) - {}", f.id, f.cve.as_str(), f.description);
+                        if let Some(target) = &f.file_path {
+                            println!("    Target:     {}", target.display());
+                        }
+                        println!("    Evidence:   {}", f.evidence_digest);
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Hunter error: {}", e);
+            std::process::exit(1);
         }
     }
 }

@@ -1,0 +1,48 @@
+{
+  "skill": "bk-threatswarm",
+  "version": "1.0.0",
+  "evaluations": [
+    {
+      "id": "eval-scope-cidr-enforcement",
+      "description": "Verifies that ThreatswarmScopeEnforcer accurately permits CIDR-authorized targets and rejects out-of-scope targets",
+      "command": "cargo test --test m4_threatswarm_deep_test test_threatswarm_scope_enforcement_contract",
+      "expected_outcome": "success",
+      "min_assertions": 10
+    },
+    {
+      "id": "eval-cvss-score-computation",
+      "description": "Verifies that CvssVector correctly parses v3.1 vectors, computes base scores, and maps to remediation SLAs",
+      "command": "cargo test --test m4_threatswarm_deep_test test_threatswarm_cvss_engine_and_sla_metrics",
+      "expected_outcome": "success",
+      "min_assertions": 5
+    },
+    {
+      "id": "eval-mitre-attack-mapping",
+      "description": "Verifies that ThreatswarmMitreCatalog correctly maps CWE weakness identifiers to ATT&CK enterprise techniques",
+      "command": "cargo test --test m4_threatswarm_deep_test test_threatswarm_mitre_enterprise_catalog",
+      "expected_outcome": "success",
+      "min_assertions": 4
+    },
+    {
+      "id": "eval-finding-sync-dedup",
+      "description": "Verifies that ThreatswarmFindingSync deduplicates findings across subsystem reports and renders consolidated markdown",
+      "command": "cargo test --test m4_threatswarm_deep_test test_threatswarm_findings_sync_and_deduplication",
+      "expected_outcome": "success",
+      "min_assertions": 4
+    },
+    {
+      "id": "eval-analyzer-adapter-protocol-v1",
+      "description": "Verifies that ThreatswarmAdapter implements AnalyzerAdapter schema v1.0 and generates validated findings and coverage receipts",
+      "command": "cargo test --test m4_threatswarm_deep_test test_threatswarm_analyzer_adapter_execution",
+      "expected_outcome": "success",
+      "min_assertions": 8
+    },
+    {
+      "id": "eval-broker-capability-registration",
+      "description": "Verifies that ToolCapabilityBroker discovers threatswarm-deep-adapter as Available and Approved",
+      "command": "cargo test --test m4_threatswarm_deep_test test_threatswarm_broker_registration_contract",
+      "expected_outcome": "success",
+      "min_assertions": 4
+    }
+  ]
+}

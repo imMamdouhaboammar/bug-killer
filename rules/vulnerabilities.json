@@ -110,5 +110,193 @@
       "replace": "privileged: false",
       "description": "Drop privileged mode and enforce unprivileged container execution"
     }
+  },
+  {
+    "id": "BK-AI-PRIV-001",
+    "title": "Direct PII in Unencrypted Database Column or Entity Model",
+    "severity": "High",
+    "description": "Sensitive personal identification information (SSN, credit card, bank account) declared in database schema without column-level encryption or cryptographic hashing.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js", "*.py", "*.php"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(table\\.(string|text)\\s*\\(\\s*['\"](ssn|credit_card|tax_id)['\"]|['\"](ssn|credit_card)['\"]\\s*:\\s*\\{\\s*type:\\s*String,\\s*encrypted:\\s*false)",
+      "not_matching": "encrypted:\\s*true|hash"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "encrypted:\\s*false",
+      "replace": "encrypted: true",
+      "description": "Enable field-level encryption per GDPR Art. 32 and PCI DSS."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-002",
+    "title": "Unredacted PII Ingestion into LLM or External AI API",
+    "severity": "High",
+    "description": "Direct personal identifiers (SSN, password, credit card) forwarded into remote generative AI completion payloads without prior anonymization or masking.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js", "*.py"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(openai|anthropic|cohere)\\.(chat\\.completions|messages)\\.create\\s*\\([\\s\\S]*?(req\\.body\\.(ssn|creditCard|password)|user\\.(ssn|credit_card))",
+      "not_matching": "redact|anonymize|mask"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "req\\.body\\.([a-zA-Z_]+)",
+      "replace": "redactPii(req.body.$1)",
+      "description": "Pass request payloads through privacy redactor before calling external AI model APIs."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-003",
+    "title": "Sensitive Data Infiltration via Telemetry, Analytics, or Log Dumps",
+    "severity": "Medium",
+    "description": "Telemetry emitters and debug loggers outputting full request bodies or raw credentials, violating GDPR Art. 5(1)(c) data minimization.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js", "*.py", "*.go"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(console\\.(log|error|warn)|logger\\.(info|debug))\\s*\\([^)]*req\\.body",
+      "not_matching": "sanitize|filter|mask"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "logger\\.(info|debug|warn|error)\\(([^)]*req\\.body[^)]*)\\)",
+      "replace": "logger.$1(sanitizeForLogging($2))",
+      "description": "Apply data minimization filtering before logging user request data."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-004",
+    "title": "Indefinite Storage Limitation and Missing Retention Expiration",
+    "severity": "High",
+    "description": "Personal data persistence configured with indefinite retention, null TTL, or disabled purge cron, violating GDPR Art. 5(1)(e).",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js", "*.py", "*.json", "*.yml", "*.yaml"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(retention_period\\s*:\\s*(null|none|'indefinite'|\"indefinite\"|0)|ttl\\s*:\\s*(null|none|0)|purge_expired_users\\s*:\\s*false|keep_pii_indefinitely\\s*:\\s*true)",
+      "not_matching": "retention_period:\\s*[1-9]|ttl:\\s*[1-9]"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "retention_period:\\s*(null|'indefinite'|\"indefinite\"|0)",
+      "replace": "retention_period: '730d'",
+      "description": "Enforce explicit finite retention period with automated expiration purge."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-005",
+    "title": "DSAR Export or Erasure Route Authorization Bypass",
+    "severity": "High",
+    "description": "Data Subject Access Request (DSAR) export or erasure endpoints lacking authorization or account ownership verification middleware.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js"],
+    "detection": {
+      "type": "regex",
+      "pattern": "app\\.(get|post|delete)\\s*\\(\\s*['\"]/(api/)?(export-user-data|delete-user-data|gdpr-export|gdpr-delete)['\"]\\s*,\\s*(async\\s*)?\\(\\s*(req|request)",
+      "not_matching": "verifyUserOwnership|requireAuth|authenticate"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "app\\.(get|post|delete)\\((['\"][^'\"]*['\"])\\s*,\\s*(async\\s*\\([^)]*\\)\\s*=>)",
+      "replace": "app.$1($2, verifyUserOwnership, $3)",
+      "description": "Attach ownership verification middleware to DSAR deletion and export endpoints."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-006",
+    "title": "Consent Revocation Mechanism Omission",
+    "severity": "Medium",
+    "description": "Consent management workflow does not provide an automated revocation mechanism as required by GDPR Art. 7(3).",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js", "*.py"],
+    "detection": {
+      "type": "regex",
+      "pattern": "class\\s+ConsentManager[^{]*\\{[^}]*(?<!revokeConsent)",
+      "not_matching": "revokeConsent|optOut|withdrawConsent"
+    },
+    "remediation": {
+      "type": "append_block",
+      "snippet": "  async revokeConsent(userId: string, purpose: string): Promise<void> { await this.updateConsent(userId, purpose, false); }",
+      "description": "Implement automated consent revocation interface satisfying GDPR Art. 7(3)."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-007",
+    "title": "Cross-Border Transfer Without Standard Contractual Clauses (SCC)",
+    "severity": "High",
+    "description": "Third-party data sync replicates EU data subjects to third countries without verified adequacy decision or Standard Contractual Clauses.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js", "*.py"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(transfer_region\\s*:\\s*['\"]us-east|data_egress_cross_border\\s*:\\s*true)",
+      "not_matching": "scc_verified|adequacy_decision|schrems_safeguard"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "data_egress_cross_border:\\s*true",
+      "replace": "data_egress_cross_border: true, scc_verified: true",
+      "description": "Enforce verified Standard Contractual Clauses for international data transfers."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-008",
+    "title": "HIPAA Un-Deidentified Protected Health Information Exposure",
+    "severity": "Critical",
+    "description": "Patient health records manipulated or exported without applying the 18 HIPAA Safe Harbor de-identification elements.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.py", "*.ts", "*.js"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(patient_medical_record|phi_raw_export|patient_diagnosis)\\s*=\\s*.*(medical_history|ssn|health_condition)",
+      "not_matching": "deidentify_hipaa|safe_harbor_redact|anonymize_phi"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "(patient_medical_record|phi_raw_export)\\s*=\\s*([^;\\n]+)",
+      "replace": "$1 = deidentify_hipaa($2)",
+      "description": "Apply HIPAA Safe Harbor de-identification method (45 CFR § 164.514)."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-009",
+    "title": "Autonomous High-Risk Decision Without Human Oversight",
+    "severity": "Critical",
+    "description": "High-risk AI decision making (credit scoring, employment, legal eligibility) deployed without mandatory human-in-the-loop oversight.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.py", "*.ts", "*.js"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(autonomous_high_risk_decision\\s*:\\s*true|human_in_the_loop\\s*:\\s*false|auto_reject_loan\\s*\\(|auto_deny_benefit\\s*\\()",
+      "not_matching": "human_reviewer|manual_appeal|hitl_supervisor"
+    },
+    "remediation": {
+      "type": "regex_replace",
+      "search": "human_in_the_loop:\\s*false",
+      "replace": "human_in_the_loop: true",
+      "description": "Enforce human-in-the-loop oversight per EU AI Act Art. 14 and GDPR Art. 22."
+    }
+  },
+  {
+    "id": "BK-AI-PRIV-010",
+    "title": "Security Incident Response Lacks 72-Hour Regulatory Notification",
+    "severity": "High",
+    "description": "Security incident response workflow lacks mandatory 72-hour regulatory authority escalation workflow required by GDPR Art. 33.",
+    "target_kind": "GenericSourceFile",
+    "file_patterns": ["*.ts", "*.js", "*.py"],
+    "detection": {
+      "type": "regex",
+      "pattern": "(onSecurityIncident\\s*=\\s*\\([^)]*\\)\\s*=>|//.*breach response omits 72h regulatory notification)",
+      "not_matching": "notify_dpa_72h|notify_supervisory_authority"
+    },
+    "remediation": {
+      "type": "append_block",
+      "snippet": "  await notify_dpa_72h(incident);\n  await logBreachAuditRecord(incident);",
+      "description": "Integrate automated 72-hour supervisory authority notification playbook per GDPR Art. 33."
+    }
   }
 ]

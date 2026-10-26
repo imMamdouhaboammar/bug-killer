@@ -205,6 +205,7 @@ dependencies = [
  "colored",
  "ed25519-dalek",
  "goblin",
+ "libc",
  "memmap2",
  "rand",
  "regex",

@@ -66,6 +66,7 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 | **1. SAST & AST** | cargo-audit | `cargo-audit-adapter` | `SCA` / `SAST` | `CLI` | `CONFIRMED` | Apache-2.0 / MIT |
 | **1. SAST & AST** | cargo-deny | `cargo-deny-adapter` | `SCA` / `SAST` | `CLI` | `STRONGLY_SUPPORTED` | Apache-2.0 / MIT |
 | **2. SCA & SBOM** | OSV-Scanner | `osv-scanner-adapter` | `SCA` / `ADVISORY` | `CLI` | `CONFIRMED` | Apache-2.0 |
+| **2. SCA & SBOM** | CVE MCP Server | `cve-mcp-adapter` | `ADVISORY` / `SCA` / `CONTEXT` | `MCP` | `STRONGLY_SUPPORTED` | MIT |
 | **2. SCA & SBOM** | Syft | `syft-adapter` | `SBOM` | `CLI` | `STRONGLY_SUPPORTED` | Apache-2.0 |
 | **2. SCA & SBOM** | Trivy | `trivy-adapter` | `SCA` / `IAC` | `CLI` / `CONTAINER` | `CONFIRMED` | Apache-2.0 |
 | **2. SCA & SBOM** | Grype | `grype-adapter` | `SCA` | `CLI` | `CONFIRMED` | Apache-2.0 |
@@ -77,6 +78,7 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 | **4. Secrets & IaC** | Checkov | `checkov-adapter` | `IAC` | `CLI` / `CONTAINER` | `STRONGLY_SUPPORTED` | Apache-2.0 |
 | **4. Secrets & IaC** | tfsec | `tfsec-adapter` | `IAC` | `CLI` | `STRONGLY_SUPPORTED` | MIT |
 | **4. Secrets & IaC** | KICS | `kics-adapter` | `IAC` | `CLI` / `CONTAINER` | `STRONGLY_SUPPORTED` | Apache-2.0 |
+| **5. Threat & Scope** | ThreatSwarm | `threatswarm-deep-adapter` | `CONTEXT` / `ADVISORY` / `SAST` | `LIBRARY` | `STRONGLY_SUPPORTED` | MIT |
 | **5. Binary & Fuzz** | Ghidra (Headless) | `ghidra-headless-adapter` | `SYMBOLIC` / `CONTEXT` | `CLI` | `STRONGLY_SUPPORTED` | Apache-2.0 |
 | **5. Binary & Fuzz** | Rizin (radare2) | `rizin-adapter` | `SYMBOLIC` / `CONTEXT` | `CLI` | `STRONGLY_SUPPORTED` | LGPL-3.0 |
 | **5. Binary & Fuzz** | cargo-fuzz | `cargo-fuzz-runner` | `FUZZ` | `CLI` | `CONFIRMED` | Apache-2.0 / MIT |
@@ -121,6 +123,12 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 - **Bug Killer Integration:** Operates alongside `bk`'s internal synchronous HTTP OSV client ([`src/scanner/osv.rs`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/scanner/osv.rs)), acting as an external, independent SCA verification witness.
 - **Evidence Characteristics:** Matches are cross-checked against actual call-graph reachability. Package presence alone is tagged as `CONFIRMED_AFFECTED_VERSION`, requiring AST or binary symbol confirmation to elevate to `CONFIRMED_REACHABLE`.
 
+#### CVE MCP Server (`cve-mcp-adapter`)
+- **Technical Role:** High-density threat intelligence sidecar orchestrating 28 security intelligence tools across 24 upstream vulnerability and threat data sources (NVD, FIRST EPSS, CISA KEV catalog, Shodan, VirusTotal, crt.sh, CIRCL Passive DNS, and MITRE ATT&CK mappings).
+- **Bug Killer Integration:** Integrated into `bk`'s deep engine via [`CveMcpAdapter`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/cve_mcp.rs) and registered in [`ToolCapabilityBroker`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/broker.rs). Supports live MCP stdio communication, one-call triage orchestration (`bk.cve_triage`), and deterministic offline risk scoring with CISA KEV hard-overrides.
+- **Defensive Invariant:** Strictly defensive threat intelligence aggregation and reachability verification. Weaponized payload generation and offensive exploitation are disabled by default.
+- **Execution Transport:** `ExecutionTransport::Mcp` (FastMCP / stdio JSON-RPC). Offline-capable via local SQLite caching and deterministic fallbacks.
+
 #### Syft (`syft-adapter`)
 - **Technical Role:** Software Bill of Materials (SBOM) generator from Anchore. Catalogues packages, direct dependencies, transitive libraries, and OS packages from directories, archive files, and OCI container image layers.
 - **Bug Killer Integration:** Generates standard SPDX JSON and CycloneDX manifests during `bk init` and container scanning tasks. The SBOM artifact is hashed (SHA-256) and cataloged in `.aegis/manifest.json`.
@@ -163,6 +171,20 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 - **Technical Role:** Static analysis security engines for Infrastructure as Code (IaC). Evaluates configurations in Terraform, Kubernetes manifests, Dockerfiles, CloudFormation, and Helm charts against CIS Benchmarks, NIST guidelines, and cloud provider security best practices.
 - **Target Failure Modes:** Identifies root execution in Dockerfiles, privileged security contexts in Kubernetes Pod specs, publicly exposed S3 buckets, open security group ingress (`0.0.0.0/0`), and missing encryption-at-rest flags.
 - **Bug Killer Integration:** Analyzes workspace deployment assets during L1 scanning. Feeds into `bk plan` to synthesize prospective HCL and YAML patches.
+
+---
+
+### Category 5: Threat Modeling, Scope Enforcement & CVSS Scoring
+
+#### ThreatSwarm (`threatswarm-deep-adapter`)
+- **Technical Role:** High-performance defensive boundary enforcer, CVSS v3.1 mathematical scoring engine, and MITRE ATT&CK enterprise catalog mapper adapted from ThreatSwarm.
+- **Defensive Perimeter:** All weaponized offensive exploit generation, payload encoding, and C2 operations are completely removed. Operates exclusively in zero-trust scope verification, finding deduplication, and risk triage.
+- **Bug Killer Integration:** Embedded directly into Bug Killer's deep engine via [`ThreatswarmAdapter`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs), registered in [`ToolCapabilityBroker`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/broker.rs), and surfaced via `.agents/skills/bk-threatswarm/`.
+- **Key Modules:**
+  - `ThreatswarmScopeEnforcer`: CIDR bitmask evaluation (`10.0.0.0/8`, `192.168.1.0/24`), FQDN allowlisting, and command interception.
+  - `ThreatswarmCvssEngine` / `CvssVector`: Full FIRST.org CVSS 3.1 calculation, ceiling roundup to 0.1, and automated SLA timers (Critical: 24h, High: 72h).
+  - `ThreatswarmMitreCatalog`: ATT&CK technique lookups and CWE-to-TTP translation.
+  - `ThreatswarmFindingSync`: Deduplication of Critical/High findings across report markdown files into `FINDINGS_SUMMARY.md`.
 
 ---
 
@@ -310,3 +332,121 @@ flowchart LR
 
 - In **Strict Mode** (CI pipelines, release security gates), the absence of a mandatory tool (e.g. `gitleaks` for secrets or `cargo-audit` for Rust dependencies) immediately halts the pipeline with an error. Silent skips are prohibited.
 - In **Quick Mode** (local developer workflows), absent optional tools generate a receipt with `status: "NOT_RUN"` and `reason_code: "EngineMissing"`, clearly highlighting unassessed scope in the terminal report.
+
+---
+
+## 6. Deep Cybersecurity Skills Knowledge Engine
+
+Under `src/deep/skills.rs` and `rules/cybersecurity_skills/`, Bug Killer embeds an authoritative, curated repository of 818 specialized cybersecurity skills derived from Anthropic's cybersecurity curriculum and frameworks.
+
+### Architecture & Capabilities
+
+```mermaid
+flowchart TD
+    subgraph KNOWLEDGE ["Cybersecurity Skills Knowledge Base"]
+        CATALOG["Master Catalog<br/>rules/cybersecurity_skills/catalog.json"]
+        EMBEDDED["Compact Embedded Payload (747 KB)<br/>src/deep/cyber_skills_data.json"]
+        REGISTRY["CybersecuritySkillsRegistry<br/>src/deep/skills.rs"]
+    end
+
+    subgraph INDEXES ["O(1) Inverted Indices"]
+        BY_ID["Index by Skill ID"]
+        BY_SUB["Index by Subdomain (46)"]
+        BY_MITRE["Index by MITRE Technique (310)"]
+        BY_NIST["Index by NIST Control (52)"]
+        BY_CLASS["Index by Defensive Class (6)"]
+        BY_TAG["Index by Normalized Tags"]
+    end
+
+    subgraph SURFACES ["Integration Surfaces"]
+        BROKER["ToolCapabilityBroker<br/>recommend_skills_for_tool()"]
+        DOCTOR["bk engine doctor<br/>Skills Health Metrics"]
+        EXPLAIN["bk engine explain<br/>Goal-to-Skill Recommendations"]
+        SKILLS_CLI["bk engine skills<br/>list | show | search | recommend | stats"]
+    end
+
+    CATALOG --> EMBEDDED
+    EMBEDDED --> REGISTRY
+    REGISTRY --> INDEXES
+    INDEXES --> SURFACES
+```
+
+### Metrics & Distribution
+
+| Dimension | Metric | Key Value |
+|---|---|---|
+| **Total Skills Indexed** | 818 | Hermetically verified |
+| **Technical Subdomains** | 46 | Cloud, Network, Web, Forensics, Malware, IAM, SOC, ICS/OT |
+| **MITRE ATT&CK Techniques** | 310 | T1055, T1190, T1059, T1547, T1078, etc. |
+| **NIST CSF Controls** | 52 | PR.PS, PR.IR, DE.CM, RS.RP, ID.AM, etc. |
+| **Defensive Classes** | 6 | `DETECTION` (223), `HARDENING` (161), `VIRTUAL_PATCHING` (38), `FORENSICS_TRIAGE` (150), `AUDIT_COMPLIANCE` (92), `ADVERSARIAL_SIMULATION` (154) |
+
+### CLI Interface Commands
+
+- `bk engine skills stats`: Displays global catalog metrics and defensive distribution.
+- `bk engine skills list [--filter <subdomain|tag|mitre>] [--limit <n>] [--json]`: Lists indexed skills with metadata.
+- `bk engine skills show --id <skill-id>`: Displays comprehensive procedure details, MITRE/NIST mappings, and path.
+- `bk engine skills search --query <keywords> [--limit <n>]`: Full-text fuzzy search across titles, descriptions, and tags.
+- `bk engine skills recommend --cve <cve-id>`: Recommends prioritized defensive skills for runtime vulnerabilities (e.g. `CVE-2026-109618`, `CVE-2026-111497`).
+
+---
+
+## 7. Deep Privacy & Data Protection Engine
+
+Under `src/deep/privacy.rs`, `skills/privacy/`, and `docs/privacy/`, Bug Killer embeds an authoritative, curated repository of 282 specialized privacy and data protection procedures covering major worldwide regulatory frameworks and engineering standards (GDPR, CCPA/CPRA, HIPAA, EU AI Act, LINDDUN Threat Modeling, OWASP Privacy Risks P1–P10, ISO/IEC 27701:2025, and NIST Privacy Framework v1.0).
+
+### Architecture & Capabilities
+
+```mermaid
+flowchart TD
+    subgraph REPO ["Privacy & Data Protection Repository"]
+        SKILLS["Canonical Procedures (282)<br/>skills/privacy/<skill-id>/"]
+        DATA["Embedded Metadata Payload (442 KB)<br/>src/deep/privacy_skills_data.json"]
+        REGISTRY["PrivacySkillsRegistry<br/>src/deep/privacy.rs"]
+    end
+
+    subgraph MATRICES ["Authoritative Cross-Reference Matrices"]
+        OWASP["OWASP Top 10 Privacy Risks (P1–P10)<br/>docs/privacy/owasp-privacy-risks-mapping.md"]
+        NIST["NIST Privacy Framework (18 Categories)<br/>docs/privacy/nist-privacy-framework-mapping.md"]
+        ISO["ISO/IEC 27701:2025 (10 Clauses)<br/>docs/privacy/iso-27701-mapping.md"]
+    end
+
+    subgraph DETECTION ["Analysis & Enforcement Engines"]
+        STATIC["Static Regulatory AST Scanners<br/>src/deep/privacy.rs"]
+        CPG["CPG Multi-File Taint Tracking<br/>Source-to-Sink Dataflow"]
+        RULES["Semgrep Privacy Rules<br/>rules/semgrep/privacy-data-protection.yaml"]
+        HEAL["Remediation Catalog Recipes<br/>rules/vulnerabilities.json"]
+    end
+
+    subgraph SURFACES ["Execution Surfaces"]
+        BROKER["ToolCapabilityBroker<br/>recommend_privacy_skills()"]
+        ADAPTER["PrivacyEngineAdapter<br/>AnalyzerAdapter Implementation"]
+        AGENT_SKILL[".agents/skills/bk-privacy/SKILL.md"]
+    end
+
+    SKILLS --> DATA
+    MATRICES --> DATA
+    DATA --> REGISTRY
+    REGISTRY --> ADAPTER
+    STATIC --> ADAPTER
+    CPG --> ADAPTER
+    ADAPTER --> BROKER
+    ADAPTER --> AGENT_SKILL
+```
+
+### Supported Regulatory Check IDs & Defenses
+
+| Check ID | Title | Regulatory Framework | CWE | OWASP Risk | LINDDUN Threat |
+|---|---|---|---|---|---|
+| `BK-AI-PRIV-001` | Plaintext PII in Database Column Definition | GDPR Art. 32 / CCPA 1798.100 | CWE-311 | P1 / P2 | Disclosure (D) |
+| `BK-AI-PRIV-002` | Unredacted PII Sent to External LLM / AI API | EU AI Act Art. 10 / GDPR Art. 5 | CWE-359 | P1 / P3 | Linkability (L) / Disclosure (D) |
+| `BK-AI-PRIV-003` | Credit Card / Financial Data Leak in Application Logs | PCI-DSS v4.0 / GDPR Art. 32 | CWE-532 | P1 / P2 | Disclosure (D) |
+| `BK-AI-PRIV-004` | Indefinite Data Retention Policy in Storage Configuration | GDPR Art. 5(1)(e) / CCPA | CWE-404 | P7 / P9 | Unawareness (U) |
+| `BK-AI-PRIV-005` | DSAR Deletion Endpoint Missing Authentication | GDPR Art. 17 / CCPA 1798.105 | CWE-840 | P4 / P6 | Detectability (D) |
+| `BK-AI-PRIV-006` | PII Field Logging in Web Request Middleware | GDPR Art. 5(1)(c) / OWASP P2 | CWE-532 | P2 | Identifiability (I) |
+| `BK-AI-PRIV-007` | Unconsented Analytics Cookie Tracking | ePrivacy Directive / GDPR Art. 6 | CWE-359 | P5 / P6 | Non-repudiation (NR) |
+| `BK-AI-PRIV-008` | Unsafe PHI Export Missing HIPAA Safe Harbor De-identification | HIPAA 45 CFR § 164.514(b) | CWE-359 | P1 / P3 | Linkability (L) / Disclosure (D) |
+| `BK-AI-PRIV-009` | High-Risk Automated AI Decision Without Human Oversight | EU AI Act Art. 14 | CWE-840 | P8 | Non-compliance (NC) |
+| `BK-AI-PRIV-010` | Incident Response Plan Omits 72-Hour Supervisory Authority Notification | GDPR Art. 33 / DPA Notification | CWE-840 | P10 | Unawareness (U) |
+
+

@@ -157,6 +157,48 @@ impl McpServer {
                 }),
             },
             McpTool {
+                name: "bk.cve_triage".into(),
+                description: "Triage a CVE with composite risk scoring (0-100), CISA KEV priority override, EPSS exploitation probability, and actionable remediation SLA.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "required": ["cve_id"],
+                    "properties": {
+                        "cve_id": {
+                            "type": "string",
+                            "description": "CVE identifier to triage (e.g. CVE-2026-109618)"
+                        }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bk.cve_lookup".into(),
+                description: "Look up vulnerability details, EPSS score, and CISA KEV status for a CVE identifier.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "required": ["cve_id"],
+                    "properties": {
+                        "cve_id": {
+                            "type": "string",
+                            "description": "CVE identifier (e.g. CVE-2026-109618)"
+                        }
+                    }
+                }),
+            },
+            McpTool {
+                name: "bk.cve_kev_check".into(),
+                description: "Check if a CVE is in the CISA Known Exploited Vulnerabilities (KEV) catalog with due dates.".into(),
+                input_schema: json!({
+                    "type": "object",
+                    "required": ["cve_id"],
+                    "properties": {
+                        "cve_id": {
+                            "type": "string",
+                            "description": "CVE identifier to check in KEV"
+                        }
+                    }
+                }),
+            },
+            McpTool {
                 name: "bk.skill_scan".into(),
                 description: "Scan AI agent skills, prompts, and MCP server configuration files for supply-chain risks, prompt injections, and shell privilege escapes.".into(),
                 input_schema: json!({
@@ -555,6 +597,48 @@ impl McpServer {
                     Err(error) => CallToolResult::error_text(error),
                 }
             }
+            "bk.cve_triage" => {
+                let Some(cve_id) = args.get("cve_id").and_then(Value::as_str) else {
+                    return CallToolResult::error_text("Missing required argument 'cve_id'");
+                };
+                let adapter = crate::deep::cve_mcp::CveMcpAdapter::new();
+                match adapter.triage_cve(cve_id) {
+                    Ok(triage) => CallToolResult::ok_json(&triage)
+                        .unwrap_or_else(|e| CallToolResult::error_text(e.to_string())),
+                    Err(e) => CallToolResult::error_text(e),
+                }
+            }
+
+            "bk.cve_lookup" => {
+                let Some(cve_id) = args.get("cve_id").and_then(Value::as_str) else {
+                    return CallToolResult::error_text("Missing required argument 'cve_id'");
+                };
+                let adapter = crate::deep::cve_mcp::CveMcpAdapter::new();
+                let triage = adapter.triage_cve(cve_id);
+                let kev = adapter.check_kev(cve_id);
+                let epss = adapter.get_epss(cve_id);
+                let lookup = json!({
+                    "cve_id": cve_id,
+                    "triage": triage.ok(),
+                    "kev": kev.ok(),
+                    "epss": epss.ok(),
+                });
+                CallToolResult::ok_json(&lookup)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
+            }
+
+            "bk.cve_kev_check" => {
+                let Some(cve_id) = args.get("cve_id").and_then(Value::as_str) else {
+                    return CallToolResult::error_text("Missing required argument 'cve_id'");
+                };
+                let adapter = crate::deep::cve_mcp::CveMcpAdapter::new();
+                match adapter.check_kev(cve_id) {
+                    Ok(kev) => CallToolResult::ok_json(&kev)
+                        .unwrap_or_else(|e| CallToolResult::error_text(e.to_string())),
+                    Err(e) => CallToolResult::error_text(e),
+                }
+            }
+
             "bk.asset_inventory" => {
                 let packages = OsvClient::discover_packages(&target_path);
                 let processes = HostProcessScanner::discover_running_processes();

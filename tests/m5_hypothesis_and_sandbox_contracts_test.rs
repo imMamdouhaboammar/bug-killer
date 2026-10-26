@@ -389,3 +389,14 @@ fn test_sandbox_output_truncation() {
     assert!(receipt.output_truncated);
     assert_eq!(receipt.stdout.len(), 64);
 }
+
+#[test]
+fn test_sandbox_zero_egress_preflight_blocks_outbound() {
+    let runner = SandboxRunner::default_runner().expect("Runner must construct");
+
+    let res = runner.run_command("curl", &["https://example.com/api"]);
+    assert!(res.is_err(), "Outbound curl must be blocked fail-closed");
+
+    let res_wget = runner.run_command("wget", &["http://1.2.3.4/malicious"]);
+    assert!(res_wget.is_err(), "Outbound wget must be blocked fail-closed");
+}

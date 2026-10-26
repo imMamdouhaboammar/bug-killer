@@ -14,3 +14,10 @@ test-findings.json
 # repowise owner-digest key (local)
 .repowise/
 .vscode/
+
+# Python artifacts
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+

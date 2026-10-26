@@ -1,0 +1,129 @@
+rules:
+  - id: bk-privacy-ai-unredacted-pii
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $CLIENT.chat.completions.create(
+                ...,
+                messages=[..., {"role": ..., "content": $REQ.body.$PII}, ...],
+                ...
+              )
+          - pattern: |
+              $CLIENT.messages.create(
+                ...,
+                messages=[..., {"role": ..., "content": $REQ.body.$PII}, ...],
+                ...
+              )
+          - pattern: |
+              openai.chat.completions.create(
+                ...,
+                prompt=... + $USER.$PII + ...,
+                ...
+              )
+    message: "Sensitive user PII (SSN, credit card, health record) passed directly to remote LLM completion API without anonymization or redaction."
+    languages: [python, javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-359"
+      category: "privacy"
+      owasp_privacy: "P1"
+      regulation: "GDPR Art. 5(1)(c) / EU AI Act Art. 10"
+      confidence: HIGH
+
+  - id: bk-privacy-unencrypted-pii-column
+    patterns:
+      - pattern-either:
+          - pattern: |
+              table.string('$FIELD')
+          - pattern: |
+              $FIELD: { type: String, encrypted: false }
+      - metavariable-regex:
+          metavariable: $FIELD
+          regex: (?i)^(ssn|social_security|credit_card|card_number|tax_id|bank_account|passport_number)$
+    message: "Direct database column for primary PII declared without column-level encryption or hashing."
+    languages: [javascript, typescript, python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-311"
+      category: "privacy"
+      owasp_privacy: "P2"
+      regulation: "GDPR Art. 32 / HIPAA § 164.312"
+      confidence: HIGH
+
+  - id: bk-privacy-indefinite-storage-retention
+    patterns:
+      - pattern-either:
+          - pattern: "retention_period = None"
+          - pattern: "retention_period: null"
+          - pattern: "retention_period: 'indefinite'"
+          - pattern: "ttl: 0"
+          - pattern: "purge_expired_users: false"
+          - pattern: "keep_pii_indefinitely: true"
+    message: "Storage limitation invariant violated: Personal data configured with indefinite retention period."
+    languages: [python, javascript, typescript, yaml]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-404"
+      category: "privacy"
+      owasp_privacy: "P4"
+      regulation: "GDPR Art. 5(1)(e) / CCPA § 1798.100"
+      confidence: HIGH
+
+  - id: bk-privacy-dsar-missing-auth
+    patterns:
+      - pattern: |
+          $APP.$METHOD('/api/export-user-data', (req, res) => {
+            ...
+          })
+      - pattern-not: |
+          $APP.$METHOD('/api/export-user-data', $AUTH, (req, res) => {
+            ...
+          })
+    message: "Data Subject Access Request (DSAR) export endpoint lacks authentication and owner verification middleware."
+    languages: [javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-285"
+      category: "privacy"
+      owasp_privacy: "P9"
+      regulation: "GDPR Art. 15 / CCPA § 1798.100"
+      confidence: HIGH
+
+  - id: bk-privacy-eu-ai-automated-decision-oversight
+    patterns:
+      - pattern-either:
+          - pattern: "autonomous_high_risk_decision: true"
+          - pattern: "human_in_the_loop: false"
+          - pattern: "auto_reject_loan($APPLICANT)"
+          - pattern: "auto_deny_benefit($CLAIM)"
+    message: "EU AI Act Art. 14 / GDPR Art. 22 violation: High-risk autonomous automated decision without human oversight or recourse mechanism."
+    languages: [python, javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-840"
+      category: "privacy"
+      owasp_privacy: "P10"
+      regulation: "EU AI Act Art. 14 / GDPR Art. 22"
+      confidence: HIGH
+
+  - id: bk-privacy-hipaa-unsafe-phi-export
+    patterns:
+      - pattern: |
+          def export_patient_records($PATIENT):
+            ...
+            return $PATIENT.medical_history
+      - pattern-not: |
+          def export_patient_records($PATIENT):
+            ...
+            $DEIDENTIFIED = deidentify_hipaa(...)
+            ...
+            return $DEIDENTIFIED
+    message: "HIPAA Protected Health Information (PHI) exported without applying Safe Harbor de-identification (18 identifiers)."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-359"
+      category: "privacy"
+      owasp_privacy: "P2"
+      regulation: "HIPAA 45 CFR § 164.514"
+      confidence: HIGH

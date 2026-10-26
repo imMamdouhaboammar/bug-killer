@@ -1,8 +1,12 @@
 pub mod broker;
 pub mod codeql;
 pub mod cpg;
+pub mod cve_mcp;
 pub mod joern;
+pub mod privacy;
 pub mod semgrep;
+pub mod skills;
+pub mod threatswarm;
 
 // Re-export key capability broker and receipt types
 pub use broker::{
@@ -23,4 +27,16 @@ pub use cpg::{
     CpgNodeKind, DataflowStep, EdgeKind, NodeKind, TaintFlow, TaintStep, TraceCertainty, TraceStep,
 };
 pub use joern::{JoernAdapter, JoernSidecarConfig};
+pub use privacy::{
+    PrivacyEngineAdapter, PrivacyFinding, PrivacyFramework, PrivacyRegistryMetrics, PrivacySkill,
+    PrivacySkillsRegistry,
+};
 pub use semgrep::SemgrepAdapter;
+pub use skills::{
+    CybersecuritySkill, CybersecuritySkillsRegistry, DefensiveClass, SkillsRegistryMetrics,
+};
+pub use threatswarm::{
+    AttackComplexity, AttackVector, CvssVector, FindingSyncSummary, ImpactMetric, MitreTechnique,
+    PrivilegesRequired, Scope, ScopeEntry, ScopeViolation, ThreatswarmAdapter, ThreatswarmCvssEngine,
+    ThreatswarmFindingSync, ThreatswarmMitreCatalog, ThreatswarmScopeEnforcer,
+};

@@ -515,7 +515,15 @@ impl ToolCapabilityBroker {
 
     /// Discovers all standard external tools.
     pub fn discover_all(&mut self) -> Vec<ToolCapability> {
-        let tools = ["semgrep", "joern", "codeql", "trivy"];
+        let tools = [
+            "semgrep",
+            "joern",
+            "codeql",
+            "trivy",
+            "privacy-engine",
+            "threatswarm",
+            "cve-mcp",
+        ];
         let mut results = Vec::new();
         for tool in tools {
             let cap = self.discover_tool(tool);
@@ -531,6 +539,12 @@ impl ToolCapabilityBroker {
             "codeql" | "codeql-adapter" => "codeql",
             "joern" | "joern-cpg-adapter" => "joern",
             "trivy" | "trivy-adapter" => "trivy",
+            "privacy-engine" | "privacy-adapter" | "bk-privacy" | "data-protection" => {
+                "privacy-engine"
+            }
+            "threatswarm" | "threatswarm-deep-adapter" | "threatswarm-adapter" | "bk-threatswarm" => {
+                "threatswarm"
+            }
             other => other,
         };
 
@@ -542,6 +556,9 @@ impl ToolCapabilityBroker {
             "codeql" => self.build_codeql_capability(binary_path.as_deref(), &now),
             "joern" => self.build_joern_capability(binary_path.as_deref(), &now),
             "trivy" => self.build_trivy_capability(binary_path.as_deref(), &now),
+            "privacy-engine" => self.build_privacy_capability(&now),
+            "threatswarm" => self.build_threatswarm_capability(&now),
+            "cve-mcp" => self.build_cve_mcp_capability(binary_path.as_deref(), &now),
             custom => self.build_custom_capability(custom, binary_path.as_deref(), &now),
         };
 
@@ -560,6 +577,24 @@ impl ToolCapabilityBroker {
             self.capabilities
                 .insert("joern-cpg-adapter".to_string(), cap.clone());
         }
+        if canonical_id == "privacy-engine" {
+            self.capabilities
+                .insert("privacy-engine-adapter".to_string(), cap.clone());
+            self.capabilities
+                .insert("bk-privacy".to_string(), cap.clone());
+        }
+        if canonical_id == "threatswarm" {
+            self.capabilities
+                .insert("threatswarm-deep-adapter".to_string(), cap.clone());
+            self.capabilities
+                .insert("bk-threatswarm".to_string(), cap.clone());
+        }
+        if canonical_id == "cve-mcp" {
+            self.capabilities
+                .insert("cve-mcp-adapter".to_string(), cap.clone());
+            self.capabilities
+                .insert("cve-mcp-server".to_string(), cap.clone());
+        }
         cap
     }
 
@@ -571,6 +606,33 @@ impl ToolCapabilityBroker {
     /// Retrieve a tool capability by tool ID.
     pub fn get_tool(&self, tool_id: &str) -> Option<&ToolCapability> {
         self.get_capability(tool_id)
+    }
+
+    /// Access the deep cybersecurity skills registry.
+    pub fn skills(&self) -> &'static crate::deep::skills::CybersecuritySkillsRegistry {
+        crate::deep::skills::CybersecuritySkillsRegistry::default_embedded()
+    }
+
+    /// Recommends cybersecurity skills associated with an external tool ID.
+    pub fn recommend_skills_for_tool(
+        &self,
+        tool_id: &str,
+    ) -> Vec<&'static crate::deep::skills::CybersecuritySkill> {
+        crate::deep::skills::CybersecuritySkillsRegistry::default_embedded()
+            .recommend_for_tool(tool_id)
+    }
+
+    /// Access the deep privacy & data protection skills registry.
+    pub fn privacy_skills(&self) -> &'static crate::deep::privacy::PrivacySkillsRegistry {
+        crate::deep::privacy::PrivacySkillsRegistry::default_embedded()
+    }
+
+    /// Recommends privacy & data protection skills for a given check ID or regulatory term.
+    pub fn recommend_privacy_skills(
+        &self,
+        check_id: &str,
+    ) -> Vec<&'static crate::deep::privacy::PrivacySkill> {
+        crate::deep::privacy::PrivacySkillsRegistry::default_embedded().recommend_for_check(check_id)
     }
 
     /// Register or override a tool capability.
@@ -1086,6 +1148,89 @@ impl ToolCapabilityBroker {
         }
     }
 
+    fn build_privacy_capability(&self, now: &str) -> ToolCapability {
+        ToolCapability {
+            schema_version: "1.0".to_string(),
+            tool_id: "privacy-engine-adapter".to_string(),
+            adapter_version: "1.0.0".to_string(),
+            engine_version: Some("1.0.0".to_string()),
+            binary_sha256: None,
+            installation: Installation::Available,
+            capabilities: ToolCapabilityDetails {
+                kinds: vec![
+                    CapabilityKind::Sast,
+                    CapabilityKind::Context,
+                    CapabilityKind::Advisory,
+                    CapabilityKind::Secrets,
+                ],
+                languages: vec![
+                    "all".to_string(),
+                    "python".to_string(),
+                    "javascript".to_string(),
+                    "typescript".to_string(),
+                    "go".to_string(),
+                    "rust".to_string(),
+                    "php".to_string(),
+                    "java".to_string(),
+                    "ruby".to_string(),
+                    "csharp".to_string(),
+                    "yaml".to_string(),
+                    "json".to_string(),
+                ],
+                asset_types: vec![
+                    "source".to_string(),
+                    "config".to_string(),
+                    "dataset".to_string(),
+                    "privacy_manifest".to_string(),
+                    "ropa".to_string(),
+                    "dpia".to_string(),
+                ],
+                check_ids: vec![
+                    "privacy.gdpr".to_string(),
+                    "privacy.ccpa".to_string(),
+                    "privacy.hipaa".to_string(),
+                    "privacy.eu_ai_act".to_string(),
+                    "privacy.linddun".to_string(),
+                    "privacy.owasp_top10".to_string(),
+                    "BK-AI-PRIV-001".to_string(),
+                    "BK-AI-PRIV-002".to_string(),
+                    "BK-AI-PRIV-003".to_string(),
+                    "BK-AI-PRIV-004".to_string(),
+                    "BK-AI-PRIV-005".to_string(),
+                    "BK-AI-PRIV-006".to_string(),
+                    "BK-AI-PRIV-007".to_string(),
+                    "BK-AI-PRIV-008".to_string(),
+                    "BK-AI-PRIV-009".to_string(),
+                    "BK-AI-PRIV-010".to_string(),
+                ],
+                output_formats: vec![OutputFormat::Json, OutputFormat::Sarif, OutputFormat::Text],
+                evidence_limit: EvidenceLimit::Confirmed,
+            },
+            execution: ToolExecutionDetails {
+                transport: ExecutionTransport::Library,
+                local: true,
+                network_required: false,
+                scoped_permission_classes: vec!["workspace:read".to_string()],
+                platforms: vec![std::env::consts::OS.to_string()],
+            },
+            governance: ToolGovernanceDetails {
+                license_review: LicenseReview::Approved,
+                entitlement_verified: true,
+                source_export_required: false,
+                cost_model: CostModel::LocalResources,
+                restrictions: vec![
+                    "Strictly defensive data protection, privacy compliance, and LINDDUN threat modeling"
+                        .to_string(),
+                ],
+            },
+            verified_at: now.to_string(),
+            notes: vec![
+                "Embedded 282+ procedure Privacy & Data Protection Deep Engine (GDPR, CCPA, HIPAA, EU AI Act, LINDDUN, ISO 27701)"
+                    .to_string(),
+            ],
+        }
+    }
+
     fn build_custom_capability(
         &self,
         tool_id: &str,
@@ -1132,6 +1277,145 @@ impl ToolCapabilityBroker {
             },
             verified_at: now.to_string(),
             notes: vec!["Generic discovered external tool".to_string()],
+        }
+    }
+
+    fn build_threatswarm_capability(&self, now: &str) -> ToolCapability {
+        ToolCapability {
+            schema_version: "1.0".to_string(),
+            tool_id: "threatswarm-deep-adapter".to_string(),
+            adapter_version: "1.0.0".to_string(),
+            engine_version: Some("1.0.0".to_string()),
+            binary_sha256: None,
+            installation: Installation::Available,
+            capabilities: ToolCapabilityDetails {
+                kinds: vec![
+                    CapabilityKind::Context,
+                    CapabilityKind::Advisory,
+                    CapabilityKind::Sast,
+                ],
+                languages: vec![
+                    "all".to_string(),
+                    "rust".to_string(),
+                    "go".to_string(),
+                    "python".to_string(),
+                    "javascript".to_string(),
+                    "typescript".to_string(),
+                    "php".to_string(),
+                ],
+                asset_types: vec![
+                    "source".to_string(),
+                    "config".to_string(),
+                    "boundary".to_string(),
+                    "network".to_string(),
+                ],
+                check_ids: vec![
+                    "threatswarm.scope.unauthorized_egress".to_string(),
+                    "threatswarm.defense.disabled_tls_validation".to_string(),
+                    "threatswarm.cvss.base_score".to_string(),
+                    "threatswarm.mitre.technique_map".to_string(),
+                ],
+                output_formats: vec![OutputFormat::Json, OutputFormat::Sarif, OutputFormat::Text],
+                evidence_limit: EvidenceLimit::StronglySupported,
+            },
+            execution: ToolExecutionDetails {
+                transport: ExecutionTransport::Library,
+                local: true,
+                network_required: false,
+                scoped_permission_classes: vec!["workspace:read".to_string()],
+                platforms: vec![std::env::consts::OS.to_string()],
+            },
+            governance: ToolGovernanceDetails {
+                license_review: LicenseReview::Approved,
+                entitlement_verified: true,
+                source_export_required: false,
+                cost_model: CostModel::LocalResources,
+                restrictions: vec![
+                    "Strictly defensive perimeter: scope boundary enforcement, MITRE ATT&CK mapping, and CVSS 3.1 base scoring"
+                        .to_string(),
+                ],
+            },
+            verified_at: now.to_string(),
+            notes: vec![
+                "Integrated ThreatSwarm defensive intelligence engine for autonomous boundary containment, CVSS 3.1 scoring, and MITRE enterprise mapping"
+                    .to_string(),
+            ],
+        }
+    }
+
+    fn build_cve_mcp_capability(&self, binary_path: Option<&Path>, now: &str) -> ToolCapability {
+        let adapter = crate::deep::cve_mcp::CveMcpAdapter::new();
+        let installed = adapter.is_installed() || binary_path.is_some();
+        let installation = if installed {
+            Installation::Available
+        } else {
+            Installation::Missing
+        };
+
+        ToolCapability {
+            schema_version: "1.0".to_string(),
+            tool_id: "cve-mcp-adapter".to_string(),
+            adapter_version: "0.2.0".to_string(),
+            engine_version: Some("0.2.0".to_string()),
+            binary_sha256: None,
+            installation,
+            capabilities: ToolCapabilityDetails {
+                kinds: vec![
+                    CapabilityKind::Advisory,
+                    CapabilityKind::Context,
+                    CapabilityKind::Sca,
+                ],
+                languages: vec![
+                    "all".to_string(),
+                    "python".to_string(),
+                    "javascript".to_string(),
+                    "typescript".to_string(),
+                    "go".to_string(),
+                    "rust".to_string(),
+                    "php".to_string(),
+                    "c".to_string(),
+                    "cpp".to_string(),
+                ],
+                asset_types: vec![
+                    "source".to_string(),
+                    "binary".to_string(),
+                    "container".to_string(),
+                    "advisory".to_string(),
+                    "cve".to_string(),
+                ],
+                check_ids: vec![
+                    "cve.lookup".to_string(),
+                    "cve.triage".to_string(),
+                    "cve.epss".to_string(),
+                    "cve.kev".to_string(),
+                    "cve.cvss".to_string(),
+                    "cve.risk_score".to_string(),
+                ],
+                output_formats: vec![OutputFormat::Json, OutputFormat::Sarif, OutputFormat::Text],
+                evidence_limit: EvidenceLimit::StronglySupported,
+            },
+            execution: ToolExecutionDetails {
+                transport: ExecutionTransport::Mcp,
+                local: true,
+                network_required: false,
+                scoped_permission_classes: vec!["workspace:read".to_string()],
+                platforms: vec![std::env::consts::OS.to_string()],
+            },
+            governance: ToolGovernanceDetails {
+                license_review: LicenseReview::Approved,
+                entitlement_verified: true,
+                source_export_required: false,
+                cost_model: CostModel::LocalResources,
+                restrictions: vec![
+                    "Strictly defensive CVE intelligence triage, CISA KEV validation, and EPSS correlation"
+                        .to_string(),
+                ],
+            },
+            verified_at: now.to_string(),
+            notes: vec![
+                "CVE MCP server integration providing deterministic risk scoring (0-100), CISA KEV priority override, and EPSS probabilities"
+                    .to_string(),
+            ],
         }
     }
 }

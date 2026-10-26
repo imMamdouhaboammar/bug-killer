@@ -47,6 +47,16 @@ impl HostConfigGenerator {
         })
     }
 
+    /// Generates CVE MCP Server configuration snippet
+    pub fn cve_mcp_config(server_dir: Option<&str>) -> Value {
+        let dir = server_dir.unwrap_or("services/cve-mcp-server");
+        json!({
+            "command": "uv",
+            "args": ["run", "--directory", dir, "cve-mcp"],
+            "description": "CVE MCP Server: Correlated Vulnerability Triage, EPSS & CISA KEV Intelligence"
+        })
+    }
+
     /// Generates combined multi-host configuration manifest
     pub fn generate_all(binary_path: Option<&str>) -> Value {
         json!({
