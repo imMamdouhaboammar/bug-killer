@@ -11,8 +11,16 @@ pub struct AgentIdentity {
     verifying_key: VerifyingKey,
 }
 
-fn to_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+pub fn to_hex(bytes: impl AsRef<[u8]>) -> String {
+    const HEX_CHARS: &[u8; 16] = b"0123456789abcdef";
+    let slice = bytes.as_ref();
+    let mut v = Vec::with_capacity(slice.len() * 2);
+    for &byte in slice {
+        v.push(HEX_CHARS[(byte >> 4) as usize]);
+        v.push(HEX_CHARS[(byte & 0x0f) as usize]);
+    }
+    // Sound: HEX_CHARS contains only valid ASCII bytes '0'..='9', 'a'..='f'.
+    unsafe { String::from_utf8_unchecked(v) }
 }
 
 fn from_hex(s: &str) -> Result<Vec<u8>, &'static str> {
@@ -107,14 +115,14 @@ impl AgentIdentity {
     }
 
     pub fn public_key_hex(&self) -> String {
-        to_hex(&self.verifying_key.to_bytes())
+        to_hex(self.verifying_key.to_bytes())
     }
 
     /// Cryptographically signs arbitrary byte slice with agent's Ed25519 private key.
     #[allow(dead_code)]
     pub fn sign_bytes(&self, data: &[u8]) -> String {
         let sig: Signature = self.signing_key.sign(data);
-        to_hex(&sig.to_bytes())
+        to_hex(sig.to_bytes())
     }
 
     /// Verifies Ed25519 signature in hex format against agent's public key.
@@ -158,7 +166,7 @@ impl AgentIdentity {
         let sig: Signature = self.signing_key.sign(&digest);
 
         manifest.signer_public_key = Some(self.public_key_hex());
-        manifest.signature = Some(to_hex(&sig.to_bytes()));
+        manifest.signature = Some(to_hex(sig.to_bytes()));
     }
 
     /// Verifies the cryptographic integrity and authenticity of a backup manifest against the trusted local agent identity.
@@ -355,13 +363,13 @@ impl OperatorIdentity {
     }
 
     pub fn public_key_hex(&self) -> String {
-        to_hex(&self.verifying_key.to_bytes())
+        to_hex(self.verifying_key.to_bytes())
     }
 
     /// Cryptographically signs arbitrary byte slice with operator's Ed25519 private key.
     pub fn sign_bytes(&self, data: &[u8]) -> String {
         let sig: Signature = self.signing_key.sign(data);
-        to_hex(&sig.to_bytes())
+        to_hex(sig.to_bytes())
     }
 
     /// Verifies Ed25519 signature in hex format against operator's public key.

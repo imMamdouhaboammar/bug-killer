@@ -25,3 +25,5 @@ pub mod structural;
 pub mod taint;
 pub mod types;
 pub mod watcher;
+
+pub use identity::to_hex;

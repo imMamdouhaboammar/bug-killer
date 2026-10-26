@@ -187,7 +187,7 @@ impl AffectednessCorrelator {
                 hasher.update(run_id.as_bytes());
                 hasher.update(pkg.name.as_bytes());
                 hasher.update(canonical_id.as_bytes());
-                let finding_hash = format!("{:x}", hasher.finalize());
+                let finding_hash = crate::to_hex(hasher.finalize());
                 let finding_id = format!("finding-{}", &finding_hash[..16]);
 
                 let summary = cluster

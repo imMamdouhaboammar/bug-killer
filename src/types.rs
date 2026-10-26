@@ -414,7 +414,7 @@ impl Finding {
         }
         hasher.update(b":");
         hasher.update(self.detected_version_or_pattern.as_bytes());
-        self.dedupe_fingerprint = format!("{:x}", hasher.finalize());
+        self.dedupe_fingerprint = crate::to_hex(hasher.finalize());
     }
 }
 

@@ -359,7 +359,7 @@ fn test_disclosure_audit_logging_and_tamper_evidence() {
 
     let mut hasher = Sha256::new();
     hasher.update(b"canonical_draft_payload");
-    let content_sha = format!("{:x}", hasher.finalize());
+    let content_sha = bug_killer::to_hex(hasher.finalize());
 
     // 1. Log sequential lifecycle events
     let ev_create = DisclosureAuditEvent::new(

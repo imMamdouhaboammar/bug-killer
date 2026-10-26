@@ -9,6 +9,7 @@ mod detectors;
 mod doctor;
 mod healer;
 mod identity;
+pub use identity::to_hex;
 mod mcp;
 mod osv;
 mod rules;

@@ -14,7 +14,7 @@ impl ContainerScanner {
             Err(_) => return findings,
         };
 
-        let file_digest = format!("{:x}", Sha256::digest(path.to_string_lossy().as_bytes()));
+        let file_digest = crate::to_hex(Sha256::digest(path.to_string_lossy().as_bytes()));
         let mut has_user_directive = false;
         let mut last_user = String::new();
         let mut last_user_line = 0;

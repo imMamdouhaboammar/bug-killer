@@ -257,7 +257,7 @@ impl RulePack {
                 hasher.update(p.as_bytes());
             }
         }
-        format!("{:x}", hasher.finalize())
+        crate::to_hex(hasher.finalize())
     }
 
     /// Finds all rules applicable to the given language.

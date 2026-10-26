@@ -88,7 +88,7 @@ impl BinaryScanner {
             }
         };
 
-        let file_digest = format!("{:x}", Sha256::digest(path.to_string_lossy().as_bytes()));
+        let file_digest = crate::to_hex(Sha256::digest(path.to_string_lossy().as_bytes()));
         let mut detected_brotli = false;
         let mut detected_php = false;
         let mut arch_info = "Unknown".to_string();

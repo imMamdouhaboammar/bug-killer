@@ -625,7 +625,7 @@ fn build_receipt(
     hasher.update(status.as_str().as_bytes());
     hasher.update(&stdout);
     hasher.update(&stderr);
-    let digest = format!("{:x}", hasher.finalize());
+    let digest = crate::to_hex(hasher.finalize());
 
     let receipt_id = format!("receipt-sbx-{}", &digest[..16]);
 

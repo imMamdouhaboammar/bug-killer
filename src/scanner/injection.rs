@@ -46,7 +46,7 @@ impl InjectionScanner {
             return findings;
         }
 
-        let file_hash = format!("{:x}", Sha256::digest(path_str.as_bytes()));
+        let file_hash = crate::to_hex(Sha256::digest(path_str.as_bytes()));
 
         for (idx, line) in content.lines().enumerate() {
             let line_num = idx + 1;
@@ -156,7 +156,7 @@ impl InjectionScanner {
     pub fn scan_redos(path: &Path, content: &str) -> Vec<Finding> {
         let mut findings = Vec::new();
         let path_str = path.to_string_lossy().replace('\\', "/");
-        let file_hash = format!("{:x}", Sha256::digest(path_str.as_bytes()));
+        let file_hash = crate::to_hex(Sha256::digest(path_str.as_bytes()));
 
         let target_kind = if path
             .extension()

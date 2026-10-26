@@ -510,7 +510,7 @@ impl ToolCapabilityBroker {
             }
             hasher.update(&buffer[..n]);
         }
-        Some(format!("{:x}", hasher.finalize()))
+        Some(crate::to_hex(hasher.finalize()))
     }
 
     /// Discovers all standard external tools.

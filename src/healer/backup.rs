@@ -13,7 +13,7 @@ impl BackupManager {
         let bytes = fs::read(path)?;
         let mut hasher = Sha256::new();
         hasher.update(&bytes);
-        Ok(format!("{:x}", hasher.finalize()))
+        Ok(crate::to_hex(hasher.finalize()))
     }
 
     /// Generates a collision-proof unique backup ID.
@@ -41,7 +41,7 @@ impl BackupManager {
             .map(|a| {
                 let mut hasher = Sha256::new();
                 hasher.update(a.replacement_content.as_bytes());
-                (a.target_file.clone(), format!("{:x}", hasher.finalize()))
+                (a.target_file.clone(), crate::to_hex(hasher.finalize()))
             })
             .collect();
         Self::create_backup_with_post_heals(root, &files, &post_heals)

@@ -224,7 +224,7 @@ impl Redactor {
             let matched_text = &input[start..end];
             let mut hasher = Sha256::new();
             hasher.update(matched_text.as_bytes());
-            let sha256_full = format!("{:x}", hasher.finalize());
+            let sha256_full = crate::to_hex(hasher.finalize());
             let prefix_8 = &sha256_full[..8];
 
             let replacement = format!("[REDACTED:{}:{}]", cat.tag(), prefix_8);

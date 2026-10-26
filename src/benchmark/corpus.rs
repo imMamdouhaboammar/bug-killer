@@ -227,7 +227,7 @@ impl BenchmarkCorpus {
         }
 
         let digest = hasher.finalize();
-        Ok(format!("{:x}", digest))
+        Ok(crate::to_hex(digest))
     }
 
     /// Verifies the integrity of all cases and the dataset fingerprint.
@@ -284,5 +284,5 @@ pub fn compute_file_sha256(path: &Path) -> Result<String, BenchmarkError> {
         .map_err(|e| BenchmarkError::Io(format!("{}: {}", path.display(), e)))?;
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(crate::to_hex(hasher.finalize()))
 }
