@@ -9,6 +9,7 @@ pub mod cve_db;
 pub mod dast;
 pub mod deep;
 pub mod detectors;
+pub mod disclosure;
 pub mod doctor;
 pub mod engine;
 pub mod healer;

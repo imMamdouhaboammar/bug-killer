@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "disclosure-packet.schema.json",
+  "title": "Bug Killer Private Disclosure Packet v1 (PROPOSED)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "packet_id",
+    "draft_id",
+    "finding_id",
+    "lifecycle_state",
+    "title",
+    "vulnerability_type",
+    "severity",
+    "affected_target",
+    "security_impact",
+    "safe_reproduction",
+    "root_cause",
+    "suggested_mitigation",
+    "contact_channel",
+    "reporter",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "packet_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the disclosure packet envelope."
+    },
+    "draft_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Deterministic draft revision identifier."
+    },
+    "finding_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference to the source finding or research candidate finding_id."
+    },
+    "lifecycle_state": {
+      "type": "string",
+      "enum": [
+        "PrivateDraft",
+        "UserReviewed",
+        "SubmittedPrivately",
+        "MaintainerTriaged",
+        "FixAvailable",
+        "CoordinatedPublished",
+        "Withdrawn",
+        "Duplicate",
+        "Rejected",
+        "AwaitingResponse",
+        "HoldForSafety"
+      ],
+      "description": "Authoritative lifecycle state of the disclosure packet."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "description": "Clear descriptive summary of the discovered vulnerability."
+    },
+    "vulnerability_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Classification (e.g. Remote Code Execution, Memory Corruption, Authentication Bypass)."
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "Critical",
+        "High",
+        "Medium",
+        "Low"
+      ],
+      "description": "Assessed severity level according to CVSS qualification."
+    },
+    "affected_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package",
+        "commit_range",
+        "repository",
+        "source_snapshot_sha256"
+      ],
+      "properties": {
+        "package": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Component or package name affected by the issue."
+        },
+        "commit_range": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Vulnerable commit hash range or release tag range."
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Canonical upstream repository URL or identifier."
+        },
+        "source_snapshot_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Cryptographic digest of the audited source tree snapshot."
+        }
+      }
+    },
+    "security_impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prerequisites",
+        "attack_vector",
+        "privileges_required",
+        "user_interaction",
+        "scope",
+        "confidential_impact",
+        "integrity_impact",
+        "availability_impact"
+      ],
+      "properties": {
+        "prerequisites": {
+          "type": "string",
+          "description": "Operational prerequisites or environmental conditions for exploitability."
+        },
+        "attack_vector": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Network, Adjacent, Local, or Physical context."
+        },
+        "privileges_required": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Privilege level required by the attacker (None, Low, High)."
+        },
+        "user_interaction": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Whether benign user interaction is required (None, Required)."
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Whether vulnerability impacts resources beyond its security authority (Unchanged, Changed)."
+        },
+        "confidential_impact": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Impact to confidentiality (None, Low, High)."
+        },
+        "integrity_impact": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Impact to integrity (None, Low, High)."
+        },
+        "availability_impact": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Impact to availability (None, Low, High)."
+        }
+      }
+    },
+    "safe_reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "test_type",
+        "harness_code",
+        "sanitized_input",
+        "expected_behavior",
+        "observed_behavior"
+      ],
+      "properties": {
+        "test_type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Type of offline test harness (e.g. Unit Test, Property Invariant, Sanitizer Fixture)."
+        },
+        "harness_code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Deterministic, harmless offline reproduction harness code."
+        },
+        "sanitized_input": {
+          "type": "string",
+          "description": "Sanitized trigger input. MUST NOT contain weaponized shellcode, live credentials, or binary exploit payloads."
+        },
+        "expected_behavior": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Expected safe execution or rejection behavior."
+        },
+        "observed_behavior": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Observed failure, panic, or security assertion violation."
+        }
+      },
+      "description": "Safe offline reproduction steps and harness. MUST NOT contain weaponized shellcode, live attack payloads, or remote execution triggers."
+    },
+    "root_cause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "cwe_id",
+        "trace_evidence_hashes"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Technical analysis of the root cause in source logic."
+        },
+        "cwe_id": {
+          "type": "string",
+          "pattern": "^CWE-[0-9]+$",
+          "description": "Standardized Common Weakness Enumeration identifier."
+        },
+        "trace_evidence_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "uniqueItems": true,
+          "description": "SHA-256 hashes of verifiable execution or taint traces."
+        }
+      }
+    },
+    "suggested_mitigation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "diff",
+        "compatibility_notes",
+        "fixed_versions"
+      ],
+      "properties": {
+        "diff": {
+          "type": "string",
+          "description": "Suggested patch formatted as unified diff."
+        },
+        "compatibility_notes": {
+          "type": "string",
+          "description": "Evaluation of breaking changes, API impacts, or regression risks."
+        },
+        "fixed_versions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Target release versions receiving the remediation."
+        }
+      }
+    },
+    "contact_channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_type",
+        "contact_target",
+        "security_policy_url"
+      ],
+      "properties": {
+        "channel_type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Upstream coordinated reporting channel (e.g. GitHubPrivateVulnerabilityReporting, SecurityEmail, SecurityTxt)."
+        },
+        "contact_target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Specific endpoint, security email address, or repository slug."
+        },
+        "security_policy_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Verified upstream security policy URL (e.g. from SECURITY.md)."
+        }
+      }
+    },
+    "reporter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credit_name",
+        "contact_email",
+        "embargo_requested_days"
+      ],
+      "properties": {
+        "credit_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name or pseudonym for security advisory attribution."
+        },
+        "contact_email": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Secure email address for maintainer coordination."
+        },
+        "embargo_requested_days": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 365,
+          "description": "Proposed coordination embargo window (typically 90 days)."
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp of packet creation."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp of packet last modification."
+    }
+  }
+}

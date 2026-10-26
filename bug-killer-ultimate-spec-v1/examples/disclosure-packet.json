@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "packet_id": "packet-c7f8a91b2c3d4e5f",
+  "draft_id": "draft-001",
+  "finding_id": "finding-novel-tar-slip-001",
+  "lifecycle_state": "PrivateDraft",
+  "title": "Path Traversal in Archive Extraction leading to Arbitrary File Overwrite",
+  "vulnerability_type": "Arbitrary File Overwrite via Directory Traversal",
+  "severity": "High",
+  "affected_target": {
+    "package": "acme-archive-extractor",
+    "commit_range": "v1.2.0..v1.4.2",
+    "repository": "https://github.com/acme-org/acme-archive-extractor",
+    "source_snapshot_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "security_impact": {
+    "prerequisites": "Victim application unpacks an untrusted archive containing parent directory traversal paths.",
+    "attack_vector": "Local",
+    "privileges_required": "None",
+    "user_interaction": "Required",
+    "scope": "Unchanged",
+    "confidential_impact": "None",
+    "integrity_impact": "High",
+    "availability_impact": "Low"
+  },
+  "safe_reproduction": {
+    "test_type": "offline_unit_test",
+    "harness_code": "fn test_archive_traversal_reproduction() {\n    let fixture_archive = synthetic_traversal_archive(\"../../escaped.txt\");\n    let out_dir = tempfile::tempdir().unwrap();\n    let res = extract_all(&fixture_archive, out_dir.path());\n    assert!(res.is_err(), \"Expected traversal entry to be rejected\");\n}",
+    "sanitized_input": "archive_entry_filename: ../../harmless_synthetic_target.txt",
+    "expected_behavior": "Extractor validates canonical destination path and returns an error when entry escapes destination root.",
+    "observed_behavior": "Extractor resolves path relative to working directory, writing outside designated extraction root."
+  },
+  "root_cause": {
+    "summary": "Path canonicalization check was omitted before filesystem write operations in the unpack loop.",
+    "cwe_id": "CWE-22",
+    "trace_evidence_hashes": [
+      "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+    ]
+  },
+  "suggested_mitigation": {
+    "diff": "--- a/src/extract.rs\n+++ b/src/extract.rs\n@@ -24,4 +24,8 @@\n     let target = dest.join(entry.path());\n+    let canonical = target.canonicalize().unwrap_or(target.clone());\n+    if !canonical.starts_with(&dest_canonical) {\n+        return Err(ExtractError::TraversalDetected);\n+    }\n",
+    "compatibility_notes": "Maintains backwards compatibility for all standard relative archive paths strictly within destination root.",
+    "fixed_versions": [
+      "1.4.3"
+    ]
+  },
+  "contact_channel": {
+    "channel_type": "GitHubPrivateVulnerabilityReporting",
+    "contact_target": "acme-org/acme-archive-extractor",
+    "security_policy_url": "https://github.com/acme-org/acme-archive-extractor/security/policy"
+  },
+  "reporter": {
+    "credit_name": "Bug Killer Security Research",
+    "contact_email": "security-research@example.com",
+    "embargo_requested_days": 90
+  },
+  "created_at": "2026-10-26T08:00:00Z",
+  "updated_at": "2026-10-26T08:00:00Z"
+}
