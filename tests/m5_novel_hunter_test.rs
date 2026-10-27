@@ -213,6 +213,7 @@ fn test_m5_sandbox_execution_isolation() {
             "SECRET_".to_string(),
             "TOKEN_".to_string(),
         ],
+        ..Default::default()
     };
 
     let sandbox = ResearchSandbox::new(config.clone());
