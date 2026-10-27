@@ -1,6 +1,5 @@
 use bug_killer::hunter::orchestrator::{AttackSurfaceScanner, AutonomousHunter};
 use bug_killer::hunter::sandbox::{SandboxConfig, SandboxRunner, SandboxStatus};
-use bug_killer::identity::AgentIdentity;
 use std::fs;
 use tempfile::tempdir;
 
@@ -112,37 +111,11 @@ app.post('/api/admin/system/reset', (req, res) => {
     assert_eq!(report.hypotheses_synthesized, 1);
     assert_eq!(report.hypotheses_triaged_out, 0);
     assert_eq!(report.candidates_reproduced, 1);
-    assert_eq!(report.candidates_verified, 1);
-    assert_eq!(report.verified_findings.len(), 1);
-    assert_eq!(report.research_receipts.len(), 1);
-    assert_eq!(report.pvr_drafts.len(), 1);
-
-    // Cryptographic proof verification
-    let receipt = &report.research_receipts[0];
-    assert_eq!(receipt.verification_passes_completed, 3);
-    assert_eq!(receipt.passes_succeeded, 3);
-    assert_eq!(receipt.ed25519_signature.len(), 128); // 64 bytes in hex
-
-    let identity = AgentIdentity::load_existing(root).expect("Agent identity must be loadable");
-    assert!(
-        identity
-            .verify_bytes(
-                receipt.artifact_sha256.as_bytes(),
-                &receipt.ed25519_signature
-            )
-            .is_ok(),
-        "Ed25519 signature on research receipt must cryptographically verify"
-    );
-
-    // Verify finding details
-    let finding = &report.verified_findings[0];
-    assert_eq!(finding.category, "NOVEL_RESEARCH");
-    assert_eq!(finding.evidence_digest, receipt.receipt_id);
-
-    // Verify PVR draft
-    let pvr = &report.pvr_drafts[0];
-    assert!(pvr.draft_id.contains("cand-hunt-001"));
-    assert!(!pvr.safe_reproduction.sanitized_input.is_empty());
+    assert_eq!(report.simulated_hypotheses, 1);
+    assert_eq!(report.candidates_verified, 0);
+    assert!(report.verified_findings.is_empty());
+    assert!(report.research_receipts.is_empty());
+    assert!(report.pvr_drafts.is_empty());
 }
 
 #[test]
@@ -181,4 +154,45 @@ fn test_sandbox_process_group_termination_on_timeout() {
 
     assert_eq!(receipt.status, SandboxStatus::TimedOut);
     assert!(receipt.duration_ms >= 550 && receipt.duration_ms < 3000);
+}
+
+#[test]
+fn test_simulated_experiments_are_quarantined_and_cannot_yield_verified_findings_or_pvr_drafts() {
+    let temp = tempdir().expect("Failed to create tempdir");
+    let root = temp.path();
+
+    let route_file = root.join("server.js");
+    fs::write(
+        &route_file,
+        r#"
+const express = require('express');
+const app = express();
+
+app.post('/api/admin/system/reset', (req, res) => {
+    const input = req.body;
+    resetDatabase();
+});
+"#,
+    )
+    .expect("Failed to write route file");
+
+    let hunter = AutonomousHunter::new();
+    let report = hunter.hunt(root, 5).expect("Hunt execution must succeed");
+
+    // BK-ND-01 Invariant: Under simulated closure experiments without target execution:
+    // 1. candidates_verified MUST be 0
+    // 2. verified_findings MUST be empty
+    // 3. pvr_drafts MUST be empty
+    assert_eq!(
+        report.candidates_verified, 0,
+        "Simulated experiment without target runtime execution cannot yield verified candidates"
+    );
+    assert!(
+        report.verified_findings.is_empty(),
+        "Simulated experiment cannot yield verified findings"
+    );
+    assert!(
+        report.pvr_drafts.is_empty(),
+        "Simulated experiment cannot yield private vulnerability report disclosure drafts"
+    );
 }
