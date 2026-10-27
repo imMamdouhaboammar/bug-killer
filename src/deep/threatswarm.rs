@@ -12,10 +12,10 @@ use sha2::{Digest, Sha256};
 
 use crate::engine::adapter::{AdapterCapabilities, AnalyzerAdapter};
 use crate::engine::protocol::{
-    AnalysisRequest, AnalysisResponse, CoverageReceiptStatus, CoverageReceiptV1,
-    EngineDescriptor, EngineStatus, EvidenceCertaintyV1, EvidenceItemKind, EvidenceItemV1,
-    FindingKind, FindingStatus, FindingV1, NormalizedSeverity, NormalizedTargetKind,
-    ReceiptCounts, ResourceUsage, SourceSpanV1, TargetDescriptor,
+    AnalysisRequest, AnalysisResponse, CoverageReceiptStatus, CoverageReceiptV1, EngineDescriptor,
+    EngineStatus, EvidenceCertaintyV1, EvidenceItemKind, EvidenceItemV1, FindingKind,
+    FindingStatus, FindingV1, NormalizedSeverity, NormalizedTargetKind, ReceiptCounts,
+    ResourceUsage, SourceSpanV1, TargetDescriptor,
 };
 use crate::engine::runner::{AnalysisError, CancellationToken};
 use crate::types::{ScanProfile, TargetKind};
@@ -730,22 +730,102 @@ impl ThreatswarmMitreCatalog {
     pub fn new() -> Self {
         let mut techniques = BTreeMap::new();
         let entries = [
-            ("T1595", "Active Scanning", "Reconnaissance", "Scanning network infrastructure for open ports, versions, and vulnerabilities."),
-            ("T1190", "Exploit Public-Facing Application", "Initial Access", "Exploitation of software vulnerabilities in Internet-facing web servers or APIs."),
-            ("T1059", "Command and Scripting Interpreter", "Execution", "Executing arbitrary commands via bash, sh, python, powershell, or node."),
-            ("T1078", "Valid Accounts", "Initial Access", "Adversaries obtaining and abusing credentials of existing accounts."),
-            ("T1003", "OS Credential Dumping", "Credential Access", "Extracting plaintext credentials, tokens, or hashes from process memory or files."),
-            ("T1021", "Remote Services", "Lateral Movement", "Validating remote management protocols (SSH, SMB, RDP, WinRM) across subnets."),
-            ("T1068", "Exploitation for Privilege Escalation", "Privilege Escalation", "Leveraging system vulnerabilities or misconfigurations to gain elevated privileges."),
-            ("T1055", "Process Injection", "Defense Evasion", "Injecting code into processes to evade process-based defenses."),
-            ("T1027", "Obfuscated Files or Information", "Defense Evasion", "Hiding malicious payloads or command strings via encoding or compression."),
-            ("T1562", "Impair Defenses", "Defense Evasion", "Disabling audit logging, safety guards, or virtual patching hooks."),
-            ("T1486", "Data Encrypted for Impact", "Impact", "Encrypting target assets to interrupt operational availability."),
-            ("T1110", "Brute Force", "Credential Access", "Attempting automated password guessing or spraying across user endpoints."),
-            ("T1046", "Network Service Discovery", "Discovery", "Enumerating listening services and daemon fingerprints."),
-            ("T1071", "Application Layer Protocol", "Command and Control", "Standard web protocol communication (HTTP/HTTPS, DNS) for exfiltration or C2."),
-            ("T1083", "File and Directory Discovery", "Discovery", "Adversaries enumerating files and directories on a system to find sensitive assets or traversal paths."),
-            ("T1005", "Data from Local System", "Collection", "Adversaries extracting sensitive data from local system files, configurations, and paths."),
+            (
+                "T1595",
+                "Active Scanning",
+                "Reconnaissance",
+                "Scanning network infrastructure for open ports, versions, and vulnerabilities.",
+            ),
+            (
+                "T1190",
+                "Exploit Public-Facing Application",
+                "Initial Access",
+                "Exploitation of software vulnerabilities in Internet-facing web servers or APIs.",
+            ),
+            (
+                "T1059",
+                "Command and Scripting Interpreter",
+                "Execution",
+                "Executing arbitrary commands via bash, sh, python, powershell, or node.",
+            ),
+            (
+                "T1078",
+                "Valid Accounts",
+                "Initial Access",
+                "Adversaries obtaining and abusing credentials of existing accounts.",
+            ),
+            (
+                "T1003",
+                "OS Credential Dumping",
+                "Credential Access",
+                "Extracting plaintext credentials, tokens, or hashes from process memory or files.",
+            ),
+            (
+                "T1021",
+                "Remote Services",
+                "Lateral Movement",
+                "Validating remote management protocols (SSH, SMB, RDP, WinRM) across subnets.",
+            ),
+            (
+                "T1068",
+                "Exploitation for Privilege Escalation",
+                "Privilege Escalation",
+                "Leveraging system vulnerabilities or misconfigurations to gain elevated privileges.",
+            ),
+            (
+                "T1055",
+                "Process Injection",
+                "Defense Evasion",
+                "Injecting code into processes to evade process-based defenses.",
+            ),
+            (
+                "T1027",
+                "Obfuscated Files or Information",
+                "Defense Evasion",
+                "Hiding malicious payloads or command strings via encoding or compression.",
+            ),
+            (
+                "T1562",
+                "Impair Defenses",
+                "Defense Evasion",
+                "Disabling audit logging, safety guards, or virtual patching hooks.",
+            ),
+            (
+                "T1486",
+                "Data Encrypted for Impact",
+                "Impact",
+                "Encrypting target assets to interrupt operational availability.",
+            ),
+            (
+                "T1110",
+                "Brute Force",
+                "Credential Access",
+                "Attempting automated password guessing or spraying across user endpoints.",
+            ),
+            (
+                "T1046",
+                "Network Service Discovery",
+                "Discovery",
+                "Enumerating listening services and daemon fingerprints.",
+            ),
+            (
+                "T1071",
+                "Application Layer Protocol",
+                "Command and Control",
+                "Standard web protocol communication (HTTP/HTTPS, DNS) for exfiltration or C2.",
+            ),
+            (
+                "T1083",
+                "File and Directory Discovery",
+                "Discovery",
+                "Adversaries enumerating files and directories on a system to find sensitive assets or traversal paths.",
+            ),
+            (
+                "T1005",
+                "Data from Local System",
+                "Collection",
+                "Adversaries extracting sensitive data from local system files, configurations, and paths.",
+            ),
         ];
 
         for (id, name, tactic, desc) in entries {
@@ -789,7 +869,10 @@ impl ThreatswarmMitreCatalog {
             &["T1190", "T1046"] // SSRF
         } else if upper.contains("CWE-798") || upper.contains("CWE-259") {
             &["T1078"] // Hardcoded credentials / Valid accounts
-        } else if upper.contains("CWE-122") || upper.contains("CWE-787") || upper.contains("CWE-120") {
+        } else if upper.contains("CWE-122")
+            || upper.contains("CWE-787")
+            || upper.contains("CWE-120")
+        {
             &["T1190", "T1068"] // Buffer overflow / Memory corruption RCE
         } else if upper.contains("CWE-22") || upper.contains("CWE-23") {
             &["T1083", "T1005"] // Path traversal / File disclosure
@@ -929,7 +1012,10 @@ impl ThreatswarmFindingSync {
         let mut md = String::new();
         md.push_str("# ThreatSwarm Findings Summary\n\n");
         md.push_str(&format!("Generated at: {}\n", summary.generated_at));
-        md.push_str(&format!("Evidence Files Scanned: {}\n\n", summary.scanned_files));
+        md.push_str(&format!(
+            "Evidence Files Scanned: {}\n\n",
+            summary.scanned_files
+        ));
         md.push_str(&format!(
             "### Risk Overview: {} Critical | {} High\n\n",
             summary.total_critical, summary.total_high
@@ -1055,12 +1141,27 @@ impl ThreatswarmAdapter {
                 };
 
                 let mut extensions = serde_json::Map::new();
-                extensions.insert("cvss_vector".to_string(), serde_json::Value::String(vector_str.clone()));
-                extensions.insert("cvss_score".to_string(), serde_json::json!(cvss.calculate_score()));
+                extensions.insert(
+                    "cvss_vector".to_string(),
+                    serde_json::Value::String(vector_str.clone()),
+                );
+                extensions.insert(
+                    "cvss_score".to_string(),
+                    serde_json::json!(cvss.calculate_score()),
+                );
                 if let Some(t) = tech {
-                    extensions.insert("mitre_technique_id".to_string(), serde_json::Value::String(t.id.clone()));
-                    extensions.insert("mitre_technique_name".to_string(), serde_json::Value::String(t.name.clone()));
-                    extensions.insert("mitre_tactic".to_string(), serde_json::Value::String(t.tactic.clone()));
+                    extensions.insert(
+                        "mitre_technique_id".to_string(),
+                        serde_json::Value::String(t.id.clone()),
+                    );
+                    extensions.insert(
+                        "mitre_technique_name".to_string(),
+                        serde_json::Value::String(t.name.clone()),
+                    );
+                    extensions.insert(
+                        "mitre_tactic".to_string(),
+                        serde_json::Value::String(t.tactic.clone()),
+                    );
                 }
 
                 let span = SourceSpanV1 {
@@ -1079,7 +1180,11 @@ impl ThreatswarmAdapter {
                     span: Some(span),
                 };
 
-                let receipt_id = format!("ts-rcpt-{}-{}", &snapshot_sha256[..8.min(snapshot_sha256.len())], line_num);
+                let receipt_id = format!(
+                    "ts-rcpt-{}-{}",
+                    &snapshot_sha256[..8.min(snapshot_sha256.len())],
+                    line_num
+                );
 
                 return Some(FindingV1 {
                     schema_version: "1.0".to_string(),
@@ -1089,7 +1194,10 @@ impl ThreatswarmAdapter {
                     kind: FindingKind::Catalog,
                     status: FindingStatus::Suspected,
                     title: format!("Unauthorized Network Egress Target '{}'", target),
-                    summary: Some(format!("Outbound network call to '{}' outside authorized scope boundary", target)),
+                    summary: Some(format!(
+                        "Outbound network call to '{}' outside authorized scope boundary",
+                        target
+                    )),
                     severity: NormalizedSeverity::High,
                     evidence_certainty: EvidenceCertaintyV1::StronglySupported,
                     rule_id: Some("threatswarm.scope.unauthorized_egress".to_string()),
@@ -1106,14 +1214,21 @@ impl ThreatswarmAdapter {
                         EvidenceItemV1 {
                             kind: EvidenceItemKind::SourceSpan,
                             artifact_sha256: snapshot_sha256.to_string(),
-                            description: format!("Outbound request to '{}' without scope allowlisting", target),
+                            description: format!(
+                                "Outbound request to '{}' without scope allowlisting",
+                                target
+                            ),
                             reference: Some(format!("{}:{}", file_path, line_num)),
                             limitations: Vec::new(),
                         },
                         EvidenceItemV1 {
                             kind: EvidenceItemKind::Other,
                             artifact_sha256: snapshot_sha256.to_string(),
-                            description: format!("CVSS 3.1 Base Score: {:.1} ({})", cvss.calculate_score(), vector_str),
+                            description: format!(
+                                "CVSS 3.1 Base Score: {:.1} ({})",
+                                cvss.calculate_score(),
+                                vector_str
+                            ),
                             reference: None,
                             limitations: Vec::new(),
                         },
@@ -1158,12 +1273,27 @@ impl ThreatswarmAdapter {
             };
 
             let mut extensions = serde_json::Map::new();
-            extensions.insert("cvss_vector".to_string(), serde_json::Value::String(vector_str.clone()));
-            extensions.insert("cvss_score".to_string(), serde_json::json!(cvss.calculate_score()));
+            extensions.insert(
+                "cvss_vector".to_string(),
+                serde_json::Value::String(vector_str.clone()),
+            );
+            extensions.insert(
+                "cvss_score".to_string(),
+                serde_json::json!(cvss.calculate_score()),
+            );
             if let Some(t) = tech {
-                extensions.insert("mitre_technique_id".to_string(), serde_json::Value::String(t.id.clone()));
-                extensions.insert("mitre_technique_name".to_string(), serde_json::Value::String(t.name.clone()));
-                extensions.insert("mitre_tactic".to_string(), serde_json::Value::String(t.tactic.clone()));
+                extensions.insert(
+                    "mitre_technique_id".to_string(),
+                    serde_json::Value::String(t.id.clone()),
+                );
+                extensions.insert(
+                    "mitre_technique_name".to_string(),
+                    serde_json::Value::String(t.name.clone()),
+                );
+                extensions.insert(
+                    "mitre_tactic".to_string(),
+                    serde_json::Value::String(t.tactic.clone()),
+                );
             }
 
             let span = SourceSpanV1 {
@@ -1182,7 +1312,11 @@ impl ThreatswarmAdapter {
                 span: Some(span),
             };
 
-            let receipt_id = format!("ts-rcpt-{}-tls-{}", &snapshot_sha256[..8.min(snapshot_sha256.len())], line_num);
+            let receipt_id = format!(
+                "ts-rcpt-{}-tls-{}",
+                &snapshot_sha256[..8.min(snapshot_sha256.len())],
+                line_num
+            );
 
             return Some(FindingV1 {
                 schema_version: "1.0".to_string(),
@@ -1347,7 +1481,16 @@ impl AnalyzerAdapter for ThreatswarmAdapter {
                         .to_lowercase();
                     if matches!(
                         ext.as_str(),
-                        "js" | "ts" | "py" | "go" | "rs" | "php" | "c" | "cpp" | "json" | "yaml" | "yml"
+                        "js" | "ts"
+                            | "py"
+                            | "go"
+                            | "rs"
+                            | "php"
+                            | "c"
+                            | "cpp"
+                            | "json"
+                            | "yaml"
+                            | "yml"
                     ) {
                         if let Ok(content) = fs::read_to_string(path) {
                             files_scanned += 1;
@@ -1466,7 +1609,11 @@ api.internal.corp
         let enforcer = ThreatswarmScopeEnforcer::load_from_str(scope_data);
 
         // In-scope commands pass
-        assert!(enforcer.verify_command("curl http://10.10.10.5/api").is_ok());
+        assert!(
+            enforcer
+                .verify_command("curl http://10.10.10.5/api")
+                .is_ok()
+        );
         assert!(enforcer.verify_command("nmap -sV internal.local").is_ok());
         assert!(enforcer.verify_command("cargo test --workspace").is_ok());
 
@@ -1534,7 +1681,10 @@ api.internal.corp
         );
         assert!(f1.is_some());
         let finding = f1.unwrap();
-        assert_eq!(finding.rule_id, Some("threatswarm.scope.unauthorized_egress".to_string()));
+        assert_eq!(
+            finding.rule_id,
+            Some("threatswarm.scope.unauthorized_egress".to_string())
+        );
         assert_eq!(finding.severity, NormalizedSeverity::High);
         assert!(finding.validate().is_ok());
 
@@ -1548,7 +1698,10 @@ api.internal.corp
         );
         assert!(f2.is_some());
         let tls_finding = f2.unwrap();
-        assert_eq!(tls_finding.rule_id, Some("threatswarm.defense.disabled_tls_validation".to_string()));
+        assert_eq!(
+            tls_finding.rule_id,
+            Some("threatswarm.defense.disabled_tls_validation".to_string())
+        );
         assert!(tls_finding.validate().is_ok());
     }
 
@@ -1558,8 +1711,14 @@ api.internal.corp
         let rce = CvssVector::prebuilt_for_pattern("pre-auth-rce");
         assert_eq!(rce.calculate_score(), 9.8);
         assert_eq!(rce.severity_tier(), NormalizedSeverity::Critical);
-        assert_eq!(ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::Critical), 24);
-        assert_eq!(ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::High), 72);
+        assert_eq!(
+            ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::Critical),
+            24
+        );
+        assert_eq!(
+            ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::High),
+            72
+        );
 
         // Finding sync parser
         let sample_md = r#"

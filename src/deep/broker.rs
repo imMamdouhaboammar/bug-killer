@@ -542,9 +542,10 @@ impl ToolCapabilityBroker {
             "privacy-engine" | "privacy-adapter" | "bk-privacy" | "data-protection" => {
                 "privacy-engine"
             }
-            "threatswarm" | "threatswarm-deep-adapter" | "threatswarm-adapter" | "bk-threatswarm" => {
-                "threatswarm"
-            }
+            "threatswarm"
+            | "threatswarm-deep-adapter"
+            | "threatswarm-adapter"
+            | "bk-threatswarm" => "threatswarm",
             other => other,
         };
 
@@ -632,7 +633,8 @@ impl ToolCapabilityBroker {
         &self,
         check_id: &str,
     ) -> Vec<&'static crate::deep::privacy::PrivacySkill> {
-        crate::deep::privacy::PrivacySkillsRegistry::default_embedded().recommend_for_check(check_id)
+        crate::deep::privacy::PrivacySkillsRegistry::default_embedded()
+            .recommend_for_check(check_id)
     }
 
     /// Register or override a tool capability.
@@ -1344,8 +1346,14 @@ impl ToolCapabilityBroker {
     }
 
     fn build_cve_mcp_capability(&self, binary_path: Option<&Path>, now: &str) -> ToolCapability {
-        let adapter = crate::deep::cve_mcp::CveMcpAdapter::new();
-        let installed = adapter.is_installed() || binary_path.is_some();
+        let server_dir = crate::deep::cve_mcp::CveMcpAdapter::discover_server_dir();
+        let installed = server_dir
+            .as_ref()
+            .map(|p| p.join("src/cve_mcp/server.py").is_file())
+            .unwrap_or(false)
+            || binary_path.is_some()
+            || self.find_binary("python3").is_some()
+            || self.find_binary("uv").is_some();
         let installation = if installed {
             Installation::Available
         } else {

@@ -53,7 +53,7 @@ fn test_mcp_engine_capabilities_dispatch() {
 #[test]
 fn test_mcp_room_plan_and_status_dispatch() {
     let mut server = setup_mcp_server();
-    
+
     // 1. Plan
     let plan_req = serde_json::json!({
         "jsonrpc": "2.0",
@@ -73,8 +73,9 @@ fn test_mcp_room_plan_and_status_dispatch() {
         .handle_json_rpc_line(&plan_req.to_string())
         .expect("Server must reply to bugkiller_room_plan");
     let plan_resp: Value = serde_json::from_str(&plan_resp_str).unwrap();
-    let plan_data: Value = serde_json::from_str(plan_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    
+    let plan_data: Value =
+        serde_json::from_str(plan_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+
     assert_eq!(plan_data["status"], "PLANNED");
     assert_eq!(plan_data["goal"], "prevention");
     assert!(plan_data["plan_id"].as_str().unwrap().starts_with("plan-"));
@@ -96,8 +97,13 @@ fn test_mcp_room_plan_and_status_dispatch() {
         .handle_json_rpc_line(&status_req.to_string())
         .expect("Server must reply to bugkiller_room_status");
     let status_resp: Value = serde_json::from_str(&status_resp_str).unwrap();
-    let status_data: Value = serde_json::from_str(status_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    
+    let status_data: Value = serde_json::from_str(
+        status_resp["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap(),
+    )
+    .unwrap();
+
     assert_eq!(status_data["run_id"], "run-xyz-999");
     assert_eq!(status_data["state"], "COMPLETED");
 }
@@ -123,7 +129,8 @@ fn test_mcp_research_hunter_cycle() {
         .handle_json_rpc_line(&plan_req.to_string())
         .expect("Server must reply to bugkiller_research_plan");
     let plan_resp: Value = serde_json::from_str(&plan_resp_str).unwrap();
-    let plan_data: Value = serde_json::from_str(plan_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    let plan_data: Value =
+        serde_json::from_str(plan_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
     assert_eq!(plan_data["hypotheses_count"], 8);
 
     // 2. Research Execute
@@ -144,7 +151,8 @@ fn test_mcp_research_hunter_cycle() {
         .handle_json_rpc_line(&exec_req.to_string())
         .expect("Server must reply to bugkiller_research_execute");
     let exec_resp: Value = serde_json::from_str(&exec_resp_str).unwrap();
-    let exec_data: Value = serde_json::from_str(exec_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    let exec_data: Value =
+        serde_json::from_str(exec_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
     assert_eq!(exec_data["status"], "EXECUTED");
     assert_eq!(exec_data["iterations_completed"], 50);
 
@@ -165,7 +173,12 @@ fn test_mcp_research_hunter_cycle() {
         .handle_json_rpc_line(&verify_req.to_string())
         .expect("Server must reply to bugkiller_research_verify");
     let verify_resp: Value = serde_json::from_str(&verify_resp_str).unwrap();
-    let verify_data: Value = serde_json::from_str(verify_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    let verify_data: Value = serde_json::from_str(
+        verify_resp["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(verify_data["verified"], true);
     assert_eq!(verify_data["proof_method"], "PROPERTY_INVARIANT");
 }
@@ -179,7 +192,11 @@ fn test_mcp_disclosure_draft_and_inventory() {
     let tmp_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(tmp_rel);
     let _ = std::fs::create_dir_all(&tmp_dir);
     let pkg_json = tmp_dir.join("package.json");
-    std::fs::write(&pkg_json, r#"{"name": "test-pkg-m7", "version": "1.0.0", "dependencies": {"express": "4.18.2"}}"#).unwrap();
+    std::fs::write(
+        &pkg_json,
+        r#"{"name": "test-pkg-m7", "version": "1.0.0", "dependencies": {"express": "4.18.2"}}"#,
+    )
+    .unwrap();
 
     // 1. Disclosure Draft
     let draft_req = serde_json::json!({
@@ -200,7 +217,8 @@ fn test_mcp_disclosure_draft_and_inventory() {
         .handle_json_rpc_line(&draft_req.to_string())
         .expect("Server must reply to bugkiller_disclosure_draft");
     let draft_resp: Value = serde_json::from_str(&draft_resp_str).unwrap();
-    let draft_data: Value = serde_json::from_str(draft_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    let draft_data: Value =
+        serde_json::from_str(draft_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
     assert_eq!(draft_data["finding_id"], "finding-test-m7-001");
     let md = draft_data["github_pvr_markdown"].as_str().unwrap();
     assert!(md.contains("# [PVR Draft]"));
@@ -223,7 +241,8 @@ fn test_mcp_disclosure_draft_and_inventory() {
         .handle_json_rpc_line(&inv_req.to_string())
         .expect("Server must reply to bugkiller_inventory");
     let inv_resp: Value = serde_json::from_str(&inv_resp_str).unwrap();
-    let inv_data: Value = serde_json::from_str(inv_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    let inv_data: Value =
+        serde_json::from_str(inv_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
     assert!(inv_data["total_discovered_packages"].as_u64().unwrap() > 0);
     assert!(inv_data["packages"].is_array());
     let _ = std::fs::remove_dir_all(&tmp_dir);
@@ -233,7 +252,11 @@ fn test_mcp_disclosure_draft_and_inventory() {
 fn test_cli_operations_room_commands() {
     let tmp = tempfile::tempdir().unwrap();
     let pkg_json = tmp.path().join("package.json");
-    std::fs::write(&pkg_json, r#"{"name": "demo-app", "version": "1.0.0", "dependencies": {"express": "4.18.2"}}"#).unwrap();
+    std::fs::write(
+        &pkg_json,
+        r#"{"name": "demo-app", "version": "1.0.0", "dependencies": {"express": "4.18.2"}}"#,
+    )
+    .unwrap();
 
     // 1. bk engine doctor --json
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
@@ -255,14 +278,31 @@ fn test_cli_operations_room_commands() {
 
     // 3. bk engine explain --goal prevention --target <tmp> --json
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["engine", "explain", "--goal", "prevention", "--target", tmp.path().to_str().unwrap(), "--json"])
+        .args([
+            "engine",
+            "explain",
+            "--goal",
+            "prevention",
+            "--target",
+            tmp.path().to_str().unwrap(),
+            "--json",
+        ])
         .output()
         .expect("bk engine explain should run");
     assert!(out.status.success());
 
     // 4. bk room plan --goal prevention --profile project --json
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["room", "plan", tmp.path().to_str().unwrap(), "--goal", "prevention", "--profile", "project", "--json"])
+        .args([
+            "room",
+            "plan",
+            tmp.path().to_str().unwrap(),
+            "--goal",
+            "prevention",
+            "--profile",
+            "project",
+            "--json",
+        ])
         .output()
         .expect("bk room plan should run");
     assert!(out.status.success());
@@ -289,7 +329,14 @@ fn test_cli_operations_room_commands() {
 
     // 7. bk hunter run --plan plan-test-1 --sandbox-only --json
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["hunter", "run", "--plan", "plan-test-1", "--sandbox-only", "--json"])
+        .args([
+            "hunter",
+            "run",
+            "--plan",
+            "plan-test-1",
+            "--sandbox-only",
+            "--json",
+        ])
         .output()
         .expect("bk hunter run should run");
     assert!(out.status.success());
@@ -305,7 +352,14 @@ fn test_cli_operations_room_commands() {
 
     // 9. bk disclose draft finding-test-m7-001 <tmp> --private --json
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["disclose", "draft", "finding-test-m7-001", tmp.path().to_str().unwrap(), "--private", "--json"])
+        .args([
+            "disclose",
+            "draft",
+            "finding-test-m7-001",
+            tmp.path().to_str().unwrap(),
+            "--private",
+            "--json",
+        ])
         .output()
         .expect("bk disclose draft should run");
     assert!(out.status.success());
@@ -313,7 +367,13 @@ fn test_cli_operations_room_commands() {
     // 10. bk advisory sync --offline-cache <tmp/cache> --json
     let cache_dir = tmp.path().join("cache");
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["advisory", "sync", "--offline-cache", cache_dir.to_str().unwrap(), "--json"])
+        .args([
+            "advisory",
+            "sync",
+            "--offline-cache",
+            cache_dir.to_str().unwrap(),
+            "--json",
+        ])
         .output()
         .expect("bk advisory sync should run");
     assert!(out.status.success());
@@ -336,7 +396,13 @@ fn test_cli_operations_room_commands() {
 
     // 13. bk security coverage --per-rule --json
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["security", "coverage", tmp.path().to_str().unwrap(), "--per-rule", "--json"])
+        .args([
+            "security",
+            "coverage",
+            tmp.path().to_str().unwrap(),
+            "--per-rule",
+            "--json",
+        ])
         .output()
         .expect("bk security coverage should run");
     assert!(out.status.success());
@@ -345,7 +411,16 @@ fn test_cli_operations_room_commands() {
 
     // 14. bk security scan --report-version 2 --json
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["security", "scan", tmp.path().to_str().unwrap(), "--profile", "quick", "--report-version", "2", "--json"])
+        .args([
+            "security",
+            "scan",
+            tmp.path().to_str().unwrap(),
+            "--profile",
+            "quick",
+            "--report-version",
+            "2",
+            "--json",
+        ])
         .output()
         .expect("bk security scan v2 should run");
     assert!(out.status.success());
@@ -354,7 +429,15 @@ fn test_cli_operations_room_commands() {
 
     // 15. bk security scan --exit-contract v2
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_bug-killer"))
-        .args(["security", "scan", tmp.path().to_str().unwrap(), "--profile", "quick", "--exit-contract", "v2"])
+        .args([
+            "security",
+            "scan",
+            tmp.path().to_str().unwrap(),
+            "--profile",
+            "quick",
+            "--exit-contract",
+            "v2",
+        ])
         .output()
         .expect("bk security scan exit contract v2 should run");
     assert!(out.status.code() == Some(0) || out.status.code() == Some(11));

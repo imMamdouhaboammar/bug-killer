@@ -591,7 +591,8 @@ impl PrivacyEngineAdapter {
             }
 
             // 4. Unsafe PHI Exposure without Safe Harbor De-identification (HIPAA § 164.514)
-            if RE_HIPAA_UNSAFE_PHI.is_match(trimmed) && !RE_HIPAA_DEIDENTIFY_GUARD.is_match(content) {
+            if RE_HIPAA_UNSAFE_PHI.is_match(trimmed) && !RE_HIPAA_DEIDENTIFY_GUARD.is_match(content)
+            {
                 let skill_id = registry
                     .recommend_for_check("BK-AI-PRIV-008")
                     .first()
@@ -615,7 +616,9 @@ impl PrivacyEngineAdapter {
             }
 
             // 5. Data Breach Notification Deficiency (OWASP P3 / GDPR Art. 33)
-            if RE_BREACH_NOTIFICATION_DEFICIENCY.is_match(trimmed) && !content.contains("notify_dpa_72h") {
+            if RE_BREACH_NOTIFICATION_DEFICIENCY.is_match(trimmed)
+                && !content.contains("notify_dpa_72h")
+            {
                 let skill_id = registry
                     .recommend_for_check("BK-AI-PRIV-010")
                     .first()
@@ -640,7 +643,8 @@ impl PrivacyEngineAdapter {
         }
 
         // 6. DSAR Export / Deletion Unprotected Route (OWASP P9 / GDPR Art. 17 / CCPA § 1798.105)
-        if RE_DSAR_UNPROTECTED_ROUTE.is_match(content) && !RE_AUTH_OWNERSHIP_GUARD.is_match(content) {
+        if RE_DSAR_UNPROTECTED_ROUTE.is_match(content) && !RE_AUTH_OWNERSHIP_GUARD.is_match(content)
+        {
             let skill_id = registry
                 .recommend_for_check("BK-AI-PRIV-005")
                 .first()
@@ -820,7 +824,15 @@ impl AnalyzerAdapter for PrivacyEngineAdapter {
                             .to_ascii_lowercase();
                         if matches!(
                             ext.as_str(),
-                            "js" | "mjs" | "cjs" | "ts" | "tsx" | "py" | "php" | "go" | "rs" | "java"
+                            "js" | "mjs"
+                                | "cjs"
+                                | "ts"
+                                | "tsx"
+                                | "py"
+                                | "php"
+                                | "go"
+                                | "rs"
+                                | "java"
                         ) {
                             if let Ok(c) = std::fs::read_to_string(p) {
                                 cpg_builder.add_source_file(p, &c);
@@ -850,7 +862,12 @@ impl AnalyzerAdapter for PrivacyEngineAdapter {
                 let check_id = "BK-AI-PRIV-002".to_string();
 
                 let safe_sink_path = flow.sink_file.replace(['/', '\\'], "-");
-                let f_id = format!("priv-{}-{}-L{}", check_id.to_lowercase(), safe_sink_path, flow.sink_line);
+                let f_id = format!(
+                    "priv-{}-{}-L{}",
+                    check_id.to_lowercase(),
+                    safe_sink_path,
+                    flow.sink_line
+                );
 
                 let finding = FindingV1 {
                     schema_version: "1.0".to_string(),
@@ -859,7 +876,8 @@ impl AnalyzerAdapter for PrivacyEngineAdapter {
                     fingerprint: Some(format!("fp-{}", &trace_sha256[..16])),
                     kind: FindingKind::Catalog,
                     status: FindingStatus::Verified,
-                    title: "Sensitive PII propagates to untrusted logging/sink endpoint".to_string(),
+                    title: "Sensitive PII propagates to untrusted logging/sink endpoint"
+                        .to_string(),
                     summary: Some(format!(
                         "Untrusted PII from {}:{} flows to sensitive sink at {}:{} without sanitization.",
                         flow.source_file, flow.source_line, flow.sink_file, flow.sink_line
@@ -1043,7 +1061,9 @@ impl AnalyzerAdapter for PrivacyEngineAdapter {
                     items_skipped: 0,
                 },
                 reason_codes: Vec::new(),
-                details: vec!["Privacy and data protection compliance analysis complete".to_string()],
+                details: vec![
+                    "Privacy and data protection compliance analysis complete".to_string(),
+                ],
                 started_at: now.clone(),
                 completed_at: now.clone(),
                 required_by_policy: Some(false),

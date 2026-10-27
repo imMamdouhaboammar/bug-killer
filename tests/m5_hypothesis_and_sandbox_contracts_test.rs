@@ -398,5 +398,8 @@ fn test_sandbox_zero_egress_preflight_blocks_outbound() {
     assert!(res.is_err(), "Outbound curl must be blocked fail-closed");
 
     let res_wget = runner.run_command("wget", &["http://1.2.3.4/malicious"]);
-    assert!(res_wget.is_err(), "Outbound wget must be blocked fail-closed");
+    assert!(
+        res_wget.is_err(),
+        "Outbound wget must be blocked fail-closed"
+    );
 }

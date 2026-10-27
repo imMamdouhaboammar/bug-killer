@@ -77,7 +77,11 @@ impl CybersecuritySkill {
         {
             return true;
         }
-        if self.tags.iter().any(|t| t.to_lowercase().contains(&q_lower)) {
+        if self
+            .tags
+            .iter()
+            .any(|t| t.to_lowercase().contains(&q_lower))
+        {
             return true;
         }
         if self
@@ -196,17 +200,11 @@ impl CybersecuritySkillsRegistry {
             }
 
             for nist in &skill.nist_csf {
-                by_nist
-                    .entry(nist.to_uppercase())
-                    .or_default()
-                    .push(idx);
+                by_nist.entry(nist.to_uppercase()).or_default().push(idx);
             }
 
             for tag in &skill.tags {
-                by_tag
-                    .entry(tag.to_lowercase())
-                    .or_default()
-                    .push(idx);
+                by_tag.entry(tag.to_lowercase()).or_default().push(idx);
             }
 
             by_class.entry(skill.defensive_class).or_default().push(idx);
@@ -226,8 +224,8 @@ impl CybersecuritySkillsRegistry {
 
     /// Parses skills from a JSON string.
     pub fn from_json_str(json_str: &str) -> Result<Self, String> {
-        let skills: Vec<CybersecuritySkill> =
-            serde_json::from_str(json_str).map_err(|e| format!("Failed to parse skills JSON: {}", e))?;
+        let skills: Vec<CybersecuritySkill> = serde_json::from_str(json_str)
+            .map_err(|e| format!("Failed to parse skills JSON: {}", e))?;
         Ok(Self::from_skills(skills))
     }
 
@@ -245,8 +243,12 @@ impl CybersecuritySkillsRegistry {
     pub fn default_embedded() -> &'static Self {
         EMBEDDED_REGISTRY.get_or_init(|| {
             const EMBEDDED_JSON: &str = include_str!("cyber_skills_data.json");
-            Self::from_json_str(EMBEDDED_JSON)
-                .unwrap_or_else(|e| panic!("Critical: Failed to parse embedded cyber_skills_data.json: {}", e))
+            Self::from_json_str(EMBEDDED_JSON).unwrap_or_else(|e| {
+                panic!(
+                    "Critical: Failed to parse embedded cyber_skills_data.json: {}",
+                    e
+                )
+            })
         })
     }
 
@@ -353,10 +355,7 @@ impl CybersecuritySkillsRegistry {
         if q.is_empty() {
             return self.skills.iter().collect();
         }
-        self.skills
-            .iter()
-            .filter(|s| s.matches_query(q))
-            .collect()
+        self.skills.iter().filter(|s| s.matches_query(q)).collect()
     }
 
     /// Recommends relevant cybersecurity skills for a specific CVE identifier.
@@ -364,22 +363,43 @@ impl CybersecuritySkillsRegistry {
         let cve_upper = cve_id.trim().to_uppercase();
 
         // 1. First-class CVE coverage for core runtime targets
-        let keywords: Vec<&str> = if cve_upper.contains("2026-109618") || cve_upper.contains("2026-109619") {
-            // PHP2Shell memory corruption / heap overflow / OOB execution
-            vec!["php", "heap", "memory", "buffer", "overflow", "remote-code-execution", "rce"]
-        } else if cve_upper.contains("2026-111497") {
-            // Node2Shell brotli memory desync / buffer overwrite
-            vec!["node", "brotli", "buffer", "memory", "deserialization", "dos"]
-        } else if cve_upper.contains("2021-44228") || cve_upper.contains("LOG4SHELL") {
-            vec!["jndi", "log4j", "java", "rce", "injection"]
-        } else if cve_upper.contains("2020-1472") || cve_upper.contains("ZEROLOGON") {
-            vec!["zerologon", "netlogon", "active-directory", "privilege-escalation"]
-        } else if cve_upper.contains("2017-010") || cve_upper.contains("ETERNALBLUE") {
-            vec!["smb", "eternalblue", "ms17-010", "windows"]
-        } else {
-            // Generic query decomposition
-            cve_upper.split('-').collect()
-        };
+        let keywords: Vec<&str> =
+            if cve_upper.contains("2026-109618") || cve_upper.contains("2026-109619") {
+                // PHP2Shell memory corruption / heap overflow / OOB execution
+                vec![
+                    "php",
+                    "heap",
+                    "memory",
+                    "buffer",
+                    "overflow",
+                    "remote-code-execution",
+                    "rce",
+                ]
+            } else if cve_upper.contains("2026-111497") {
+                // Node2Shell brotli memory desync / buffer overwrite
+                vec![
+                    "node",
+                    "brotli",
+                    "buffer",
+                    "memory",
+                    "deserialization",
+                    "dos",
+                ]
+            } else if cve_upper.contains("2021-44228") || cve_upper.contains("LOG4SHELL") {
+                vec!["jndi", "log4j", "java", "rce", "injection"]
+            } else if cve_upper.contains("2020-1472") || cve_upper.contains("ZEROLOGON") {
+                vec![
+                    "zerologon",
+                    "netlogon",
+                    "active-directory",
+                    "privilege-escalation",
+                ]
+            } else if cve_upper.contains("2017-010") || cve_upper.contains("ETERNALBLUE") {
+                vec!["smb", "eternalblue", "ms17-010", "windows"]
+            } else {
+                // Generic query decomposition
+                cve_upper.split('-').collect()
+            };
 
         let mut results = Vec::new();
         let mut seen = std::collections::HashSet::new();
@@ -446,9 +466,7 @@ impl CybersecuritySkillsRegistry {
             "forensics" | "incident_response" => {
                 self.find_by_defensive_class(DefensiveClass::ForensicsTriage)
             }
-            "compliance" | "audit" => {
-                self.find_by_defensive_class(DefensiveClass::AuditCompliance)
-            }
+            "compliance" | "audit" => self.find_by_defensive_class(DefensiveClass::AuditCompliance),
             _ => self.skills.iter().collect(),
         }
     }
@@ -457,17 +475,60 @@ impl CybersecuritySkillsRegistry {
     pub fn recommend_for_tool(&self, tool_id: &str) -> Vec<&CybersecuritySkill> {
         let t_norm = tool_id.to_lowercase();
         let filter_tags: &[&str] = if t_norm.contains("semgrep") {
-            &["sast", "semgrep", "ast", "code-review", "injection", "xss", "deserialization"]
+            &[
+                "sast",
+                "semgrep",
+                "ast",
+                "code-review",
+                "injection",
+                "xss",
+                "deserialization",
+            ]
         } else if t_norm.contains("codeql") {
-            &["codeql", "cpg", "memory-corruption", "dataflow", "taint", "buffer-overflow", "source-sink"]
+            &[
+                "codeql",
+                "cpg",
+                "memory-corruption",
+                "dataflow",
+                "taint",
+                "buffer-overflow",
+                "source-sink",
+            ]
         } else if t_norm.contains("joern") {
-            &["cpg", "code-property-graph", "ast", "cfg", "taint-analysis", "binary-analysis", "static-analysis"]
+            &[
+                "cpg",
+                "code-property-graph",
+                "ast",
+                "cfg",
+                "taint-analysis",
+                "binary-analysis",
+                "static-analysis",
+            ]
         } else if t_norm.contains("trivy") {
-            &["container-security", "docker", "kubernetes", "sbom", "iac", "vulnerability-management", "cve"]
+            &[
+                "container-security",
+                "docker",
+                "kubernetes",
+                "sbom",
+                "iac",
+                "vulnerability-management",
+                "cve",
+            ]
         } else if t_norm.contains("osv") {
-            &["sca", "supply-chain", "dependency", "vulnerability-management", "cve"]
+            &[
+                "sca",
+                "supply-chain",
+                "dependency",
+                "vulnerability-management",
+                "cve",
+            ]
         } else if t_norm.contains("nuclei") {
-            &["dast", "api-security", "web-application-security", "fuzzing"]
+            &[
+                "dast",
+                "api-security",
+                "web-application-security",
+                "fuzzing",
+            ]
         } else if t_norm.contains("gitleaks") || t_norm.contains("trufflehog") {
             &["secrets", "credentials", "credential-access", "api-key"]
         } else {

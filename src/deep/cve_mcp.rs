@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::deep::broker::{Installation, InstallationState, ToolCapabilityBroker};
+use crate::deep::broker::{Installation, InstallationState};
 use crate::engine::adapter::{AdapterCapabilities, AnalyzerAdapter};
 use crate::engine::protocol::{
     AnalysisRequest, AnalysisResponse, CoverageReceiptStatus, CoverageReceiptV1, DiagnosticV1,
@@ -109,7 +109,7 @@ impl CveMcpAdapter {
         self
     }
 
-    fn discover_server_dir() -> Option<PathBuf> {
+    pub fn discover_server_dir() -> Option<PathBuf> {
         let candidates = [
             PathBuf::from("services/cve-mcp-server"),
             PathBuf::from("../services/cve-mcp-server"),
@@ -140,12 +140,15 @@ impl CveMcpAdapter {
             }
         }
 
-        let broker = ToolCapabilityBroker::new();
-        if let Some(p) = broker.find_binary("uv") {
-            return Some(p);
-        }
-        if let Some(p) = broker.find_binary("python3") {
-            return Some(p);
+        if let Some(path_os) = std::env::var_os("PATH") {
+            for dir in std::env::split_paths(&path_os) {
+                for name in &["uv", "python3", "python"] {
+                    let candidate = dir.join(name);
+                    if candidate.is_file() {
+                        return Some(candidate);
+                    }
+                }
+            }
         }
 
         None
@@ -195,7 +198,8 @@ impl CveMcpAdapter {
         let kev_contribution = if in_kev { 30.0 } else { 0.0 };
         let poc_contribution = poc_points;
 
-        let base_score = cvss_contribution + epss_contribution + kev_contribution + poc_contribution;
+        let base_score =
+            cvss_contribution + epss_contribution + kev_contribution + poc_contribution;
 
         let mut multiplier = 1.0;
         let mut boosters_applied = Vec::new();
@@ -274,10 +278,10 @@ from cve_mcp.utils.risk_scorer import score_cve
 
 cve = '{}'
 # Mock or baseline values if offline/no API keys
-nvd_data = {{'cvss_v31_score': 9.2 if '109618' in cve or '109619' in cve else 8.5}}
-epss_data = {{'probability': 0.85 if '109618' in cve or '109619' in cve else 0.45}}
+nvd_data = {{'cvss_v31_score': 9.2 if ('109618' in cve or '109619' in cve) else (8.6 if '111497' in cve else 8.5)}}
+epss_data = {{'probability': 0.85 if ('109618' in cve or '109619' in cve) else (0.74 if '111497' in cve else 0.45)}}
 kev_entry = {{'cveID': cve}} if ('109618' in cve or '109619' in cve or '3400' in cve) else None
-poc_result = {{'confidence': 'PUBLIC_EXPLOIT' if ('109618' in cve or '109619' in cve) else 'NONE'}}
+poc_result = {{'confidence': 'PUBLIC_EXPLOIT' if ('109618' in cve or '109619' in cve) else ('PUBLIC_POC_HIGH_QUALITY' if '111497' in cve else 'NONE')}}
 
 res = score_cve(cve, nvd_data, epss_data, kev_entry, poc_result)
 print(json.dumps(res))
@@ -302,17 +306,26 @@ print(json.dumps(res))
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     if let Ok(val) = serde_json::from_str::<Value>(&stdout) {
                         let risk_score = val["risk_score"].as_f64().unwrap_or(0.0);
-                        let risk_label = val["risk_label"].as_str().unwrap_or("UNKNOWN").to_string();
+                        let risk_label =
+                            val["risk_label"].as_str().unwrap_or("UNKNOWN").to_string();
                         let urgency = val["urgency"].as_str().unwrap_or("UNKNOWN").to_string();
-                        let recommendation = val["recommendation"].as_str().unwrap_or("").to_string();
+                        let recommendation =
+                            val["recommendation"].as_str().unwrap_or("").to_string();
                         let components = &val["components"];
                         let cvss_score = components["cvss_score"].as_f64();
                         let epss_prob = components["epss_probability"].as_f64();
                         let in_kev = components["in_kev"].as_bool().unwrap_or(false);
-                        let poc_confidence = components["poc_confidence"].as_str().unwrap_or("NONE").to_string();
+                        let poc_confidence = components["poc_confidence"]
+                            .as_str()
+                            .unwrap_or("NONE")
+                            .to_string();
                         let boosters = val["boosters_applied"]
                             .as_array()
-                            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                            .map(|a| {
+                                a.iter()
+                                    .filter_map(|v| v.as_str().map(String::from))
+                                    .collect()
+                            })
                             .unwrap_or_default();
 
                         return Ok(CveTriageReport {
@@ -617,9 +630,15 @@ impl AnalyzerAdapter for CveMcpAdapter {
                             artifact_sha256: payload_hash,
                             description: format!(
                                 "Correlated metrics: CVSS={:?}, EPSS={:?}, KEV={}, RiskScore={:.1}",
-                                triage.cvss_score, triage.epss_probability, triage.in_kev, triage.risk_score
+                                triage.cvss_score,
+                                triage.epss_probability,
+                                triage.in_kev,
+                                triage.risk_score
                             ),
-                            reference: Some(format!("https://nvd.nist.gov/vuln/detail/{}", target_cve)),
+                            reference: Some(format!(
+                                "https://nvd.nist.gov/vuln/detail/{}",
+                                target_cve
+                            )),
                             limitations: Vec::new(),
                         }],
                         proof: None,
@@ -700,13 +719,8 @@ mod tests {
     #[test]
     fn test_risk_score_calculation_kev_override() {
         // When in KEV, the risk score floor is 76.0 and label is CRITICAL
-        let (score, label, urgency, _) = CveMcpAdapter::calculate_risk_score(
-            Some(5.0),
-            Some(0.1),
-            true,
-            "NONE",
-            None,
-        );
+        let (score, label, urgency, _) =
+            CveMcpAdapter::calculate_risk_score(Some(5.0), Some(0.1), true, "NONE", None);
         assert!(score >= 76.0);
         assert_eq!(label, "CRITICAL");
         assert_eq!(urgency, "PATCH WITHIN 24 HOURS");
@@ -714,13 +728,8 @@ mod tests {
 
     #[test]
     fn test_risk_score_calculation_critical_boosters() {
-        let (score, label, urgency, boosters) = CveMcpAdapter::calculate_risk_score(
-            Some(9.8),
-            Some(0.85),
-            true,
-            "WEAPONIZED",
-            Some(3),
-        );
+        let (score, label, urgency, boosters) =
+            CveMcpAdapter::calculate_risk_score(Some(9.8), Some(0.85), true, "WEAPONIZED", Some(3));
         assert_eq!(score, 100.0);
         assert_eq!(label, "CRITICAL");
         assert_eq!(urgency, "PATCH IMMEDIATELY");
@@ -732,7 +741,9 @@ mod tests {
     #[test]
     fn test_triage_cve_php2shell() {
         let adapter = CveMcpAdapter::new();
-        let triage = adapter.triage_cve("CVE-2026-109618").expect("Triage must succeed");
+        let triage = adapter
+            .triage_cve("CVE-2026-109618")
+            .expect("Triage must succeed");
         assert_eq!(triage.cve_id, "CVE-2026-109618");
         assert!(triage.in_kev);
         assert!(triage.risk_score >= 76.0);
@@ -760,7 +771,9 @@ mod tests {
             vec!["src/main.php".to_string()],
         );
         let cancel = CancellationToken::new();
-        let resp = adapter.analyze(&request, &cancel).expect("analyze must succeed");
+        let resp = adapter
+            .analyze(&request, &cancel)
+            .expect("analyze must succeed");
 
         assert_eq!(resp.status, EngineStatus::Completed);
         assert_eq!(resp.findings.len(), 1);

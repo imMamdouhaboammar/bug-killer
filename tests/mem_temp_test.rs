@@ -231,9 +231,7 @@ export function cleanHeaders(headers: Record<string, string>) {
     let path = Path::new("lib/security/headers.ts");
     let findings = MemTempScanner::scan_source(path, js_code);
     assert!(
-        findings
-            .iter()
-            .all(|f| f.cve.as_str() != "BK-AI-MEM-002"),
+        findings.iter().all(|f| f.cve.as_str() != "BK-AI-MEM-002"),
         "JavaScript / TypeScript delete operator on object properties must not be flagged as C/C++ memory double-free"
     );
 }
