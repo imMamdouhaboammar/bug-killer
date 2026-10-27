@@ -49,39 +49,42 @@ pub fn detect_isolation_mechanism() -> IsolationMechanism {
     #[cfg(target_os = "macos")]
     {
         if Path::new("/usr/bin/sandbox-exec").exists() {
-            return IsolationMechanism::MacSeatbelt;
+            IsolationMechanism::MacSeatbelt
+        } else {
+            IsolationMechanism::PosixRlimitsOnly
         }
     }
 
     #[cfg(target_os = "linux")]
     {
         if find_in_path("bwrap").is_some() || Path::new("/usr/bin/bwrap").exists() {
-            return IsolationMechanism::LinuxBubblewrap;
-        }
-        if find_in_path("unshare").is_some() {
-            if let Ok(status) = Command::new("unshare")
+            IsolationMechanism::LinuxBubblewrap
+        } else if find_in_path("unshare").is_some()
+            && Command::new("unshare")
                 .args(["-r", "-n", "true"])
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .status()
-            {
-                if status.success() {
-                    return IsolationMechanism::LinuxNamespace;
-                }
-            }
+                .map(|s| s.success())
+                .unwrap_or(false)
+        {
+            IsolationMechanism::LinuxNamespace
+        } else {
+            IsolationMechanism::PosixRlimitsOnly
         }
-        return IsolationMechanism::PosixRlimitsOnly;
     }
 
-    #[cfg(unix)]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
-        IsolationMechanism::PosixRlimitsOnly
-    }
-
-    #[cfg(not(unix))]
-    {
-        IsolationMechanism::None
+        #[cfg(unix)]
+        {
+            IsolationMechanism::PosixRlimitsOnly
+        }
+        #[cfg(not(unix))]
+        {
+            IsolationMechanism::None
+        }
     }
 }
 
