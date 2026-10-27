@@ -3098,6 +3098,7 @@ fn handle_hunt_command(path: PathBuf, max_hypotheses: usize, json: bool) {
                 println!("Hypotheses Generated:  {}", report.hypotheses_synthesized);
                 println!("Triaged Out / Known:   {}", report.hypotheses_triaged_out);
                 println!("Reproduced Invariants: {}", report.candidates_reproduced);
+                println!("Simulated Hypotheses:  {}", report.simulated_hypotheses);
                 println!("Verified Discoveries:  {}", report.candidates_verified);
                 println!(
                     "Signed Receipts:       {} (Ed25519)",
@@ -3105,8 +3106,18 @@ fn handle_hunt_command(path: PathBuf, max_hypotheses: usize, json: bool) {
                 );
                 println!("Private PVR Drafts:    {}", report.pvr_drafts.len());
                 println!("-------------------------------------------------------");
-                if report.verified_findings.is_empty() {
-                    println!("No novel reproducible invariant violations discovered.");
+                if report.candidates_verified == 0 {
+                    if report.simulated_hypotheses > 0 {
+                        println!(
+                            "  [SIMULATION ONLY - UNCONFIRMED] {} candidate(s) reproduced in synthetic sandbox.",
+                            report.simulated_hypotheses
+                        );
+                        println!(
+                            "  Target application was not executed in real runtime. Findings are quarantined as unverified hypotheses."
+                        );
+                    } else {
+                        println!("No novel reproducible invariant violations discovered.");
+                    }
                 } else {
                     for f in &report.verified_findings {
                         println!(

@@ -288,6 +288,7 @@ pub struct AutonomousHuntReport {
     pub hypotheses_triaged_out: usize,
     pub candidates_reproduced: usize,
     pub candidates_verified: usize,
+    pub simulated_hypotheses: usize,
     pub verified_findings: Vec<Finding>,
     pub research_receipts: Vec<NovelResearchReceipt>,
     pub pvr_drafts: Vec<DisclosurePacket>,
@@ -411,6 +412,7 @@ impl AutonomousHunter {
         let hypotheses_synthesized = candidates.len();
         let mut triaged_out = 0;
         let mut reproduced_count = 0;
+        let mut simulated_count = 0;
         let mut verified_findings = Vec::new();
         let mut research_receipts = Vec::new();
         let mut pvr_drafts = Vec::new();
@@ -438,6 +440,18 @@ impl AutonomousHunter {
             if let Some(artifact) = experiment_outcome {
                 reproduced_count += 1;
                 let _ = candidate.mark_reproduced(&artifact.artifact_id);
+
+                // BK-ND-01 Gate: If the reproduction artifact was not produced via real target execution,
+                // quarantine it immediately as SimulationOnly. Under no circumstances can a simulated
+                // experiment yield Verified findings, NOVEL_RESEARCH categories, High/Critical security
+                // claims, or Private Vulnerability Report (PVR) disclosure packets.
+                if !artifact.real_execution {
+                    simulated_count += 1;
+                    let _ = candidate.mark_simulation_only(
+                        "Simulated closure: target application runtime was not executed",
+                    );
+                    continue;
+                }
 
                 // C: Independent 3-Pass Verification Gate
                 let verification_confirmed =
@@ -501,6 +515,7 @@ impl AutonomousHunter {
             hypotheses_triaged_out: triaged_out,
             candidates_reproduced: reproduced_count,
             candidates_verified: verified_findings.len(),
+            simulated_hypotheses: simulated_count,
             verified_findings,
             research_receipts,
             pvr_drafts,
@@ -572,7 +587,7 @@ impl AutonomousHunter {
                 error_description,
                 ..
             } => {
-                let artifact = ReproductionArtifact::new(
+                let artifact = ReproductionArtifact::new_simulated(
                     minimized_input.clone(),
                     minimized_input,
                     &error_description,
@@ -584,12 +599,17 @@ impl AutonomousHunter {
     }
 
     /// Verifies candidate against 3 clean, independent reproduction sandboxes.
+    /// Strictly fails closed if the artifact was generated in simulation mode without real target execution.
     fn verify_candidate_three_pass(
         &self,
         runner: &SandboxRunner,
         candidate: &HypothesisCandidate,
         artifact: &ReproductionArtifact,
     ) -> bool {
+        if !artifact.real_execution {
+            return false;
+        }
+
         let trigger = &artifact.minimized_trigger;
 
         for _pass in 1..=3 {
