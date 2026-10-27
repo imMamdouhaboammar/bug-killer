@@ -4,6 +4,8 @@ pub mod converter;
 pub mod protocol;
 pub mod registry;
 pub mod runner;
+pub mod scope;
+pub mod snapshot;
 
 pub use adapter::{AdapterCapabilities, AnalyzerAdapter};
 pub use builtin::BuiltinScannerAdapter;
@@ -21,3 +23,5 @@ pub use protocol::{
 };
 pub use registry::EngineRegistry;
 pub use runner::{AnalysisError, CancellationToken, IsolatedRunner};
+pub use scope::{ResearchScope, ScopeError};
+pub use snapshot::{InventoryStatus, SnapshotFileEntry, SnapshotInventory, TargetSnapshot};
