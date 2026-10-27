@@ -128,6 +128,7 @@ pub enum CandidateState {
     Dismissed(CandidateDismissReason),
     Inconclusive(String),
     Blocked(String),
+    BlockedByScope(String),
     SimulationOnly(String),
 }
 
@@ -137,6 +138,7 @@ impl CandidateState {
             self,
             CandidateState::Verified
                 | CandidateState::Dismissed(_)
+                | CandidateState::BlockedByScope(_)
                 | CandidateState::SimulationOnly(_)
         )
     }
@@ -150,6 +152,7 @@ impl CandidateState {
             CandidateState::Dismissed(_) => "Dismissed",
             CandidateState::Inconclusive(_) => "Inconclusive",
             CandidateState::Blocked(_) => "Blocked",
+            CandidateState::BlockedByScope(_) => "BlockedByScope",
             CandidateState::SimulationOnly(_) => "SimulationOnly",
         }
     }
@@ -203,6 +206,8 @@ pub struct HypothesisCandidate {
     pub created_at: String,
     pub updated_at: String,
     pub reproduction_receipt_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_snapshot_sha256: Option<String>,
 }
 
 impl HypothesisCandidate {
@@ -238,7 +243,14 @@ impl HypothesisCandidate {
             created_at: now.clone(),
             updated_at: now,
             reproduction_receipt_id: None,
+            target_snapshot_sha256: None,
         }
+    }
+
+    /// Attaches the immutable target snapshot digest.
+    pub fn with_target_snapshot_sha256(mut self, sha256: impl Into<String>) -> Self {
+        self.target_snapshot_sha256 = Some(sha256.into());
+        self
     }
 
     /// Evaluates if state transition is allowed and performs state transition.
@@ -246,14 +258,15 @@ impl HypothesisCandidate {
     /// without physical test reproduction (must have `reproduction_receipt_id` to enter `Verified`).
     pub fn transition_to(&mut self, next: CandidateState) -> Result<(), HypothesisError> {
         match (&self.state, &next) {
-            // Candidate -> Reproducing, Reproduced, Dismissed, Inconclusive, Blocked, SimulationOnly
+            // Candidate -> Reproducing, Reproduced, Dismissed, Inconclusive, Blocked, BlockedByScope, SimulationOnly
             (CandidateState::Candidate, CandidateState::Reproducing)
             | (CandidateState::Candidate, CandidateState::Dismissed(_))
             | (CandidateState::Candidate, CandidateState::Inconclusive(_))
             | (CandidateState::Candidate, CandidateState::Blocked(_))
+            | (CandidateState::Candidate, CandidateState::BlockedByScope(_))
             | (CandidateState::Candidate, CandidateState::SimulationOnly(_)) => {}
 
-            // Reproducing -> Reproduced, Verified (MUST have reproduction receipt), Dismissed, Inconclusive, Reproducing (retry), SimulationOnly
+            // Reproducing -> Reproduced, Verified (MUST have reproduction receipt), Dismissed, Inconclusive, Reproducing (retry), BlockedByScope, SimulationOnly
             (CandidateState::Reproducing, CandidateState::Reproduced) => {}
             (CandidateState::Reproducing, CandidateState::Verified) => {
                 if self.reproduction_receipt_id.is_none() {
@@ -268,7 +281,9 @@ impl HypothesisCandidate {
             (CandidateState::Reproducing, CandidateState::Dismissed(_))
             | (CandidateState::Reproducing, CandidateState::Inconclusive(_))
             | (CandidateState::Reproducing, CandidateState::Reproducing)
+            | (CandidateState::Reproducing, CandidateState::BlockedByScope(_))
             | (CandidateState::Reproduced, CandidateState::Dismissed(_))
+            | (CandidateState::Reproduced, CandidateState::BlockedByScope(_))
             | (CandidateState::Reproducing, CandidateState::SimulationOnly(_))
             | (CandidateState::Reproduced, CandidateState::SimulationOnly(_)) => {}
 
@@ -321,6 +336,14 @@ impl HypothesisCandidate {
     /// Marks candidate as inconclusive when reproduction cannot definitively confirm or refute hypothesis.
     pub fn mark_inconclusive(&mut self, reason: impl Into<String>) -> Result<(), HypothesisError> {
         self.transition_to(CandidateState::Inconclusive(reason.into()))
+    }
+
+    /// Marks candidate as blocked by scope when the target entrypoint is outside authorized boundaries.
+    pub fn mark_blocked_by_scope(
+        &mut self,
+        reason: impl Into<String>,
+    ) -> Result<(), HypothesisError> {
+        self.transition_to(CandidateState::BlockedByScope(reason.into()))
     }
 
     /// Marks candidate as simulation only, quarantining it from verification and promotion.
