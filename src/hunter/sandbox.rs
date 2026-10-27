@@ -17,6 +17,87 @@ pub const DEFAULT_TIMEOUT_MS: u64 = 5000;
 /// Default maximum captured output size: 1 MB.
 pub const DEFAULT_MAX_OUTPUT_BYTES: usize = 1024 * 1024;
 
+/// Operating system-level isolation mechanism applied to the sandboxed execution.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum IsolationMechanism {
+    /// macOS kernel Seatbelt sandbox applied via `/usr/bin/sandbox-exec` profile.
+    MacSeatbelt,
+    /// Linux Bubblewrap container isolation (`bwrap`).
+    LinuxBubblewrap,
+    /// Linux unprivileged user + network namespaces (`unshare -r -n`).
+    LinuxNamespace,
+    /// POSIX process resource limits (`setrlimit`) only (no network/fs namespace).
+    PosixRlimitsOnly,
+    /// No OS-level isolation active.
+    None,
+}
+
+impl IsolationMechanism {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            IsolationMechanism::MacSeatbelt => "MacSeatbelt",
+            IsolationMechanism::LinuxBubblewrap => "LinuxBubblewrap",
+            IsolationMechanism::LinuxNamespace => "LinuxNamespace",
+            IsolationMechanism::PosixRlimitsOnly => "PosixRlimitsOnly",
+            IsolationMechanism::None => "None",
+        }
+    }
+}
+
+/// Detects the strongest OS-level isolation mechanism supported on the current host.
+pub fn detect_isolation_mechanism() -> IsolationMechanism {
+    #[cfg(target_os = "macos")]
+    {
+        if Path::new("/usr/bin/sandbox-exec").exists() {
+            return IsolationMechanism::MacSeatbelt;
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if find_in_path("bwrap").is_some() || Path::new("/usr/bin/bwrap").exists() {
+            return IsolationMechanism::LinuxBubblewrap;
+        }
+        if find_in_path("unshare").is_some() {
+            if let Ok(status) = Command::new("unshare")
+                .args(["-r", "-n", "true"])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+            {
+                if status.success() {
+                    return IsolationMechanism::LinuxNamespace;
+                }
+            }
+        }
+        return IsolationMechanism::PosixRlimitsOnly;
+    }
+
+    #[cfg(unix)]
+    {
+        IsolationMechanism::PosixRlimitsOnly
+    }
+
+    #[cfg(not(unix))]
+    {
+        IsolationMechanism::None
+    }
+}
+
+#[allow(dead_code)]
+fn find_in_path(executable: &str) -> Option<PathBuf> {
+    if let Some(paths) = std::env::var_os("PATH") {
+        for path in std::env::split_paths(&paths) {
+            let full = path.join(executable);
+            if full.is_file() {
+                return Some(full);
+            }
+        }
+    }
+    None
+}
+
 /// Configuration defining isolation boundaries, budgets, and environment sanitization for sandboxed execution.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SandboxConfig {
@@ -34,6 +115,12 @@ pub struct SandboxConfig {
     pub strip_ambient_env: bool,
     /// Explicit prefixes of environment variables to scrub (e.g. `AWS_`, `GITHUB_`, `SECRET_`, `TOKEN_`).
     pub stripped_env_prefixes: Vec<String>,
+    /// Whether OS-level isolation is mandatory (fail-closed if unavailable on host, default: true).
+    pub require_os_isolation: bool,
+    /// Maximum CPU seconds before process termination via rlimit (default: Some(15)).
+    pub max_cpu_seconds: Option<u64>,
+    /// Maximum number of processes permitted (default: Some(64)).
+    pub max_pid_count: Option<u32>,
 }
 
 impl Default for SandboxConfig {
@@ -51,6 +138,9 @@ impl Default for SandboxConfig {
                 "SECRET_".to_string(),
                 "TOKEN_".to_string(),
             ],
+            require_os_isolation: true,
+            max_cpu_seconds: Some(15),
+            max_pid_count: None,
         }
     }
 }
@@ -76,6 +166,12 @@ impl SandboxConfig {
                 "Sandbox max_memory_bytes must be greater than zero".to_string(),
             ));
         }
+        if self.require_os_isolation && detect_isolation_mechanism() == IsolationMechanism::None {
+            return Err(SandboxError::IsolationViolation(
+                "OS-level sandbox isolation is required by policy but unsupported on this host platform"
+                    .to_string(),
+            ));
+        }
         Ok(())
     }
 
@@ -98,6 +194,21 @@ impl SandboxConfig {
         self.stripped_env_prefixes = prefixes;
         self
     }
+
+    pub fn with_require_os_isolation(mut self, require: bool) -> Self {
+        self.require_os_isolation = require;
+        self
+    }
+
+    pub fn with_max_cpu_seconds(mut self, max_cpu: u64) -> Self {
+        self.max_cpu_seconds = Some(max_cpu);
+        self
+    }
+
+    pub fn with_max_pid_count(mut self, max_pids: u32) -> Self {
+        self.max_pid_count = Some(max_pids);
+        self
+    }
 }
 
 /// Execution status reported upon completion or termination of a sandboxed run.
@@ -107,6 +218,7 @@ pub enum SandboxStatus {
     TimedOut,
     ResourceExceeded,
     Killed,
+    Blocked,
     Error,
 }
 
@@ -117,6 +229,7 @@ impl SandboxStatus {
             SandboxStatus::TimedOut => "TimedOut",
             SandboxStatus::ResourceExceeded => "ResourceExceeded",
             SandboxStatus::Killed => "Killed",
+            SandboxStatus::Blocked => "Blocked",
             SandboxStatus::Error => "Error",
         }
     }
@@ -131,6 +244,9 @@ pub struct SandboxExecutionReceipt {
     pub peak_memory_bytes: u64,
     pub exit_code: Option<i32>,
     pub status: SandboxStatus,
+    pub isolation_mechanism: IsolationMechanism,
+    pub isolation_enforced: bool,
+    pub host_os: String,
     pub network_egress_prevented: bool,
     pub stdout: Vec<u8>,
     pub stderr: Vec<u8>,
@@ -281,12 +397,17 @@ impl SandboxRunner {
             SandboxStatus::Completed
         };
 
+        let peak_rss = get_process_rss_bytes(std::process::id()).unwrap_or(0);
         let receipt = build_receipt(
             &sandbox_id,
             duration_ms,
-            0,
+            peak_rss,
             if result.is_ok() { Some(0) } else { Some(1) },
             status,
+            IsolationMechanism::None,
+            false,
+            std::env::consts::OS.to_string(),
+            false,
             Vec::new(),
             Vec::new(),
             false,
@@ -319,6 +440,14 @@ impl SandboxRunner {
             return Err(SandboxError::Cancelled);
         }
 
+        let mechanism = detect_isolation_mechanism();
+        if self.config.require_os_isolation && mechanism == IsolationMechanism::None {
+            return Err(SandboxError::IsolationViolation(
+                "OS-level sandbox isolation is required by policy but unsupported on this host platform"
+                    .to_string(),
+            ));
+        }
+
         let temp_dir = tempfile::Builder::new()
             .prefix("bk_hunter_cmd_")
             .tempdir()?;
@@ -347,14 +476,95 @@ impl SandboxRunner {
             }
         }
 
-        let mut cmd = Command::new(program);
-        cmd.args(args);
+        let canonical_temp = std::fs::canonicalize(temp_dir.path())
+            .unwrap_or_else(|_| temp_dir.path().to_path_buf());
+
+        let mut cmd = match mechanism {
+            IsolationMechanism::MacSeatbelt => {
+                let seatbelt_profile = format!(
+                    "(version 1)\n\
+                     (deny default)\n\
+                     (allow process-exec)\n\
+                     (allow process-fork)\n\
+                     (allow sysctl-read)\n\
+                     (allow file-read*)\n\
+                     (allow file-write-data (literal \"/dev/null\") (literal \"/dev/zero\") (literal \"/dev/dtracehelper\"))\n\
+                     (allow file-write* (subpath \"{}\"))\n\
+                     (allow file-write* (subpath \"{}\"))\n\
+                     {}\n",
+                    canonical_temp.display(),
+                    temp_dir.path().display(),
+                    if self.config.allow_network {
+                        "(allow network*)"
+                    } else {
+                        "(deny network*)"
+                    }
+                );
+                let mut c = Command::new("/usr/bin/sandbox-exec");
+                c.arg("-p");
+                c.arg(&seatbelt_profile);
+                c.arg(program);
+                c.args(args);
+                c
+            }
+            IsolationMechanism::LinuxBubblewrap => {
+                let mut c = Command::new("bwrap");
+                if !self.config.allow_network {
+                    c.arg("--unshare-net");
+                }
+                c.arg("--ro-bind").arg("/").arg("/");
+                c.arg("--dev").arg("/dev");
+                c.arg("--proc").arg("/proc");
+                c.arg("--bind").arg(&canonical_temp).arg(&canonical_temp);
+                if canonical_temp != temp_dir.path() {
+                    c.arg("--bind").arg(temp_dir.path()).arg(temp_dir.path());
+                }
+                c.arg(program);
+                c.args(args);
+                c
+            }
+            IsolationMechanism::LinuxNamespace => {
+                let mut c = Command::new("unshare");
+                c.args(["-r", "-n"]);
+                c.arg(program);
+                c.args(args);
+                c
+            }
+            IsolationMechanism::PosixRlimitsOnly | IsolationMechanism::None => {
+                let mut c = Command::new(program);
+                c.args(args);
+                c
+            }
+        };
+
         cmd.current_dir(temp_dir.path());
 
         #[cfg(unix)]
         {
             use std::os::unix::process::CommandExt;
             cmd.process_group(0);
+
+            let cpu_limit = self.config.max_cpu_seconds.unwrap_or(15);
+            let pid_limit = self.config.max_pid_count;
+            unsafe {
+                cmd.pre_exec(move || {
+                    let rlim_cpu = libc::rlimit {
+                        rlim_cur: cpu_limit,
+                        rlim_max: cpu_limit + 5,
+                    };
+                    libc::setrlimit(libc::RLIMIT_CPU, &rlim_cpu);
+
+                    if let Some(pids) = pid_limit {
+                        let rlim_nproc = libc::rlimit {
+                            rlim_cur: pids as libc::rlim_t,
+                            rlim_max: pids as libc::rlim_t,
+                        };
+                        libc::setrlimit(libc::RLIMIT_NPROC, &rlim_nproc);
+                    }
+
+                    Ok(())
+                });
+            }
         }
 
         // Sanitization: Strip ambient environment if enabled
@@ -378,9 +588,10 @@ impl SandboxRunner {
             cmd.env_remove("SECRET_KEY");
             cmd.env_remove("TOKEN");
 
-            // Isolate HOME and TMPDIR to the ephemeral directory
-            cmd.env("HOME", temp_dir.path());
-            cmd.env("TMPDIR", temp_dir.path());
+            // Isolate HOME, TMPDIR, and DARWIN_USER_TEMP_DIR to the ephemeral directory
+            cmd.env("HOME", &canonical_temp);
+            cmd.env("TMPDIR", &canonical_temp);
+            cmd.env("DARWIN_USER_TEMP_DIR", &canonical_temp);
         }
 
         // Network isolation invariant: null-route proxy environment variables and TLS certificates
@@ -451,6 +662,7 @@ impl SandboxRunner {
         let timeout = Duration::from_millis(self.config.timeout_ms);
         let mut status = SandboxStatus::Completed;
         let mut exit_code = None;
+        let mut peak_rss: u64 = 0;
 
         loop {
             // Check cancellation token
@@ -465,6 +677,18 @@ impl SandboxRunner {
                 terminate_process_tree(&mut child);
                 status = SandboxStatus::TimedOut;
                 break;
+            }
+
+            // Real process RSS sampling
+            if let Some(rss) = get_process_rss_bytes(child.id()) {
+                if rss > peak_rss {
+                    peak_rss = rss;
+                }
+                if peak_rss > self.config.max_memory_bytes {
+                    terminate_process_tree(&mut child);
+                    status = SandboxStatus::ResourceExceeded;
+                    break;
+                }
             }
 
             match child.try_wait() {
@@ -488,6 +712,27 @@ impl SandboxRunner {
             }
         }
 
+        // Post-exit rusage capture if peak_rss was too fast to catch during polling
+        #[cfg(unix)]
+        {
+            unsafe {
+                let mut usage: libc::rusage = std::mem::zeroed();
+                if libc::getrusage(libc::RUSAGE_CHILDREN, &mut usage) == 0 {
+                    #[cfg(target_os = "macos")]
+                    let rusage_bytes = usage.ru_maxrss as u64;
+                    #[cfg(not(target_os = "macos"))]
+                    let rusage_bytes = (usage.ru_maxrss as u64) * 1024;
+                    if rusage_bytes > peak_rss {
+                        peak_rss = rusage_bytes;
+                    }
+                }
+            }
+        }
+
+        if peak_rss > self.config.max_memory_bytes && status == SandboxStatus::Completed {
+            status = SandboxStatus::ResourceExceeded;
+        }
+
         let duration_ms = start_time.elapsed().as_millis() as u64;
 
         // Collect outputs from background readers
@@ -499,19 +744,25 @@ impl SandboxRunner {
             .unwrap_or_default();
 
         let output_truncated = stdout_truncated || stderr_truncated;
-        let output_bytes_len = (stdout_bytes.len() + stderr_bytes.len()) as u64;
 
-        // Resource constraint check
-        if output_bytes_len > self.config.max_memory_bytes {
-            status = SandboxStatus::ResourceExceeded;
-        }
+        let isolation_enforced = matches!(
+            mechanism,
+            IsolationMechanism::MacSeatbelt
+                | IsolationMechanism::LinuxBubblewrap
+                | IsolationMechanism::LinuxNamespace
+        );
+        let network_egress_prevented = !self.config.allow_network && isolation_enforced;
 
         let receipt = build_receipt(
             &sandbox_id,
             duration_ms,
-            output_bytes_len,
+            peak_rss,
             exit_code,
             status,
+            mechanism,
+            isolation_enforced,
+            std::env::consts::OS.to_string(),
+            network_egress_prevented,
             stdout_bytes,
             stderr_bytes,
             output_truncated,
@@ -642,6 +893,10 @@ fn build_receipt(
     peak_memory_bytes: u64,
     exit_code: Option<i32>,
     status: SandboxStatus,
+    isolation_mechanism: IsolationMechanism,
+    isolation_enforced: bool,
+    host_os: String,
+    network_egress_prevented: bool,
     stdout: Vec<u8>,
     stderr: Vec<u8>,
     output_truncated: bool,
@@ -651,7 +906,11 @@ fn build_receipt(
     let mut hasher = Sha256::new();
     hasher.update(sandbox_id.as_bytes());
     hasher.update(duration_ms.to_le_bytes());
+    hasher.update(peak_memory_bytes.to_le_bytes());
     hasher.update(status.as_str().as_bytes());
+    hasher.update(isolation_mechanism.as_str().as_bytes());
+    hasher.update([if isolation_enforced { 1 } else { 0 }]);
+    hasher.update([if network_egress_prevented { 1 } else { 0 }]);
     hasher.update(&stdout);
     hasher.update(&stderr);
     let digest = crate::to_hex(hasher.finalize());
@@ -665,7 +924,10 @@ fn build_receipt(
         peak_memory_bytes,
         exit_code,
         status,
-        network_egress_prevented: true,
+        isolation_mechanism,
+        isolation_enforced,
+        host_os,
+        network_egress_prevented,
         stdout,
         stderr,
         output_truncated,
@@ -697,4 +959,82 @@ fn terminate_process_tree(child: &mut std::process::Child) {
     }
     let _ = child.kill();
     let _ = child.wait();
+}
+
+#[cfg(target_os = "macos")]
+fn get_process_rss_bytes(pid: u32) -> Option<u64> {
+    #[repr(C)]
+    struct ProcTaskInfo {
+        pti_virtual_size: u64,
+        pti_resident_size: u64,
+        pti_total_user: u64,
+        pti_total_system: u64,
+        pti_threads_user: u64,
+        pti_threads_system: u64,
+        pti_policy: i32,
+        pti_faults: i32,
+        pti_pageins: i32,
+        pti_cow_faults: i32,
+        pti_messages_sent: i32,
+        pti_messages_received: i32,
+        pti_syscalls_mach: i32,
+        pti_syscalls_unix: i32,
+        pti_csw: i32,
+        pti_threadnum: i32,
+        pti_numrunning: i32,
+        pti_priority: i32,
+    }
+
+    unsafe extern "C" {
+        fn proc_pidinfo(
+            pid: i32,
+            flavor: i32,
+            arg: u64,
+            buffer: *mut std::ffi::c_void,
+            buffersize: i32,
+        ) -> i32;
+    }
+
+    unsafe {
+        let mut info: ProcTaskInfo = std::mem::zeroed();
+        let size = std::mem::size_of::<ProcTaskInfo>() as i32;
+        let ret = proc_pidinfo(
+            pid as i32,
+            4, // PROC_PIDTASKINFO
+            0,
+            &mut info as *mut _ as *mut std::ffi::c_void,
+            size,
+        );
+        if ret == size && info.pti_resident_size > 0 {
+            Some(info.pti_resident_size)
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn get_process_rss_bytes(pid: u32) -> Option<u64> {
+    let path = format!("/proc/{}/statm", pid);
+    if let Ok(content) = std::fs::read_to_string(path) {
+        let mut parts = content.split_whitespace();
+        let _total = parts.next()?;
+        if let Some(resident_pages_str) = parts.next() {
+            if let Ok(pages) = resident_pages_str.parse::<u64>() {
+                let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+                let page_size = if page_size > 0 {
+                    page_size as u64
+                } else {
+                    4096
+                };
+                return Some(pages * page_size);
+            }
+        }
+    }
+    None
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn get_process_rss_bytes(_pid: u32) -> Option<u64> {
+    None
 }
