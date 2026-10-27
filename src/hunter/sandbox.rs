@@ -57,7 +57,16 @@ pub fn detect_isolation_mechanism() -> IsolationMechanism {
 
     #[cfg(target_os = "linux")]
     {
-        if find_in_path("bwrap").is_some() || Path::new("/usr/bin/bwrap").exists() {
+        if (find_in_path("bwrap").is_some() || Path::new("/usr/bin/bwrap").exists())
+            && Command::new("bwrap")
+                .args(["--ro-bind", "/", "/", "true"])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false)
+        {
             IsolationMechanism::LinuxBubblewrap
         } else if find_in_path("unshare").is_some()
             && Command::new("unshare")
@@ -516,7 +525,7 @@ impl SandboxRunner {
                     c.arg("--unshare-net");
                 }
                 c.arg("--ro-bind").arg("/").arg("/");
-                c.arg("--dev").arg("/dev");
+                c.arg("--dev-bind-try").arg("/dev").arg("/dev");
                 c.arg("--proc").arg("/proc");
                 c.arg("--bind").arg(&canonical_temp).arg(&canonical_temp);
                 if canonical_temp != temp_dir.path() {

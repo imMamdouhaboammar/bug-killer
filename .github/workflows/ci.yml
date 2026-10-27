@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y bubblewrap protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap protobuf-compiler && sudo chmod u+s /usr/bin/bwrap || true
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y bubblewrap libpcap-dev protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap libpcap-dev protobuf-compiler && sudo chmod u+s /usr/bin/bwrap || true
       - uses: actions/setup-go@v7
         with:
           go-version-file: services/orchestrator/go.mod
@@ -68,7 +68,7 @@ jobs:
             services/orchestrator/go.sum
             services/healer/go.sum
       - name: Install System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y bubblewrap libpcap-dev protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap libpcap-dev protobuf-compiler && sudo chmod u+s /usr/bin/bwrap || true
       - name: Full System Build
         run: make build
       - name: Run Full Test Suite
