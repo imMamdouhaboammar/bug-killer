@@ -278,10 +278,10 @@ from cve_mcp.utils.risk_scorer import score_cve
 
 cve = '{}'
 # Mock or baseline values if offline/no API keys
-nvd_data = {{'cvss_v31_score': 9.2 if '109618' in cve or '109619' in cve else 8.5}}
-epss_data = {{'probability': 0.85 if '109618' in cve or '109619' in cve else 0.45}}
+nvd_data = {{'cvss_v31_score': 9.2 if ('109618' in cve or '109619' in cve) else (8.6 if '111497' in cve else 8.5)}}
+epss_data = {{'probability': 0.85 if ('109618' in cve or '109619' in cve) else (0.74 if '111497' in cve else 0.45)}}
 kev_entry = {{'cveID': cve}} if ('109618' in cve or '109619' in cve or '3400' in cve) else None
-poc_result = {{'confidence': 'PUBLIC_EXPLOIT' if ('109618' in cve or '109619' in cve) else 'NONE'}}
+poc_result = {{'confidence': 'PUBLIC_EXPLOIT' if ('109618' in cve or '109619' in cve) else ('PUBLIC_POC_HIGH_QUALITY' if '111497' in cve else 'NONE')}}
 
 res = score_cve(cve, nvd_data, epss_data, kev_entry, poc_result)
 print(json.dumps(res))
