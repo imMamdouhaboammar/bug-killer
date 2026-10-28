@@ -1,0 +1,19 @@
+feature,area,priority,original,clone,notes
+init_command,cli,must,yes,yes,Initializes project structure and generates INFO.md
+scan_command,scanner,must,yes,yes,Fast regex scanner across repository excluding ignored paths
+tech_detection,scanner,must,yes,yes,Detects web frameworks and project tools to gate matchers
+matcher_registry,scanner,must,yes,yes,Built-in registry of 50+ vulnerability matchers
+process_command,processor,must,yes,yes,Batched AI investigation of candidate files
+atomic_file_locks,storage,must,yes,yes,Atomic file locking with PID and timestamp recovery
+prompt_assembly,processor,must,yes,yes,Assembles system prompt with core prompt and tech highlights
+revalidate_command,revalidate,must,yes,yes,Filters false positives and checks git commits for fixes
+triage_command,triage,should,yes,yes,Assigns P0/P1/P2 priorities and exploitability ratings
+enrich_command,enrich,should,yes,yes,Attaches git authors and commit dates to findings
+report_command,reporting,must,yes,yes,Renders terminal summary and Markdown report
+export_command,reporting,must,yes,yes,Exports findings as single JSON or md-dir tree
+status_command,cli,should,yes,yes,Displays mirror status and file counts
+diff_mode,cli,must,yes,yes,PR gating mode evaluating only git diff files
+token_cost_budget,processor,must,yes,yes,Caps max dollar spend and duration limits
+zero_node_runtime,core,must,no,yes,Clean-room native compiled Rust and Go harness with zero Node.js dependency
+afero_sandboxing,orchestrator,must,no,yes,Go orchestrator sandboxed workspace isolation
+defense_in_depth_healing,healer,must,no,yes,Direct integration into bug-killer virtual healing and verification
