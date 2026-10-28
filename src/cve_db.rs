@@ -12,6 +12,7 @@ impl CveDatabase {
     /// - 8.5 >= 8.5.12
     ///
     /// Any version <= 8.1 is completely EOL and unpatched.
+    // @lat: [[vulnerabilities#PHP2Shell Vulnerabilities#OOM Heap Corruption]]
     pub fn check_php_version(
         major: u32,
         minor: u32,
@@ -80,6 +81,7 @@ impl CveDatabase {
     /// - 26.x >= 26.12.1
     ///
     /// Any version <= 20.x is EOL and receives no official Brotli patch.
+    // @lat: [[vulnerabilities#Node2Shell Vulnerabilities#Brotli Decoder Out-of-Bounds Write]]
     pub fn check_node_version(
         major: u32,
         minor: u32,

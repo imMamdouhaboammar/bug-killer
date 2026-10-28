@@ -21,3 +21,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+.lat-build
+
+.mcp.json
+.claude
+.codex

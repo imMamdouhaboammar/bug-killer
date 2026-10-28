@@ -49,6 +49,7 @@ lint:
 	cd services/inspector && cargo clippy --all-targets -- -D warnings
 	cd services/orchestrator && go vet ./...
 	cd services/healer && go vet ./...
+	@if command -v lat >/dev/null 2>&1; then echo "==> Running Lat.md Check..."; lat check; fi
 
 install: build
 	@echo "==> Installing bug-killer to $(PREFIX)..."

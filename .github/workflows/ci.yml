@@ -73,3 +73,14 @@ jobs:
         run: make build
       - name: Run Full Test Suite
         run: make test
+
+  lat-knowledge-graph:
+    name: Lat.md Knowledge Graph Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify Lat Knowledge Graph
+        uses: vercel-labs/lat.md@action-v1
+        with:
+          working-directory: .
+          profile: 'false'

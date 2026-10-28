@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 pub struct RollbackManager;
 
+// @lat: [[healing#Bit-for-Bit Rollback]]
 impl RollbackManager {
     /// Reverts all changes recorded in a specified backup ID after cryptographic verification.
     pub fn rollback(root: &Path, backup_id: &str) -> Result<usize, String> {

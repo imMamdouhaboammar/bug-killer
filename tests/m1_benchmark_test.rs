@@ -6,6 +6,7 @@ use tempfile::tempdir;
 
 const BENCHMARK_DIR: &str = "tests/fixtures/benchmark";
 
+// @lat: [[tests#Test Suite Specifications#Benchmark Gates#Tamper Free Corpus Loading]]
 #[test]
 fn test_corpus_loading_and_tamper_free_verification() {
     let corpus = BenchmarkCorpus::load_from_dir(Path::new(BENCHMARK_DIR))
@@ -270,6 +271,7 @@ fn test_gate_3_mutating_fixture_or_manifest_fails_verification_and_invalidates_f
     }
 }
 
+// @lat: [[tests#Test Suite Specifications#Benchmark Gates#Repeated Runs Produce Identical Fingerprints]]
 #[test]
 fn test_gate_4_repeated_runs_produce_deterministic_metrics_and_identical_fingerprints() {
     let corpus =

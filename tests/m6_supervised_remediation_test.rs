@@ -58,6 +58,7 @@ fn test_execute(
     )
 }
 
+// @lat: [[tests#Supervised Remediation#Plan Checksum Determinism]]
 #[test]
 fn test_m6_plan_checksum_determinism_and_tamper_detection() {
     let action1 = PatchAction {
@@ -83,6 +84,7 @@ fn test_m6_plan_checksum_determinism_and_tamper_detection() {
     assert_ne!(hash1, tampered_hash);
 }
 
+// @lat: [[tests#Supervised Remediation#Approval Receipt Verification]]
 #[test]
 fn test_m6_operator_approval_receipt_verification_and_expiry() {
     let dir = tempdir().unwrap();
@@ -216,6 +218,7 @@ fn test_m6_end_to_end_supervised_l4_incident_drill() {
     assert_eq!(restored_content, original_content);
 }
 
+// @lat: [[tests#Supervised Remediation#Post-Verification Fault Triggers Automatic Rollback]]
 #[test]
 fn test_m6_fault_injection_post_verification_triggers_automatic_rollback() {
     let dir = tempdir().unwrap();

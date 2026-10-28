@@ -21,6 +21,7 @@ pub struct McpServer {
     pub workspace_root: PathBuf,
 }
 
+// @lat: [[mcp#Stdio Protocol Server]]
 impl McpServer {
     pub fn new(workspace_root: PathBuf, read_only: bool) -> Self {
         Self {
