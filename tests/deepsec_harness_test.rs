@@ -75,7 +75,7 @@ def run_command(user_input):
     // 4. Processor Stage (AI Investigation with Mock client)
     let proc_opts = ProcessOptions {
         concurrency: 1,
-        batch_size: 2,
+        batch_size: 5,
         limit: None,
         filter: None,
         max_cost_usd: Some(10.0),

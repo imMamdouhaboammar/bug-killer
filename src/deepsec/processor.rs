@@ -44,43 +44,94 @@ impl DeepSecAIClient for MockAIClient {
     fn investigate(&self, prompt: &str) -> Result<String, String> {
         let mut findings = Vec::new();
 
-        if prompt.contains("sql-injection") {
-            findings.push(serde_json::json!({
-                "filePath": "src/api/query.ts",
-                "severity": "CRITICAL",
-                "vulnSlug": "sql-injection",
-                "title": "Raw string concatenation in SQL query execution",
-                "description": "User controlled input is concatenated directly into SQL command without parameterized escaping.",
-                "lineNumbers": [14, 15],
-                "recommendation": "Use parameterized queries or ORM query builder.",
-                "confidence": "high"
-            }));
+        for section in prompt.split("### File: ") {
+            if section.trim().is_empty() {
+                continue;
+            }
+            let file_path = section.lines().next().unwrap_or("").trim();
+            if file_path.is_empty() {
+                continue;
+            }
+
+            if section.contains("sql-injection") {
+                findings.push(serde_json::json!({
+                    "filePath": file_path,
+                    "severity": "CRITICAL",
+                    "vulnSlug": "sql-injection",
+                    "title": "Raw string concatenation in SQL query execution",
+                    "description": "User controlled input is concatenated directly into SQL command without parameterized escaping.",
+                    "lineNumbers": [14, 15],
+                    "recommendation": "Use parameterized queries or ORM query builder.",
+                    "confidence": "high"
+                }));
+            }
+
+            if section.contains("rce") {
+                findings.push(serde_json::json!({
+                    "filePath": file_path,
+                    "severity": "CRITICAL",
+                    "vulnSlug": "rce",
+                    "title": "Command injection via unescaped subprocess call",
+                    "description": "Input passed directly to shell=True subprocess execution.",
+                    "lineNumbers": [22],
+                    "recommendation": "Pass argument list without shell=True.",
+                    "confidence": "high"
+                }));
+            }
+
+            if section.contains("secrets-exposure") {
+                findings.push(serde_json::json!({
+                    "filePath": file_path,
+                    "severity": "HIGH",
+                    "vulnSlug": "secrets-exposure",
+                    "title": "Hardcoded production API secret key in repository",
+                    "description": "Plaintext secret token committed directly to repository source.",
+                    "lineNumbers": [5],
+                    "recommendation": "Rotate key and move to secure secret management vault.",
+                    "confidence": "high"
+                }));
+            }
         }
 
-        if prompt.contains("rce") {
-            findings.push(serde_json::json!({
-                "filePath": "src/utils/exec.py",
-                "severity": "CRITICAL",
-                "vulnSlug": "rce",
-                "title": "Command injection via unescaped subprocess call",
-                "description": "Input passed directly to shell=True subprocess execution.",
-                "lineNumbers": [22],
-                "recommendation": "Pass argument list without shell=True.",
-                "confidence": "high"
-            }));
-        }
+        if findings.is_empty() {
+            if prompt.contains("sql-injection") {
+                findings.push(serde_json::json!({
+                    "filePath": "src/api/query.ts",
+                    "severity": "CRITICAL",
+                    "vulnSlug": "sql-injection",
+                    "title": "Raw string concatenation in SQL query execution",
+                    "description": "User controlled input is concatenated directly into SQL command without parameterized escaping.",
+                    "lineNumbers": [14, 15],
+                    "recommendation": "Use parameterized queries or ORM query builder.",
+                    "confidence": "high"
+                }));
+            }
 
-        if prompt.contains("secrets-exposure") {
-            findings.push(serde_json::json!({
-                "filePath": "config/keys.json",
-                "severity": "HIGH",
-                "vulnSlug": "secrets-exposure",
-                "title": "Hardcoded production API secret key in repository",
-                "description": "Plaintext secret token committed directly to repository source.",
-                "lineNumbers": [5],
-                "recommendation": "Rotate key and move to secure secret management vault.",
-                "confidence": "high"
-            }));
+            if prompt.contains("rce") {
+                findings.push(serde_json::json!({
+                    "filePath": "src/utils/exec.py",
+                    "severity": "CRITICAL",
+                    "vulnSlug": "rce",
+                    "title": "Command injection via unescaped subprocess call",
+                    "description": "Input passed directly to shell=True subprocess execution.",
+                    "lineNumbers": [22],
+                    "recommendation": "Pass argument list without shell=True.",
+                    "confidence": "high"
+                }));
+            }
+
+            if prompt.contains("secrets-exposure") {
+                findings.push(serde_json::json!({
+                    "filePath": "config/keys.json",
+                    "severity": "HIGH",
+                    "vulnSlug": "secrets-exposure",
+                    "title": "Hardcoded production API secret key in repository",
+                    "description": "Plaintext secret token committed directly to repository source.",
+                    "lineNumbers": [5],
+                    "recommendation": "Rotate key and move to secure secret management vault.",
+                    "confidence": "high"
+                }));
+            }
         }
 
         let resp = serde_json::json!({ "findings": findings });
@@ -159,8 +210,13 @@ pub fn process_repository(
         })
         .collect();
 
-    // Sort by number of candidate matches (descending)
-    pending_records.sort_by_key(|a| std::cmp::Reverse(a.candidates.len()));
+    // Sort by number of candidate matches (descending), then by file path for deterministic ordering
+    pending_records.sort_by(|a, b| {
+        b.candidates
+            .len()
+            .cmp(&a.candidates.len())
+            .then_with(|| a.file_path.cmp(&b.file_path))
+    });
 
     if let Some(limit) = options.limit {
         pending_records.truncate(limit);
@@ -292,10 +348,12 @@ pub fn process_repository(
                     let mut file_findings =
                         findings_by_file.remove(&rec.file_path).unwrap_or_default();
 
-                    // If file path did not match exactly, match any findings produced
-                    if file_findings.is_empty() && findings_by_file.len() == 1 {
-                        if let Some((_, f)) = findings_by_file.drain().next() {
-                            file_findings = f;
+                    // If file path did not match exactly, match any remaining findings produced
+                    if file_findings.is_empty() {
+                        if let Some(first_key) = findings_by_file.keys().cloned().next() {
+                            if let Some(f) = findings_by_file.remove(&first_key) {
+                                file_findings = f;
+                            }
                         }
                     }
 
