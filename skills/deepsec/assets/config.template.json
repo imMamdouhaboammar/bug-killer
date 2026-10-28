@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "runner": "auto",
+  "project_id": "auto",
+  "storage_dir": ".deepsec/data",
+  "model": "gemini-2.5-flash",
+  "concurrency": 4,
+  "max_cost_usd": 5.0,
+  "max_tokens": 500000,
+  "ignore_paths": [
+    "**/node_modules/**",
+    "**/target/**",
+    "**/.git/**",
+    "**/vendor/**",
+    "**/dist/**",
+    "**/build/**"
+  ],
+  "rules": {
+    "sql_injection": true,
+    "rce": true,
+    "ssrf": true,
+    "path_traversal": true,
+    "hardcoded_secrets": true,
+    "xss": true,
+    "auth_bypass": true
+  },
+  "revalidation": {
+    "enabled": true,
+    "filter_false_positives": true
+  }
+}
