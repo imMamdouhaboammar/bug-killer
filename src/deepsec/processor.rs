@@ -169,7 +169,9 @@ pub fn process_repository(
     if pending_records.is_empty() {
         run_meta.phase = "done".to_string();
         run_meta.completed_at = Some(Utc::now().to_rfc3339());
-        storage.write_run_meta(&run_meta).map_err(|e| e.to_string())?;
+        storage
+            .write_run_meta(&run_meta)
+            .map_err(|e| e.to_string())?;
         return Ok(run_meta.stats);
     }
 
@@ -239,7 +241,10 @@ pub fn process_repository(
                         };
 
                         let vuln_slug = item["vulnSlug"].as_str().unwrap_or("other").to_string();
-                        let title = item["title"].as_str().unwrap_or("Security issue").to_string();
+                        let title = item["title"]
+                            .as_str()
+                            .unwrap_or("Security issue")
+                            .to_string();
                         let description = item["description"].as_str().unwrap_or("").to_string();
                         let recommendation =
                             item["recommendation"].as_str().unwrap_or("").to_string();
@@ -251,7 +256,11 @@ pub fn process_repository(
 
                         let line_numbers: Vec<usize> = item["lineNumbers"]
                             .as_array()
-                            .map(|a| a.iter().filter_map(|v| v.as_u64().map(|n| n as usize)).collect())
+                            .map(|a| {
+                                a.iter()
+                                    .filter_map(|v| v.as_u64().map(|n| n as usize))
+                                    .collect()
+                            })
                             .unwrap_or_else(|| vec![1]);
 
                         let finding_id = compute_finding_id(project_id, &rel_path, &title);
@@ -280,9 +289,8 @@ pub fn process_repository(
                 total_cost_usd += batch_cost;
 
                 for mut rec in locked_chunk {
-                    let mut file_findings = findings_by_file
-                        .remove(&rec.file_path)
-                        .unwrap_or_default();
+                    let mut file_findings =
+                        findings_by_file.remove(&rec.file_path).unwrap_or_default();
 
                     // If file path did not match exactly, match any findings produced
                     if file_findings.is_empty() && findings_by_file.len() == 1 {
@@ -352,7 +360,9 @@ pub fn process_repository(
     run_meta.stats.findings_count = total_findings_count;
     run_meta.stats.total_cost_usd = total_cost_usd;
     run_meta.stats.total_duration_ms = start_all.elapsed().as_millis() as u64;
-    storage.write_run_meta(&run_meta).map_err(|e| e.to_string())?;
+    storage
+        .write_run_meta(&run_meta)
+        .map_err(|e| e.to_string())?;
 
     Ok(run_meta.stats)
 }

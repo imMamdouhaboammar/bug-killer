@@ -742,8 +742,7 @@ impl ToolCapabilityBroker {
         if canonical_id == "osv-scanner" {
             self.capabilities
                 .insert("osv-scanner-adapter".to_string(), cap.clone());
-            self.capabilities
-                .insert("osv".to_string(), cap.clone());
+            self.capabilities.insert("osv".to_string(), cap.clone());
         }
         if canonical_id == "privacy-engine" {
             self.capabilities
@@ -910,7 +909,9 @@ impl ToolCapabilityBroker {
                 Vec::new(),
             ),
             Installation::Available => {
-                let bin = self.find_binary(&cap.tool_id).or_else(|| self.find_binary(tool_id));
+                let bin = self
+                    .find_binary(&cap.tool_id)
+                    .or_else(|| self.find_binary(tool_id));
                 match bin {
                     Some(b) => {
                         let timeout = request.timeout_seconds.unwrap_or(30);
@@ -1154,14 +1155,24 @@ impl ToolCapabilityBroker {
                 Self::kill_process_group(pid);
                 let _ = child.wait();
                 let dur = start.elapsed().as_millis() as u64;
-                return (ToolExecutionStatus::Cancelled, "CANCELLED".to_string(), dur, Vec::new());
+                return (
+                    ToolExecutionStatus::Cancelled,
+                    "CANCELLED".to_string(),
+                    dur,
+                    Vec::new(),
+                );
             }
 
             if start.elapsed() >= timeout_dur {
                 Self::kill_process_group(pid);
                 let _ = child.wait();
                 let dur = start.elapsed().as_millis() as u64;
-                return (ToolExecutionStatus::Error, "TIMEOUT".to_string(), dur, Vec::new());
+                return (
+                    ToolExecutionStatus::Error,
+                    "TIMEOUT".to_string(),
+                    dur,
+                    Vec::new(),
+                );
             }
 
             match child.try_wait() {
@@ -1171,7 +1182,12 @@ impl ToolCapabilityBroker {
                     Self::kill_process_group(pid);
                     let _ = child.wait();
                     let dur = start.elapsed().as_millis() as u64;
-                    return (ToolExecutionStatus::Error, format!("WAIT_ERROR: {}", e), dur, Vec::new());
+                    return (
+                        ToolExecutionStatus::Error,
+                        format!("WAIT_ERROR: {}", e),
+                        dur,
+                        Vec::new(),
+                    );
                 }
             }
         };

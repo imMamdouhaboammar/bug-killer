@@ -54,14 +54,16 @@ pub fn get_tech_highlight(tag: &str) -> Option<&'static str> {
         "actix" | "axum" => Some(
             "- Rust web frameworks: check for unsafe blocks, unbounded buffer allocations in request bodies, and directory traversal.",
         ),
-        "gin" => Some(
-            "- Go Gin: check for c.Bind query injection and raw SQL string formatting.",
-        ),
+        "gin" => Some("- Go Gin: check for c.Bind query injection and raw SQL string formatting."),
         _ => None,
     }
 }
 
-pub fn assemble_prompt(tech_tags: &[String], info_md: Option<&str>, files_overview: &str) -> String {
+pub fn assemble_prompt(
+    tech_tags: &[String],
+    info_md: Option<&str>,
+    files_overview: &str,
+) -> String {
     let mut prompt = String::from(CORE_PROMPT);
 
     if !tech_tags.is_empty() {

@@ -67,7 +67,8 @@ impl StorageManager {
 
     pub fn file_record_path(&self, project_id: &str, rel_path: &str) -> PathBuf {
         let safe_rel = rel_path.trim_start_matches('/');
-        self.files_dir(project_id).join(format!("{}.json", safe_rel))
+        self.files_dir(project_id)
+            .join(format!("{}.json", safe_rel))
     }
 
     pub fn read_file_record(&self, project_id: &str, rel_path: &str) -> Option<FileRecord> {
@@ -114,7 +115,9 @@ impl StorageManager {
     }
 
     pub fn write_run_meta(&self, meta: &RunMeta) -> io::Result<()> {
-        let path = self.runs_dir(&meta.project_id).join(format!("{}.json", meta.run_id));
+        let path = self
+            .runs_dir(&meta.project_id)
+            .join(format!("{}.json", meta.run_id));
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }

@@ -51,11 +51,17 @@ def run_command(user_input):
     // 2. Project Initialization (Coordinator)
     initialize_project(root, project_id, &storage).expect("initialize_project succeeds");
     assert!(storage.project_dir(project_id).join("INFO.md").exists());
-    assert!(storage.setup_dir(project_id).join("surface-inventory.json").exists());
+    assert!(
+        storage
+            .setup_dir(project_id)
+            .join("surface-inventory.json")
+            .exists()
+    );
 
     // 3. Scanner Stage
     let scan_opts = ScanOptions::default();
-    let scan_stats = scan_repository(root, project_id, &storage, &scan_opts).expect("scan succeeds");
+    let scan_stats =
+        scan_repository(root, project_id, &storage, &scan_opts).expect("scan succeeds");
     assert!(scan_stats.files_scanned >= 3);
     assert!(scan_stats.candidates_found >= 3);
 
@@ -128,7 +134,9 @@ fn test_atomic_file_lock_and_stale_reclaim() {
     let tmp = tempdir().expect("temp dir");
     let storage = StorageManager::new(tmp.path());
     let project_id = "test-lock-proj";
-    storage.ensure_project(project_id, "/dummy").expect("ensure project");
+    storage
+        .ensure_project(project_id, "/dummy")
+        .expect("ensure project");
 
     let mut record = FileRecord::new(
         "src/auth.ts".to_string(),
@@ -153,7 +161,9 @@ fn test_atomic_file_lock_and_stale_reclaim() {
     assert!(storage.is_reclaimable_lock(&record2));
 
     // Release lock
-    storage.release_file_lock(&mut record).expect("release lock");
+    storage
+        .release_file_lock(&mut record)
+        .expect("release lock");
     assert_eq!(record.locked_by_run_id, None);
     assert_eq!(record.locked_at, None);
 }
@@ -165,6 +175,9 @@ fn test_finding_id_deterministic_and_unique() {
     let id3 = compute_finding_id("proj-a", "src/db.ts", "RCE Injection");
 
     assert_eq!(id1, id2, "Finding IDs with same signature must match");
-    assert_ne!(id1, id3, "Different vulnerability titles must have distinct finding IDs");
+    assert_ne!(
+        id1, id3,
+        "Different vulnerability titles must have distinct finding IDs"
+    );
     assert!(id1.starts_with("finding_"));
 }

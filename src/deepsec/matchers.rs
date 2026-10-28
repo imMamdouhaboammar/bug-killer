@@ -63,11 +63,18 @@ impl MatcherRegistry {
             label: "SQL Raw Concatenation / Interpolation",
             file_extensions: vec!["ts", "js", "py", "go", "rs", "php", "rb"],
             patterns: vec![
-                Regex::new(r#"(?i)(SELECT|INSERT|UPDATE|DELETE|DROP)\s+.*(\+|\$|\$\{).*?"#).unwrap(),
-                Regex::new(r#"(?i)(SELECT|INSERT|UPDATE|DELETE|DROP)\s+.*(\+|\$|\%s|\{.*\}).*FROM"#).unwrap(),
+                Regex::new(r#"(?i)(SELECT|INSERT|UPDATE|DELETE|DROP)\s+.*(\+|\$|\$\{).*?"#)
+                    .unwrap(),
+                Regex::new(
+                    r#"(?i)(SELECT|INSERT|UPDATE|DELETE|DROP)\s+.*(\+|\$|\%s|\{.*\}).*FROM"#,
+                )
+                .unwrap(),
                 Regex::new(r#"(?i)\.query\s*\(\s*`[^`]*\$\{.+?\}"#).unwrap(),
                 Regex::new(r#"(?i)\.execute\s*\(\s*f["'].*?\{.+?\}.*?["']\s*\)"#).unwrap(),
-                Regex::new(r#"(?i)(db|conn|cursor)\.(raw|exec|query|execute)\s*\(\s*["'].*?\+.*?\)"#).unwrap(),
+                Regex::new(
+                    r#"(?i)(db|conn|cursor)\.(raw|exec|query|execute)\s*\(\s*["'].*?\+.*?\)"#,
+                )
+                .unwrap(),
             ],
             noise_tier: NoiseTier::Precise,
             requires_tech: None,
@@ -114,12 +121,17 @@ impl MatcherRegistry {
         self.matchers.push(Matcher {
             vuln_slug: "secrets-exposure",
             label: "Hardcoded API Keys or Credentials",
-            file_extensions: vec!["ts", "js", "py", "go", "rs", "php", "rb", "json", "yaml", "env"],
+            file_extensions: vec![
+                "ts", "js", "py", "go", "rs", "php", "rb", "json", "yaml", "env",
+            ],
             patterns: vec![
                 Regex::new(r#"(?i)(AKIA[0-9A-Z]{16})"#).unwrap(),
                 Regex::new(r#"ghp_[A-Za-z0-9_]{36}"#).unwrap(),
                 Regex::new(r#"-----BEGIN (RSA|EC|PRIVATE) KEY-----"#).unwrap(),
-                Regex::new(r#"(?i)(password|secret|api_key|token)\s*[:=]\s*["'][A-Za-z0-9_\-\.]{12,}["']"#).unwrap(),
+                Regex::new(
+                    r#"(?i)(password|secret|api_key|token)\s*[:=]\s*["'][A-Za-z0-9_\-\.]{12,}["']"#,
+                )
+                .unwrap(),
             ],
             noise_tier: NoiseTier::Precise,
             requires_tech: None,
@@ -204,7 +216,8 @@ impl MatcherRegistry {
             label: "Insecure JWT Signing or Algorithm Header Trust",
             file_extensions: vec!["ts", "js", "py", "go", "rs"],
             patterns: vec![
-                Regex::new(r#"(?i)jwt\.verify\s*\([^)]*algorithms\s*:\s*\[[^\]]*["']none["']"#).unwrap(),
+                Regex::new(r#"(?i)jwt\.verify\s*\([^)]*algorithms\s*:\s*\[[^\]]*["']none["']"#)
+                    .unwrap(),
                 Regex::new(r#"(?i)jwt\.decode\s*\([^)]*verify\s*=\s*False"#).unwrap(),
             ],
             noise_tier: NoiseTier::Precise,
@@ -216,7 +229,8 @@ impl MatcherRegistry {
             label: "Authentication Route Without Rate Limiting",
             file_extensions: vec!["ts", "js", "py", "go", "rs"],
             patterns: vec![
-                Regex::new(r#"(?i)(login|signin|reset-password|forgot-password)\s*\(.*req"#).unwrap(),
+                Regex::new(r#"(?i)(login|signin|reset-password|forgot-password)\s*\(.*req"#)
+                    .unwrap(),
             ],
             noise_tier: NoiseTier::Noisy,
             requires_tech: None,

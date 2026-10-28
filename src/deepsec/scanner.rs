@@ -81,8 +81,10 @@ pub fn detect_tech(root_path: &Path) -> Vec<String> {
 
     if root_path.join("requirements.txt").exists() || root_path.join("pyproject.toml").exists() {
         tags.push("python".to_string());
-        let req_content = fs::read_to_string(root_path.join("requirements.txt")).unwrap_or_default();
-        let pyproj_content = fs::read_to_string(root_path.join("pyproject.toml")).unwrap_or_default();
+        let req_content =
+            fs::read_to_string(root_path.join("requirements.txt")).unwrap_or_default();
+        let pyproj_content =
+            fs::read_to_string(root_path.join("pyproject.toml")).unwrap_or_default();
         let combined = format!("{}\n{}", req_content, pyproj_content);
 
         if combined.contains("django") || combined.contains("Django") {
@@ -176,7 +178,9 @@ pub fn scan_content(
         }
 
         if let Some(required) = &matcher.requires_tech {
-            let has_required = required.iter().any(|t| detected_tech.contains(&t.to_string()));
+            let has_required = required
+                .iter()
+                .any(|t| detected_tech.contains(&t.to_string()));
             if !has_required {
                 continue;
             }

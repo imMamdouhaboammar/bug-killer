@@ -62,7 +62,9 @@ pub fn revalidate_findings(
             if seen_titles.contains(&normalized_title) {
                 finding.revalidation = Some(Revalidation {
                     verdict: RevalidationVerdict::Duplicate,
-                    reasoning: "Duplicate finding in same file with matching vulnerability signature".to_string(),
+                    reasoning:
+                        "Duplicate finding in same file with matching vulnerability signature"
+                            .to_string(),
                     adjusted_severity: None,
                     duplicate_of: Some(finding.title.clone()),
                     revalidated_at: Utc::now().to_rfc3339(),
@@ -112,7 +114,8 @@ pub fn revalidate_findings(
                 } else {
                     finding.revalidation = Some(Revalidation {
                         verdict: RevalidationVerdict::TruePositive,
-                        reasoning: "Verified unmitigated vulnerability in production code path".to_string(),
+                        reasoning: "Verified unmitigated vulnerability in production code path"
+                            .to_string(),
                         adjusted_severity: None,
                         duplicate_of: None,
                         revalidated_at: Utc::now().to_rfc3339(),
@@ -139,7 +142,9 @@ pub fn revalidate_findings(
     run_meta.stats.false_positives = false_positives;
     run_meta.stats.fixed = fixed;
     run_meta.stats.duplicates = duplicates;
-    storage.write_run_meta(&run_meta).map_err(|e| e.to_string())?;
+    storage
+        .write_run_meta(&run_meta)
+        .map_err(|e| e.to_string())?;
 
     Ok(run_meta.stats)
 }

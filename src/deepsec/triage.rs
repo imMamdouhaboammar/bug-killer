@@ -17,7 +17,9 @@ pub fn triage_findings(project_id: &str, storage: &StorageManager) -> Result<usi
                 continue;
             }
 
-            let (priority, exploitability, impact, reasoning) = if let Some(reval) = &finding.revalidation {
+            let (priority, exploitability, impact, reasoning) = if let Some(reval) =
+                &finding.revalidation
+            {
                 if reval.verdict == RevalidationVerdict::FalsePositive
                     || reval.verdict == RevalidationVerdict::Fixed
                     || reval.verdict == RevalidationVerdict::Duplicate
@@ -76,7 +78,8 @@ fn classify_finding(finding: &Finding) -> (TriagePriority, String, String, Strin
             TriagePriority::P2,
             "moderate".to_string(),
             "medium".to_string(),
-            "P2: Medium risk finding or major bug requiring standard sprint remediation".to_string(),
+            "P2: Medium risk finding or major bug requiring standard sprint remediation"
+                .to_string(),
         ),
         Severity::Bug | Severity::Low => (
             TriagePriority::Skip,

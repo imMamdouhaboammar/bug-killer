@@ -87,7 +87,10 @@ pub fn generate_markdown_report(project_id: &str, storage: &StorageManager) -> S
     }
 
     out.push_str("## Executive Summary\n\n");
-    out.push_str(&format!("- Total Scanned Files with Findings: {}\n", records.len()));
+    out.push_str(&format!(
+        "- Total Scanned Files with Findings: {}\n",
+        records.len()
+    ));
     out.push_str(&format!("- Total Verified Findings: {}\n", total_findings));
     out.push_str(&format!("  - CRITICAL: {}\n", critical_count));
     out.push_str(&format!("  - HIGH: {}\n", high_count));

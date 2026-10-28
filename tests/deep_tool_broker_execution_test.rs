@@ -41,7 +41,10 @@ fn test_broker_missing_tool_honest_not_run_and_no_mock_artifacts() {
     assert_eq!(receipt.reason_code, "ENGINE_MISSING");
     assert!(receipt.is_engine_missing());
     assert_eq!(receipt.resources.duration_ms, 0);
-    assert!(receipt.artifacts.is_empty(), "Missing tool must never produce fake artifacts");
+    assert!(
+        receipt.artifacts.is_empty(),
+        "Missing tool must never produce fake artifacts"
+    );
     assert!(receipt.validate().is_ok());
 }
 
@@ -57,7 +60,10 @@ fn test_broker_unlicensed_codeql_blocked_with_no_mock_artifacts() {
     assert_eq!(receipt.status, ToolExecutionStatus::Blocked);
     assert_eq!(receipt.reason_code, "UNLICENSED_ENVIRONMENT");
     assert!(receipt.is_unlicensed());
-    assert!(receipt.artifacts.is_empty(), "Unlicensed tool must never emit artifacts");
+    assert!(
+        receipt.artifacts.is_empty(),
+        "Unlicensed tool must never emit artifacts"
+    );
     assert!(receipt.validate().is_ok());
 }
 
@@ -99,7 +105,10 @@ fn test_broker_real_execution_invokes_process_and_hashes_actual_output() {
     assert!(receipt.validate().is_ok());
 
     // Invariant: The artifact hash must be the real SHA-256 of the output bytes, NOT dummy hash!
-    assert!(!receipt.artifacts.is_empty(), "Real tool output must produce artifact receipt");
+    assert!(
+        !receipt.artifacts.is_empty(),
+        "Real tool output must produce artifact receipt"
+    );
     let expected_hash = {
         let mut hasher = Sha256::new();
         hasher.update(output_body);
@@ -124,11 +133,7 @@ fn test_broker_timeout_kills_process_group_and_reaps_child() {
     let script_path = tmp.path().join("slow_tool.sh");
 
     // Script spawns background child sleep and sleeps in foreground
-    fs::write(
-        &script_path,
-        "#!/bin/sh\nsleep 60 &\nsleep 60\n",
-    )
-    .expect("write script");
+    fs::write(&script_path, "#!/bin/sh\nsleep 60 &\nsleep 60\n").expect("write script");
 
     let mut perms = fs::metadata(&script_path).expect("meta").permissions();
     perms.set_mode(0o755);
@@ -147,7 +152,10 @@ fn test_broker_timeout_kills_process_group_and_reaps_child() {
     let elapsed = start.elapsed();
 
     // Must return in roughly 1-2 seconds, not hang for 60 seconds
-    assert!(elapsed < Duration::from_secs(5), "Timeout must fire promptly");
+    assert!(
+        elapsed < Duration::from_secs(5),
+        "Timeout must fire promptly"
+    );
     assert_eq!(receipt.status, ToolExecutionStatus::Error);
     assert_eq!(receipt.reason_code, "TIMEOUT");
     assert!(receipt.validate().is_ok());
@@ -158,11 +166,7 @@ fn test_broker_cancellation_kills_process_group() {
     let tmp = tempdir().expect("temp dir");
     let script_path = tmp.path().join("cancellable_tool.sh");
 
-    fs::write(
-        &script_path,
-        "#!/bin/sh\nsleep 30\n",
-    )
-    .expect("write script");
+    fs::write(&script_path, "#!/bin/sh\nsleep 30\n").expect("write script");
 
     let mut perms = fs::metadata(&script_path).expect("meta").permissions();
     perms.set_mode(0o755);
@@ -185,7 +189,10 @@ fn test_broker_cancellation_kills_process_group() {
     let receipt = broker.execute("cancellable-tool", &req, &cancel);
     let elapsed = start.elapsed();
 
-    assert!(elapsed < Duration::from_secs(3), "Cancellation must terminate process quickly");
+    assert!(
+        elapsed < Duration::from_secs(3),
+        "Cancellation must terminate process quickly"
+    );
     assert_eq!(receipt.status, ToolExecutionStatus::Cancelled);
     assert_eq!(receipt.reason_code, "CANCELLED");
     assert!(receipt.validate().is_ok());
@@ -230,7 +237,9 @@ fn test_execution_ledger_integrity_and_tamper_detection() {
         completed_at: "2026-10-27T10:00:01Z".to_string(),
     };
 
-    ledger.record_receipt(receipt.clone(), true).expect("record real receipt");
+    ledger
+        .record_receipt(receipt.clone(), true)
+        .expect("record real receipt");
     assert_eq!(ledger.len(), 1);
     assert!(ledger.is_real_execution("rcpt-001"));
 
@@ -241,7 +250,10 @@ fn test_execution_ledger_integrity_and_tamper_detection() {
     // Tampering test: modified ledger digest does not match
     let mut tampered = ledger.clone();
     tampered.receipts[0].reason_code = "FORGED_REASON".to_string();
-    assert!(tampered.verify_integrity(&digest).is_err(), "Tampered receipt must fail integrity check");
+    assert!(
+        tampered.verify_integrity(&digest).is_err(),
+        "Tampered receipt must fail integrity check"
+    );
 }
 
 #[test]
@@ -276,7 +288,10 @@ fn test_execution_ledger_rejects_mock_execution_as_real() {
 
     // Attempting to register mock receipt as real execution MUST fail
     let res = ledger.record_receipt(dummy_receipt.clone(), true);
-    assert!(res.is_err(), "Mock receipt claiming real execution must be rejected");
+    assert!(
+        res.is_err(),
+        "Mock receipt claiming real execution must be rejected"
+    );
 
     // But can be recorded honestly as non-real execution
     assert!(ledger.record_receipt(dummy_receipt, false).is_ok());
@@ -292,7 +307,9 @@ fn test_broker_executes_osv_scanner_when_installed() {
     let broker = ToolCapabilityBroker::new();
     if let Some(binary) = broker.find_binary("osv-scanner") {
         assert!(binary.is_file());
-        let cap = broker.get_capability("osv-scanner").expect("osv-scanner cap");
+        let cap = broker
+            .get_capability("osv-scanner")
+            .expect("osv-scanner cap");
         assert_eq!(cap.installation, Installation::Available);
 
         let mut req = create_request("osv-scanner");
@@ -303,10 +320,16 @@ fn test_broker_executes_osv_scanner_when_installed() {
         let receipt = broker.execute("osv-scanner", &req, &cancel);
 
         assert_eq!(receipt.status, ToolExecutionStatus::Completed);
-        assert!(!receipt.artifacts.is_empty(), "osv-scanner --version produces stdout artifact");
+        assert!(
+            !receipt.artifacts.is_empty(),
+            "osv-scanner --version produces stdout artifact"
+        );
         assert!(receipt.validate().is_ok());
 
         let mut ledger = ExecutionLedger::new();
-        assert!(ledger.record_receipt(receipt, true).is_ok(), "Real tool receipt must record cleanly as real execution");
+        assert!(
+            ledger.record_receipt(receipt, true).is_ok(),
+            "Real tool receipt must record cleanly as real execution"
+        );
     }
 }

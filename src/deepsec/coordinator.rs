@@ -1,4 +1,4 @@
-use crate::deepsec::scanner::{detect_tech, scan_repository, ScanOptions};
+use crate::deepsec::scanner::{ScanOptions, detect_tech, scan_repository};
 use crate::deepsec::storage::StorageManager;
 use crate::deepsec::types::*;
 use chrono::Utc;
@@ -32,13 +32,18 @@ pub fn initialize_project(
             info_content.push_str("- Next.js App Router detected: review server actions for unauthenticated mutations.\n");
         }
         if tech_tags.contains(&"fastapi".to_string()) || tech_tags.contains(&"django".to_string()) {
-            info_content.push_str("- Python web surface: inspect parameter injection and serialization.\n");
+            info_content
+                .push_str("- Python web surface: inspect parameter injection and serialization.\n");
         }
         if tech_tags.contains(&"rust".to_string()) {
-            info_content.push_str("- Rust workspace: check unsafe blocks and external process execution.\n");
+            info_content.push_str(
+                "- Rust workspace: check unsafe blocks and external process execution.\n",
+            );
         }
         if tech_tags.contains(&"go".to_string()) {
-            info_content.push_str("- Go microservices: inspect concurrency race conditions and HTTP handlers.\n");
+            info_content.push_str(
+                "- Go microservices: inspect concurrency race conditions and HTTP handlers.\n",
+            );
         }
 
         fs::write(info_path, info_content)?;
