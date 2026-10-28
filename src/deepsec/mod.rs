@@ -1,0 +1,23 @@
+pub mod coordinator;
+pub mod enrich;
+pub mod export;
+pub mod matchers;
+pub mod processor;
+pub mod prompt;
+pub mod revalidate;
+pub mod scanner;
+pub mod storage;
+pub mod triage;
+pub mod types;
+
+pub use coordinator::initialize_project;
+pub use enrich::enrich_findings;
+pub use export::{export_json, export_md_dir, generate_markdown_report, render_terminal_summary};
+pub use matchers::{Matcher, MatcherRegistry, NoiseTier};
+pub use processor::{process_repository, DeepSecAIClient, HttpAIClient, MockAIClient, ProcessOptions};
+pub use prompt::{assemble_prompt, CORE_PROMPT};
+pub use revalidate::{revalidate_findings, RevalidateOptions};
+pub use scanner::{detect_tech, is_ignored_path, scan_content, scan_repository, ScanOptions};
+pub use storage::StorageManager;
+pub use triage::triage_findings;
+pub use types::*;
