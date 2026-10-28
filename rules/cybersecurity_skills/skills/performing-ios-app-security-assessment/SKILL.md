@@ -12,7 +12,7 @@ description: 'Performs comprehensive iOS application security assessments using 
   '
 domain: cybersecurity
 subdomain: mobile-security
-author: mukul975
+author: mamdouh-boammar
 tags:
 - mobile-security
 - ios

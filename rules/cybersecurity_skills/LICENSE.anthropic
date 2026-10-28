@@ -1,5 +1,5 @@
 // Anthropic Cybersecurity Skills License
-// Upstream Repository: https://github.com/mukul975/Anthropic-Cybersecurity-Skills
+// Upstream Repository: https://github.com/mamdouh-boammar/Anthropic-Cybersecurity-Skills
 // Licensed under the Apache License, Version 2.0.
 // Integrated into Bug Killer ('bk') Deep Analysis Engine under Strictly Defensive Perimeter Invariants.
 
@@ -191,7 +191,7 @@
       the license header comment from a contributed file except when
       necessary.
 
-   Copyright 2026 mukul975
+   Copyright 2026 mamdouh-boammar
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
