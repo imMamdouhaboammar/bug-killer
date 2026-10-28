@@ -350,7 +350,7 @@ pub fn process_repository(
 
                     // If file path did not match exactly, match any remaining findings produced
                     if file_findings.is_empty() {
-                        if let Some(first_key) = findings_by_file.keys().cloned().next() {
+                        if let Some(first_key) = findings_by_file.keys().next().cloned() {
                             if let Some(f) = findings_by_file.remove(&first_key) {
                                 file_findings = f;
                             }
