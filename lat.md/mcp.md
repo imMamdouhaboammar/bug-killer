@@ -12,6 +12,8 @@ Server request dispatch is handled by [[src/mcp/server.rs#McpServer]] using stru
 
 Research execution and verification endpoints currently return `NOT_RUN` or `verified: false` because no execution backend or proof store is wired to these handlers. A plan is not evidence of execution.
 
+The disclosure draft handler also returns `NOT_RUN` until a real source snapshot and verified reproduction evidence can be supplied. A requested finding ID alone is not sufficient to generate a PVR packet.
+
 ## Read-Only Security Boundary
 
 By default, MCP server connections execute in read-only mode to prevent unapproved agent mutations.

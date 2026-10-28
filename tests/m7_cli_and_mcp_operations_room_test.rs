@@ -223,9 +223,10 @@ fn test_mcp_disclosure_draft_and_inventory() {
     let draft_data: Value =
         serde_json::from_str(draft_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
     assert_eq!(draft_data["finding_id"], "finding-test-m7-001");
-    let md = draft_data["github_pvr_markdown"].as_str().unwrap();
-    assert!(md.contains("# [PVR Draft]"));
-    assert!(md.contains("security@target.example"));
+    assert_eq!(draft_data["status"], "NOT_RUN");
+    assert_eq!(draft_data["reason"], "VERIFIED_REPRODUCTION_REQUIRED");
+    assert!(draft_data["draft_packet"].is_null());
+    assert!(draft_data["github_pvr_markdown"].is_null());
 
     // 2. Inventory (within workspace boundary)
     let inv_req = serde_json::json!({
