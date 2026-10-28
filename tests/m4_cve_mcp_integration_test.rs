@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
-use bug_killer::deep::broker::{CapabilityKind, ExecutionTransport, Installation, ToolCapabilityBroker};
+use bug_killer::deep::broker::{
+    CapabilityKind, ExecutionTransport, Installation, ToolCapabilityBroker,
+};
 use bug_killer::deep::cve_mcp::CveMcpAdapter;
 use bug_killer::engine::adapter::AnalyzerAdapter;
 use bug_killer::engine::protocol::{
@@ -19,7 +21,10 @@ fn test_cve_mcp_adapter_initialization_and_discovery() {
 
     assert_eq!(adapter.engine_id(), "cve-mcp-adapter");
     assert_eq!(adapter.engine_version(), "0.2.0");
-    assert!(adapter.is_installed(), "cve-mcp-server service must be discoverable in services/");
+    assert!(
+        adapter.is_installed(),
+        "cve-mcp-server service must be discoverable in services/"
+    );
     assert_eq!(adapter.installation_state(), Installation::Available);
     assert!(adapter.can_handle_profile(ScanProfile::Deep));
     assert!(adapter.can_handle_profile(ScanProfile::Quick));
@@ -39,7 +44,10 @@ fn test_broker_cve_mcp_capability_discovery_and_registration() {
     assert!(cap.capabilities.kinds.contains(&CapabilityKind::Advisory));
     assert!(cap.capabilities.kinds.contains(&CapabilityKind::Context));
     assert!(cap.capabilities.kinds.contains(&CapabilityKind::Sca));
-    assert!(cap.validate().is_ok(), "Discovered capability must satisfy schema v1.0");
+    assert!(
+        cap.validate().is_ok(),
+        "Discovered capability must satisfy schema v1.0"
+    );
 
     // All tools discovery includes cve-mcp
     let all = broker.discover_all();
@@ -57,25 +65,15 @@ fn test_broker_cve_mcp_capability_discovery_and_registration() {
 #[test]
 fn test_cve_mcp_risk_score_deterministic_formula() {
     // 1. KEV Hard Override: Even with low CVSS and low EPSS, KEV membership sets floor to 76.0 and CRITICAL
-    let (score_kev, label_kev, urgency_kev, _) = CveMcpAdapter::calculate_risk_score(
-        Some(4.0),
-        Some(0.05),
-        true,
-        "NONE",
-        None,
-    );
+    let (score_kev, label_kev, urgency_kev, _) =
+        CveMcpAdapter::calculate_risk_score(Some(4.0), Some(0.05), true, "NONE", None);
     assert!(score_kev >= 76.0);
     assert_eq!(label_kev, "CRITICAL");
     assert_eq!(urgency_kev, "PATCH WITHIN 24 HOURS");
 
     // 2. Maximum Threat: Critical CVSS + High EPSS + KEV + Weaponized PoC + Recent Disclosure
-    let (score_max, label_max, urgency_max, boosters) = CveMcpAdapter::calculate_risk_score(
-        Some(9.8),
-        Some(0.92),
-        true,
-        "WEAPONIZED",
-        Some(2),
-    );
+    let (score_max, label_max, urgency_max, boosters) =
+        CveMcpAdapter::calculate_risk_score(Some(9.8), Some(0.92), true, "WEAPONIZED", Some(2));
     assert_eq!(score_max, 100.0);
     assert_eq!(label_max, "CRITICAL");
     assert_eq!(urgency_max, "PATCH IMMEDIATELY");
@@ -84,13 +82,8 @@ fn test_cve_mcp_risk_score_deterministic_formula() {
     assert!(boosters.contains(&"Published<7days".to_string()));
 
     // 3. Low Risk Vulnerability: No KEV, No PoC, Low CVSS, Low EPSS
-    let (score_low, label_low, urgency_low, _) = CveMcpAdapter::calculate_risk_score(
-        Some(3.5),
-        Some(0.01),
-        false,
-        "NONE",
-        Some(180),
-    );
+    let (score_low, label_low, urgency_low, _) =
+        CveMcpAdapter::calculate_risk_score(Some(3.5), Some(0.01), false, "NONE", Some(180));
     assert!(score_low <= 25.0);
     assert_eq!(label_low, "LOW");
     assert_eq!(urgency_low, "SCHEDULE FOR NEXT CYCLE");
@@ -101,7 +94,9 @@ fn test_cve_triage_and_intelligence_endpoints() {
     let adapter = CveMcpAdapter::new();
 
     // PHP2Shell Triage
-    let triage_php = adapter.triage_cve("CVE-2026-109618").expect("Triage must succeed");
+    let triage_php = adapter
+        .triage_cve("CVE-2026-109618")
+        .expect("Triage must succeed");
     assert_eq!(triage_php.cve_id, "CVE-2026-109618");
     assert!(triage_php.in_kev);
     assert_eq!(triage_php.risk_label, "CRITICAL");
@@ -109,21 +104,29 @@ fn test_cve_triage_and_intelligence_endpoints() {
     assert!(triage_php.recommendation.contains("CISA KEV"));
 
     // Node2Shell Triage
-    let triage_node = adapter.triage_cve("CVE-2026-111497").expect("Triage must succeed");
+    let triage_node = adapter
+        .triage_cve("CVE-2026-111497")
+        .expect("Triage must succeed");
     assert_eq!(triage_node.cve_id, "CVE-2026-111497");
     assert!(triage_node.risk_score >= 50.0);
 
     // KEV Catalog Check
-    let kev_positive = adapter.check_kev("CVE-2026-109618").expect("KEV check must succeed");
+    let kev_positive = adapter
+        .check_kev("CVE-2026-109618")
+        .expect("KEV check must succeed");
     assert!(kev_positive.in_kev);
     assert!(kev_positive.due_date.is_some());
 
-    let kev_negative = adapter.check_kev("CVE-2020-000000").expect("KEV check must succeed");
+    let kev_negative = adapter
+        .check_kev("CVE-2020-000000")
+        .expect("KEV check must succeed");
     assert!(!kev_negative.in_kev);
     assert!(kev_negative.due_date.is_none());
 
     // EPSS Scoring
-    let epss = adapter.get_epss("CVE-2026-109618").expect("EPSS must succeed");
+    let epss = adapter
+        .get_epss("CVE-2026-109618")
+        .expect("EPSS must succeed");
     assert_eq!(epss.cve_id, "CVE-2026-109618");
     assert!(epss.probability > 0.8);
     assert!(epss.percentile > 0.9);
@@ -143,13 +146,19 @@ fn test_cve_mcp_analyzer_adapter_execution_receipt() {
     );
 
     let cancel = CancellationToken::new();
-    let response = adapter.analyze(&request, &cancel).expect("analyze must succeed");
+    let response = adapter
+        .analyze(&request, &cancel)
+        .expect("analyze must succeed");
 
     assert_eq!(response.status, EngineStatus::Completed);
     assert_eq!(response.findings.len(), 1);
     assert_eq!(response.findings[0].advisory_ids[0], "CVE-2026-109618");
     assert_eq!(response.findings[0].severity, NormalizedSeverity::Critical);
-    assert!(response.findings[0].title.contains("Threat Intelligence Triage"));
+    assert!(
+        response.findings[0]
+            .title
+            .contains("Threat Intelligence Triage")
+    );
 
     assert_eq!(response.receipts.len(), 1);
     let receipt = &response.receipts[0];
@@ -159,9 +168,14 @@ fn test_cve_mcp_analyzer_adapter_execution_receipt() {
 
     // Cancellation test
     cancel.cancel();
-    let cancelled_response = adapter.analyze(&request, &cancel).expect("cancelled analyze must return response");
+    let cancelled_response = adapter
+        .analyze(&request, &cancel)
+        .expect("cancelled analyze must return response");
     assert_eq!(cancelled_response.status, EngineStatus::Cancelled);
-    assert_eq!(cancelled_response.receipts[0].status, CoverageReceiptStatus::NotRun);
+    assert_eq!(
+        cancelled_response.receipts[0].status,
+        CoverageReceiptStatus::NotRun
+    );
 }
 
 #[test]
@@ -187,7 +201,9 @@ fn test_mcp_server_cve_tools_json_rpc_integration() {
         }
     }"#;
 
-    let res_str = server.handle_json_rpc_line(triage_req).expect("Server must reply");
+    let res_str = server
+        .handle_json_rpc_line(triage_req)
+        .expect("Server must reply");
     let res: Value = serde_json::from_str(&res_str).expect("Valid JSON-RPC response");
     assert_eq!(res["id"], 1);
     assert_eq!(res["result"]["isError"], false);
@@ -208,7 +224,9 @@ fn test_mcp_server_cve_tools_json_rpc_integration() {
         }
     }"#;
 
-    let res_kev_str = server.handle_json_rpc_line(kev_req).expect("Server must reply");
+    let res_kev_str = server
+        .handle_json_rpc_line(kev_req)
+        .expect("Server must reply");
     let res_kev: Value = serde_json::from_str(&res_kev_str).expect("Valid JSON-RPC response");
     assert_eq!(res_kev["id"], 2);
     assert_eq!(res_kev["result"]["isError"], false);

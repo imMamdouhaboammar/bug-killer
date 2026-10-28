@@ -127,9 +127,9 @@ fn test_cve_skill_recommendations() {
         "Must recommend skills for PHP2Shell CVE-2026-109618"
     );
     assert!(
-        php_recs
-            .iter()
-            .any(|s| s.matches_query("memory") || s.matches_query("heap") || s.matches_query("overflow")),
+        php_recs.iter().any(|s| s.matches_query("memory")
+            || s.matches_query("heap")
+            || s.matches_query("overflow")),
         "Recommendations for CVE-2026-109618 must include memory/heap vulnerability skills"
     );
 
@@ -155,10 +155,7 @@ fn test_mission_goal_recommendations() {
     assert!(!known_skills.is_empty(), "Must return known skills");
 
     let research_skills = registry.recommend_for_goal("research");
-    assert!(
-        !research_skills.is_empty(),
-        "Must return research skills"
-    );
+    assert!(!research_skills.is_empty(), "Must return research skills");
 }
 
 #[test]
@@ -196,8 +193,8 @@ fn test_tool_broker_skill_association() {
 
 #[test]
 fn test_disk_catalog_matches_embedded_catalog() {
-    let catalog_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("rules/cybersecurity_skills/catalog.json");
+    let catalog_path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("rules/cybersecurity_skills/catalog.json");
 
     assert!(
         catalog_path.is_file(),

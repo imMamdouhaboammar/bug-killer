@@ -128,13 +128,18 @@ pub enum CandidateState {
     Dismissed(CandidateDismissReason),
     Inconclusive(String),
     Blocked(String),
+    BlockedByScope(String),
+    SimulationOnly(String),
 }
 
 impl CandidateState {
     pub fn is_terminal(&self) -> bool {
         matches!(
             self,
-            CandidateState::Verified | CandidateState::Dismissed(_)
+            CandidateState::Verified
+                | CandidateState::Dismissed(_)
+                | CandidateState::BlockedByScope(_)
+                | CandidateState::SimulationOnly(_)
         )
     }
 
@@ -147,6 +152,8 @@ impl CandidateState {
             CandidateState::Dismissed(_) => "Dismissed",
             CandidateState::Inconclusive(_) => "Inconclusive",
             CandidateState::Blocked(_) => "Blocked",
+            CandidateState::BlockedByScope(_) => "BlockedByScope",
+            CandidateState::SimulationOnly(_) => "SimulationOnly",
         }
     }
 }
@@ -199,6 +206,8 @@ pub struct HypothesisCandidate {
     pub created_at: String,
     pub updated_at: String,
     pub reproduction_receipt_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_snapshot_sha256: Option<String>,
 }
 
 impl HypothesisCandidate {
@@ -234,7 +243,14 @@ impl HypothesisCandidate {
             created_at: now.clone(),
             updated_at: now,
             reproduction_receipt_id: None,
+            target_snapshot_sha256: None,
         }
+    }
+
+    /// Attaches the immutable target snapshot digest.
+    pub fn with_target_snapshot_sha256(mut self, sha256: impl Into<String>) -> Self {
+        self.target_snapshot_sha256 = Some(sha256.into());
+        self
     }
 
     /// Evaluates if state transition is allowed and performs state transition.
@@ -242,13 +258,15 @@ impl HypothesisCandidate {
     /// without physical test reproduction (must have `reproduction_receipt_id` to enter `Verified`).
     pub fn transition_to(&mut self, next: CandidateState) -> Result<(), HypothesisError> {
         match (&self.state, &next) {
-            // Candidate -> Reproducing, Reproduced, Dismissed, Inconclusive, Blocked
+            // Candidate -> Reproducing, Reproduced, Dismissed, Inconclusive, Blocked, BlockedByScope, SimulationOnly
             (CandidateState::Candidate, CandidateState::Reproducing)
             | (CandidateState::Candidate, CandidateState::Dismissed(_))
             | (CandidateState::Candidate, CandidateState::Inconclusive(_))
-            | (CandidateState::Candidate, CandidateState::Blocked(_)) => {}
+            | (CandidateState::Candidate, CandidateState::Blocked(_))
+            | (CandidateState::Candidate, CandidateState::BlockedByScope(_))
+            | (CandidateState::Candidate, CandidateState::SimulationOnly(_)) => {}
 
-            // Reproducing -> Reproduced, Verified (MUST have reproduction receipt), Dismissed, Inconclusive, Reproducing (retry)
+            // Reproducing -> Reproduced, Verified (MUST have reproduction receipt), Dismissed, Inconclusive, Reproducing (retry), BlockedByScope, SimulationOnly
             (CandidateState::Reproducing, CandidateState::Reproduced) => {}
             (CandidateState::Reproducing, CandidateState::Verified) => {
                 if self.reproduction_receipt_id.is_none() {
@@ -263,7 +281,11 @@ impl HypothesisCandidate {
             (CandidateState::Reproducing, CandidateState::Dismissed(_))
             | (CandidateState::Reproducing, CandidateState::Inconclusive(_))
             | (CandidateState::Reproducing, CandidateState::Reproducing)
-            | (CandidateState::Reproduced, CandidateState::Dismissed(_)) => {}
+            | (CandidateState::Reproducing, CandidateState::BlockedByScope(_))
+            | (CandidateState::Reproduced, CandidateState::Dismissed(_))
+            | (CandidateState::Reproduced, CandidateState::BlockedByScope(_))
+            | (CandidateState::Reproducing, CandidateState::SimulationOnly(_))
+            | (CandidateState::Reproduced, CandidateState::SimulationOnly(_)) => {}
 
             // Inconclusive -> Reproducing (retry with adjusted parameters), Dismissed
             (CandidateState::Inconclusive(_), CandidateState::Reproducing)
@@ -314,6 +336,22 @@ impl HypothesisCandidate {
     /// Marks candidate as inconclusive when reproduction cannot definitively confirm or refute hypothesis.
     pub fn mark_inconclusive(&mut self, reason: impl Into<String>) -> Result<(), HypothesisError> {
         self.transition_to(CandidateState::Inconclusive(reason.into()))
+    }
+
+    /// Marks candidate as blocked by scope when the target entrypoint is outside authorized boundaries.
+    pub fn mark_blocked_by_scope(
+        &mut self,
+        reason: impl Into<String>,
+    ) -> Result<(), HypothesisError> {
+        self.transition_to(CandidateState::BlockedByScope(reason.into()))
+    }
+
+    /// Marks candidate as simulation only, quarantining it from verification and promotion.
+    pub fn mark_simulation_only(
+        &mut self,
+        reason: impl Into<String>,
+    ) -> Result<(), HypothesisError> {
+        self.transition_to(CandidateState::SimulationOnly(reason.into()))
     }
 
     /// Sets reproduction receipt identifier without changing current state.
@@ -569,5 +607,56 @@ impl HypothesisCandidate {
 
     fn touch(&mut self) {
         self.updated_at = Utc::now().to_rfc3339();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simulation_only_candidate_cannot_be_verified_or_promoted() {
+        let mut candidate = HypothesisCandidate::new(
+            "hypo-001",
+            ThreatHypothesisFamily::AuthAuthz,
+            "Unchecked mutation route",
+            "endpoint",
+            "boundary",
+            "input",
+            "Invariant holds",
+            "src/server.js",
+            ExperimentKind::PropertyInvariant,
+            vec!["precondition".to_string()],
+            vec!["evidence".to_string()],
+        );
+
+        assert_eq!(candidate.state, CandidateState::Candidate);
+        assert!(!candidate.can_promote_to_finding());
+
+        // Mark simulation only
+        assert!(
+            candidate
+                .mark_simulation_only("Simulated experiment without runtime execution")
+                .is_ok()
+        );
+        assert_eq!(
+            candidate.state,
+            CandidateState::SimulationOnly(
+                "Simulated experiment without runtime execution".to_string()
+            )
+        );
+        assert!(!candidate.can_promote_to_finding());
+
+        // Cannot promote to finding
+        assert!(
+            candidate
+                .promote_to_finding("finding-001", Severity::High)
+                .is_err()
+        );
+        assert!(
+            candidate
+                .synthesize_finding_v1("run-001", "snapshot-hash")
+                .is_err()
+        );
     }
 }

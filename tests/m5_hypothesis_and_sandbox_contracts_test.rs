@@ -314,7 +314,12 @@ fn test_sandbox_runner_closure_execution() {
     assert!(res);
     assert_eq!(receipt.status, SandboxStatus::Completed);
     assert_eq!(receipt.exit_code, Some(0));
-    assert!(receipt.network_egress_prevented);
+    assert!(
+        !receipt.network_egress_prevented,
+        "Closure in-process execution must truthfully report network egress not prevented"
+    );
+    assert_eq!(receipt.isolation_mechanism, IsolationMechanism::None);
+    assert!(!receipt.isolation_enforced);
     assert!(receipt.receipt_id.starts_with("receipt-sbx-"));
     assert_eq!(receipt.receipt_sha256.len(), 64);
 }
@@ -335,6 +340,8 @@ fn test_sandbox_runner_command_execution_and_env_stripping() {
     assert_eq!(receipt.exit_code, Some(0));
     assert!(receipt.stdout_lossy().contains("hunter-sandbox-ok"));
     assert!(receipt.network_egress_prevented);
+    assert!(receipt.isolation_enforced);
+    assert_ne!(receipt.isolation_mechanism, IsolationMechanism::None);
 }
 
 #[test]
@@ -398,5 +405,8 @@ fn test_sandbox_zero_egress_preflight_blocks_outbound() {
     assert!(res.is_err(), "Outbound curl must be blocked fail-closed");
 
     let res_wget = runner.run_command("wget", &["http://1.2.3.4/malicious"]);
-    assert!(res_wget.is_err(), "Outbound wget must be blocked fail-closed");
+    assert!(
+        res_wget.is_err(),
+        "Outbound wget must be blocked fail-closed"
+    );
 }

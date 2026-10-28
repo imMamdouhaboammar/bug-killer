@@ -5,11 +5,12 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 use crate::disclosure::draft::{DisclosureDraftBuilder, DisclosurePacket};
+use crate::engine::scope::ResearchScope;
+use crate::engine::snapshot::TargetSnapshot;
 use crate::hunter::candidate::ReproductionArtifact;
 use crate::hunter::fuzzer::{DifferentialFuzzer, FuzzOutcome, InvariantKind};
 use crate::hunter::hypothesis::{
-    CandidateDismissReason, ExperimentKind, HypothesisCandidate,
-    ThreatHypothesisFamily,
+    CandidateDismissReason, ExperimentKind, HypothesisCandidate, ThreatHypothesisFamily,
 };
 use crate::hunter::novelty::NoveltyChecker;
 use crate::hunter::sandbox::{SandboxConfig, SandboxRunner, SandboxStatus};
@@ -56,8 +57,13 @@ impl AttackSurfaceScanner {
         if !root.exists() {
             return entries;
         }
+        let canonical_root = match fs::canonicalize(root) {
+            Ok(c) => c,
+            Err(_) => return entries,
+        };
 
         for entry in WalkDir::new(root)
+            .follow_links(false)
             .into_iter()
             .filter_entry(|e| {
                 let name = e.file_name().to_string_lossy();
@@ -66,6 +72,18 @@ impl AttackSurfaceScanner {
             .filter_map(|e| e.ok())
         {
             let path = entry.path();
+
+            // Deny symlinks that escape outside canonical_root
+            if entry.path_is_symlink() {
+                if let Ok(target) = fs::canonicalize(path) {
+                    if !target.starts_with(&canonical_root) {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+            }
+
             if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
                     match ext {
@@ -119,7 +137,11 @@ impl AttackSurfaceScanner {
                 let mut block_lines = Vec::new();
                 for l in &lines[idx..] {
                     block_lines.push(*l);
-                    if block_lines.len() > 1 && (l.trim().starts_with("});") || l.contains("app.") || l.contains("router.")) {
+                    if block_lines.len() > 1
+                        && (l.trim().starts_with("});")
+                            || l.contains("app.")
+                            || l.contains("router."))
+                    {
                         break;
                     }
                 }
@@ -175,8 +197,8 @@ impl AttackSurfaceScanner {
                 let block_end = std::cmp::min(idx + 12, lines.len());
                 let block_text = lines[idx..block_end].join("\n").to_lowercase();
 
-                let has_auth =
-                    block_text.contains("depends(get_current_user") || block_text.contains("security(");
+                let has_auth = block_text.contains("depends(get_current_user")
+                    || block_text.contains("security(");
                 let has_input = block_text.contains("body") || block_text.contains("payload");
 
                 let lower_trimmed = trimmed.to_lowercase();
@@ -191,7 +213,8 @@ impl AttackSurfaceScanner {
                     },
                     has_auth_guard: has_auth,
                     has_untrusted_input: has_input,
-                    uses_dynamic_parser: block_text.contains("json.loads") || block_text.contains("yaml.load"),
+                    uses_dynamic_parser: block_text.contains("json.loads")
+                        || block_text.contains("yaml.load"),
                     code_snippet: trimmed.to_string(),
                 });
             }
@@ -235,7 +258,10 @@ impl AttackSurfaceScanner {
 
         for (idx, line) in content.lines().enumerate() {
             let trimmed = line.trim();
-            if trimmed.contains(".GET(") || trimmed.contains(".POST(") || trimmed.contains("HandleFunc(") {
+            if trimmed.contains(".GET(")
+                || trimmed.contains(".POST(")
+                || trimmed.contains("HandleFunc(")
+            {
                 let lower = trimmed.to_lowercase();
                 entries.push(AttackSurfaceEntry {
                     file_path: path.to_string_lossy().to_string(),
@@ -281,6 +307,14 @@ pub struct AutonomousHuntReport {
     pub hypotheses_triaged_out: usize,
     pub candidates_reproduced: usize,
     pub candidates_verified: usize,
+    pub simulated_hypotheses: usize,
+    pub blocked_by_scope_count: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_snapshot_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inventory_status: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub candidates: Vec<HypothesisCandidate>,
     pub verified_findings: Vec<Finding>,
     pub research_receipts: Vec<NovelResearchReceipt>,
     pub pvr_drafts: Vec<DisclosurePacket>,
@@ -322,14 +356,19 @@ impl AutonomousHunter {
     }
 
     /// Synthesizes structured, falsifiable research hypotheses from discovered attack surface entries.
-    pub fn synthesize_hypotheses(&self, entries: &[AttackSurfaceEntry]) -> Vec<HypothesisCandidate> {
+    pub fn synthesize_hypotheses(
+        &self,
+        entries: &[AttackSurfaceEntry],
+    ) -> Vec<HypothesisCandidate> {
         let mut hypotheses = Vec::new();
 
         for (idx, entry) in entries.iter().enumerate() {
             let candidate_id = format!("cand-hunt-{:03}", idx + 1);
 
             // 1. Missing Authorization on mutating or entry routes
-            if !entry.has_auth_guard && (entry.method == "POST" || entry.method == "DELETE" || entry.method == "PUT") {
+            if !entry.has_auth_guard
+                && (entry.method == "POST" || entry.method == "DELETE" || entry.method == "PUT")
+            {
                 hypotheses.push(HypothesisCandidate::new(
                     &candidate_id,
                     ThreatHypothesisFamily::AuthAuthz,
@@ -363,7 +402,10 @@ impl AutonomousHunter {
                 hypotheses.push(HypothesisCandidate::new(
                     &candidate_id,
                     ThreatHypothesisFamily::TrustBoundary,
-                    format!("Untrusted input reaches sensitive sink in {}", entry.route_or_entry),
+                    format!(
+                        "Untrusted input reaches sensitive sink in {}",
+                        entry.route_or_entry
+                    ),
                     "parameter-flow",
                     "trust-boundary",
                     "unvalidated-parameter",
@@ -379,19 +421,39 @@ impl AutonomousHunter {
         hypotheses
     }
 
-    /// Executes the full autonomous research pipeline on a target workspace directory.
-    pub fn hunt(&self, target_path: &Path, max_hypotheses: usize) -> Result<AutonomousHuntReport, String> {
+    /// Executes the full autonomous research pipeline against an authorized `ResearchScope`.
+    pub fn hunt_with_scope(
+        &self,
+        scope: &ResearchScope,
+        max_hypotheses: usize,
+    ) -> Result<AutonomousHuntReport, String> {
         let start_time = std::time::Instant::now();
+        scope
+            .validate()
+            .map_err(|e| format!("Research scope validation failed: {}", e))?;
+
+        let target_path = &scope.target_root;
         let target_str = target_path.to_string_lossy().to_string();
 
-        // 1. Scan Attack Surface
+        // 1. Immutable Target Snapshot & Inventory Pinning
+        let snapshot = TargetSnapshot::create_allow_partial(scope)
+            .map_err(|e| format!("Failed to create immutable target snapshot: {}", e))?;
+        let snapshot_sha256 = snapshot.snapshot_sha256.clone();
+        let inventory_status = format!("{:?}", snapshot.inventory.status);
+
+        // 2. Scan Attack Surface
         let entries = self.scanner.scan_workspace(target_path);
         let mut candidates = self.synthesize_hypotheses(&entries);
+        for c in &mut candidates {
+            c.target_snapshot_sha256 = Some(snapshot_sha256.clone());
+        }
         candidates.truncate(max_hypotheses);
 
         let hypotheses_synthesized = candidates.len();
         let mut triaged_out = 0;
         let mut reproduced_count = 0;
+        let mut simulated_count = 0;
+        let mut blocked_by_scope_count = 0;
         let mut verified_findings = Vec::new();
         let mut research_receipts = Vec::new();
         let mut pvr_drafts = Vec::new();
@@ -402,8 +464,19 @@ impl AutonomousHunter {
         let runner = SandboxRunner::new(self.sandbox_config.clone())
             .map_err(|e| format!("Failed to create research sandbox runner: {}", e))?;
 
-        // 2. Execute Research Loop on each hypothesis
+        // 3. Execute Research Loop on each hypothesis
         for candidate in &mut candidates {
+            // Scope gate: candidate target path must be within authorized scope
+            let candidate_path = Path::new(&candidate.affected_path);
+            if let Err(scope_err) = scope.is_path_in_scope(candidate_path) {
+                blocked_by_scope_count += 1;
+                let _ = candidate.mark_blocked_by_scope(format!(
+                    "Path '{}' is outside authorized research scope: {}",
+                    candidate.affected_path, scope_err
+                ));
+                continue;
+            }
+
             // A: Known advisory check
             let asset = candidate.asset.clone();
             let is_novel = candidate.check_novelty_against_advisories(&[], &asset, "latest");
@@ -420,8 +493,21 @@ impl AutonomousHunter {
                 reproduced_count += 1;
                 let _ = candidate.mark_reproduced(&artifact.artifact_id);
 
+                // BK-ND-01 Gate: If the reproduction artifact was not produced via real target execution,
+                // quarantine it immediately as SimulationOnly. Under no circumstances can a simulated
+                // experiment yield Verified findings, NOVEL_RESEARCH categories, High/Critical security
+                // claims, or Private Vulnerability Report (PVR) disclosure packets.
+                if !artifact.real_execution {
+                    simulated_count += 1;
+                    let _ = candidate.mark_simulation_only(
+                        "Simulated closure: target application runtime was not executed",
+                    );
+                    continue;
+                }
+
                 // C: Independent 3-Pass Verification Gate
-                let verification_confirmed = self.verify_candidate_three_pass(&runner, candidate, &artifact);
+                let verification_confirmed =
+                    self.verify_candidate_three_pass(&runner, candidate, &artifact);
                 if verification_confirmed {
                     let receipt_id = format!("receipt-hunter-{}", &artifact.artifact_sha256[..16]);
                     let _ = candidate.mark_verified(&receipt_id);
@@ -452,7 +538,9 @@ impl AutonomousHunter {
 
                     // Synthesize private responsible disclosure packet (PVR Draft)
                     let run_id = format!("run-hunter-{}", &artifact.artifact_sha256[..8]);
-                    if let Ok(finding_v1) = candidate.synthesize_finding_v1(&run_id, &artifact.artifact_sha256) {
+                    if let Ok(finding_v1) =
+                        candidate.synthesize_finding_v1(&run_id, &artifact.artifact_sha256)
+                    {
                         let draft_res = DisclosureDraftBuilder::from_finding(&finding_v1)
                             .draft_id(format!("pvr-{}", candidate.candidate_id))
                             .build();
@@ -461,7 +549,8 @@ impl AutonomousHunter {
                         }
                     }
                 } else {
-                    let _ = candidate.mark_inconclusive("Failed 3-pass independent reproduction verification");
+                    let _ = candidate
+                        .mark_inconclusive("Failed 3-pass independent reproduction verification");
                 }
             } else {
                 let _ = candidate.dismiss(CandidateDismissReason::NotReproducible);
@@ -478,10 +567,26 @@ impl AutonomousHunter {
             hypotheses_triaged_out: triaged_out,
             candidates_reproduced: reproduced_count,
             candidates_verified: verified_findings.len(),
+            simulated_hypotheses: simulated_count,
+            blocked_by_scope_count,
+            target_snapshot_sha256: Some(snapshot_sha256),
+            inventory_status: Some(inventory_status),
+            candidates,
             verified_findings,
             research_receipts,
             pvr_drafts,
         })
+    }
+
+    /// Executes the full autonomous research pipeline on a target workspace directory.
+    pub fn hunt(
+        &self,
+        target_path: &Path,
+        max_hypotheses: usize,
+    ) -> Result<AutonomousHuntReport, String> {
+        let scope = ResearchScope::new(target_path, true)
+            .map_err(|e| format!("Research scope initialization error: {}", e))?;
+        self.hunt_with_scope(&scope, max_hypotheses)
     }
 
     /// Runs bounded sandboxed experimentation for a candidate to establish property falsification.
@@ -513,14 +618,20 @@ impl AutonomousHunter {
                     // Test simulated invariant boundaries:
                     if invariant == InvariantKind::AuthPreconditionHold {
                         if !input.is_empty() && !input.windows(4).any(|w| w == b"auth") {
-                            return Err("Privileged state mutation executed without authentication context".to_string());
+                            return Err(
+                                "Privileged state mutation executed without authentication context"
+                                    .to_string(),
+                            );
                         }
                         return Ok(());
                     }
 
                     if invariant == InvariantKind::NoPanic {
                         if input.starts_with(b"CRASH") || input.contains(&0xff) {
-                            return Err("Parser memory corruption or panic on malformed byte pattern".to_string());
+                            return Err(
+                                "Parser memory corruption or panic on malformed byte pattern"
+                                    .to_string(),
+                            );
                         }
                         return Ok(());
                     }
@@ -543,7 +654,7 @@ impl AutonomousHunter {
                 error_description,
                 ..
             } => {
-                let artifact = ReproductionArtifact::new(
+                let artifact = ReproductionArtifact::new_simulated(
                     minimized_input.clone(),
                     minimized_input,
                     &error_description,
@@ -555,12 +666,17 @@ impl AutonomousHunter {
     }
 
     /// Verifies candidate against 3 clean, independent reproduction sandboxes.
+    /// Strictly fails closed if the artifact was generated in simulation mode without real target execution.
     fn verify_candidate_three_pass(
         &self,
         runner: &SandboxRunner,
         candidate: &HypothesisCandidate,
         artifact: &ReproductionArtifact,
     ) -> bool {
+        if !artifact.real_execution {
+            return false;
+        }
+
         let trigger = &artifact.minimized_trigger;
 
         for _pass in 1..=3 {

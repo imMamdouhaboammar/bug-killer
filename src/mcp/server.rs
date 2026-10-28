@@ -1041,8 +1041,14 @@ impl McpServer {
             }
 
             "bugkiller_room_plan" => {
-                let goal = args.get("goal").and_then(Value::as_str).unwrap_or("prevention");
-                let profile = args.get("profile").and_then(Value::as_str).unwrap_or("project");
+                let goal = args
+                    .get("goal")
+                    .and_then(Value::as_str)
+                    .unwrap_or("prevention");
+                let profile = args
+                    .get("profile")
+                    .and_then(Value::as_str)
+                    .unwrap_or("project");
                 let mut broker = ToolCapabilityBroker::discover_default_tools();
                 let tools = broker.discover_all();
                 let mut selected = Vec::new();
@@ -1054,7 +1060,9 @@ impl McpServer {
                         skipped.push(json!({ "tool_id": t.tool_id, "status": format!("{:?}", t.installation), "reason": "tool unavailable or unlicensed" }));
                     }
                 }
-                let hash = crate::identity::to_hex(Sha256::digest(target_path.display().to_string().as_bytes()));
+                let hash = crate::identity::to_hex(Sha256::digest(
+                    target_path.display().to_string().as_bytes(),
+                ));
                 let plan = json!({
                     "plan_id": format!("plan-{}", &hash[..12]),
                     "target_workspace": target_path.display().to_string(),
@@ -1119,11 +1127,17 @@ impl McpServer {
             }
 
             "bugkiller_research_execute" => {
-                let candidate_id = args.get("candidate_id").and_then(Value::as_str).unwrap_or("");
+                let candidate_id = args
+                    .get("candidate_id")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
                 if candidate_id.is_empty() {
                     return CallToolResult::error_text("candidate_id is required".to_string());
                 }
-                let iterations = args.get("iterations").and_then(Value::as_u64).unwrap_or(100);
+                let iterations = args
+                    .get("iterations")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(100);
                 let out = json!({
                     "candidate_id": candidate_id,
                     "status": "EXECUTED",
@@ -1137,7 +1151,10 @@ impl McpServer {
             }
 
             "bugkiller_research_verify" => {
-                let candidate_id = args.get("candidate_id").and_then(Value::as_str).unwrap_or("");
+                let candidate_id = args
+                    .get("candidate_id")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
                 if candidate_id.is_empty() {
                     return CallToolResult::error_text("candidate_id is required".to_string());
                 }
@@ -1157,12 +1174,22 @@ impl McpServer {
                 if finding_id.is_empty() {
                     return CallToolResult::error_text("finding_id is required".to_string());
                 }
-                let recipient = args.get("recipient").and_then(Value::as_str).unwrap_or("security@vendor.local");
+                let recipient = args
+                    .get("recipient")
+                    .and_then(Value::as_str)
+                    .unwrap_or("security@vendor.local");
                 let report = FleetScanner::scan_directory(&target_path, false);
-                let matching_finding = report.findings.iter().find(|f| f.id == finding_id || f.cve.as_str() == finding_id);
+                let matching_finding = report
+                    .findings
+                    .iter()
+                    .find(|f| f.id == finding_id || f.cve.as_str() == finding_id);
                 let dummy_sha = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
                 let packet_res = if let Some(f) = matching_finding {
-                    let f_v1 = crate::engine::converter::to_normalized_finding(f, "run-mcp-disclosure", dummy_sha);
+                    let f_v1 = crate::engine::converter::to_normalized_finding(
+                        f,
+                        "run-mcp-disclosure",
+                        dummy_sha,
+                    );
                     DisclosureDraftBuilder::from_finding(&f_v1)
                         .contact_channel(crate::disclosure::draft::ContactChannel {
                             channel_type: "email".to_string(),
@@ -1173,7 +1200,8 @@ impl McpServer {
                             test_type: "offline_regression_test".to_string(),
                             harness_code: format!("// Defensive test for {}", f.cve.as_str()),
                             sanitized_input: "defensive_verification_payload".to_string(),
-                            expected_behavior: "Safe handling under defensive security policy".to_string(),
+                            expected_behavior: "Safe handling under defensive security policy"
+                                .to_string(),
                             observed_behavior: f.description.clone(),
                         })
                         .build()
@@ -1216,7 +1244,10 @@ impl McpServer {
                         CallToolResult::ok_json(&out)
                             .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
                     }
-                    Err(e) => CallToolResult::error_text(format!("Failed to build disclosure draft: {:?}", e)),
+                    Err(e) => CallToolResult::error_text(format!(
+                        "Failed to build disclosure draft: {:?}",
+                        e
+                    )),
                 }
             }
 

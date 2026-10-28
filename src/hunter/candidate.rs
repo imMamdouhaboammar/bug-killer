@@ -18,10 +18,28 @@ pub struct ReproductionArtifact {
     pub minimized_trigger: Vec<u8>,
     pub error_message: String,
     pub captured_at: String,
+    pub real_execution: bool,
 }
 
 impl ReproductionArtifact {
     pub fn new(raw_payload: Vec<u8>, minimized_trigger: Vec<u8>, error_message: &str) -> Self {
+        Self::with_execution(raw_payload, minimized_trigger, error_message, true)
+    }
+
+    pub fn new_simulated(
+        raw_payload: Vec<u8>,
+        minimized_trigger: Vec<u8>,
+        error_message: &str,
+    ) -> Self {
+        Self::with_execution(raw_payload, minimized_trigger, error_message, false)
+    }
+
+    pub fn with_execution(
+        raw_payload: Vec<u8>,
+        minimized_trigger: Vec<u8>,
+        error_message: &str,
+        real_execution: bool,
+    ) -> Self {
         let mut hasher = Sha256::new();
         hasher.update(&minimized_trigger);
         let artifact_sha256 = crate::to_hex(hasher.finalize());
@@ -34,6 +52,7 @@ impl ReproductionArtifact {
             minimized_trigger,
             error_message: error_message.to_string(),
             captured_at: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            real_execution,
         }
     }
 }
@@ -78,9 +97,15 @@ impl ResearchCandidate {
     }
 
     /// Promotion Gate: Returns true if and only if the candidate has been successfully reproduced
-    /// and verified (`CandidateState::Verified`).
+    /// through real target execution and verified (`CandidateState::Verified`).
     pub fn can_promote_to_finding(&self) -> bool {
-        matches!(self.state, CandidateState::Verified)
+        if !matches!(self.state, CandidateState::Verified) {
+            return false;
+        }
+        match &self.reproduction_artifact {
+            Some(artifact) => artifact.real_execution,
+            None => false,
+        }
     }
 
     /// Transitions the candidate from Candidate into Reproducing.
@@ -115,10 +140,17 @@ impl ResearchCandidate {
     }
 
     /// Promotes candidate to `Verified` once reproduction is independently verified.
+    /// Fails closed if the reproduction artifact was produced via simulation without real target execution.
     pub fn mark_verified(&mut self) -> Result<(), String> {
-        if self.reproduction_artifact.is_none() {
-            return Err("Cannot mark verified without reproduction artifact".to_string());
+        let artifact = self
+            .reproduction_artifact
+            .as_ref()
+            .ok_or_else(|| "Cannot mark verified without reproduction artifact".to_string())?;
+
+        if !artifact.real_execution {
+            return Err("Cannot mark candidate verified: reproduction artifact was produced via simulation without target runtime execution".to_string());
         }
+
         match self.state {
             CandidateState::Reproduced | CandidateState::Reproducing => {
                 self.state = CandidateState::Verified;
@@ -127,6 +159,12 @@ impl ResearchCandidate {
             }
             _ => Err(format!("Cannot mark verified from state {:?}", self.state)),
         }
+    }
+
+    /// Marks candidate as simulation only, preventing verification or promotion to confirmed finding.
+    pub fn mark_simulation_only(&mut self, reason: &str) {
+        self.state = CandidateState::SimulationOnly(reason.to_string());
+        self.touch();
     }
 
     /// Dismisses candidate with a specific reason (e.g. already known advisory).
@@ -381,5 +419,74 @@ impl CoverageLedger {
         let mut hasher = Sha256::new();
         hasher.update(serialized.as_bytes());
         crate::to_hex(hasher.finalize())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simulated_artifact_fails_closed_on_verification() {
+        let mut candidate = ResearchCandidate::new(
+            "cand-sim-01",
+            "Simulated Candidate",
+            "src/target.rs",
+            "CWE-285",
+            "Synthetic hypothesis",
+        );
+
+        let simulated_artifact = ReproductionArtifact::new_simulated(
+            b"test_payload".to_vec(),
+            b"payload".to_vec(),
+            "Simulated invariant failure",
+        );
+        assert!(!simulated_artifact.real_execution);
+
+        assert!(candidate.mark_reproduced(simulated_artifact).is_ok());
+        assert_eq!(candidate.state, CandidateState::Reproduced);
+        assert!(!candidate.can_promote_to_finding());
+
+        let snapshot_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+        // Attempting to verify a simulated artifact must fail closed
+        let verify_result = candidate.mark_verified();
+        assert!(verify_result.is_err());
+        assert!(!candidate.can_promote_to_finding());
+        assert!(
+            candidate
+                .synthesize_finding("run-001", snapshot_sha256)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn test_real_artifact_can_be_verified_and_promoted() {
+        let mut candidate = ResearchCandidate::new(
+            "cand-real-01",
+            "Real Candidate",
+            "src/target.rs",
+            "CWE-285",
+            "Real hypothesis",
+        );
+
+        let real_artifact = ReproductionArtifact::new(
+            b"real_payload".to_vec(),
+            b"payload".to_vec(),
+            "Real execution violation",
+        );
+        assert!(real_artifact.real_execution);
+
+        assert!(candidate.mark_reproduced(real_artifact).is_ok());
+        assert!(candidate.mark_verified().is_ok());
+        assert_eq!(candidate.state, CandidateState::Verified);
+        assert!(candidate.can_promote_to_finding());
+
+        let snapshot_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert!(
+            candidate
+                .synthesize_finding("run-001", snapshot_sha256)
+                .is_ok()
+        );
     }
 }
