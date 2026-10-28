@@ -5,24 +5,27 @@
 [![CI](https://github.com/imMamdouhaboammar/deepsec/actions/workflows/ci.yml/badge.svg)](https://github.com/imMamdouhaboammar/deepsec/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-`deepsec` is a production-grade agentic skill providing deterministic repository candidate scanning, LLM-powered investigation, two-pass false positive elimination, and priority triage (`P0`/`P1`/`P2`) for AI agents across Google Antigravity, Claude Code, Cursor, Codex, and Windsurf.
+`deepsec` is an experimental security review harness with deterministic candidate scanning, opt-in AI investigation, and priority triage (`P0`/`P1`/`P2`). Findings need independent validation before being treated as confirmed vulnerabilities.
 
 ---
 
 ## Capabilities
 
 - **Multi-Runtime Execution:** Automatically detects and operates with high-performance native compiled binaries (`bk deepsec`) or upstream Node.js CLI (`npx deepsec`).
-- **Two-Pass Verification:** Pre-filter regex candidate matches are rigorously evaluated and revalidated before inclusion in findings.
-- **Budget & Concurrency Fences:** Hard caps prevent runaway recursive LLM API billing and thread starvation.
-- **Resumable State Machine:** Persists scan progress in `.deepsec/data/<project>/` with atomic file locking.
+- **Evidence labels:** Regex matches remain candidates; heuristic revalidation reports uncertainty, not proof of a fix or exploit.
+- **Cost visibility:** Provider usage telemetry and enforceable LLM spending limits are not yet implemented. A requested hard budget is rejected by the Rust processor.
+- **On-disk state:** JSON records are replaced atomically and per-file claims are serialized by an advisory OS mutex. End-to-end crash recovery and durable ownership are not established.
 
 ---
 
 ## Quick Start & Installation
 
-### Option 1: Automatic Installer
+### Option 1: Review and run the installer from a trusted checkout
 ```bash
-curl -fsSL https://raw.githubusercontent.com/imMamdouhaboammar/deepsec/main/install.sh | bash
+git clone https://github.com/imMamdouhaboammar/deepsec.git
+cd deepsec
+# Inspect install.sh before executing it; it replaces existing deepsec skill directories.
+bash install.sh
 ```
 
 ### Option 2: Clone to Agent Skills Directory
@@ -51,7 +54,7 @@ git clone https://github.com/imMamdouhaboammar/deepsec.git ~/.gemini/config/skil
 +-------------------+      +----------------------+      +----------------------+
                                                                     |
 +-------------------+      +----------------------+                 v
-| 5. Triage Findings| <--- | 4. AI Revalidation   | <---------------+
+| 5. Triage Findings| <--- | 4. Revalidation      | <---------------+
 | (P0/P1/P2 Reports)|      | (Filter False Pos)   |
 +-------------------+      +----------------------+
 ```
@@ -61,7 +64,7 @@ git clone https://github.com/imMamdouhaboammar/deepsec.git ~/.gemini/config/skil
 | `detect-runner` | low | Execute `scripts/detect-runtime.sh` to select execution engine. |
 | `configure-engine` | low | Generate or validate `.deepsec/config.json` schema and budget. |
 | `execute-scan` | low | Run regex matchers to populate candidate records in storage. |
-| `process-and-revalidate` | medium | Dispatch batched LLM investigation and secondary revalidation. |
+| `process-and-revalidate` | medium | Require configured `DEEPSEC_AI_ENDPOINT` (HTTPS) and `DEEPSEC_AI_KEY` for Rust CLI investigation; revalidation remains uncertain without external proof. |
 | `triage-and-report` | medium | Compute priority tiers (`P0`, `P1`, `P2`) and emit audit reports. |
 
 ---

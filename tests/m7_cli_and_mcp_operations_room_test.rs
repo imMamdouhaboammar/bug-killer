@@ -105,7 +105,8 @@ fn test_mcp_room_plan_and_status_dispatch() {
     .unwrap();
 
     assert_eq!(status_data["run_id"], "run-xyz-999");
-    assert_eq!(status_data["state"], "COMPLETED");
+    assert_eq!(status_data["state"], "NOT_RUN");
+    assert_eq!(status_data["receipts_count"], 0);
 }
 
 #[test]
@@ -153,8 +154,9 @@ fn test_mcp_research_hunter_cycle() {
     let exec_resp: Value = serde_json::from_str(&exec_resp_str).unwrap();
     let exec_data: Value =
         serde_json::from_str(exec_resp["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-    assert_eq!(exec_data["status"], "EXECUTED");
-    assert_eq!(exec_data["iterations_completed"], 50);
+    assert_eq!(exec_data["status"], "NOT_RUN");
+    assert_eq!(exec_data["iterations_completed"], 0);
+    assert_eq!(exec_data["reason"], "EXECUTION_BACKEND_NOT_CONFIGURED");
 
     // 3. Research Verify
     let verify_req = serde_json::json!({
@@ -179,8 +181,9 @@ fn test_mcp_research_hunter_cycle() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(verify_data["verified"], true);
-    assert_eq!(verify_data["proof_method"], "PROPERTY_INVARIANT");
+    assert_eq!(verify_data["verified"], false);
+    assert_eq!(verify_data["proof_method"], serde_json::Value::Null);
+    assert_eq!(verify_data["reason"], "NO_EXECUTION_EVIDENCE");
 }
 
 #[test]

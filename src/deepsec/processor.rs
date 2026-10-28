@@ -44,7 +44,7 @@ impl DeepSecAIClient for MockAIClient {
     fn investigate(&self, prompt: &str) -> Result<String, String> {
         let mut findings = Vec::new();
 
-        for section in prompt.split("### File: ") {
+        for section in prompt.split("### File: ").skip(1) {
             if section.trim().is_empty() {
                 continue;
             }
@@ -82,47 +82,6 @@ impl DeepSecAIClient for MockAIClient {
             if section.contains("secrets-exposure") {
                 findings.push(serde_json::json!({
                     "filePath": file_path,
-                    "severity": "HIGH",
-                    "vulnSlug": "secrets-exposure",
-                    "title": "Hardcoded production API secret key in repository",
-                    "description": "Plaintext secret token committed directly to repository source.",
-                    "lineNumbers": [5],
-                    "recommendation": "Rotate key and move to secure secret management vault.",
-                    "confidence": "high"
-                }));
-            }
-        }
-
-        if findings.is_empty() {
-            if prompt.contains("sql-injection") {
-                findings.push(serde_json::json!({
-                    "filePath": "src/api/query.ts",
-                    "severity": "CRITICAL",
-                    "vulnSlug": "sql-injection",
-                    "title": "Raw string concatenation in SQL query execution",
-                    "description": "User controlled input is concatenated directly into SQL command without parameterized escaping.",
-                    "lineNumbers": [14, 15],
-                    "recommendation": "Use parameterized queries or ORM query builder.",
-                    "confidence": "high"
-                }));
-            }
-
-            if prompt.contains("rce") {
-                findings.push(serde_json::json!({
-                    "filePath": "src/utils/exec.py",
-                    "severity": "CRITICAL",
-                    "vulnSlug": "rce",
-                    "title": "Command injection via unescaped subprocess call",
-                    "description": "Input passed directly to shell=True subprocess execution.",
-                    "lineNumbers": [22],
-                    "recommendation": "Pass argument list without shell=True.",
-                    "confidence": "high"
-                }));
-            }
-
-            if prompt.contains("secrets-exposure") {
-                findings.push(serde_json::json!({
-                    "filePath": "config/keys.json",
                     "severity": "HIGH",
                     "vulnSlug": "secrets-exposure",
                     "title": "Hardcoded production API secret key in repository",
@@ -180,6 +139,9 @@ pub fn process_repository(
     ai_client: &dyn DeepSecAIClient,
     options: &ProcessOptions,
 ) -> Result<RunStats, String> {
+    if options.max_cost_usd.is_some() {
+        return Err("Cost budget enforcement requires verified provider usage telemetry, which is not available".to_string());
+    }
     storage
         .ensure_project(project_id, &root_path.to_string_lossy())
         .map_err(|e| e.to_string())?;
@@ -196,11 +158,19 @@ pub fn process_repository(
         root_path.to_string_lossy().to_string(),
         "process".to_string(),
     );
+    // An acquired file lock must point to an on-disk live owner. Otherwise
+    // another worker could immediately reclaim it as an unknown run.
+    storage
+        .write_run_meta(&run_meta)
+        .map_err(|e| e.to_string())?;
 
     let all_records = storage.load_all_file_records(project_id);
     let mut pending_records: Vec<FileRecord> = all_records
         .into_iter()
-        .filter(|r| r.status == FileStatus::Pending || storage.is_reclaimable_lock(r))
+        .filter(|r| {
+            r.status == FileStatus::Pending
+                || (r.status == FileStatus::Processing && storage.is_reclaimable_lock(r))
+        })
         .filter(|r| {
             if let Some(filter) = &options.filter {
                 r.file_path.starts_with(filter)
@@ -242,7 +212,7 @@ pub fn process_repository(
 
     let mut total_files_processed = 0;
     let mut total_findings_count = 0;
-    let mut total_cost_usd = 0.0;
+    let total_cost_usd = 0.0;
 
     let start_all = Instant::now();
 
@@ -277,8 +247,23 @@ pub fn process_repository(
 
         match ai_result {
             Ok(json_text) => {
-                let parsed: Value = serde_json::from_str(&json_text).unwrap_or(Value::Null);
-                let findings_array = parsed["findings"].as_array();
+                let parsed = serde_json::from_str::<Value>(&json_text).ok();
+                let findings_array = parsed
+                    .as_ref()
+                    .and_then(|value| value.get("findings"))
+                    .and_then(Value::as_array);
+
+                if findings_array.is_none() {
+                    for mut rec in locked_chunk {
+                        rec.status = FileStatus::Error;
+                        rec.locked_by_run_id = None;
+                        rec.locked_at = None;
+                        storage.write_file_record(&rec).map_err(|e| e.to_string())?;
+                    }
+                    return Err(
+                        "AI Investigation returned invalid or missing findings JSON".to_string()
+                    );
+                }
 
                 let mut findings_by_file: std::collections::HashMap<String, Vec<Finding>> =
                     std::collections::HashMap::new();
@@ -339,23 +324,25 @@ pub fn process_repository(
                     }
                 }
 
-                // Batch cost allocation (modeled)
-                let batch_cost = 0.05 * (locked_chunk.len() as f64);
-                let per_file_cost = batch_cost / (locked_chunk.len() as f64);
-                total_cost_usd += batch_cost;
+                if let Some(unrecognized_path) = findings_by_file
+                    .keys()
+                    .find(|path| !locked_chunk.iter().any(|rec| rec.file_path == **path))
+                {
+                    let message = format!(
+                        "AI returned a finding for an unscanned file: {}",
+                        unrecognized_path
+                    );
+                    for mut rec in locked_chunk {
+                        rec.status = FileStatus::Error;
+                        rec.locked_by_run_id = None;
+                        rec.locked_at = None;
+                        storage.write_file_record(&rec).map_err(|e| e.to_string())?;
+                    }
+                    return Err(message);
+                }
 
                 for mut rec in locked_chunk {
-                    let mut file_findings =
-                        findings_by_file.remove(&rec.file_path).unwrap_or_default();
-
-                    // If file path did not match exactly, match any remaining findings produced
-                    if file_findings.is_empty() {
-                        if let Some(first_key) = findings_by_file.keys().next().cloned() {
-                            if let Some(f) = findings_by_file.remove(&first_key) {
-                                file_findings = f;
-                            }
-                        }
-                    }
+                    let file_findings = findings_by_file.remove(&rec.file_path).unwrap_or_default();
 
                     let finding_count = file_findings.len();
                     total_findings_count += finding_count;
@@ -377,13 +364,8 @@ pub fn process_repository(
                         agent_type: options.agent_type.clone(),
                         model: options.model.clone(),
                         finding_count,
-                        cost_usd: Some(per_file_cost),
-                        usage: Some(TokenUsage {
-                            input_tokens: 1500,
-                            output_tokens: 350,
-                            cache_read_input_tokens: 0,
-                            cache_creation_input_tokens: 0,
-                        }),
+                        cost_usd: None,
+                        usage: None,
                         phase: Some("process".to_string()),
                     });
 

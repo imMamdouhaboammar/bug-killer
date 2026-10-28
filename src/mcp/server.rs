@@ -1089,7 +1089,8 @@ impl McpServer {
                 }
                 let status = json!({
                     "run_id": run_id,
-                    "state": "COMPLETED",
+                    "state": "NOT_RUN",
+                    "reason": "RUN_NOT_FOUND",
                     "receipts_count": 0,
                     "receipts": [],
                     "evidence_summary": {
@@ -1135,16 +1136,13 @@ impl McpServer {
                 if candidate_id.is_empty() {
                     return CallToolResult::error_text("candidate_id is required".to_string());
                 }
-                let iterations = args
-                    .get("iterations")
-                    .and_then(Value::as_u64)
-                    .unwrap_or(100);
                 let out = json!({
                     "candidate_id": candidate_id,
-                    "status": "EXECUTED",
-                    "iterations_completed": iterations,
-                    "sandbox_isolation": "CONTAINED",
-                    "crash_detected": false,
+                    "status": "NOT_RUN",
+                    "reason": "EXECUTION_BACKEND_NOT_CONFIGURED",
+                    "iterations_completed": 0,
+                    "sandbox_isolation": "NOT_APPLICABLE",
+                    "crash_detected": null,
                     "reproduction_verified": false
                 });
                 CallToolResult::ok_json(&out)
@@ -1161,10 +1159,11 @@ impl McpServer {
                 }
                 let out = json!({
                     "candidate_id": candidate_id,
-                    "verified": true,
-                    "proof_method": "PROPERTY_INVARIANT",
-                    "isolation_preserved": true,
-                    "confidence": "HIGH"
+                    "verified": false,
+                    "reason": "NO_EXECUTION_EVIDENCE",
+                    "proof_method": null,
+                    "isolation_preserved": null,
+                    "confidence": "UNKNOWN"
                 });
                 CallToolResult::ok_json(&out)
                     .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))

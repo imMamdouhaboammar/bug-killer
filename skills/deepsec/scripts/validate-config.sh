@@ -11,11 +11,11 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
     exit 1
 fi
 
-python3 -c "
+python3 - "$CONFIG_PATH" <<'PY'
 import json
 import sys
 
-with open('$CONFIG_PATH') as f:
+with open(sys.argv[1], encoding='utf-8') as f:
     cfg = json.load(f)
 
 concurrency = cfg.get('concurrency', 4)
@@ -33,5 +33,5 @@ if max_tokens <= 0:
     print('ERROR: max_tokens must be greater than 0', file=sys.stderr)
     sys.exit(1)
 
-print('VALID: DeepSec configuration conforms to all safety invariants')
-"
+print('VALID: DeepSec configuration syntax and bounds checked; provider cost limits are not enforced by this validator')
+PY

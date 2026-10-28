@@ -34,7 +34,7 @@ def test_skill_structure():
     assert "## Invariants" in content, "Must declare Invariants section"
     assert "Strictly Defensive Perimeter" in content, "Must declare defensive perimeter"
     assert "Budget & Concurrency Fences" in content, "Must declare budget fence"
-    assert "Two-Pass Verification" in content, "Must declare two-pass verification"
+    assert "Evidence Integrity" in content, "Must declare honest evidence provenance"
     assert "Non-Destructive Scanning" in content, "Must declare non-destructive invariant"
 
     # Step freedom levels
@@ -115,8 +115,10 @@ def test_security_scanner():
         assert report.get("passed") is True, "Security scan passed flag must be True"
         assert report.get("risk_score", 100) < 50, f"Risk score too high: {report.get('risk_score')}"
         print(f"      ✓ Security scan APPROVE (Risk score: {report.get('risk_score')}/100)")
+        return "APPROVE", report.get("risk_score")
     else:
-        print("      ⚠ scan_skill_security.py not found, skipping security subprocess")
+        print("      ⚠ scan_skill_security.py not found; security result is NOT_RUN")
+        return "NOT_RUN", None
 
 def test_references_and_assets():
     print("[5/5] Verifying reference documentation and assets...")
@@ -138,15 +140,20 @@ def main():
     test_skill_structure()
     test_scripts()
     test_triggers_and_routing()
-    test_security_scanner()
+    security_status, risk_score = test_security_scanner()
     test_references_and_assets()
     print("--------------------------------------------------")
     print("EVAL REPORT: deepsec")
-    print("Capability: 5/5 passed (pass@3: 100%)")
-    print("Regression: 3/3 passed (pass^3: 100%)")
-    print("Security:   APPROVE (Risk score: 0/100)")
-    print("Status:     PASS")
+    print(f"Checks:     {5 if security_status == 'APPROVE' else 4}/5 completed")
+    if security_status == "APPROVE":
+        print(f"Security:   APPROVE (Risk score: {risk_score}/100)")
+        print("Status:     PASS")
+    else:
+        print("Security:   NOT_RUN")
+        print("Status:     INCOMPLETE")
     print("==================================================")
+    if security_status != "APPROVE":
+        sys.exit(2)
 
 if __name__ == "__main__":
     main()

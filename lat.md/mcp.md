@@ -10,6 +10,8 @@ The MCP server communicates using JSON-RPC messages over standard input and outp
 
 Server request dispatch is handled by [[src/mcp/server.rs#McpServer]] using structured payloads from [[src/mcp/protocol.rs#JsonRpcRequest]] and [[src/mcp/protocol.rs#JsonRpcResponse]].
 
+Research execution and verification endpoints currently return `NOT_RUN` or `verified: false` because no execution backend or proof store is wired to these handlers. A plan is not evidence of execution.
+
 ## Read-Only Security Boundary
 
 By default, MCP server connections execute in read-only mode to prevent unapproved agent mutations.

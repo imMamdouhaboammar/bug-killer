@@ -1,7 +1,8 @@
 use crate::deepsec::types::*;
 use chrono::{DateTime, Utc};
-use std::fs;
+use std::fs::{self, OpenOptions};
 use std::io;
+use std::os::fd::AsRawFd;
 use std::path::{Path, PathBuf};
 
 pub struct StorageManager {
@@ -9,6 +10,25 @@ pub struct StorageManager {
 }
 
 impl StorageManager {
+    fn valid_project_id(project_id: &str) -> bool {
+        (1..=128).contains(&project_id.len())
+            && project_id
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+    }
+
+    fn valid_relative_path(path: &str) -> bool {
+        !path.is_empty()
+            && !path.contains('\\')
+            && Path::new(path)
+                .components()
+                .all(|component| matches!(component, std::path::Component::Normal(_)))
+    }
+
+    fn invalid_input(message: &str) -> io::Error {
+        io::Error::new(io::ErrorKind::InvalidInput, message)
+    }
+
     pub fn new(root: impl AsRef<Path>) -> Self {
         Self {
             base_dir: root.as_ref().join(".deepsec").join("data"),
@@ -40,6 +60,9 @@ impl StorageManager {
     }
 
     pub fn ensure_project(&self, project_id: &str, root_path: &str) -> io::Result<ProjectConfig> {
+        if !Self::valid_project_id(project_id) {
+            return Err(Self::invalid_input("unsafe project ID"));
+        }
         let pdir = self.project_dir(project_id);
         fs::create_dir_all(&pdir)?;
         fs::create_dir_all(self.files_dir(project_id))?;
@@ -72,6 +95,9 @@ impl StorageManager {
     }
 
     pub fn read_file_record(&self, project_id: &str, rel_path: &str) -> Option<FileRecord> {
+        if !Self::valid_project_id(project_id) || !Self::valid_relative_path(rel_path) {
+            return None;
+        }
         let path = self.file_record_path(project_id, rel_path);
         if !path.exists() {
             return None;
@@ -81,6 +107,11 @@ impl StorageManager {
     }
 
     pub fn write_file_record(&self, record: &FileRecord) -> io::Result<()> {
+        if !Self::valid_project_id(&record.project_id)
+            || !Self::valid_relative_path(&record.file_path)
+        {
+            return Err(Self::invalid_input("unsafe file record path"));
+        }
         let path = self.file_record_path(&record.project_id, &record.file_path);
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
@@ -91,6 +122,9 @@ impl StorageManager {
     }
 
     pub fn load_all_file_records(&self, project_id: &str) -> Vec<FileRecord> {
+        if !Self::valid_project_id(project_id) {
+            return Vec::new();
+        }
         let files_dir = self.files_dir(project_id);
         if !files_dir.exists() {
             return Vec::new();
@@ -115,6 +149,9 @@ impl StorageManager {
     }
 
     pub fn write_run_meta(&self, meta: &RunMeta) -> io::Result<()> {
+        if !Self::valid_project_id(&meta.project_id) || !Self::valid_project_id(&meta.run_id) {
+            return Err(Self::invalid_input("unsafe run metadata path"));
+        }
         let path = self
             .runs_dir(&meta.project_id)
             .join(format!("{}.json", meta.run_id));
@@ -127,6 +164,9 @@ impl StorageManager {
     }
 
     pub fn read_run_meta(&self, project_id: &str, run_id: &str) -> Option<RunMeta> {
+        if !Self::valid_project_id(project_id) || !Self::valid_project_id(run_id) {
+            return None;
+        }
         let path = self.runs_dir(project_id).join(format!("{}.json", run_id));
         if !path.exists() {
             return None;
@@ -137,7 +177,7 @@ impl StorageManager {
 
     pub fn is_reclaimable_lock(&self, record: &FileRecord) -> bool {
         if record.locked_by_run_id.is_none() {
-            return true;
+            return record.status == FileStatus::Pending;
         }
 
         if let Some(locked_at_str) = &record.locked_at {
@@ -163,8 +203,6 @@ impl StorageManager {
                         return true;
                     }
                 }
-            } else {
-                return true;
             }
         }
 
@@ -172,20 +210,84 @@ impl StorageManager {
     }
 
     pub fn acquire_file_lock(&self, record: &mut FileRecord, run_id: &str) -> bool {
-        if !self.is_reclaimable_lock(record) {
+        if !Self::valid_project_id(&record.project_id)
+            || !Self::valid_project_id(run_id)
+            || !Self::valid_relative_path(&record.file_path)
+        {
             return false;
         }
-
-        record.status = FileStatus::Processing;
-        record.locked_by_run_id = Some(run_id.to_string());
-        record.locked_at = Some(Utc::now().to_rfc3339());
-        self.write_file_record(record).is_ok()
+        let project_id = record.project_id.clone();
+        let file_path = record.file_path.clone();
+        self.with_file_record_mutex(&project_id, &file_path, || {
+            // Always re-read under the mutex. The caller's record may have been
+            // loaded before another process acquired the same file.
+            let Some(mut latest) = self.read_file_record(&project_id, &file_path) else {
+                return Ok(false);
+            };
+            if !self.is_reclaimable_lock(&latest) {
+                return Ok(false);
+            }
+            latest.status = FileStatus::Processing;
+            latest.locked_by_run_id = Some(run_id.to_string());
+            latest.locked_at = Some(Utc::now().to_rfc3339());
+            self.write_file_record(&latest)?;
+            *record = latest;
+            Ok(true)
+        })
+        .unwrap_or(false)
     }
 
     pub fn release_file_lock(&self, record: &mut FileRecord) -> io::Result<()> {
-        record.locked_by_run_id = None;
-        record.locked_at = None;
-        self.write_file_record(record)
+        if !Self::valid_project_id(&record.project_id)
+            || !Self::valid_relative_path(&record.file_path)
+        {
+            return Err(Self::invalid_input("unsafe file record path"));
+        }
+        let project_id = record.project_id.clone();
+        let file_path = record.file_path.clone();
+        self.with_file_record_mutex(&project_id, &file_path, || {
+            let mut latest = self
+                .read_file_record(&project_id, &file_path)
+                .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "file record missing"))?;
+            if latest.locked_by_run_id != record.locked_by_run_id {
+                return Err(io::Error::new(
+                    io::ErrorKind::PermissionDenied,
+                    "file lock belongs to another run",
+                ));
+            }
+            latest.locked_by_run_id = None;
+            latest.locked_at = None;
+            self.write_file_record(&latest)?;
+            *record = latest;
+            Ok(())
+        })
+    }
+
+    fn with_file_record_mutex<T>(
+        &self,
+        project_id: &str,
+        rel_path: &str,
+        operation: impl FnOnce() -> io::Result<T>,
+    ) -> io::Result<T> {
+        let record_path = self.file_record_path(project_id, rel_path);
+        let lock_path = record_path.with_extension("json.lock");
+        fs::create_dir_all(lock_path.parent().unwrap_or_else(|| Path::new(".")))?;
+        let lock_file = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(lock_path)?;
+        // Advisory OS mutex across threads and processes; released on close or crash.
+        if unsafe { libc::flock(lock_file.as_raw_fd(), libc::LOCK_EX) } != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        let result = operation();
+        let unlock_result = unsafe { libc::flock(lock_file.as_raw_fd(), libc::LOCK_UN) };
+        if unlock_result != 0 && result.is_ok() {
+            return Err(io::Error::last_os_error());
+        }
+        result
     }
 
     fn write_atomic(&self, path: &Path, content: &[u8]) -> io::Result<()> {

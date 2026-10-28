@@ -18,9 +18,12 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Verify CLI Execution
+      - name: Verify Placeholder CLI Fails Closed
         run: |
-          bun ./bin/cli.js
+          if bun ./bin/cli.js; then
+            echo "Placeholder CLI must not advertise a successful execution" >&2
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -29,6 +29,15 @@ var defaultIgnorePatterns = []string{
 	"__tests__",
 }
 
+var safeProjectID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$`)
+
+func validateProjectID(projectID string) error {
+	if !safeProjectID.MatchString(projectID) {
+		return fmt.Errorf("invalid project ID: expected 1-128 letters, digits, underscores or hyphens, beginning with a letter or digit")
+	}
+	return nil
+}
+
 type Runner struct {
 	fs afero.Fs
 }
@@ -53,6 +62,9 @@ func (r *Runner) runsDir(projectID string) string {
 }
 
 func (r *Runner) EnsureProject(projectID, rootPath string) error {
+	if err := validateProjectID(projectID); err != nil {
+		return err
+	}
 	pDir := r.dataDir(projectID)
 	if err := r.fs.MkdirAll(r.filesDir(projectID), 0755); err != nil {
 		return err
@@ -200,6 +212,9 @@ func (r *Runner) Scan(ctx context.Context, rootPath, projectID string) (*RunStat
 }
 
 func (r *Runner) LoadPendingFiles(projectID string) ([]FileRecord, error) {
+	if err := validateProjectID(projectID); err != nil {
+		return nil, err
+	}
 	filesDir := r.filesDir(projectID)
 	var pending []FileRecord
 
@@ -262,6 +277,7 @@ func (r *Runner) Process(ctx context.Context, rootPath, projectID string, concur
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+	workerErrors := make(chan error, concurrency)
 
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
@@ -275,28 +291,23 @@ func (r *Runner) Process(ctx context.Context, rootPath, projectID string, concur
 				}
 
 				for _, rec := range batch {
-					// Simulate AI Investigation
+					fileStart := time.Now()
+					// This is deterministic pattern classification, not an AI investigation
+					// or a verified exploit. Preserve that distinction in every record.
 					findings := make([]Finding, 0)
 					for _, c := range rec.Candidates {
 						h := sha256.Sum256([]byte(projectID + ":" + rec.FilePath + ":" + c.VulnSlug))
 						fid := fmt.Sprintf("finding_%s", hex.EncodeToString(h[:])[:16])
 
-						sev := SeverityMedium
-						if c.VulnSlug == "sql-injection" || c.VulnSlug == "rce" {
-							sev = SeverityCritical
-						} else if c.VulnSlug == "secrets-exposure" {
-							sev = SeverityHigh
-						}
-
 						findings = append(findings, Finding{
 							FindingID:      fid,
-							Severity:       sev,
+							Severity:       SeverityMedium,
 							VulnSlug:       c.VulnSlug,
-							Title:          fmt.Sprintf("Vulnerability in %s", rec.FilePath),
+							Title:          fmt.Sprintf("Unverified pattern indicator in %s", rec.FilePath),
 							Description:    c.Snippet,
 							LineNumbers:    c.LineNumbers,
-							Recommendation: "Sanitize input and enforce boundary guards",
-							Confidence:     "high",
+							Recommendation: "Review the flagged code path and validate exploitability before remediation",
+							Confidence:     "low",
 						})
 					}
 
@@ -305,21 +316,27 @@ func (r *Runner) Process(ctx context.Context, rootPath, projectID string, concur
 					rec.AnalysisHistory = append(rec.AnalysisHistory, AnalysisEntry{
 						RunID:          runID,
 						InvestigatedAt: time.Now().UTC(),
-						DurationMs:     50,
-						AgentType:      "go-worker",
-						Model:          "mock-go-engine",
+						DurationMs:     time.Since(fileStart).Milliseconds(),
+						AgentType:      "local-patterns",
+						Model:          "deterministic-pattern-matcher-v1",
 						FindingCount:   len(findings),
-						CostUSD:        0.01,
+						CostUSD:        0,
 					})
 
 					recordPath := filepath.Join(r.filesDir(projectID), rec.FilePath+".json")
-					recBytes, _ := json.MarshalIndent(rec, "", "  ")
-					_ = afero.WriteFile(r.fs, recordPath, recBytes, 0644)
+					recBytes, err := json.MarshalIndent(rec, "", "  ")
+					if err != nil {
+						workerErrors <- fmt.Errorf("marshal file record %s: %w", rec.FilePath, err)
+						return
+					}
+					if err := afero.WriteFile(r.fs, recordPath, recBytes, 0644); err != nil {
+						workerErrors <- fmt.Errorf("write file record %s: %w", rec.FilePath, err)
+						return
+					}
 
 					mu.Lock()
 					stats.FilesProcessed++
 					stats.FindingsCount += len(findings)
-					stats.TotalCostUSD += 0.01
 					mu.Unlock()
 				}
 			}
@@ -327,6 +344,13 @@ func (r *Runner) Process(ctx context.Context, rootPath, projectID string, concur
 	}
 
 	wg.Wait()
+	close(workerErrors)
+	for err := range workerErrors {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	stats.TotalDurationMs = time.Since(start).Milliseconds()
 	return stats, nil
 }

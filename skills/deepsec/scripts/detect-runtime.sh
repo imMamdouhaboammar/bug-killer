@@ -4,25 +4,20 @@ set -euo pipefail
 # DeepSec Runtime Detector
 # Identifies available execution environment (native vs node)
 
-if command -v bk >/dev/null 2>&1; then
-    echo "native:$(command -v bk)"
+if command -v bug-killer >/dev/null 2>&1; then
+    echo "native:$(command -v bug-killer)"
     exit 0
 fi
 
-if [[ -x "./target/release/bk" ]]; then
-    echo "native:./target/release/bk"
+if [[ -x "./target/release/bug-killer" ]]; then
+    echo "native:./target/release/bug-killer"
     exit 0
 fi
 
-if [[ -x "./target/debug/bk" ]]; then
-    echo "native:./target/debug/bk"
+if [[ -x "./target/debug/bug-killer" ]]; then
+    echo "native:./target/debug/bug-killer"
     exit 0
 fi
 
-if command -v npx >/dev/null 2>&1; then
-    echo "node:$(command -v npx)"
-    exit 0
-fi
-
-echo "error:no_runner_found" >&2
+echo "error:no_verified_native_runner (bundled Node CLI is a placeholder)" >&2
 exit 1

@@ -1,7 +1,7 @@
 {
   "name": "deepsec",
   "version": "1.0.0",
-  "description": "Autonomous DeepSec security review and triage skill for AI agents",
+  "description": "DeepSec agent skill metadata; bundled Node CLI is an explicit placeholder",
   "type": "module",
   "main": "bin/cli.js",
   "bin": {

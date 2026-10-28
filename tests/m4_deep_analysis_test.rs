@@ -285,7 +285,7 @@ fn test_5_codeql_licensing_gate_fails_closed() {
         vec!["target/project".to_string()],
         vec!["CWE-89".to_string()],
     );
-    assert_eq!(receipt_unlicensed.status, ToolExecutionStatus::Blocked);
+    assert_eq!(receipt_unlicensed.status, ToolExecutionStatus::NotRun);
     assert!(
         receipt_unlicensed.is_unlicensed(),
         "Unlicensed CodeQL must fail closed with UnlicensedEnvironment reason"
@@ -316,7 +316,7 @@ fn test_5_codeql_licensing_gate_fails_closed() {
     );
     assert!(cap_licensed.governance.entitlement_verified);
 
-    // 3. Execution in licensed environment succeeds
+    // 3. Discovery of a licensed tool does not prove an execution occurred.
     let receipt_licensed = broker.emit_receipt(
         "plan-codeql-02",
         "run-codeql-02",
@@ -325,8 +325,9 @@ fn test_5_codeql_licensing_gate_fails_closed() {
         vec!["target/project".to_string()],
         vec!["CWE-89".to_string()],
     );
-    assert_eq!(receipt_licensed.status, ToolExecutionStatus::Completed);
-    assert_eq!(receipt_licensed.reason_code, REASON_COMPLETED);
+    assert_eq!(receipt_licensed.status, ToolExecutionStatus::NotRun);
+    assert_eq!(receipt_licensed.reason_code, "NOT_EXECUTED");
+    assert!(receipt_licensed.artifacts.is_empty());
 
     // Clean up temporary mock binary
     let _ = fs::remove_file(dummy_temp_bin);

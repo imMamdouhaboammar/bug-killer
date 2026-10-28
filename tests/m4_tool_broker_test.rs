@@ -201,8 +201,9 @@ fn test_broker_configured_binary_hash_and_discovery() {
         vec!["target/1".to_string()],
         vec!["CHECK-1".to_string()],
     );
-    assert_eq!(receipt.status, ToolExecutionStatus::Completed);
-    assert_eq!(receipt.reason_code, REASON_COMPLETED);
+    assert_eq!(receipt.status, ToolExecutionStatus::NotRun);
+    assert_eq!(receipt.reason_code, "NOT_EXECUTED");
+    assert!(receipt.artifacts.is_empty());
     assert!(receipt.validate().is_ok());
 }
 

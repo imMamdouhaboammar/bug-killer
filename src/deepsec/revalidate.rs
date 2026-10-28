@@ -39,9 +39,9 @@ pub fn revalidate_findings(
 
     let all_records = storage.load_all_file_records(project_id);
     let mut total_revalidated = 0;
-    let mut true_positives = 0;
-    let mut false_positives = 0;
-    let mut fixed = 0;
+    let true_positives = 0;
+    let false_positives = 0;
+    let fixed = 0;
     let mut duplicates = 0;
 
     for mut rec in all_records {
@@ -69,7 +69,7 @@ pub fn revalidate_findings(
                     duplicate_of: Some(finding.title.clone()),
                     revalidated_at: Utc::now().to_rfc3339(),
                     run_id: run_id.clone(),
-                    model: options.model.clone(),
+                    model: "deterministic-dedup-v1".to_string(),
                 });
                 duplicates += 1;
                 total_revalidated += 1;
@@ -78,52 +78,33 @@ pub fn revalidate_findings(
             }
             seen_titles.insert(normalized_title);
 
-            // Revalidation heuristics
+            // File presence and keyword matching are not evidence that a
+            // vulnerability is real, remediated, or a false positive.
             let abs_file = root_path.join(&rec.file_path);
             let file_exists = abs_file.exists();
 
             if !file_exists {
                 finding.revalidation = Some(Revalidation {
-                    verdict: RevalidationVerdict::Fixed,
-                    reasoning: "Vulnerable file was removed or refactored out of tree".to_string(),
+                    verdict: RevalidationVerdict::Uncertain,
+                    reasoning: "File unavailable; remediation cannot be verified".to_string(),
                     adjusted_severity: None,
                     duplicate_of: None,
                     revalidated_at: Utc::now().to_rfc3339(),
                     run_id: run_id.clone(),
-                    model: options.model.clone(),
+                    model: "deterministic-presence-check-v1".to_string(),
                 });
-                fixed += 1;
             } else {
-                let file_content = std::fs::read_to_string(&abs_file).unwrap_or_default();
-                let has_mitigation = file_content.contains("escape")
-                    || file_content.contains("sanitize")
-                    || file_content.contains("parameterized")
-                    || file_content.contains("auth.verify");
-
-                if has_mitigation && finding.confidence == Confidence::Low {
-                    finding.revalidation = Some(Revalidation {
-                        verdict: RevalidationVerdict::FalsePositive,
-                        reasoning: "Input is properly sanitized and guarded by surrounding defensive patterns".to_string(),
-                        adjusted_severity: Some(Severity::Low),
-                        duplicate_of: None,
-                        revalidated_at: Utc::now().to_rfc3339(),
-                        run_id: run_id.clone(),
-                        model: options.model.clone(),
-                    });
-                    false_positives += 1;
-                } else {
-                    finding.revalidation = Some(Revalidation {
-                        verdict: RevalidationVerdict::TruePositive,
-                        reasoning: "Verified unmitigated vulnerability in production code path"
+                finding.revalidation = Some(Revalidation {
+                    verdict: RevalidationVerdict::Uncertain,
+                    reasoning:
+                        "File exists, but no independent security verification was performed"
                             .to_string(),
-                        adjusted_severity: None,
-                        duplicate_of: None,
-                        revalidated_at: Utc::now().to_rfc3339(),
-                        run_id: run_id.clone(),
-                        model: options.model.clone(),
-                    });
-                    true_positives += 1;
-                }
+                    adjusted_severity: None,
+                    duplicate_of: None,
+                    revalidated_at: Utc::now().to_rfc3339(),
+                    run_id: run_id.clone(),
+                    model: "deterministic-presence-check-v1".to_string(),
+                });
             }
 
             total_revalidated += 1;

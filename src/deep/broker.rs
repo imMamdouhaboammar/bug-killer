@@ -403,7 +403,8 @@ pub const REASON_CANCELLED: &str = "Cancelled";
 // Execution Ledger Data Types
 // =========================================================================
 
-/// Tamper-evident ledger tracking host-authored tool execution receipts and proving execution authenticity.
+/// In-memory receipt ledger with a digest suitable for comparison against an
+/// independently retained checkpoint. This is not an authenticated audit log.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ExecutionLedger {
     pub schema_version: String,
@@ -474,34 +475,23 @@ impl ExecutionLedger {
         Ok(())
     }
 
-    /// Computes deterministic SHA-256 digest over canonical serialized receipts.
+    /// Computes a deterministic SHA-256 commitment over every serialized field,
+    /// the append order and the caller-supplied execution provenance flags.
+    /// The expected digest must be kept outside this mutable structure.
     pub fn compute_digest(&self) -> String {
         let mut hasher = Sha256::new();
-        hasher.update(self.schema_version.as_bytes());
-        hasher.update(b":");
-        hasher.update(self.ledger_id.as_bytes());
-        hasher.update(b":");
+        for value in [&self.schema_version, &self.ledger_id] {
+            hasher.update((value.len() as u64).to_be_bytes());
+            hasher.update(value.as_bytes());
+        }
 
         for r in &self.receipts {
-            hasher.update(r.receipt_id.as_bytes());
-            hasher.update(b"|");
-            hasher.update(r.tool_id.as_bytes());
-            hasher.update(b"|");
-            hasher.update(format!("{:?}", r.status).as_bytes());
-            hasher.update(b"|");
-            hasher.update(r.reason_code.as_bytes());
-            hasher.update(b"|");
-            hasher.update(r.snapshot_sha256.as_bytes());
-            hasher.update(b"|");
-            hasher.update(r.resources.duration_ms.to_be_bytes());
-            hasher.update(b"|");
+            let bytes = serde_json::to_vec(r)
+                .expect("serializing validated execution receipts must not fail");
+            hasher.update((bytes.len() as u64).to_be_bytes());
+            hasher.update(&bytes);
             let is_real = self.is_real_execution(&r.receipt_id);
-            hasher.update(if is_real { b"1|" } else { b"0|" });
-            for a in &r.artifacts {
-                hasher.update(a.sha256.as_bytes());
-                hasher.update(b",");
-            }
-            hasher.update(b";");
+            hasher.update([u8::from(is_real)]);
         }
 
         crate::identity::to_hex(hasher.finalize())
@@ -885,7 +875,7 @@ impl ToolCapabilityBroker {
                 Vec::new(),
             ),
             Installation::Unlicensed => (
-                ToolExecutionStatus::Blocked,
+                ToolExecutionStatus::NotRun,
                 "UNLICENSED_ENVIRONMENT".to_string(),
                 0,
                 Vec::new(),
@@ -1012,7 +1002,7 @@ impl ToolCapabilityBroker {
                 REASON_ENGINE_MISSING.to_string(),
             ),
             Installation::Unlicensed => (
-                ToolExecutionStatus::Blocked,
+                ToolExecutionStatus::NotRun,
                 REASON_UNLICENSED_ENVIRONMENT.to_string(),
             ),
             Installation::Incompatible => (
@@ -1021,9 +1011,7 @@ impl ToolCapabilityBroker {
             ),
             Installation::Unhealthy => (ToolExecutionStatus::Error, "EngineUnhealthy".to_string()),
             Installation::Disabled => (ToolExecutionStatus::NotRun, "EngineDisabled".to_string()),
-            Installation::Available => {
-                (ToolExecutionStatus::Completed, REASON_COMPLETED.to_string())
-            }
+            Installation::Available => (ToolExecutionStatus::NotRun, "NOT_EXECUTED".to_string()),
         };
 
         let receipt = ToolExecutionReceipt {
@@ -1068,13 +1056,9 @@ impl ToolCapabilityBroker {
         &mut self.ledger
     }
 
-    /// Creates and stores an arbitrary completed or partial execution receipt in both receipts and ledger.
+    /// Imports a caller-provided receipt without claiming its execution was verified.
     pub fn record_receipt(&mut self, receipt: ToolExecutionReceipt) {
-        let is_real = receipt.status != ToolExecutionStatus::NotRun
-            && !receipt.artifacts.iter().any(|a| {
-                a.sha256 == "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
-            });
-        let _ = self.ledger.record_receipt(receipt.clone(), is_real);
+        let _ = self.ledger.record_receipt(receipt.clone(), false);
         self.receipts.push(receipt);
     }
 
@@ -1086,10 +1070,8 @@ impl ToolCapabilityBroker {
         cancel_token: &crate::engine::runner::CancellationToken,
     ) -> ToolExecutionReceipt {
         let receipt = self.execute(tool_id, request, cancel_token);
-        let is_real = receipt.status != ToolExecutionStatus::NotRun
-            && receipt.status != ToolExecutionStatus::Blocked
-            && receipt.status != ToolExecutionStatus::Cancelled
-            && !receipt.artifacts.is_empty();
+        let is_real =
+            receipt.status == ToolExecutionStatus::Completed && !receipt.artifacts.is_empty();
         let _ = self.ledger.record_receipt(receipt.clone(), is_real);
         self.receipts.push(receipt.clone());
         receipt
@@ -1113,8 +1095,8 @@ impl ToolCapabilityBroker {
         working_dir: Option<&Path>,
         timeout_seconds: u64,
         cancel_token: &crate::engine::runner::CancellationToken,
-        tool_id: &str,
-        snapshot_sha256: &str,
+        _tool_id: &str,
+        _snapshot_sha256: &str,
     ) -> (ToolExecutionStatus, String, u64, Vec<ReceiptArtifact>) {
         let start = Instant::now();
         let mut cmd = Command::new(binary);
@@ -1145,6 +1127,18 @@ impl ToolCapabilityBroker {
                 );
             }
         };
+
+        // Drain both pipes while the child runs. Waiting first deadlocks when
+        // either pipe fills and can turn a successful scan into a timeout.
+        // Stream through the hasher instead of retaining unbounded raw output.
+        let stdout_reader = child
+            .stdout
+            .take()
+            .map(|out| std::thread::spawn(move || Self::hash_stream(out)));
+        let stderr_reader = child
+            .stderr
+            .take()
+            .map(|err| std::thread::spawn(move || Self::hash_stream(err)));
 
         let pid = child.id();
         let timeout_dur = Duration::from_secs(timeout_seconds);
@@ -1194,39 +1188,33 @@ impl ToolCapabilityBroker {
 
         let dur = start.elapsed().as_millis() as u64;
 
-        let mut stdout_bytes = Vec::new();
-        if let Some(mut out) = child.stdout.take() {
-            let _ = out.read_to_end(&mut stdout_bytes);
-        }
-        let mut stderr_bytes = Vec::new();
-        if let Some(mut err) = child.stderr.take() {
-            let _ = err.read_to_end(&mut stderr_bytes);
-        }
-
         let mut artifacts = Vec::new();
-        if !stdout_bytes.is_empty() {
-            let mut hasher = Sha256::new();
-            hasher.update(&stdout_bytes);
-            let digest = crate::identity::to_hex(hasher.finalize());
-            artifacts.push(ReceiptArtifact {
-                kind: ArtifactKind::RawOutput,
-                sha256: digest,
-                access_class: ArtifactAccessClass::LocalRedacted,
-                storage_ref: Some(format!(
-                    "receipts/{}-{}-stdout.raw",
-                    tool_id,
-                    &snapshot_sha256[..8.min(snapshot_sha256.len())]
-                )),
-            });
+        // The two possible artifacts are ordered stdout, then stderr. No
+        // storage reference is advertised: only their byte digests are kept.
+        for reader in [stdout_reader, stderr_reader].into_iter().flatten() {
+            match reader.join() {
+                Ok(Ok(Some(digest))) => artifacts.push(ReceiptArtifact {
+                    kind: ArtifactKind::RawOutput,
+                    sha256: digest,
+                    access_class: ArtifactAccessClass::PrivateRestricted,
+                    storage_ref: None,
+                }),
+                Ok(Ok(None)) => {}
+                Ok(Err(_)) | Err(_) => {
+                    return (
+                        ToolExecutionStatus::Error,
+                        "OUTPUT_CAPTURE_FAILED".to_string(),
+                        dur,
+                        Vec::new(),
+                    );
+                }
+            }
         }
 
         let (status, reason_code) = if exit_status.success() {
             (ToolExecutionStatus::Completed, "COMPLETED".to_string())
         } else if let Some(code) = exit_status.code() {
-            (
-                ToolExecutionStatus::Completed,
-                format!("EXIT_CODE_{}", code),
-            )
+            (ToolExecutionStatus::Error, format!("EXIT_CODE_{}", code))
         } else {
             (
                 ToolExecutionStatus::Error,
@@ -1235,6 +1223,25 @@ impl ToolCapabilityBroker {
         };
 
         (status, reason_code, dur, artifacts)
+    }
+
+    fn hash_stream(mut stream: impl Read) -> std::io::Result<Option<String>> {
+        let mut hasher = Sha256::new();
+        let mut buffer = [0u8; 8192];
+        let mut total = 0u64;
+        loop {
+            let n = stream.read(&mut buffer)?;
+            if n == 0 {
+                break;
+            }
+            total += n as u64;
+            hasher.update(&buffer[..n]);
+        }
+        if total == 0 {
+            Ok(None)
+        } else {
+            Ok(Some(crate::identity::to_hex(hasher.finalize())))
+        }
     }
 
     fn kill_process_group(pid: u32) {

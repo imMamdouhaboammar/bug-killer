@@ -1,5 +1,6 @@
 use bug_killer::deepsec::*;
 use std::fs;
+use std::process::Command;
 use tempfile::tempdir;
 
 // @lat: [[tests#Test Suite Specifications#DeepSec Harness Specifications#Full Pipeline Lifecycle Verification]]
@@ -78,7 +79,7 @@ def run_command(user_input):
         batch_size: 5,
         limit: None,
         filter: None,
-        max_cost_usd: Some(10.0),
+        max_cost_usd: None,
         model: "claude-opus-4-8".to_string(),
         agent_type: "claude".to_string(),
     };
@@ -87,11 +88,20 @@ def run_command(user_input):
         .expect("process succeeds");
     assert_eq!(proc_stats.files_processed, 3);
     assert!(proc_stats.findings_count >= 1);
+    assert_eq!(
+        proc_stats.total_cost_usd, 0.0,
+        "No cost telemetry is available from the mock"
+    );
 
     let analyzed_records = storage.load_all_file_records(project_id);
     for r in &analyzed_records {
         assert_eq!(r.status, FileStatus::Analyzed);
         assert!(!r.analysis_history.is_empty());
+        assert!(
+            r.analysis_history
+                .iter()
+                .all(|entry| entry.cost_usd.is_none() && entry.usage.is_none())
+        );
     }
 
     // 5. Triage Stage
@@ -106,6 +116,18 @@ def run_command(user_input):
     let reval_stats =
         revalidate_findings(root, project_id, &storage, &reval_opts).expect("revalidate succeeds");
     assert!(reval_stats.findings_revalidated >= 1);
+    assert_eq!(
+        reval_stats.true_positives, 0,
+        "Text-only heuristic inspection must not certify true positives"
+    );
+    for record in storage.load_all_file_records(project_id) {
+        for finding in record.findings {
+            assert_ne!(
+                finding.revalidation.unwrap().verdict,
+                RevalidationVerdict::TruePositive
+            );
+        }
+    }
 
     // 7. Enrichment Stage
     let enriched = enrich_findings(root, project_id, &storage).expect("enrich succeeds");
@@ -126,6 +148,112 @@ def run_command(user_input):
     // 9. Status & Terminal Table
     let table = render_terminal_summary(&analyzed_records);
     assert!(!table.is_empty());
+}
+
+#[test]
+fn test_process_cli_requires_real_analysis_backend() {
+    let tmp = tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_bug-killer"))
+        .args(["deepsec", "process", tmp.path().to_str().unwrap()])
+        .env_remove("DEEPSEC_AI_ENDPOINT")
+        .env_remove("DEEPSEC_AI_KEY")
+        .output()
+        .expect("invoke real DeepSec CLI");
+    assert!(
+        !output.status.success(),
+        "CLI must not run an implicit mock backend"
+    );
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("DEEPSEC_AI_ENDPOINT"),
+        "missing backend should be explained: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+struct InvalidResponseClient;
+
+impl DeepSecAIClient for InvalidResponseClient {
+    fn investigate(&self, _prompt: &str) -> Result<String, String> {
+        Ok("this is not a structured finding response".to_string())
+    }
+}
+
+struct WrongFileResponseClient;
+
+impl DeepSecAIClient for WrongFileResponseClient {
+    fn investigate(&self, _prompt: &str) -> Result<String, String> {
+        Ok(serde_json::json!({"findings": [{
+            "filePath": "unscanned/file.py", "vulnSlug": "rce", "title": "Unattributed",
+            "severity": "CRITICAL", "lineNumbers": [1]
+        }]})
+        .to_string())
+    }
+}
+
+#[test]
+fn test_invalid_ai_response_does_not_mark_file_analyzed() {
+    let tmp = tempdir().unwrap();
+    let storage = StorageManager::new(tmp.path());
+    let project = "invalid-response";
+    storage
+        .ensure_project(project, tmp.path().to_str().unwrap())
+        .unwrap();
+
+    let mut record = FileRecord::new(
+        "src/test.py".to_string(),
+        project.to_string(),
+        "filehash".to_string(),
+        "scan-run".to_string(),
+    );
+    record.candidates.push(CandidateMatch {
+        vuln_slug: "rce".to_string(),
+        line_numbers: vec![1],
+        snippet: "exec(user_input)".to_string(),
+        matched_pattern: "exec".to_string(),
+    });
+    storage.write_file_record(&record).unwrap();
+
+    let result = process_repository(
+        tmp.path(),
+        project,
+        &storage,
+        &InvalidResponseClient,
+        &ProcessOptions::default(),
+    );
+    assert!(result.is_err());
+    let stored = storage.read_file_record(project, "src/test.py").unwrap();
+    assert_ne!(stored.status, FileStatus::Analyzed);
+    assert!(stored.findings.is_empty());
+
+    let mut pending_again = stored;
+    pending_again.status = FileStatus::Pending;
+    storage.write_file_record(&pending_again).unwrap();
+    let wrong_path_result = process_repository(
+        tmp.path(),
+        project,
+        &storage,
+        &WrongFileResponseClient,
+        &ProcessOptions::default(),
+    );
+    assert!(
+        wrong_path_result.is_err(),
+        "AI findings for unscanned paths must not be silently assigned or ignored"
+    );
+}
+
+#[test]
+fn test_storage_rejects_project_and_file_path_traversal() {
+    let tmp = tempdir().unwrap();
+    let storage = StorageManager::new(tmp.path());
+    assert!(storage.ensure_project("../escaped", "ignored").is_err());
+    storage.ensure_project("valid-project", "ignored").unwrap();
+    let record = FileRecord::new(
+        "../../escaped".to_string(),
+        "valid-project".to_string(),
+        "hash".to_string(),
+        "run".to_string(),
+    );
+    assert!(storage.write_file_record(&record).is_err());
 }
 
 // @lat: [[tests#Test Suite Specifications#DeepSec Harness Specifications#Atomic File Locking And Reclaim]]
@@ -156,9 +284,17 @@ fn test_atomic_file_lock_and_stale_reclaim() {
         .read_file_record(project_id, "src/auth.ts")
         .expect("read record");
 
-    // Because run-worker-1 has no completed RunMeta, is_reclaimable_lock checks if run exists.
-    // Since no RunMeta exists for run-worker-1 on disk, is_reclaimable_lock returns true.
-    assert!(storage.is_reclaimable_lock(&record2));
+    // An unknown, recently-acquired owner cannot be reclaimed immediately.
+    assert!(!storage.is_reclaimable_lock(&record2));
+    let mut contender = record2.clone();
+    assert!(!storage.acquire_file_lock(&mut contender, "run-worker-2"));
+
+    let mut stale_owner = record2.clone();
+    stale_owner.locked_by_run_id = Some("run-worker-2".to_string());
+    assert!(
+        storage.release_file_lock(&mut stale_owner).is_err(),
+        "a different worker must not release a lock it does not own"
+    );
 
     // Release lock
     storage
@@ -166,6 +302,43 @@ fn test_atomic_file_lock_and_stale_reclaim() {
         .expect("release lock");
     assert_eq!(record.locked_by_run_id, None);
     assert_eq!(record.locked_at, None);
+}
+
+#[test]
+fn test_concurrent_file_lock_only_one_worker_wins() {
+    use std::sync::{Arc, Barrier};
+
+    let tmp = tempdir().unwrap();
+    let storage = StorageManager::new(tmp.path());
+    storage.ensure_project("concurrent", "ignored").unwrap();
+    let record = FileRecord::new(
+        "src/shared.ts".to_string(),
+        "concurrent".to_string(),
+        "hash".to_string(),
+        "scan-run".to_string(),
+    );
+    storage.write_file_record(&record).unwrap();
+
+    let barrier = Arc::new(Barrier::new(3));
+    let handles: Vec<_> = (0..2)
+        .map(|worker| {
+            let root = tmp.path().to_path_buf();
+            let barrier = Arc::clone(&barrier);
+            let mut own_copy = record.clone();
+            std::thread::spawn(move || {
+                let storage = StorageManager::new(root);
+                barrier.wait();
+                storage.acquire_file_lock(&mut own_copy, &format!("worker-{worker}"))
+            })
+        })
+        .collect();
+    barrier.wait();
+    let winners = handles
+        .into_iter()
+        .map(|handle| handle.join().unwrap())
+        .filter(|won| *won)
+        .count();
+    assert_eq!(winners, 1, "a single record cannot have two live owners");
 }
 
 #[test]

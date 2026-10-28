@@ -3321,8 +3321,27 @@ fn handle_deepsec_command(cmd: DeepsecCommands) {
                 model,
                 agent_type: agent,
             };
-            let mock_client = deepsec::MockAIClient;
-            match deepsec::process_repository(&path, &pid, &storage, &mock_client, &opts) {
+            // Never silently use a synthetic backend in production commands.
+            let endpoint_url = match std::env::var("DEEPSEC_AI_ENDPOINT") {
+                Ok(url) if url.starts_with("https://") => url,
+                _ => {
+                    eprintln!("DeepSec process requires a configured HTTPS DEEPSEC_AI_ENDPOINT");
+                    std::process::exit(1);
+                }
+            };
+            let api_key = match std::env::var("DEEPSEC_AI_KEY") {
+                Ok(key) if !key.trim().is_empty() => key,
+                _ => {
+                    eprintln!("DeepSec process requires DEEPSEC_AI_KEY");
+                    std::process::exit(1);
+                }
+            };
+            let client = deepsec::HttpAIClient {
+                endpoint_url,
+                api_key,
+                model: opts.model.clone(),
+            };
+            match deepsec::process_repository(&path, &pid, &storage, &client, &opts) {
                 Ok(stats) => {
                     if json {
                         println!("{}", serde_json::to_string_pretty(&stats).unwrap());

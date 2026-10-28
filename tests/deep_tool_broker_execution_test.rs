@@ -57,7 +57,7 @@ fn test_broker_unlicensed_codeql_blocked_with_no_mock_artifacts() {
     let cancel = CancellationToken::new();
     let receipt = broker.execute("codeql", &req, &cancel);
 
-    assert_eq!(receipt.status, ToolExecutionStatus::Blocked);
+    assert_eq!(receipt.status, ToolExecutionStatus::NotRun);
     assert_eq!(receipt.reason_code, "UNLICENSED_ENVIRONMENT");
     assert!(receipt.is_unlicensed());
     assert!(
@@ -121,6 +121,93 @@ fn test_broker_real_execution_invokes_process_and_hashes_actual_output() {
         "Broker must not emit hardcoded dummy artifact hash for real executions"
     );
     assert_eq!(receipt.artifacts[0].sha256, expected_hash);
+}
+
+#[test]
+fn test_available_tool_without_execution_never_emits_success() {
+    let tmp = tempdir().unwrap();
+    let binary = tmp.path().join("available_tool.sh");
+    let marker = tmp.path().join("should_not_exist");
+    fs::write(
+        &binary,
+        format!(
+            "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 1.0; exit 0; fi\ntouch '{}'\n",
+            marker.display()
+        ),
+    )
+    .unwrap();
+    let mut perms = fs::metadata(&binary).unwrap().permissions();
+    perms.set_mode(0o755);
+    fs::set_permissions(&binary, perms).unwrap();
+
+    let mut broker = ToolCapabilityBroker::new();
+    broker.set_tool_path("available-tool", binary);
+    let receipt = broker.emit_receipt(
+        "plan-01",
+        "run-01",
+        "available-tool",
+        DUMMY_SNAPSHOT,
+        vec!["src/lib.rs".into()],
+        vec!["RULE-01".into()],
+    );
+    assert_eq!(receipt.status, ToolExecutionStatus::NotRun);
+    assert_eq!(receipt.reason_code, "NOT_EXECUTED");
+    assert!(receipt.artifacts.is_empty());
+    assert!(!marker.exists());
+}
+
+#[test]
+fn test_failed_process_is_not_reported_completed() {
+    let tmp = tempdir().unwrap();
+    let binary = tmp.path().join("failed_tool.sh");
+    fs::write(&binary, "#!/bin/sh\nprintf 'scanner failed' >&2\nexit 17\n").unwrap();
+    let mut perms = fs::metadata(&binary).unwrap().permissions();
+    perms.set_mode(0o755);
+    fs::set_permissions(&binary, perms).unwrap();
+
+    let mut broker = ToolCapabilityBroker::new();
+    broker.set_tool_path("failed-tool", binary);
+    let receipt = broker.execute(
+        "failed-tool",
+        &create_request("failed-tool"),
+        &CancellationToken::new(),
+    );
+    assert_eq!(receipt.status, ToolExecutionStatus::Error);
+    assert_eq!(receipt.reason_code, "EXIT_CODE_17");
+    assert_eq!(receipt.artifacts.len(), 1, "stderr must be measured");
+    let expected = Sha256::digest(b"scanner failed");
+    assert_eq!(
+        receipt.artifacts[0].sha256,
+        bug_killer::identity::to_hex(expected)
+    );
+}
+
+#[test]
+fn test_large_output_does_not_deadlock_on_full_pipe() {
+    let tmp = tempdir().unwrap();
+    let binary = tmp.path().join("large_tool.sh");
+    fs::write(&binary, "#!/bin/sh\nhead -c 262144 /dev/zero\n").unwrap();
+    let mut perms = fs::metadata(&binary).unwrap().permissions();
+    perms.set_mode(0o755);
+    fs::set_permissions(&binary, perms).unwrap();
+
+    let mut broker = ToolCapabilityBroker::new();
+    broker.set_tool_path("large-tool", binary);
+    let mut req = create_request("large-tool");
+    req.timeout_seconds = Some(3);
+    let receipt = broker.execute("large-tool", &req, &CancellationToken::new());
+    assert_eq!(
+        receipt.status,
+        ToolExecutionStatus::Completed,
+        "{}",
+        receipt.reason_code
+    );
+    assert_eq!(receipt.artifacts.len(), 1);
+    let expected = Sha256::digest(vec![0u8; 262144]);
+    assert_eq!(
+        receipt.artifacts[0].sha256,
+        bug_killer::identity::to_hex(expected)
+    );
 }
 
 // -------------------------------------------------------------------------
@@ -253,6 +340,13 @@ fn test_execution_ledger_integrity_and_tamper_detection() {
     assert!(
         tampered.verify_integrity(&digest).is_err(),
         "Tampered receipt must fail integrity check"
+    );
+
+    let mut target_tampered = ledger.clone();
+    target_tampered.receipts[0].target_ids[0] = "different/file.rs".to_string();
+    assert!(
+        target_tampered.verify_integrity(&digest).is_err(),
+        "The ledger must cover all receipt fields, including target IDs"
     );
 }
 
