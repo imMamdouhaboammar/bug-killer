@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -260,6 +261,12 @@ pub struct BrokerExecutionRequest {
     pub check_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authorization_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout_seconds: Option<u64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub working_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -393,6 +400,153 @@ pub const REASON_EXECUTION_ERROR: &str = "ExecutionError";
 pub const REASON_CANCELLED: &str = "Cancelled";
 
 // =========================================================================
+// Execution Ledger Data Types
+// =========================================================================
+
+/// Tamper-evident ledger tracking host-authored tool execution receipts and proving execution authenticity.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExecutionLedger {
+    pub schema_version: String,
+    pub ledger_id: String,
+    pub receipts: Vec<ToolExecutionReceipt>,
+    /// Tracks which receipts have been verified as real OS-level executions (vs synthetic/mock).
+    pub verified_real_executions: HashMap<String, bool>,
+}
+
+impl Default for ExecutionLedger {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ExecutionLedger {
+    pub fn new() -> Self {
+        let nonce: [u8; 8] = rand::random();
+        Self {
+            schema_version: "1.0".to_string(),
+            ledger_id: format!("ledger-{}", crate::identity::to_hex(nonce)),
+            receipts: Vec::new(),
+            verified_real_executions: HashMap::new(),
+        }
+    }
+
+    pub fn with_ledger_id(ledger_id: impl Into<String>) -> Self {
+        Self {
+            schema_version: "1.0".to_string(),
+            ledger_id: ledger_id.into(),
+            receipts: Vec::new(),
+            verified_real_executions: HashMap::new(),
+        }
+    }
+
+    /// Records an execution receipt into the ledger.
+    /// If `is_real_execution` is true, enforces that the receipt represents an actual executed tool run
+    /// with valid non-dummy artifacts, rejecting any mock or synthetic results trying to pass as real.
+    pub fn record_receipt(
+        &mut self,
+        receipt: ToolExecutionReceipt,
+        is_real_execution: bool,
+    ) -> Result<(), String> {
+        receipt.validate()?;
+
+        if is_real_execution {
+            if receipt.status == ToolExecutionStatus::NotRun {
+                return Err("Cannot record a NOT_RUN receipt as a real execution".to_string());
+            }
+
+            // Check for mock/dummy hashes
+            for art in &receipt.artifacts {
+                if art.sha256 == "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+                    || art.sha256.chars().all(|c| c == '0')
+                    || art.sha256.chars().all(|c| c == '1')
+                {
+                    return Err(
+                        "Mock execution artifact detected; cannot pass as real execution in ledger"
+                            .to_string(),
+                    );
+                }
+            }
+        }
+
+        self.verified_real_executions
+            .insert(receipt.receipt_id.clone(), is_real_execution);
+        self.receipts.push(receipt);
+        Ok(())
+    }
+
+    /// Computes deterministic SHA-256 digest over canonical serialized receipts.
+    pub fn compute_digest(&self) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(self.schema_version.as_bytes());
+        hasher.update(b":");
+        hasher.update(self.ledger_id.as_bytes());
+        hasher.update(b":");
+
+        for r in &self.receipts {
+            hasher.update(r.receipt_id.as_bytes());
+            hasher.update(b"|");
+            hasher.update(r.tool_id.as_bytes());
+            hasher.update(b"|");
+            hasher.update(format!("{:?}", r.status).as_bytes());
+            hasher.update(b"|");
+            hasher.update(r.reason_code.as_bytes());
+            hasher.update(b"|");
+            hasher.update(r.snapshot_sha256.as_bytes());
+            hasher.update(b"|");
+            hasher.update(r.resources.duration_ms.to_be_bytes());
+            hasher.update(b"|");
+            let is_real = self.is_real_execution(&r.receipt_id);
+            hasher.update(if is_real { b"1|" } else { b"0|" });
+            for a in &r.artifacts {
+                hasher.update(a.sha256.as_bytes());
+                hasher.update(b",");
+            }
+            hasher.update(b";");
+        }
+
+        crate::identity::to_hex(hasher.finalize())
+    }
+
+    /// Verifies the cryptographic integrity of the execution ledger against an expected digest.
+    pub fn verify_integrity(&self, expected_digest: &str) -> Result<(), String> {
+        for r in &self.receipts {
+            r.validate()?;
+        }
+        let actual = self.compute_digest();
+        if actual != expected_digest {
+            return Err(format!(
+                "Execution ledger integrity violation: expected {}, got {}",
+                expected_digest, actual
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn is_real_execution(&self, receipt_id: &str) -> bool {
+        self.verified_real_executions
+            .get(receipt_id)
+            .copied()
+            .unwrap_or(false)
+    }
+
+    pub fn len(&self) -> usize {
+        self.receipts.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.receipts.is_empty()
+    }
+
+    pub fn receipts(&self) -> &[ToolExecutionReceipt] {
+        &self.receipts
+    }
+
+    pub fn get_receipt(&self, receipt_id: &str) -> Option<&ToolExecutionReceipt> {
+        self.receipts.iter().find(|r| r.receipt_id == receipt_id)
+    }
+}
+
+// =========================================================================
 // Tool Capability Broker
 // =========================================================================
 
@@ -403,6 +557,7 @@ pub struct ToolCapabilityBroker {
     capabilities: HashMap<String, ToolCapability>,
     receipts: Vec<ToolExecutionReceipt>,
     codeql_license_override: Option<bool>,
+    ledger: ExecutionLedger,
 }
 
 impl Default for ToolCapabilityBroker {
@@ -419,6 +574,7 @@ impl ToolCapabilityBroker {
             capabilities: HashMap::new(),
             receipts: Vec::new(),
             codeql_license_override: None,
+            ledger: ExecutionLedger::new(),
         };
         broker.discover_all();
         broker
@@ -457,6 +613,7 @@ impl ToolCapabilityBroker {
             "codeql" | "codeql-adapter" => "CODEQL_BIN",
             "joern" | "joern-cpg-adapter" => "JOERN_BIN",
             "trivy" | "trivy-adapter" => "TRIVY_BIN",
+            "osv-scanner" | "osv-scanner-adapter" | "osv" => "OSV_SCANNER_BIN",
             _ => "",
         };
         if !env_var.is_empty() {
@@ -474,6 +631,7 @@ impl ToolCapabilityBroker {
             "codeql" | "codeql-adapter" => &["codeql"],
             "joern" | "joern-cpg-adapter" => &["joern", "joern-cli"],
             "trivy" | "trivy-adapter" => &["trivy"],
+            "osv-scanner" | "osv-scanner-adapter" | "osv" => &["osv-scanner"],
             other => &[other],
         };
 
@@ -520,6 +678,7 @@ impl ToolCapabilityBroker {
             "joern",
             "codeql",
             "trivy",
+            "osv-scanner",
             "privacy-engine",
             "threatswarm",
             "cve-mcp",
@@ -539,6 +698,7 @@ impl ToolCapabilityBroker {
             "codeql" | "codeql-adapter" => "codeql",
             "joern" | "joern-cpg-adapter" => "joern",
             "trivy" | "trivy-adapter" => "trivy",
+            "osv-scanner" | "osv-scanner-adapter" | "osv" => "osv-scanner",
             "privacy-engine" | "privacy-adapter" | "bk-privacy" | "data-protection" => {
                 "privacy-engine"
             }
@@ -557,6 +717,7 @@ impl ToolCapabilityBroker {
             "codeql" => self.build_codeql_capability(binary_path.as_deref(), &now),
             "joern" => self.build_joern_capability(binary_path.as_deref(), &now),
             "trivy" => self.build_trivy_capability(binary_path.as_deref(), &now),
+            "osv-scanner" => self.build_osv_scanner_capability(binary_path.as_deref(), &now),
             "privacy-engine" => self.build_privacy_capability(&now),
             "threatswarm" => self.build_threatswarm_capability(&now),
             "cve-mcp" => self.build_cve_mcp_capability(binary_path.as_deref(), &now),
@@ -577,6 +738,12 @@ impl ToolCapabilityBroker {
         if canonical_id == "joern" {
             self.capabilities
                 .insert("joern-cpg-adapter".to_string(), cap.clone());
+        }
+        if canonical_id == "osv-scanner" {
+            self.capabilities
+                .insert("osv-scanner-adapter".to_string(), cap.clone());
+            self.capabilities
+                .insert("osv".to_string(), cap.clone());
         }
         if canonical_id == "privacy-engine" {
             self.capabilities
@@ -711,46 +878,59 @@ impl ToolCapabilityBroker {
             }
         };
 
-        let (status, reason_code, artifacts) = match cap.installation {
+        let (status, reason_code, duration_ms, artifacts) = match cap.installation {
             Installation::Missing => (
                 ToolExecutionStatus::NotRun,
                 "ENGINE_MISSING".to_string(),
+                0,
                 Vec::new(),
             ),
             Installation::Unlicensed => (
                 ToolExecutionStatus::Blocked,
                 "UNLICENSED_ENVIRONMENT".to_string(),
+                0,
                 Vec::new(),
             ),
             Installation::Incompatible => (
                 ToolExecutionStatus::NotRun,
                 "INCOMPATIBLE_ENGINE".to_string(),
+                0,
                 Vec::new(),
             ),
             Installation::Unhealthy => (
                 ToolExecutionStatus::Error,
                 "ENGINE_UNHEALTHY".to_string(),
+                0,
                 Vec::new(),
             ),
             Installation::Disabled => (
                 ToolExecutionStatus::NotRun,
                 "ENGINE_DISABLED".to_string(),
+                0,
                 Vec::new(),
             ),
             Installation::Available => {
-                let dummy_hash =
-                    "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789".to_string();
-                let art = ReceiptArtifact {
-                    kind: ArtifactKind::NormalizedFindings,
-                    sha256: dummy_hash,
-                    access_class: ArtifactAccessClass::LocalRedacted,
-                    storage_ref: Some(format!("receipts/{}-findings.json", tool_id)),
-                };
-                (
-                    ToolExecutionStatus::Completed,
-                    "COMPLETED".to_string(),
-                    vec![art],
-                )
+                let bin = self.find_binary(&cap.tool_id).or_else(|| self.find_binary(tool_id));
+                match bin {
+                    Some(b) => {
+                        let timeout = request.timeout_seconds.unwrap_or(30);
+                        Self::run_subprocess(
+                            &b,
+                            &request.args,
+                            request.working_dir.as_deref(),
+                            timeout,
+                            cancel_token,
+                            &cap.tool_id,
+                            &request.snapshot_sha256,
+                        )
+                    }
+                    None => (
+                        ToolExecutionStatus::NotRun,
+                        "ENGINE_MISSING".to_string(),
+                        0,
+                        Vec::new(),
+                    ),
+                }
             }
         };
 
@@ -768,7 +948,12 @@ impl ToolCapabilityBroker {
             status,
             reason_code,
             authorization_ref: request.authorization_ref.clone(),
-            resources: ExecutionResources::default(),
+            resources: ExecutionResources {
+                duration_ms,
+                peak_memory_bytes: None,
+                cost_estimate_usd: None,
+                cost_actual_usd: None,
+            },
             artifacts,
             started_at: now.clone(),
             completed_at: now,
@@ -872,9 +1057,41 @@ impl ToolCapabilityBroker {
         receipt
     }
 
-    /// Creates and stores an arbitrary completed or partial execution receipt.
+    /// Access reference to the execution ledger.
+    pub fn ledger(&self) -> &ExecutionLedger {
+        &self.ledger
+    }
+
+    /// Access mutable reference to the execution ledger.
+    pub fn ledger_mut(&mut self) -> &mut ExecutionLedger {
+        &mut self.ledger
+    }
+
+    /// Creates and stores an arbitrary completed or partial execution receipt in both receipts and ledger.
     pub fn record_receipt(&mut self, receipt: ToolExecutionReceipt) {
+        let is_real = receipt.status != ToolExecutionStatus::NotRun
+            && !receipt.artifacts.iter().any(|a| {
+                a.sha256 == "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+            });
+        let _ = self.ledger.record_receipt(receipt.clone(), is_real);
         self.receipts.push(receipt);
+    }
+
+    /// Executes a tool run via broker, recording the verified receipt into the ledger.
+    pub fn execute_and_record(
+        &mut self,
+        tool_id: &str,
+        request: &BrokerExecutionRequest,
+        cancel_token: &crate::engine::runner::CancellationToken,
+    ) -> ToolExecutionReceipt {
+        let receipt = self.execute(tool_id, request, cancel_token);
+        let is_real = receipt.status != ToolExecutionStatus::NotRun
+            && receipt.status != ToolExecutionStatus::Blocked
+            && receipt.status != ToolExecutionStatus::Cancelled
+            && !receipt.artifacts.is_empty();
+        let _ = self.ledger.record_receipt(receipt.clone(), is_real);
+        self.receipts.push(receipt.clone());
+        receipt
     }
 
     /// Access all execution receipts emitted or recorded by this broker.
@@ -885,6 +1102,136 @@ impl ToolCapabilityBroker {
     /// Clears all recorded execution receipts.
     pub fn clear_receipts(&mut self) {
         self.receipts.clear();
+    }
+
+    // ---------------- Subprocess Runner with Process Group Isolation ----------------
+
+    pub fn run_subprocess(
+        binary: &Path,
+        args: &[String],
+        working_dir: Option<&Path>,
+        timeout_seconds: u64,
+        cancel_token: &crate::engine::runner::CancellationToken,
+        tool_id: &str,
+        snapshot_sha256: &str,
+    ) -> (ToolExecutionStatus, String, u64, Vec<ReceiptArtifact>) {
+        let start = Instant::now();
+        let mut cmd = Command::new(binary);
+        for arg in args {
+            cmd.arg(arg);
+        }
+        if let Some(dir) = working_dir {
+            cmd.current_dir(dir);
+        }
+        cmd.stdout(std::process::Stdio::piped());
+        cmd.stderr(std::process::Stdio::piped());
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            cmd.process_group(0);
+        }
+
+        let mut child = match cmd.spawn() {
+            Ok(c) => c,
+            Err(e) => {
+                let dur = start.elapsed().as_millis() as u64;
+                return (
+                    ToolExecutionStatus::Error,
+                    format!("SPAWN_FAILED: {}", e),
+                    dur,
+                    Vec::new(),
+                );
+            }
+        };
+
+        let pid = child.id();
+        let timeout_dur = Duration::from_secs(timeout_seconds);
+        let poll_interval = Duration::from_millis(20);
+
+        let exit_status = loop {
+            if cancel_token.is_cancelled() {
+                Self::kill_process_group(pid);
+                let _ = child.wait();
+                let dur = start.elapsed().as_millis() as u64;
+                return (ToolExecutionStatus::Cancelled, "CANCELLED".to_string(), dur, Vec::new());
+            }
+
+            if start.elapsed() >= timeout_dur {
+                Self::kill_process_group(pid);
+                let _ = child.wait();
+                let dur = start.elapsed().as_millis() as u64;
+                return (ToolExecutionStatus::Error, "TIMEOUT".to_string(), dur, Vec::new());
+            }
+
+            match child.try_wait() {
+                Ok(Some(status)) => break status,
+                Ok(None) => std::thread::sleep(poll_interval),
+                Err(e) => {
+                    Self::kill_process_group(pid);
+                    let _ = child.wait();
+                    let dur = start.elapsed().as_millis() as u64;
+                    return (ToolExecutionStatus::Error, format!("WAIT_ERROR: {}", e), dur, Vec::new());
+                }
+            }
+        };
+
+        let dur = start.elapsed().as_millis() as u64;
+
+        let mut stdout_bytes = Vec::new();
+        if let Some(mut out) = child.stdout.take() {
+            let _ = out.read_to_end(&mut stdout_bytes);
+        }
+        let mut stderr_bytes = Vec::new();
+        if let Some(mut err) = child.stderr.take() {
+            let _ = err.read_to_end(&mut stderr_bytes);
+        }
+
+        let mut artifacts = Vec::new();
+        if !stdout_bytes.is_empty() {
+            let mut hasher = Sha256::new();
+            hasher.update(&stdout_bytes);
+            let digest = crate::identity::to_hex(hasher.finalize());
+            artifacts.push(ReceiptArtifact {
+                kind: ArtifactKind::RawOutput,
+                sha256: digest,
+                access_class: ArtifactAccessClass::LocalRedacted,
+                storage_ref: Some(format!(
+                    "receipts/{}-{}-stdout.raw",
+                    tool_id,
+                    &snapshot_sha256[..8.min(snapshot_sha256.len())]
+                )),
+            });
+        }
+
+        let (status, reason_code) = if exit_status.success() {
+            (ToolExecutionStatus::Completed, "COMPLETED".to_string())
+        } else if let Some(code) = exit_status.code() {
+            (
+                ToolExecutionStatus::Completed,
+                format!("EXIT_CODE_{}", code),
+            )
+        } else {
+            (
+                ToolExecutionStatus::Error,
+                "PROCESS_TERMINATED_BY_SIGNAL".to_string(),
+            )
+        };
+
+        (status, reason_code, dur, artifacts)
+    }
+
+    fn kill_process_group(pid: u32) {
+        #[cfg(unix)]
+        unsafe {
+            libc::kill(-(pid as i32), libc::SIGKILL);
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .output();
+        }
     }
 
     // ---------------- Builder Helpers for Standard Tools ----------------
@@ -1147,6 +1494,61 @@ impl ToolCapabilityBroker {
             },
             verified_at: now.to_string(),
             notes: vec!["Trivy SCA, SBOM and IaC security scanner".to_string()],
+        }
+    }
+
+    fn build_osv_scanner_capability(&self, binary: Option<&Path>, now: &str) -> ToolCapability {
+        let (installation, engine_version, binary_sha256) = match binary {
+            Some(path) => {
+                let sha = Self::hash_binary(path);
+                let ver = Self::probe_version(path, "--version");
+                (Installation::Available, ver, sha)
+            }
+            None => (Installation::Missing, None, None),
+        };
+
+        ToolCapability {
+            schema_version: "1.0".to_string(),
+            tool_id: "osv-scanner".to_string(),
+            adapter_version: "0.1.0".to_string(),
+            engine_version,
+            binary_sha256,
+            installation,
+            capabilities: ToolCapabilityDetails {
+                kinds: vec![CapabilityKind::Sca, CapabilityKind::Advisory],
+                languages: vec![
+                    "all".to_string(),
+                    "rust".to_string(),
+                    "go".to_string(),
+                    "javascript".to_string(),
+                    "typescript".to_string(),
+                    "python".to_string(),
+                    "java".to_string(),
+                ],
+                asset_types: vec!["package-manifest".to_string(), "lockfile".to_string()],
+                check_ids: vec!["OSV-VULN-CHECK".to_string()],
+                output_formats: vec![OutputFormat::Json],
+                evidence_limit: EvidenceLimit::StronglySupported,
+            },
+            execution: ToolExecutionDetails {
+                transport: ExecutionTransport::Cli,
+                local: true,
+                network_required: true,
+                scoped_permission_classes: vec![
+                    "filesystem:read".to_string(),
+                    "network:egress".to_string(),
+                ],
+                platforms: vec![std::env::consts::OS.to_string()],
+            },
+            governance: ToolGovernanceDetails {
+                license_review: LicenseReview::Approved,
+                entitlement_verified: true,
+                source_export_required: false,
+                cost_model: CostModel::LocalResources,
+                restrictions: Vec::new(),
+            },
+            verified_at: now.to_string(),
+            notes: vec!["Google OSV open-source vulnerability scanner".to_string()],
         }
     }
 
