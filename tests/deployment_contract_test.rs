@@ -248,3 +248,25 @@ fn ci_workflow_includes_completions_drift_check() {
         "CI Full System Build must enforce zero uncommitted drift in completions/"
     );
 }
+
+#[test]
+fn lat_md_skill_is_canonical_in_agents_directory() {
+    let canonical = std::path::Path::new(".agents/skills/lat-md/SKILL.md");
+    assert!(
+        canonical.exists(),
+        ".agents/skills/lat-md/SKILL.md must exist as the canonical skill definition"
+    );
+
+    let mirror = std::path::Path::new("skills/lat-md/SKILL.md");
+    assert!(
+        mirror.exists(),
+        "skills/lat-md/SKILL.md must remain resolvable for host discovery compatibility"
+    );
+
+    let canonical_content = fs::read_to_string(canonical).unwrap();
+    let mirror_content = fs::read_to_string(mirror).unwrap();
+    assert_eq!(
+        canonical_content, mirror_content,
+        "skills/lat-md must be synchronized with canonical .agents/skills/lat-md"
+    );
+}

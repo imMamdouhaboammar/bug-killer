@@ -51,3 +51,9 @@ The root workflow defines a dedicated Python gate executing `ruff check`, `ruff 
 Shell completions for Bash, Zsh, and Fish are maintained as checked-in distribution assets in `completions/`.
 
 Completions are generated dynamically via [[src/completion/mod.rs#CompletionGenerator#generate_completion]] and tested for drift against the committed scripts by `shell_completions_are_fresh_and_match_cli`. The `Makefile` installs them to standard `share` paths, and CI verifies zero uncommitted diff following `make build`.
+
+## Canonical Skill Directory and Lat.md Packaging
+
+Project-specific agent skills reside canonically within the `.agents/skills/` directory.
+
+The `lat-md` skill is authored and maintained under `.agents/skills/lat-md`, with `skills/lat-md` linked directly to eliminate redundant tracked files while preserving discovery on external agent runtimes. Contract verification in `lat_md_skill_is_canonical_in_agents_directory` ensures content synchronization.
