@@ -1,5 +1,8 @@
 # Bug Killer: Verified Novel Vulnerability Discovery
 
+> [!NOTE]
+> **Historical Execution Archive (Tier 3):** This roadmap documents the historical transition to execution-backed verification from 2026-10-26. For active implementation and runtime architecture, consult the [Documentation Map](../docs/DOCUMENTATION_MAP.md) and [lat.md Knowledge Graph](../lat.md/architecture.md).
+
 **Execution roadmap and source-grounded audit**  
 **Prepared:** 2026-10-26  
 **Repository:** https://github.com/imMamdouhaboammar/bug-killer  

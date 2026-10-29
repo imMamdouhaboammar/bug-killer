@@ -1,5 +1,8 @@
 # Bug Killer — Progress Log
 
+> [!NOTE]
+> **Historical Execution Archive (Tier 3):** This session progress log documents the 2026-10-28 planning session. For active implementation and runtime architecture, consult the [Documentation Map](../docs/DOCUMENTATION_MAP.md) and [lat.md Knowledge Graph](../lat.md/architecture.md).
+
 ---
 
 ## Session: 2026-10-28

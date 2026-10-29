@@ -1,5 +1,8 @@
 # BUG KILLER: MASTER UPGRADE PROMPT
 
+> [!NOTE]
+> **Historical Planning Artifact (Tier 3):** This master upgrade prompt is a historical multi-agent role specification from October 2026. For active implementation and runtime architecture, consult the [Documentation Map](../docs/DOCUMENTATION_MAP.md) and [lat.md Knowledge Graph](../lat.md/architecture.md).
+
 ## Repository-first, model-agnostic autonomous defensive security platform
 
 **Target repository:** https://github.com/imMamdouhaboammar/bug-killer  

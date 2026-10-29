@@ -387,3 +387,74 @@ fn deepsec_research_artifacts_are_archived_and_skill_is_functional() {
         "skills/deepsec/SKILL.md must remain available as an operational skill"
     );
 }
+
+#[test]
+fn documentation_hierarchy_and_contracts_are_discoverable() {
+    let doc_map_path = std::path::Path::new("docs/DOCUMENTATION_MAP.md");
+    assert!(
+        doc_map_path.exists(),
+        "docs/DOCUMENTATION_MAP.md must exist as the canonical documentation entrypoint"
+    );
+    let doc_map = fs::read_to_string(doc_map_path).unwrap();
+    assert!(doc_map.contains("Tier 1"));
+    assert!(doc_map.contains("Tier 2"));
+    assert!(doc_map.contains("Tier 3"));
+    assert!(doc_map.contains("Precedence Rule"));
+
+    let readme = fs::read_to_string("README.md").unwrap();
+    assert!(
+        readme.contains("docs/DOCUMENTATION_MAP.md"),
+        "README.md must reference docs/DOCUMENTATION_MAP.md"
+    );
+
+    // Plan directory and disclaimer banners
+    let plan_readme = std::path::Path::new("plan/README.md");
+    assert!(plan_readme.exists());
+    let plan_files = [
+        "plan/Bug-Killer-AI-Generated-Code-Security-Catalog.md",
+        "plan/Bug-Killer-Agentic-Master-Prompt.md",
+        "plan/Bug-Killer-Full-Security-Coverage-Implementation-Plan.md",
+    ];
+    for file in plan_files {
+        let content =
+            fs::read_to_string(file).unwrap_or_else(|_| panic!("Failed reading {}", file));
+        assert!(
+            content.contains("Historical Planning Artifact (Tier 3)"),
+            "{} must contain historical planning disclaimer banner",
+            file
+        );
+    }
+
+    // Novel discovery directory and disclaimer banners
+    let novel_readme = std::path::Path::new("bug-killer-novel-discovery-execution-plan/README.md");
+    assert!(novel_readme.exists());
+    let novel_files = [
+        "bug-killer-novel-discovery-execution-plan/bug-killer-novel-discovery-execution-plan-2026-10-26.md",
+        "bug-killer-novel-discovery-execution-plan/findings.md",
+        "bug-killer-novel-discovery-execution-plan/progress.md",
+        "bug-killer-novel-discovery-execution-plan/task_plan.md",
+    ];
+    for file in novel_files {
+        let content =
+            fs::read_to_string(file).unwrap_or_else(|_| panic!("Failed reading {}", file));
+        assert!(
+            content.contains("Historical Execution Archive (Tier 3)"),
+            "{} must contain historical execution disclaimer banner",
+            file
+        );
+    }
+
+    // Active schemas must be valid JSON
+    let active_schemas = [
+        "bug-killer-ultimate-spec-v1/schemas/finding.schema.json",
+        "bug-killer-ultimate-spec-v1/schemas/tool-capability.schema.json",
+        "bug-killer-ultimate-spec-v1/schemas/tool-execution-receipt.schema.json",
+        "bug-killer-ultimate-spec-v1/schemas/disclosure-packet.schema.json",
+    ];
+    for schema_file in active_schemas {
+        let raw = fs::read_to_string(schema_file)
+            .unwrap_or_else(|_| panic!("Missing schema {}", schema_file));
+        let parsed: Result<serde_json::Value, _> = serde_json::from_str(&raw);
+        assert!(parsed.is_ok(), "Schema {} must be valid JSON", schema_file);
+    }
+}

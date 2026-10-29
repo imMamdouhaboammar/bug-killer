@@ -1,5 +1,8 @@
 # Bug Killer: Full Security Coverage Engine
 
+> [!NOTE]
+> **Historical Planning Artifact (Tier 3):** This document is an initial implementation plan drafted on 2026-10-24. For active implementation and runtime architecture, consult the [Documentation Map](../docs/DOCUMENTATION_MAP.md) and [lat.md Knowledge Graph](../lat.md/architecture.md).
+
 ## Implementation Plan v1.0: Multi-Ecosystem SCA, Evidence-Based SAST, Safe Defensive DAST
 
 **Planning date:** 2026-10-24  

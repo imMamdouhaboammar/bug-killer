@@ -1,5 +1,8 @@
 # Bug Killer: AI-Generated Code Security Issues Catalog
 
+> [!NOTE]
+> **Historical Planning Artifact (Tier 3):** This catalog represents an initial October 2026 taxonomy planning document. For active implementation and runtime architecture, consult the [Documentation Map](../docs/DOCUMENTATION_MAP.md) and [lat.md Knowledge Graph](../lat.md/architecture.md).
+
 **Version:** 1.0 | **Date:** 2026-10-24 | **Type:** Defensive detection requirements / living test catalog  
 **Target:** [bug-killer](https://github.com/imMamdouhaboammar/bug-killer) | **Audience:** Rust/Go scanner implementers, reviewers, CI maintainers, model-agnostic security agents.
 
