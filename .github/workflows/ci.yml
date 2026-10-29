@@ -98,6 +98,16 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y bubblewrap libpcap-dev protobuf-compiler && sudo chmod u+s /usr/bin/bwrap || true
       - name: Full System Build
         run: make build
+      - name: Verify Generated Shell Completion Artifacts
+        run: |
+          test -s target/completions/bug-killer.bash
+          test -s target/completions/_bug-killer
+          test -s target/completions/bug-killer.fish
+          test ! -d completions
+          make install-completions COMPLETION_SHARE="$RUNNER_TEMP/bug-killer-completions"
+          test -s "$RUNNER_TEMP/bug-killer-completions/bash-completion/completions/bug-killer"
+          test -s "$RUNNER_TEMP/bug-killer-completions/zsh/site-functions/_bug-killer"
+          test -s "$RUNNER_TEMP/bug-killer-completions/fish/vendor_completions.d/bug-killer.fish"
       - name: Run Full Test Suite
         run: make test
 

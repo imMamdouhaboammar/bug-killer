@@ -45,3 +45,9 @@ The CI workflow verifies that the final container stage builds cleanly, entrypoi
 The Python CVE intelligence sidecar enforces offline test isolation and linter standards in CI.
 
 The root workflow defines a dedicated Python gate executing `ruff check`, `ruff format --check`, and `pytest` with the `not online` marker. This guarantees that external API dependencies (such as live NVD endpoints) are not required during pull request verification.
+
+## Shell Completion Ownership
+
+The CLI generates shell-specific completion scripts; generated files belong to ignored build outputs rather than the source tree.
+
+The [[src/completion/mod.rs#CompletionGenerator]] implementation remains the source of completion syntax. The [[Makefile]] generates Bash, Zsh, and Fish completions under `target/completions/`; `install-completions` installs them to standard shell discovery directories only when explicitly requested. The build validates these outputs in GitHub Actions.

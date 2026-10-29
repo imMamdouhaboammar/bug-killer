@@ -155,6 +155,19 @@ make lint
 
 To install the resulting executables, choose an appropriate `PREFIX` and run `make install` with write permission to that directory. The Makefile's default is `/usr/local/bin`.
 
+### Shell completions
+
+`make build` generates Bash, Zsh, and Fish completions from the current `bug-killer completion` CLI in ignored `target/completions/`. No generated completion scripts are tracked in Git. Run `make completions` to regenerate them (this builds the Rust CLI first).
+
+To opt in to installing the generated scripts, run `make install-completions PREFIX=/usr/local/bin` with write permission to the destination directories. The default shared installation root is `/usr/local/share`, and `COMPLETION_SHARE=/custom/share` overrides it:
+
+- Bash: `share/bash-completion/completions/bug-killer`
+- Zsh: `share/zsh/site-functions/_bug-killer`
+- Fish: `share/fish/vendor_completions.d/bug-killer.fish`
+
+These are locations relative to the selected shared installation root. Make sure your shell's completion search path includes the corresponding directory. The CLI also supports direct generation without installation: `bk completion bash`, `bk completion zsh`, and `bk completion fish`. Scripts register the `bug-killer` command name; installing `bk` as a binary alias does not automatically rename shell completion registrations.
+
+
 Docker Compose is available for controlled Linux-host deployments. Access to `/var/run/docker.sock` can grant broad host control, even when mounted read-only. Use the service stack only on hosts where that access is explicitly approved.
 
 ## The agentic security room roadmap
