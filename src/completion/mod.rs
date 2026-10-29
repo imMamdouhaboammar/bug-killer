@@ -6,6 +6,14 @@ pub struct CompletionGenerator;
 
 impl CompletionGenerator {
     pub fn generate_completion(shell_name: &str, cmd: &mut Command) -> Result<(), String> {
+        Self::generate_completion_to_writer(shell_name, cmd, &mut io::stdout())
+    }
+
+    pub fn generate_completion_to_writer<W: io::Write>(
+        shell_name: &str,
+        cmd: &mut Command,
+        writer: &mut W,
+    ) -> Result<(), String> {
         let shell = match shell_name.to_lowercase().as_str() {
             "bash" => Shell::Bash,
             "zsh" => Shell::Zsh,
@@ -20,7 +28,7 @@ impl CompletionGenerator {
             }
         };
 
-        generate(shell, cmd, "bug-killer", &mut io::stdout());
+        generate(shell, cmd, "bug-killer", writer);
         Ok(())
     }
 }
