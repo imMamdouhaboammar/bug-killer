@@ -73,3 +73,13 @@ jobs:
         run: make build
       - name: Run Full Test Suite
         run: make test
+
+  lat-knowledge-graph:
+    name: Lat.md Knowledge Graph Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Verify Lat Knowledge Graph
+        run: bunx --bun @lat.md/core check

@@ -1,0 +1,6 @@
+{
+  "name": "lat-md",
+  "version": "1.0.0",
+  "description": "Operational agent skill for launching lat.md, configuring agent hooks and MCP servers, and creating, authoring, and maintaining codebase knowledge graphs (\"creating lats\"). Use when asked to \"launch lat.md\", \"initialize lat.md in this project\", \"create lats\", \"write lat documentation\", \"anchor code with @lat\", \"run lat check\", \"start lat mcp\", or \"build a knowledge graph for this repository\".\n",
+  "license": "MIT"
+}

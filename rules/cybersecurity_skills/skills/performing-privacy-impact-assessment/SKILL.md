@@ -21,7 +21,7 @@ tags:
 - data-flow-mapping
 - risk-scoring
 version: '1.0'
-author: mukul975
+author: mamdouh-boammar
 license: Apache-2.0
 nist_csf:
 - GV.PO-01

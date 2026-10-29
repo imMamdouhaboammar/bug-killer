@@ -8,6 +8,7 @@ pub mod completion;
 pub mod cve_db;
 pub mod dast;
 pub mod deep;
+pub mod deepsec;
 pub mod detectors;
 pub mod disclosure;
 pub mod doctor;

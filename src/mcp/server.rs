@@ -1,7 +1,6 @@
 use crate::catalog::SecurityCatalog;
 use crate::dast::{DastProber, DastScopeConfig};
 use crate::deep::broker::ToolCapabilityBroker;
-use crate::disclosure::draft::{DisclosureDraftBuilder, SafeReproduction};
 use crate::healer::AutopilotHealer;
 use crate::hunter::hypothesis::ThreatHypothesisFamily;
 use crate::mcp::protocol::*;
@@ -21,6 +20,7 @@ pub struct McpServer {
     pub workspace_root: PathBuf,
 }
 
+// @lat: [[mcp#Stdio Protocol Server]]
 impl McpServer {
     pub fn new(workspace_root: PathBuf, read_only: bool) -> Self {
         Self {
@@ -1088,7 +1088,8 @@ impl McpServer {
                 }
                 let status = json!({
                     "run_id": run_id,
-                    "state": "COMPLETED",
+                    "state": "NOT_RUN",
+                    "reason": "RUN_NOT_FOUND",
                     "receipts_count": 0,
                     "receipts": [],
                     "evidence_summary": {
@@ -1134,16 +1135,13 @@ impl McpServer {
                 if candidate_id.is_empty() {
                     return CallToolResult::error_text("candidate_id is required".to_string());
                 }
-                let iterations = args
-                    .get("iterations")
-                    .and_then(Value::as_u64)
-                    .unwrap_or(100);
                 let out = json!({
                     "candidate_id": candidate_id,
-                    "status": "EXECUTED",
-                    "iterations_completed": iterations,
-                    "sandbox_isolation": "CONTAINED",
-                    "crash_detected": false,
+                    "status": "NOT_RUN",
+                    "reason": "EXECUTION_BACKEND_NOT_CONFIGURED",
+                    "iterations_completed": 0,
+                    "sandbox_isolation": "NOT_APPLICABLE",
+                    "crash_detected": null,
                     "reproduction_verified": false
                 });
                 CallToolResult::ok_json(&out)
@@ -1160,10 +1158,11 @@ impl McpServer {
                 }
                 let out = json!({
                     "candidate_id": candidate_id,
-                    "verified": true,
-                    "proof_method": "PROPERTY_INVARIANT",
-                    "isolation_preserved": true,
-                    "confidence": "HIGH"
+                    "verified": false,
+                    "reason": "NO_EXECUTION_EVIDENCE",
+                    "proof_method": null,
+                    "isolation_preserved": null,
+                    "confidence": "UNKNOWN"
                 });
                 CallToolResult::ok_json(&out)
                     .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
@@ -1174,81 +1173,17 @@ impl McpServer {
                 if finding_id.is_empty() {
                     return CallToolResult::error_text("finding_id is required".to_string());
                 }
-                let recipient = args
-                    .get("recipient")
-                    .and_then(Value::as_str)
-                    .unwrap_or("security@vendor.local");
-                let report = FleetScanner::scan_directory(&target_path, false);
-                let matching_finding = report
-                    .findings
-                    .iter()
-                    .find(|f| f.id == finding_id || f.cve.as_str() == finding_id);
-                let dummy_sha = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-                let packet_res = if let Some(f) = matching_finding {
-                    let f_v1 = crate::engine::converter::to_normalized_finding(
-                        f,
-                        "run-mcp-disclosure",
-                        dummy_sha,
-                    );
-                    DisclosureDraftBuilder::from_finding(&f_v1)
-                        .contact_channel(crate::disclosure::draft::ContactChannel {
-                            channel_type: "email".to_string(),
-                            contact_target: recipient.to_string(),
-                            security_policy_url: None,
-                        })
-                        .safe_reproduction(SafeReproduction {
-                            test_type: "offline_regression_test".to_string(),
-                            harness_code: format!("// Defensive test for {}", f.cve.as_str()),
-                            sanitized_input: "defensive_verification_payload".to_string(),
-                            expected_behavior: "Safe handling under defensive security policy"
-                                .to_string(),
-                            observed_behavior: f.description.clone(),
-                        })
-                        .build()
-                } else {
-                    let f_hash = crate::identity::to_hex(Sha256::digest(finding_id.as_bytes()));
-                    DisclosureDraftBuilder::new()
-                        .finding_id(finding_id)
-                        .draft_id(format!("draft-{}", finding_id))
-                        .packet_id(format!("packet-{}", &f_hash[..16]))
-                        .title(format!("Defensive Vulnerability Report: {}", finding_id))
-                        .vulnerability_type("Security Weakness / Vulnerability")
-                        .affected_target(crate::disclosure::draft::AffectedTarget {
-                            package: "workspace-target".to_string(),
-                            commit_range: "HEAD".to_string(),
-                            repository: target_path.display().to_string(),
-                            source_snapshot_sha256: dummy_sha.to_string(),
-                        })
-                        .contact_channel(crate::disclosure::draft::ContactChannel {
-                            channel_type: "email".to_string(),
-                            contact_target: recipient.to_string(),
-                            security_policy_url: None,
-                        })
-                        .safe_reproduction(SafeReproduction {
-                            test_type: "offline_reproduction".to_string(),
-                            harness_code: "// Isolated test harness".to_string(),
-                            sanitized_input: "synthetic_input".to_string(),
-                            expected_behavior: "Safe operation".to_string(),
-                            observed_behavior: "Security invariant violated".to_string(),
-                        })
-                        .build()
-                };
-                match packet_res {
-                    Ok(packet) => {
-                        let markdown = packet.to_github_pvr_markdown();
-                        let out = json!({
-                            "finding_id": finding_id,
-                            "draft_packet": packet,
-                            "github_pvr_markdown": markdown,
-                        });
-                        CallToolResult::ok_json(&out)
-                            .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
-                    }
-                    Err(e) => CallToolResult::error_text(format!(
-                        "Failed to build disclosure draft: {:?}",
-                        e
-                    )),
-                }
+                // A finding ID alone supplies neither a verified source snapshot
+                // nor reproduction evidence. Never manufacture either for a PVR.
+                let out = json!({
+                    "finding_id": finding_id,
+                    "status": "NOT_RUN",
+                    "reason": "VERIFIED_REPRODUCTION_REQUIRED",
+                    "draft_packet": null,
+                    "github_pvr_markdown": null
+                });
+                CallToolResult::ok_json(&out)
+                    .unwrap_or_else(|e| CallToolResult::error_text(e.to_string()))
             }
 
             "bugkiller_inventory" => {

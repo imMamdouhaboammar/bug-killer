@@ -1,0 +1,14 @@
+{
+  "$schema": "https://skills.sh/schema.json",
+  "name": "deepsec",
+  "version": "1.0.0",
+  "description": "Autonomous DeepSec security review and triage skill for AI agents",
+  "author": "Mamdouh Aboammar",
+  "license": "MIT",
+  "skill": "SKILL.md",
+  "tags": [
+    "agent-skill",
+    "automation",
+    "developer-tools"
+  ]
+}

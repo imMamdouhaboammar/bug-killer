@@ -19,7 +19,7 @@ tags:
 - passwordless-authentication
 - CTAP2
 version: 1.0.0
-author: mukul975
+author: mamdouh-boammar
 license: Apache-2.0
 atlas_techniques:
 - AML.T0051

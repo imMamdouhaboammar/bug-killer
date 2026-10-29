@@ -11,7 +11,7 @@
     - SACL audit rules for detection
 
 .NOTES
-    Author: mukul975
+    Author: mamdouh-boammar
     Version: 1.0
     References:
         - Trimarc Security: The Art of the Honeypot Account

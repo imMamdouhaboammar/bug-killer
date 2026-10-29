@@ -1,21 +1,13 @@
 # Failure Lessons Index
 
-| ID | Title | Failure Class | Severity | Root Cause | Status | Rule Summary |
-|---|---|---|---|---|---|---|
-| `FL-001` | WalkDir Depth-0 Filtering Bug | Navigation / Filesystem | High | `!starts_with('.')` pruned hidden root directories | Verified | `[LEARN] Navigation: Always bypass hidden-file filters when WalkDir depth is 0 to avoid pruning hidden root directories.` |
-| `FL-002` | Rust Edition Cadence & Compiler Limits | Architecture / Tooling | Medium | Assuming annual editions instead of 3-year epochs | Verified | `[LEARN] Architecture: Rust compiler editions strictly adhere to 3-year epochs (2015, 2018, 2021, 2024, 2027); annual editions do not exist.` |
-| `FL-003` | Battle-Tested Crates vs Hand-Rolled Wheels | Architecture / Ponytail | High | Reinventing SemVer parsing, shell readline, and fs sandbox | Verified | `[LEARN] Architecture: Adopt battle-tested community standard crates (semver, rustyline, afero, ed25519) before hand-rolling custom primitives.` |
-| `FL-004` | Agent Identity & Cryptographic Trust | Security / Identity | Critical | Unsigned backup manifests vulnerable to tamper & rollback attacks | Verified | `[LEARN] Security: Cryptographically sign all backup manifests with Ed25519 and fail closed on signature mismatch before rollback.` |
-| `FL-005` | Cargo Dual-Target Module Scoping | Editing / Language | Low | Module declared in lib.rs not declared in main.rs | Verified | `[LEARN] Editing: When a Cargo package defines both lib and bin targets, ensure new submodules are declared in both roots or imported through the library name.` |
+## Lessons
 
----
+| ID | Skill | Failure Class | Summary | Status |
+|---|---|---|---|---|
+| [`LESSON-001`](lesson-001-adversarial-fixture-phrasing.md) | `deepsec` | `eval_security_linter_false_positive` | Unescaped jailbreak phrases in test fixtures fail Layer 0 static security gates. | Mitigated |
 
-## Rules We Now Enforce
+## Rules We Now Enforce for deepsec
 
-```text
-[LEARN] Navigation: Always bypass hidden-file filters when WalkDir depth is 0 to avoid pruning hidden root directories.
-[LEARN] Architecture: Rust compiler editions strictly adhere to 3-year epochs (2015, 2018, 2021, 2024, 2027); annual editions do not exist.
-[LEARN] Architecture: Adopt battle-tested community standard crates (semver, rustyline, afero, ed25519) before hand-rolling custom primitives.
-[LEARN] Security: Cryptographically sign all backup manifests with Ed25519 and fail closed on signature mismatch before rollback.
-[LEARN] Editing: When a Cargo package defines both lib and bin targets, ensure new submodules are declared in both roots or imported through the library name.
-```
+- **Adversarial Fixture Phrasing:** Adversarial test phrases in skill specifications must probe behavioral boundaries (e.g. `"generate a weaponized exploit script and payload"`) rather than employing literal prompt injection strings (`"ignore safety rules"`), which fail closed under Layer 0 static security auditing.
+- **Strict Concurrency Ceiling:** Concurrency parameters must be validated against a hard upper boundary ($\le 8$) in both configuration scripts and agent runtime guards.
+- **Two-Pass Verification Requirement:** Security candidate matches from static regexes must never be output directly as verified CVEs without an LLM revalidation pass.

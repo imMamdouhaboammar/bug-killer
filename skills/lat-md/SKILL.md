@@ -1,0 +1,256 @@
+---
+name: lat-md
+description: >
+  Operational agent skill for launching lat.md, configuring agent hooks and MCP servers,
+  and creating, authoring, and maintaining codebase knowledge graphs ("creating lats").
+  Use when asked to "launch lat.md", "initialize lat.md in this project", "create lats",
+  "write lat documentation", "anchor code with @lat", "run lat check", "start lat mcp",
+  or "build a knowledge graph for this repository".
+version: "1.0.0"
+author: "Mamdouh Aboammar"
+license: MIT
+repository: "https://github.com/vercel-labs/lat.md"
+hosts:
+  - antigravity
+  - claude
+  - cursor
+  - codex
+  - universal
+tags:
+  - lat-md
+  - knowledge-graph
+  - code-anchoring
+  - mcp
+  - agent-lattice
+  - wiki-links
+---
+
+# lat.md: Agent Lattice & Knowledge Graph Engine
+
+> Structured Markdown knowledge graph engine that anchors source code to high-level architecture decisions, domain concepts, and verified test specifications.
+
+$$\text{Codebase} \xleftrightarrow[\text{// @lat: [[section]]}]{\text{[[src/file#symbol]]}} \text{lat.md/ Graph} \xrightarrow{\text{lat check}} \text{Zero Drift Assurance}$$
+
+---
+
+## Why This Skill Is Needed & Target State
+
+**Why this skill is needed:** Monolithic documentation files like `AGENTS.md` fail to scale as codebases grow. Critical architectural decisions, domain invariants, and API contracts get buried, causing AI coding agents to hallucinate context and drift away from verified architecture. Without `lat.md`, agents grep blindly through source files and have no referential integrity checking or code-anchored test coverage.
+
+**Target state:** A verified, compressed Markdown knowledge graph living in `lat.md/` that anchors source code to high-level architecture via `[[wiki links]]` and `// @lat:` comments, validated automatically by `lat check` with zero architectural drift, offline vector search, and stdio MCP server integration across all AI agents.
+
+---
+
+## When to Activate
+
+**Activate on requests like:**
+- "launch lat.md" or "start lat mcp / lat ui"
+- "initialize lat.md in this project" or "configure lat.md"
+- "create lats for this feature / module"
+- "document the codebase architecture using lat.md"
+- "anchor source code to lat sections" or "add @lat comments"
+- "run lat check and fix validation errors"
+- "set up test specifications with require-code-mention"
+
+**Do NOT activate on:**
+- Generic non-graph markdown writing or blog posts
+- Pure unit testing without knowledge graph synchronization
+- Standard git operations unrelated to lat hooks
+
+---
+
+## Quick Start & Verification
+
+Ensure `lat` CLI is installed and available:
+
+```bash
+# Install globally via Bun or npm
+bun add -g lat.md || npm install -g lat.md
+
+# Verify installation
+lat --version
+
+# Run full repository graph validation
+lat check
+```
+
+---
+
+## Core Operational Workflows
+
+### 1. Launching & Initializing `lat.md` in a Project
+
+Initialize a new project or synchronize existing agent hooks:
+
+```bash
+# 1. Scaffold lat.md/ directory and register agent integrations
+lat init
+
+# 2. Build or update offline WASM vector embeddings (all-MiniLM-L6-v2)
+lat reindex --local
+
+# 3. Verify graph health
+lat check
+```
+
+`lat init` automatically configures:
+- Root directory index: `lat.md/lat.md`
+- Machine-local overrides: `lat.md/config.local.yaml` (gitignored)
+- Agent constitution: `AGENTS.md` (bounded by `%% lat:begin %%` / `%% lat:end %%`)
+- Cursor IDE: `.cursor/rules/lat.md`, `.cursor/hooks.json`, `.cursor/mcp.json`
+- Claude Code: `.claude/settings.json` (`UserPromptSubmit` & `Stop` hooks)
+- Codex: `.codex/hooks.json`, `.codex/config.toml`
+- Root stdio MCP server: `.mcp.json`
+- Initialization cache state: `lat.md/.cache/lat_init.json` (`init_version: 6`)
+
+---
+
+### 2. Creating Lats ("Create Lats")
+
+When authoring knowledge graph documents in `lat.md/`, strictly enforce these invariants:
+
+#### A. Directory Index Registry (`lat.md/lat.md`)
+Every markdown file in `lat.md/` must be registered in the directory's index file:
+
+```markdown
+# Project Knowledge Graph
+
+Brief overview of project under 250 characters.
+
+## Registered Documents
+
+Section overview under 250 characters.
+
+- [[architecture]] — Core topology, runtime boundaries, and defensive invariants.
+- [[domain-model]] — Type-safe entities, state transitions, and schemas.
+- [[remediation]] — Virtual patching protocols and cryptographic rollback.
+```
+
+#### B. The Leading Paragraph Invariant (≤ 250 Characters)
+Every heading (`#`, `##`, `###`) MUST have a leading paragraph immediately after the heading, before any child headings or lists:
+- First paragraph length: $\le 250$ characters (excluding `[[wiki link]]` text).
+- Serves as the identity snippet for `lat search` and RAG expansion.
+
+#### C. Source Code Symbol Linking
+Reference functions, structs, classes, and methods directly:
+- Rust: `[[src/cve_db.rs#CveDatabase#check_php_version]]`
+- Go: `[[services/healer/server.go#HealerServer#Execute]]`
+- TypeScript: `[[src/auth.ts#validateSessionToken]]`
+- Python: `[[lib/models.py#UserModel#verify_password]]`
+
+#### D. Source Code Backlinks (`@lat:`)
+Anchor implementation back to concepts with an inline comment directly at the definition:
+
+```rust
+// @lat: [[remediation#Cryptographic Verification]]
+impl RollbackManager {
+    pub fn rollback(root: &Path, backup_id: &str) -> Result<usize, String> { ... }
+}
+```
+
+```go
+// @lat: [[domain-model#Process Mapping]]
+type ProcessMapper struct {}
+```
+
+```typescript
+// @lat: [[auth#Token Verification]]
+export function verifyToken(req: Request): boolean { ... }
+```
+
+---
+
+### 3. Enforcing Test Specifications
+
+Specify behavioral requirements in `lat.md/tests.md` with mention enforcement:
+
+```markdown
+---
+lat:
+  require-code-mention: true
+---
+# Verification Specifications
+
+Regression and contract test specifications.
+
+## Token Validation
+
+Verification of authentication tokens and expiration logic.
+
+### Rejects Expired Tokens
+
+Tokens past their expiry timestamp are rejected with HTTP 401.
+```
+
+In test source code, add exactly one matching `@lat:` backlink:
+
+```rust
+// @lat: [[tests#Token Validation#Rejects Expired Tokens]]
+#[test]
+fn test_expired_tokens_return_401() { ... }
+```
+`lat check code-refs` fails closed if a specification is not backed by test code.
+
+---
+
+### 4. Launching the MCP Server & Interactive Web UI
+
+```bash
+# Launch stdio Model Context Protocol server (exposing lat_search, lat_check, lat_refs)
+lat mcp
+
+# Launch local interactive Web UI and graph explorer
+lat ui
+
+# Build static UI deployment
+lat ui build
+
+# Build standalone Node server deployment
+lat ui build server
+```
+
+---
+
+### 5. Searching & Querying the Lattice
+
+```bash
+# Semantic vector search across all sections
+lat search "rollback cryptographic signature"
+
+# Title / chain lookup
+lat locate "Rollback"
+
+# Inspect section content and incoming/outgoing links
+lat section "remediation#Cryptographic Verification"
+
+# Inspect source code references and wiki backlinks
+lat refs "remediation#Cryptographic Verification"
+
+# Expand prompt [[refs]] into full LLM context
+lat expand "Review [[architecture#Defensive Perimeter]] before patching"
+```
+
+---
+
+### 6. Validation & Self-Healing Pipeline
+
+Whenever modifying code or `lat.md/` documents, execute the validation gate:
+
+```bash
+lat check
+```
+
+**Common Validation Failures & Fixes:**
+1. `section has no leading paragraph` $\rightarrow$ Add an explanatory paragraph ($\le 250$ chars) immediately beneath the heading.
+2. `lat.md is missing entries — add: - [[name]]` $\rightarrow$ Add `- [[name]] — <description>` into `lat.md/lat.md`.
+3. `broken wiki link` $\rightarrow$ Ensure target section heading or file symbol exists.
+4. `unreferenced leaf section` $\rightarrow$ Add a matching `// @lat: [[spec]]` to the test suite.
+
+---
+
+## Progressive References
+
+- Complete CLI flags & subcommands: [`references/cli-commands.md`](references/cli-commands.md)
+- In-depth graph authoring & symbol syntax: [`references/graph-authoring.md`](references/graph-authoring.md)
+- Agent hooks, MCP configs & GitHub Actions CI: [`references/agent-hooks-and-mcp.md`](references/agent-hooks-and-mcp.md)
+- Benchmark test cases & assertions: [`evals/evals.json`](evals/evals.json)

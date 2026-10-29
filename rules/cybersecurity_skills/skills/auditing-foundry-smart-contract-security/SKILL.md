@@ -27,7 +27,7 @@ tags:
 version: "1.0"
 author: devredious
 license: Apache-2.0
-based_on: mukul975/analyzing-ethereum-smart-contract-vulnerabilities
+based_on: mamdouh-boammar/analyzing-ethereum-smart-contract-vulnerabilities
 swc_registry: https://swcregistry.io/
 mitre_attack:
   - T1190

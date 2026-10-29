@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/claude-plugin-manifest.json",
+  "name": "deepsec",
+  "displayName": "Deepsec",
+  "version": "1.0.0",
+  "description": "Autonomous DeepSec security review and triage skill for AI agents",
+  "author": {
+    "name": "Mamdouh Aboammar"
+  },
+  "homepage": "https://skills.sh/deepsec",
+  "license": "MIT",
+  "categories": [
+    "automation",
+    "developer-tools",
+    "agent-tools"
+  ],
+  "compatibility": {
+    "claudeCode": ">=1.0.0",
+    "claudeDesktop": ">=1.0.0",
+    "cursor": ">=0.40.0",
+    "codex": ">=0.1.0",
+    "opencode": ">=1.0.0",
+    "antigravity": ">=1.0.0"
+  },
+  "entrypoint": "SKILL.md",
+  "bin": {
+    "deepsec": "./bin/cli.js"
+  }
+}

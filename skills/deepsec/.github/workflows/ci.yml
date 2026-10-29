@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Verify Placeholder CLI Fails Closed
+        run: |
+          if bun ./bin/cli.js; then
+            echo "Placeholder CLI must not advertise a successful execution" >&2
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate SKILL.md
+        run: |
+          python3 -c "
+          content = open('SKILL.md').read()
+          assert content.startswith('---'), 'Missing YAML frontmatter'
+          assert 'name:' in content, 'Missing name'
+          print('✅ SKILL.md validated successfully!')
+          "

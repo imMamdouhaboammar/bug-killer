@@ -30,6 +30,7 @@ fn hash_directory_files(root: &Path) -> HashMap<String, String> {
     file_hashes
 }
 
+// @lat: [[tests#Safety Boundaries#Scan Is Strictly Read-Only]]
 #[test]
 fn test_m0_scan_is_strictly_read_only_and_preserves_hashes() {
     let dir = tempdir().unwrap();
@@ -185,6 +186,7 @@ require('child_process').exec(cmd);
     assert_eq!(fs::read_to_string(&js_file).unwrap(), original_js);
 }
 
+// @lat: [[tests#Safety Boundaries#Incomplete Coverage Is Not Clean]]
 #[test]
 fn test_m0_characterization_incomplete_coverage_is_not_clean() {
     let dir = tempdir().unwrap();

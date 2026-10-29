@@ -23,7 +23,7 @@ tags:
 - dependency-confusion
 - malicious-packages
 version: 1.0.0
-author: mukul975
+author: mamdouh-boammar
 license: Apache-2.0
 nist_csf:
 - GV.SC-01
