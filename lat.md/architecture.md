@@ -69,3 +69,9 @@ The `omni-skill` and `skill-conductor` packages are independently packaged skill
 Historical reverse-engineering and upstream research artifacts are archived under `docs/research/`.
 
 Clean-room audits and design artifacts previously residing in `replica/` and `docs/repo-scan-report.md` are archived in `docs/research/deepsec/` with explicit upstream provenance labels. This physical separation prevents third-party source measurements (such as `vercel-labs/deepsec`) from being conflated with Bug Killer implementation metrics, while keeping operational skills in `skills/deepsec/` fully functional as enforced by `deepsec_research_artifacts_are_archived_and_skill_is_functional` in [[tests/deployment_contract_test.rs]].
+
+## Documentation Architecture and Precedence Hierarchy
+
+Documentation is categorized into a three-tier hierarchy separating live behavior, accepted contracts, and historical plans.
+
+The repository establishes [[docs/DOCUMENTATION_MAP.md]] as the authoritative map. Tier 1 encompasses live operational documentation such as `README.md`, [[docs/OPERATOR_GUIDE.md]], and `lat.md/`. Tier 2 defines accepted architectural specifications, JSON schemas, and golden fixtures under `bug-killer-ultimate-spec-v1/`. Tier 3 archives historical milestone execution records under `plan/`, `bug-killer-novel-discovery-execution-plan/`, and `docs/research/`, where disclaimer banners prevent historical drafts from being misconstrued as shipped behavior. Contract test `documentation_hierarchy_and_contracts_are_discoverable` in [[tests/deployment_contract_test.rs]] guarantees all navigational links, schema fixtures, and milestone disclaimers remain intact.

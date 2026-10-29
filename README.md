@@ -191,6 +191,7 @@ The architecture is deliberately incremental. A registered tool, a catalog entry
 - [Operations-room architecture and integration decisions](bug-killer-ultimate-spec-v1/14-AGENTIC-SECURITY-OPERATIONS-ROOM.md)
 - [Milestones and implementation gates](bug-killer-ultimate-spec-v1/10-IMPLEMENTATION-PLAN.md)
 - [Benchmarks and verification requirements](bug-killer-ultimate-spec-v1/11-TESTING-BENCHMARKS-AND-RELEASE.md)
+- [Documentation Architecture & Canonical Hierarchy Map](docs/DOCUMENTATION_MAP.md)
 
 ## Development and verification
 

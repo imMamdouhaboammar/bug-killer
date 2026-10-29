@@ -1,5 +1,8 @@
 # Bug Killer — Novel Discovery Engine: Task Plan
 
+> [!NOTE]
+> **Historical Execution Archive (Tier 3):** This task plan tracks the historical execution cards for the BK-ND milestone. For active implementation and runtime architecture, consult the [Documentation Map](../docs/DOCUMENTATION_MAP.md) and [lat.md Knowledge Graph](../lat.md/architecture.md).
+
 **Project:** https://github.com/imMamdouhaboammar/bug-killer  
 **Baseline commit:** `06b24f2d9328de4d55868519f59e8591afbe9781`  
 **Plan version:** 1.0.0  
