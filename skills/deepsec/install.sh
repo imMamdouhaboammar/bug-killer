@@ -14,10 +14,12 @@ if [ -d "$HOME/.claude" ] || command -v claude >/dev/null 2>&1; then
 fi
 
 if [ -d "$HOME/.gemini" ]; then
-  mkdir -p "$HOME/.gemini/config/skills"
-  rm -rf "$HOME/.gemini/config/skills/${TARGET_NAME}"
-  cp -r "$SCRIPT_DIR" "$HOME/.gemini/config/skills/${TARGET_NAME}"
-  echo "  ✅ Installed for Antigravity / Gemini CLI -> $HOME/.gemini/config/skills/${TARGET_NAME}"
+  GEMINI_ROOT="$HOME/.gemini"
+  GEMINI_TARGET="${GEMINI_ROOT}/config/skills"
+  mkdir -p "${GEMINI_TARGET}"
+  rm -rf "${GEMINI_TARGET}/${TARGET_NAME}"
+  cp -r "$SCRIPT_DIR" "${GEMINI_TARGET}/${TARGET_NAME}"
+  echo "  ✅ Installed for Antigravity / Gemini CLI -> ${GEMINI_TARGET}/${TARGET_NAME}"
 fi
 
 if [ -d "$HOME/.codex" ]; then

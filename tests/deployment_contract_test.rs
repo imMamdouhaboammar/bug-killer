@@ -342,3 +342,48 @@ fn omni_skill_and_skill_conductor_shared_assets_are_synchronized() {
         );
     }
 }
+
+#[test]
+fn deepsec_research_artifacts_are_archived_and_skill_is_functional() {
+    assert!(
+        !std::path::Path::new("replica").exists(),
+        "The legacy 'replica/' directory must be removed in favor of docs/research/deepsec/"
+    );
+    assert!(
+        !std::path::Path::new("docs/repo-scan-report.md").exists(),
+        "docs/repo-scan-report.md must be relocated to docs/research/deepsec/upstream-scan-report.md"
+    );
+
+    let research_root = std::path::Path::new("docs/research/deepsec");
+    assert!(
+        research_root.exists(),
+        "docs/research/deepsec must exist for archival clean-room documentation"
+    );
+
+    let expected_artifacts = [
+        "upstream-scan-report.md",
+        "recon.md",
+        "architecture.md",
+        "feedback.md",
+        "fixes.md",
+        "features.csv",
+        "design/components.md",
+        "design/tokens.css",
+        "design/tokens.json",
+    ];
+
+    for artifact in expected_artifacts {
+        let p = research_root.join(artifact);
+        assert!(
+            p.exists(),
+            "Expected archived research artifact missing: {}",
+            p.display()
+        );
+    }
+
+    let skill_manifest = std::path::Path::new("skills/deepsec/SKILL.md");
+    assert!(
+        skill_manifest.exists(),
+        "skills/deepsec/SKILL.md must remain available as an operational skill"
+    );
+}
