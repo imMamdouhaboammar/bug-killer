@@ -75,3 +75,10 @@ Clean-room audits and design artifacts previously residing in `replica/` and `do
 Documentation is categorized into a three-tier hierarchy separating live behavior, accepted contracts, and historical plans.
 
 The repository establishes [[docs/DOCUMENTATION_MAP.md]] as the authoritative map. Tier 1 encompasses live operational documentation such as `README.md`, [[docs/OPERATOR_GUIDE.md]], and `lat.md/`. Tier 2 defines accepted architectural specifications, JSON schemas, and golden fixtures under `bug-killer-ultimate-spec-v1/`. Tier 3 archives historical milestone execution records under `plan/`, `bug-killer-novel-discovery-execution-plan/`, and `docs/research/`, where disclaimer banners prevent historical drafts from being misconstrued as shipped behavior. Contract test `documentation_hierarchy_and_contracts_are_discoverable` in [[tests/deployment_contract_test.rs]] guarantees all navigational links, schema fixtures, and milestone disclaimers remain intact.
+
+## Modular CLI Subcommand Architecture
+
+Command line execution and argument dispatch are partitioned into modular domain handlers.
+
+The entrypoint [[src/main.rs]] is a minimal runner delegating to [[src/cli/mod.rs#run]]. Subcommand parsing, argument definitions, and exit-code semantics are declared in [[src/cli/mod.rs#Cli]] and routed across focused handler modules in `src/cli/handlers/` (`diagnostics`, `scan`, `healer`, `security`, `agent`, `engine`, `hunter`, `disclosure`, `advisory`, `deepsec`). This modularization eliminates duplicated module compilation between binary and library targets, maintaining sub-second incremental builds and test isolation.
+

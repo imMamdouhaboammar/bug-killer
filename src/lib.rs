@@ -4,6 +4,7 @@ pub mod advisory;
 pub mod agent;
 pub mod benchmark;
 pub mod catalog;
+pub mod cli;
 pub mod completion;
 pub mod cve_db;
 pub mod dast;
