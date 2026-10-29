@@ -39,3 +39,9 @@ The orchestrator publishes the coverage ledger atomically via [[services/orchest
 Container distribution builds the multi-stage image independently from native host toolchains.
 
 The CI workflow verifies that the final container stage builds cleanly, entrypoints execute safely under an unprivileged user, and all runtime service binaries exist without requiring privileged Docker socket mounts.
+
+## Python CVE MCP Quality Gate
+
+The Python CVE intelligence sidecar enforces offline test isolation and linter standards in CI.
+
+The root workflow defines a dedicated Python gate executing `ruff check`, `ruff format --check`, and `pytest` with the `not online` marker. This guarantees that external API dependencies (such as live NVD endpoints) are not required during pull request verification.

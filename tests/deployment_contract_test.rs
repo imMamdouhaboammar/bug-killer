@@ -159,3 +159,26 @@ fn ci_workflow_includes_docker_build_and_smoke_gate() {
         "CI smoke gate must not mount host docker socket"
     );
 }
+
+#[test]
+fn ci_workflow_includes_python_cve_mcp_quality_gate() {
+    let ci = fs::read_to_string(".github/workflows/ci.yml").unwrap();
+    assert!(
+        ci.contains("test-python:"),
+        "CI must define a test-python job"
+    );
+    assert!(
+        ci.contains("services/cve-mcp-server"),
+        "Python gate must target services/cve-mcp-server"
+    );
+    assert!(ci.contains("ruff check"), "Python gate must run ruff check");
+    assert!(ci.contains("pytest"), "Python gate must run pytest");
+    assert!(
+        ci.contains("not online"),
+        "Python gate must filter for offline execution"
+    );
+    assert!(
+        ci.contains("needs: [test-rust, test-go, test-python]"),
+        "E2E integration must depend on test-python"
+    );
+}

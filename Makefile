@@ -30,7 +30,7 @@ build-go:
 	@echo "==> Building Go Healer..."
 	cd services/healer && go build -o ../../target/bug-killer-healer .
 
-test: test-rust test-go
+test: test-rust test-go test-python
 
 test-rust:
 	@echo "==> Running Rust Test Suites..."
@@ -43,12 +43,17 @@ test-go:
 	cd services/orchestrator && go test -v ./...
 	cd services/healer && go test -v ./...
 
+test-python:
+	@echo "==> Running Python CVE MCP Test Suites..."
+	@if command -v pytest >/dev/null 2>&1; then cd services/cve-mcp-server && pytest -m "not online" -v; elif command -v uv >/dev/null 2>&1; then cd services/cve-mcp-server && uv run --extra test pytest -m "not online" -v; else echo "pytest not found; skipping python tests"; fi
+
 lint:
 	@echo "==> Running Linters..."
 	cargo clippy --workspace --all-targets -- -D warnings
 	cd services/inspector && cargo clippy --all-targets -- -D warnings
 	cd services/orchestrator && go vet ./...
 	cd services/healer && go vet ./...
+	@if command -v ruff >/dev/null 2>&1; then cd services/cve-mcp-server && ruff check . && ruff format --check .; elif command -v uv >/dev/null 2>&1; then cd services/cve-mcp-server && uv run --with ruff ruff check . && uv run --with ruff ruff format --check .; fi
 	@if command -v lat >/dev/null 2>&1; then echo "==> Running Lat.md Check..."; lat check; fi
 
 install: build
