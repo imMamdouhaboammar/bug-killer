@@ -270,3 +270,75 @@ fn lat_md_skill_is_canonical_in_agents_directory() {
         "skills/lat-md must be synchronized with canonical .agents/skills/lat-md"
     );
 }
+
+#[test]
+fn omni_skill_and_skill_conductor_shared_assets_are_synchronized() {
+    let shared_assets = [
+        "agents/analyzer.md",
+        "agents/bineval.md",
+        "agents/comparator.md",
+        "agents/grader.md",
+        "assets/eval_review.html",
+        "eval-viewer/generate_review.py",
+        "eval-viewer/viewer.html",
+        "references/bineval-method.md",
+        "references/patterns.md",
+        "references/pressure-testing.md",
+        "references/quality-questions.md",
+        "references/schemas.md",
+        "references/sop-practices.md",
+        "scripts/aggregate_benchmark.py",
+        "scripts/eval_skill.py",
+        "scripts/generate_report.py",
+        "scripts/improve_description.py",
+        "scripts/init_skill.py",
+        "scripts/package_skill.py",
+        "scripts/quick_validate.py",
+        "scripts/run_eval.py",
+        "scripts/run_loop.py",
+        "scripts/split_evals.py",
+        "scripts/test_smoke.py",
+        "scripts/utils.py",
+    ];
+
+    let omni_root = std::path::Path::new(".agents/skills/omni-skill");
+    let conductor_root = std::path::Path::new(".agents/skills/skill-conductor");
+
+    assert!(
+        omni_root.join("SKILL.md").exists(),
+        "omni-skill SKILL.md must exist"
+    );
+    assert!(
+        conductor_root.join("SKILL.md").exists(),
+        "skill-conductor SKILL.md must exist"
+    );
+
+    for asset in shared_assets {
+        let omni_path = omni_root.join(asset);
+        let conductor_path = conductor_root.join(asset);
+
+        assert!(
+            omni_path.exists(),
+            "omni-skill is missing expected shared asset: {}",
+            asset
+        );
+        assert!(
+            conductor_path.exists(),
+            "skill-conductor is missing expected shared asset: {}",
+            asset
+        );
+
+        let omni_bytes = fs::read(&omni_path).unwrap_or_else(|e| {
+            panic!("failed reading {}: {}", omni_path.display(), e);
+        });
+        let conductor_bytes = fs::read(&conductor_path).unwrap_or_else(|e| {
+            panic!("failed reading {}: {}", conductor_path.display(), e);
+        });
+
+        assert_eq!(
+            omni_bytes, conductor_bytes,
+            "Shared skill asset '{}' has diverged between omni-skill and skill-conductor. Both must remain synchronized.",
+            asset
+        );
+    }
+}
