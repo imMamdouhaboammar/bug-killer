@@ -83,3 +83,44 @@ jobs:
         uses: oven-sh/setup-bun@v2
       - name: Verify Lat Knowledge Graph
         run: bunx --bun @lat.md/core check
+
+  docker-smoke:
+    name: Docker Build & Smoke Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker Final Stage
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: final
+          load: true
+          tags: bug-killer:smoke
+      - name: Run CLI Entrypoint Smoke Test (Read-only)
+        run: |
+          echo "==> Testing default CLI --version..."
+          docker run --rm bug-killer:smoke --version
+          echo "==> Testing default CLI --help..."
+          docker run --rm bug-killer:smoke --help
+      - name: Verify Runtime Binaries and Permissions
+        run: |
+          echo "==> Verifying binary presence..."
+          docker run --rm --entrypoint /bin/sh bug-killer:smoke -c "
+            test -x /app/bug-killer || exit 1
+            test -x /app/bk || exit 1
+            test -x /app/bug-killer-inspector || exit 1
+            test -x /app/bug-killer-orchestrator || exit 1
+            test -x /app/bug-killer-healer || exit 1
+            echo '[+] All expected service binaries exist and are executable'
+          "
+      - name: Verify Unprivileged Runtime Execution
+        run: |
+          UID_VAL=$(docker run --rm --entrypoint /usr/bin/id bug-killer:smoke -u)
+          if [ "$UID_VAL" -eq 0 ]; then
+            echo "[-] Error: Container unexpectedly running as root (UID 0)"
+            exit 1
+          fi
+          echo "[+] Verified unprivileged runtime user UID: $UID_VAL"
