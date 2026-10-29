@@ -82,3 +82,9 @@ Command line execution and argument dispatch are partitioned into modular domain
 
 The entrypoint [[src/main.rs]] is a minimal runner delegating to [[src/cli/mod.rs#run]]. Subcommand parsing, argument definitions, and exit-code semantics are declared in [[src/cli/mod.rs#Cli]] and routed across focused handler modules in `src/cli/handlers/` (`diagnostics`, `scan`, `healer`, `security`, `agent`, `engine`, `hunter`, `disclosure`, `advisory`, `deepsec`). This modularization eliminates duplicated module compilation between binary and library targets, maintaining sub-second incremental builds and test isolation.
 
+## Modular MCP Typed Registry
+
+The Model Context Protocol server utilizes a typed registry pattern to eliminate schema and dispatch duplication.
+
+All 32 MCP tools are declared as [[src/mcp/registry.rs#McpToolRegistration]] entries partitioned across domain modules in `src/mcp/tools/` (`cve`, `probe`, `core`, `guard`, `operations`). Each tool specifies its name, description, JSON schema, and execution handler in a single source location. Tool listing via [[src/mcp/registry.rs#all_tools]] and tool execution via [[src/mcp/registry.rs#dispatch]] share this unified registry, while [[src/mcp/server.rs#McpServer]] handles JSON-RPC transport and workspace validation. Parity and security boundaries are enforced by `tests/mcp_registry_parity_test.rs`.
+

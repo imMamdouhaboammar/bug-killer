@@ -1,6 +1,8 @@
 pub mod host_config;
 pub mod protocol;
+pub mod registry;
 pub mod server;
+pub mod tools;
 
 pub use host_config::HostConfigGenerator;
 #[allow(unused_imports)]
