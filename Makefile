@@ -2,6 +2,7 @@
 
 TARGET_DIR := ./target
 PREFIX ?= /usr/local/bin
+SHARE_PREFIX ?= /usr/local/share
 
 all: build test
 
@@ -66,6 +67,11 @@ install: build
 	install -m 755 scripts/bk-triage.sh $(PREFIX)/bk-triage
 	install -m 755 scripts/bk-watch.sh $(PREFIX)/bk-watch
 	ln -sf $(PREFIX)/bug-killer $(PREFIX)/bk
+	@echo "==> Installing shell completions..."
+	@mkdir -p $(DESTDIR)$(SHARE_PREFIX)/bash-completion/completions $(DESTDIR)$(SHARE_PREFIX)/zsh/site-functions $(DESTDIR)$(SHARE_PREFIX)/fish/vendor_completions.d 2>/dev/null || true
+	-install -m 644 completions/bug-killer.bash $(DESTDIR)$(SHARE_PREFIX)/bash-completion/completions/bug-killer 2>/dev/null || true
+	-install -m 644 completions/_bug-killer $(DESTDIR)$(SHARE_PREFIX)/zsh/site-functions/_bug-killer 2>/dev/null || true
+	-install -m 644 completions/bug-killer.fish $(DESTDIR)$(SHARE_PREFIX)/fish/vendor_completions.d/bug-killer.fish 2>/dev/null || true
 	@echo "==> Installation complete!"
 
 clean:

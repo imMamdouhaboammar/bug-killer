@@ -153,7 +153,22 @@ make test
 make lint
 ```
 
-To install the resulting executables, choose an appropriate `PREFIX` and run `make install` with write permission to that directory. The Makefile's default is `/usr/local/bin`.
+To install the resulting executables, choose an appropriate `PREFIX` and run `make install` with write permission to that directory. The Makefile's default is `/usr/local/bin` and shell completions are installed to `/usr/local/share` (`SHARE_PREFIX`).
+
+### Shell Auto-Completions
+
+Bug Killer distributes pre-generated, drift-checked completion scripts under `completions/` for Bash, Zsh, and Fish:
+
+```bash
+# Generate dynamically for any supported shell (bash, zsh, fish, powershell, elvish)
+bug-killer completion bash > ~/.local/share/bash-completion/completions/bug-killer
+bug-killer completion zsh > ~/.zsh/completion/_bug-killer
+bug-killer completion fish > ~/.config/fish/completions/bug-killer.fish
+
+# Or regenerate and install from repository assets
+make completions
+sudo make install
+```
 
 Docker Compose is available for controlled Linux-host deployments. Access to `/var/run/docker.sock` can grant broad host control, even when mounted read-only. Use the service stack only on hosts where that access is explicitly approved.
 

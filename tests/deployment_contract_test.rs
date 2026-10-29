@@ -213,3 +213,38 @@ fn operational_mcp_configuration_and_docs_are_portable() {
         "example must not embed credentials"
     );
 }
+
+#[test]
+fn shell_completions_are_fresh_and_match_cli() {
+    let binary = env!("CARGO_BIN_EXE_bug-killer");
+    let shells = [
+        ("bash", "completions/bug-killer.bash"),
+        ("zsh", "completions/_bug-killer"),
+        ("fish", "completions/bug-killer.fish"),
+    ];
+
+    for (shell, path) in shells {
+        let output = std::process::Command::new(binary)
+            .args(["completion", shell])
+            .output()
+            .unwrap_or_else(|e| panic!("failed to execute bug-killer completion {}: {}", shell, e));
+        assert!(output.status.success(), "completion for {} failed", shell);
+        let generated = String::from_utf8(output.stdout).unwrap();
+        let committed =
+            fs::read_to_string(path).unwrap_or_else(|e| panic!("failed to read {}: {}", path, e));
+        assert_eq!(
+            generated, committed,
+            "shell completion for '{}' in {} is stale. Run 'make completions' to update.",
+            shell, path
+        );
+    }
+}
+
+#[test]
+fn ci_workflow_includes_completions_drift_check() {
+    let ci = fs::read_to_string(".github/workflows/ci.yml").unwrap();
+    assert!(
+        ci.contains("git diff --exit-code completions/"),
+        "CI Full System Build must enforce zero uncommitted drift in completions/"
+    );
+}

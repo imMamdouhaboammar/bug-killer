@@ -330,9 +330,21 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '--profile=[Scan profile (quick, project, ci, deep; default\: quick)]:PROFILE:(quick project ci deep)' \
 '--fail-on=[Exit with code 1 for findings at or above this severity]:FAIL_ON:(critical high medium low)' \
+'--report-version=[Machine-readable report contract version (1 or 2)]:REPORT_VERSION:(1 2)' \
+'--exit-contract=[Machine-readable exit-code contract version (v1 or v2)]:EXIT_CONTRACT:(v1 v2)' \
+'--engine=[Optional comma-separated list of specific engines to execute]:ENGINE:_default' \
 '--changed-only[Scan only git-changed / staged files]' \
 '(--changed-only)--staged[Scan the exact staged Git index snapshot (for pre-commit enforcement)]' \
 '--osv[Also query free open vulnerability database (OSV.dev)]' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(coverage)
+_arguments "${_arguments_options[@]}" : \
+'--per-rule[Report exact per-rule evaluation status]' \
 '--json[Output results as JSON]' \
 '-h[Print help]' \
 '--help[Print help]' \
@@ -410,6 +422,10 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(coverage)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (status)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
@@ -431,6 +447,576 @@ _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (catalog)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(engine)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__engine_commands" \
+"*::: :->engine" \
+&& ret=0
+
+    case $state in
+    (engine)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-engine-command-$line[1]:"
+        case $line[1] in
+            (doctor)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(list)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(explain)
+_arguments "${_arguments_options[@]}" : \
+'--goal=[Mission goal\: known, prevention, or research]:GOAL:_default' \
+'--target=[Target directory path (default\: current directory)]:TARGET:_files' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(skills)
+_arguments "${_arguments_options[@]}" : \
+'--filter=[Filter by subdomain, tag, or MITRE technique ID]:FILTER:_default' \
+'--id=[Skill identifier for '\''show'\'' action]:ID:_default' \
+'--cve=[Target CVE ID or mission goal for '\''recommend'\'' action]:CVE:_default' \
+'--query=[Query string for '\''search'\'' action]:QUERY:_default' \
+'--limit=[Maximum results to display (default\: 25)]:LIMIT:_default' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::action -- Subcommand action\: list, show, search, recommend, stats:_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__engine__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-engine-help-command-$line[1]:"
+        case $line[1] in
+            (doctor)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(explain)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(skills)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(room)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__room_commands" \
+"*::: :->room" \
+&& ret=0
+
+    case $state in
+    (room)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-room-command-$line[1]:"
+        case $line[1] in
+            (plan)
+_arguments "${_arguments_options[@]}" : \
+'--goal=[Mission goal\: known, prevention, or research]:GOAL:_default' \
+'--profile=[Execution profile\: quick, project, ci, or deep]:PROFILE:_default' \
+'--json[Output plan as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'--receipts[Include individual tool execution receipts]' \
+'--json[Output status as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':run_id -- Execution run ID:_default' \
+&& ret=0
+;;
+(evidence)
+_arguments "${_arguments_options[@]}" : \
+'--include-gaps[Include unexamined/skipped rule gaps]' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':run_id -- Execution run ID:_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__room__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-room-help-command-$line[1]:"
+        case $line[1] in
+            (plan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(evidence)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(hunter)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__hunter_commands" \
+"*::: :->hunter" \
+&& ret=0
+
+    case $state in
+    (hunter)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-hunter-command-$line[1]:"
+        case $line[1] in
+            (hunt)
+_arguments "${_arguments_options[@]}" : \
+'--max-hypotheses=[Maximum hypotheses to evaluate (default\: 10)]:MAX_HYPOTHESES:_default' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target project directory (default\: current directory):_files' \
+&& ret=0
+;;
+(plan)
+_arguments "${_arguments_options[@]}" : \
+'--policy=[Custom path to policy YAML file]:POLICY:_files' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+'--plan=[Research plan identifier]:PLAN:_default' \
+'--sandbox-only[Strictly execute in isolated sandbox without host mutation (default\: true)]' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(candidate)
+_arguments "${_arguments_options[@]}" : \
+'--evidence[Include full reproduction evidence and crash logs]' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::id -- Candidate identifier (e.g. cand-cwe787-001):_default' \
+&& ret=0
+;;
+(verify)
+_arguments "${_arguments_options[@]}" : \
+'--offline[Run in strictly offline mode without network access (default\: true)]' \
+'--json[Output results as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':id -- Candidate identifier to verify:_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__hunter__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-hunter-help-command-$line[1]:"
+        case $line[1] in
+            (hunt)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(plan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(candidate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(verify)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(hunt)
+_arguments "${_arguments_options[@]}" : \
+'--max-hypotheses=[Maximum hypotheses to evaluate (default\: 10)]:MAX_HYPOTHESES:_default' \
+'--json[Output diagnostic report as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target project directory (default\: current directory):_files' \
+&& ret=0
+;;
+(disclose)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__disclose_commands" \
+"*::: :->disclose" \
+&& ret=0
+
+    case $state in
+    (disclose)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-disclose-command-$line[1]:"
+        case $line[1] in
+            (draft)
+_arguments "${_arguments_options[@]}" : \
+'--output=[Output file path for generated report (e.g. ./report.md)]:OUTPUT:_files' \
+'--private[Private draft mode preventing unapproved external network disclosure (default\: true)]' \
+'--json[Output packet as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':finding_id -- Finding ID or candidate ID:_default' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__disclose__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-disclose-help-command-$line[1]:"
+        case $line[1] in
+            (draft)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(advisory)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__advisory_commands" \
+"*::: :->advisory" \
+&& ret=0
+
+    case $state in
+    (advisory)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-advisory-command-$line[1]:"
+        case $line[1] in
+            (sync)
+_arguments "${_arguments_options[@]}" : \
+'--offline-cache=[Custom path to offline cache directory]:OFFLINE_CACHE:_files' \
+'--sources=[Comma-separated advisory sources (default\: osv,ghsa)]:SOURCES:_default' \
+'--json[Output sync receipt as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'--json[Output status as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__advisory__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-advisory-help-command-$line[1]:"
+        case $line[1] in
+            (sync)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(inventory)
+_arguments "${_arguments_options[@]}" : \
+'--sbom=[Export CycloneDX SBOM format (default\: json)]:SBOM:_default' \
+'--json[Output diagnostic report as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path -- Target directory path (default\: current directory):_files' \
+&& ret=0
+;;
+(deepsec)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_bug-killer__subcmd__deepsec_commands" \
+"*::: :->deepsec" \
+&& ret=0
+
+    case $state in
+    (deepsec)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-deepsec-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(scan)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--filter=[]:FILTER:_default' \
+'--json[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(process)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--batch-size=[]:BATCH_SIZE:_default' \
+'--limit=[]:LIMIT:_default' \
+'--filter=[]:FILTER:_default' \
+'--max-cost-usd=[]:MAX_COST_USD:_default' \
+'--model=[]:MODEL:_default' \
+'--agent=[]:AGENT:_default' \
+'--json[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(revalidate)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--model=[]:MODEL:_default' \
+'--force[]' \
+'--json[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(triage)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--json[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(enrich)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--json[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(report)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--json[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(export)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--format=[]:FORMAT:_default' \
+'--out=[]:OUT:_files' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'--project-id=[]:PROJECT_ID:_default' \
+'--json[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::path:_files' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__deepsec__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-deepsec-help-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(scan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(process)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(revalidate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(triage)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(enrich)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(report)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(export)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
@@ -590,6 +1176,10 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(coverage)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (status)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
@@ -611,6 +1201,206 @@ _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (catalog)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(engine)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__engine_commands" \
+"*::: :->engine" \
+&& ret=0
+
+    case $state in
+    (engine)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-engine-command-$line[1]:"
+        case $line[1] in
+            (doctor)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(explain)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(skills)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(room)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__room_commands" \
+"*::: :->room" \
+&& ret=0
+
+    case $state in
+    (room)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-room-command-$line[1]:"
+        case $line[1] in
+            (plan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(evidence)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(hunter)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__hunter_commands" \
+"*::: :->hunter" \
+&& ret=0
+
+    case $state in
+    (hunter)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-hunter-command-$line[1]:"
+        case $line[1] in
+            (hunt)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(plan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(candidate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(verify)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(hunt)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(disclose)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__disclose_commands" \
+"*::: :->disclose" \
+&& ret=0
+
+    case $state in
+    (disclose)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-disclose-command-$line[1]:"
+        case $line[1] in
+            (draft)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(advisory)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__advisory_commands" \
+"*::: :->advisory" \
+&& ret=0
+
+    case $state in
+    (advisory)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-advisory-command-$line[1]:"
+        case $line[1] in
+            (sync)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(inventory)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(deepsec)
+_arguments "${_arguments_options[@]}" : \
+":: :_bug-killer__subcmd__help__subcmd__deepsec_commands" \
+"*::: :->deepsec" \
+&& ret=0
+
+    case $state in
+    (deepsec)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:bug-killer-help-deepsec-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(scan)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(process)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(revalidate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(triage)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(enrich)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(report)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(export)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
@@ -654,9 +1444,60 @@ _bug-killer_commands() {
 'mcp:Model Context Protocol (MCP) server and integration commands' \
 'init:Initialize Bug Killer in a project, create security configuration, and run baseline scan' \
 'security:Bug Killer Security Guard suite (scan, status, explain, fix, verify, guidance, catalog)' \
+'engine:Sibling & external tool capability broker (doctor, list, explain)' \
+'room:Agentic Security Operations Room (plan, status, evidence)' \
+'hunter:Novel vulnerability hunter & bounded research runner (plan, run, candidate, verify)' \
+'hunt:Autonomous novel vulnerability hunter on target project (full end-to-end research loop)' \
+'disclose:Responsible private disclosure & PVR draft generation (draft)' \
+'advisory:Advisory feeds & dependency vulnerability cache (sync, status)' \
+'inventory:Software asset inventory & CycloneDX / JSON SBOM extraction' \
+'deepsec:DeepSec\: Agent-Powered Security Review Harness' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'bug-killer commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__advisory_commands] )) ||
+_bug-killer__subcmd__advisory_commands() {
+    local commands; commands=(
+'sync:Synchronize and cache open-source vulnerability advisory feeds' \
+'status:Check status and freshness of the local advisory feed cache' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer advisory commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__advisory__subcmd__help_commands] )) ||
+_bug-killer__subcmd__advisory__subcmd__help_commands() {
+    local commands; commands=(
+'sync:Synchronize and cache open-source vulnerability advisory feeds' \
+'status:Check status and freshness of the local advisory feed cache' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer advisory help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__advisory__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__advisory__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer advisory help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__advisory__subcmd__help__subcmd__status_commands] )) ||
+_bug-killer__subcmd__advisory__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer advisory help status commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__advisory__subcmd__help__subcmd__sync_commands] )) ||
+_bug-killer__subcmd__advisory__subcmd__help__subcmd__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer advisory help sync commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__advisory__subcmd__status_commands] )) ||
+_bug-killer__subcmd__advisory__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer advisory status commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__advisory__subcmd__sync_commands] )) ||
+_bug-killer__subcmd__advisory__subcmd__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer advisory sync commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__agent_commands] )) ||
 _bug-killer__subcmd__agent_commands() {
@@ -721,10 +1562,235 @@ _bug-killer__subcmd__cve-info_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer cve-info commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__deepsec_commands] )) ||
+_bug-killer__subcmd__deepsec_commands() {
+    local commands; commands=(
+'init:Initialize deepsec for a codebase, generating INFO.md and running baseline scan' \
+'scan:Fast regex pattern scan across repository' \
+'process:AI investigation of candidate files' \
+'revalidate:Revalidate findings to eliminate false positives and check git fixes' \
+'triage:Prioritize findings into P0/P1/P2 buckets' \
+'enrich:Enrich findings with git committer and authorship history' \
+'report:Render human-readable summary and report' \
+'export:Export findings to JSON or markdown directory' \
+'status:Show data mirror status and file counts' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer deepsec commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__enrich_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__enrich_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec enrich commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__export_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__export_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec export commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help_commands() {
+    local commands; commands=(
+'init:Initialize deepsec for a codebase, generating INFO.md and running baseline scan' \
+'scan:Fast regex pattern scan across repository' \
+'process:AI investigation of candidate files' \
+'revalidate:Revalidate findings to eliminate false positives and check git fixes' \
+'triage:Prioritize findings into P0/P1/P2 buckets' \
+'enrich:Enrich findings with git committer and authorship history' \
+'report:Render human-readable summary and report' \
+'export:Export findings to JSON or markdown directory' \
+'status:Show data mirror status and file counts' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer deepsec help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__enrich_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__enrich_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help enrich commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__export_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__export_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help export commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__init_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help init commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__process_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__process_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help process commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__report_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__report_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help report commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__revalidate_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__revalidate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help revalidate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__scan_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__scan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help scan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__status_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help status commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__help__subcmd__triage_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__help__subcmd__triage_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec help triage commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__init_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec init commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__process_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__process_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec process commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__report_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__report_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec report commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__revalidate_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__revalidate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec revalidate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__scan_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__scan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec scan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__status_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec status commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__deepsec__subcmd__triage_commands] )) ||
+_bug-killer__subcmd__deepsec__subcmd__triage_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer deepsec triage commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__disclose_commands] )) ||
+_bug-killer__subcmd__disclose_commands() {
+    local commands; commands=(
+'draft:Synthesize a private responsible disclosure draft (PVR markdown or JSON)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer disclose commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__disclose__subcmd__draft_commands] )) ||
+_bug-killer__subcmd__disclose__subcmd__draft_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer disclose draft commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__disclose__subcmd__help_commands] )) ||
+_bug-killer__subcmd__disclose__subcmd__help_commands() {
+    local commands; commands=(
+'draft:Synthesize a private responsible disclosure draft (PVR markdown or JSON)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer disclose help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__disclose__subcmd__help__subcmd__draft_commands] )) ||
+_bug-killer__subcmd__disclose__subcmd__help__subcmd__draft_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer disclose help draft commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__disclose__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__disclose__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer disclose help help commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__doctor_commands] )) ||
 _bug-killer__subcmd__doctor_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine_commands] )) ||
+_bug-killer__subcmd__engine_commands() {
+    local commands; commands=(
+'doctor:Check health, versions, and installation status of sibling security engines' \
+'list:List all registered sibling tool capabilities and execution transports' \
+'explain:Explain which security tools match a specified goal (known, prevention, research)' \
+'skills:Query, inspect, and recommend deep cybersecurity skills and MITRE/NIST mappings' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer engine commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__explain_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__explain_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine explain commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__help_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__help_commands() {
+    local commands; commands=(
+'doctor:Check health, versions, and installation status of sibling security engines' \
+'list:List all registered sibling tool capabilities and execution transports' \
+'explain:Explain which security tools match a specified goal (known, prevention, research)' \
+'skills:Query, inspect, and recommend deep cybersecurity skills and MITRE/NIST mappings' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer engine help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__help__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__help__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine help doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__help__subcmd__explain_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__help__subcmd__explain_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine help explain commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__help__subcmd__list_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__help__subcmd__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine help list commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__help__subcmd__skills_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__help__subcmd__skills_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine help skills commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__list_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine list commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__engine__subcmd__skills_commands] )) ||
+_bug-killer__subcmd__engine__subcmd__skills_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer engine skills commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__evidence_commands] )) ||
 _bug-killer__subcmd__evidence_commands() {
@@ -759,9 +1825,35 @@ _bug-killer__subcmd__help_commands() {
 'mcp:Model Context Protocol (MCP) server and integration commands' \
 'init:Initialize Bug Killer in a project, create security configuration, and run baseline scan' \
 'security:Bug Killer Security Guard suite (scan, status, explain, fix, verify, guidance, catalog)' \
+'engine:Sibling & external tool capability broker (doctor, list, explain)' \
+'room:Agentic Security Operations Room (plan, status, evidence)' \
+'hunter:Novel vulnerability hunter & bounded research runner (plan, run, candidate, verify)' \
+'hunt:Autonomous novel vulnerability hunter on target project (full end-to-end research loop)' \
+'disclose:Responsible private disclosure & PVR draft generation (draft)' \
+'advisory:Advisory feeds & dependency vulnerability cache (sync, status)' \
+'inventory:Software asset inventory & CycloneDX / JSON SBOM extraction' \
+'deepsec:DeepSec\: Agent-Powered Security Review Harness' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'bug-killer help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__advisory_commands] )) ||
+_bug-killer__subcmd__help__subcmd__advisory_commands() {
+    local commands; commands=(
+'sync:Synchronize and cache open-source vulnerability advisory feeds' \
+'status:Check status and freshness of the local advisory feed cache' \
+    )
+    _describe -t commands 'bug-killer help advisory commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__advisory__subcmd__status_commands] )) ||
+_bug-killer__subcmd__help__subcmd__advisory__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help advisory status commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__advisory__subcmd__sync_commands] )) ||
+_bug-killer__subcmd__help__subcmd__advisory__subcmd__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help advisory sync commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__help__subcmd__agent_commands] )) ||
 _bug-killer__subcmd__help__subcmd__agent_commands() {
@@ -801,10 +1893,112 @@ _bug-killer__subcmd__help__subcmd__cve-info_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help cve-info commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec_commands() {
+    local commands; commands=(
+'init:Initialize deepsec for a codebase, generating INFO.md and running baseline scan' \
+'scan:Fast regex pattern scan across repository' \
+'process:AI investigation of candidate files' \
+'revalidate:Revalidate findings to eliminate false positives and check git fixes' \
+'triage:Prioritize findings into P0/P1/P2 buckets' \
+'enrich:Enrich findings with git committer and authorship history' \
+'report:Render human-readable summary and report' \
+'export:Export findings to JSON or markdown directory' \
+'status:Show data mirror status and file counts' \
+    )
+    _describe -t commands 'bug-killer help deepsec commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__enrich_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__enrich_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec enrich commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__export_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__export_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec export commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__init_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec init commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__process_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__process_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec process commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__report_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__report_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec report commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__revalidate_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__revalidate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec revalidate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__scan_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__scan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec scan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__status_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec status commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__deepsec__subcmd__triage_commands] )) ||
+_bug-killer__subcmd__help__subcmd__deepsec__subcmd__triage_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help deepsec triage commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__disclose_commands] )) ||
+_bug-killer__subcmd__help__subcmd__disclose_commands() {
+    local commands; commands=(
+'draft:Synthesize a private responsible disclosure draft (PVR markdown or JSON)' \
+    )
+    _describe -t commands 'bug-killer help disclose commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__disclose__subcmd__draft_commands] )) ||
+_bug-killer__subcmd__help__subcmd__disclose__subcmd__draft_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help disclose draft commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__help__subcmd__doctor_commands] )) ||
 _bug-killer__subcmd__help__subcmd__doctor_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__engine_commands] )) ||
+_bug-killer__subcmd__help__subcmd__engine_commands() {
+    local commands; commands=(
+'doctor:Check health, versions, and installation status of sibling security engines' \
+'list:List all registered sibling tool capabilities and execution transports' \
+'explain:Explain which security tools match a specified goal (known, prevention, research)' \
+'skills:Query, inspect, and recommend deep cybersecurity skills and MITRE/NIST mappings' \
+    )
+    _describe -t commands 'bug-killer help engine commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__engine__subcmd__doctor_commands] )) ||
+_bug-killer__subcmd__help__subcmd__engine__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help engine doctor commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__engine__subcmd__explain_commands] )) ||
+_bug-killer__subcmd__help__subcmd__engine__subcmd__explain_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help engine explain commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__engine__subcmd__list_commands] )) ||
+_bug-killer__subcmd__help__subcmd__engine__subcmd__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help engine list commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__engine__subcmd__skills_commands] )) ||
+_bug-killer__subcmd__help__subcmd__engine__subcmd__skills_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help engine skills commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__help__subcmd__evidence_commands] )) ||
 _bug-killer__subcmd__help__subcmd__evidence_commands() {
@@ -826,10 +2020,56 @@ _bug-killer__subcmd__help__subcmd__history_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help history commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__help__subcmd__hunt_commands] )) ||
+_bug-killer__subcmd__help__subcmd__hunt_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help hunt commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__hunter_commands] )) ||
+_bug-killer__subcmd__help__subcmd__hunter_commands() {
+    local commands; commands=(
+'hunt:Run autonomous end-to-end novel vulnerability hunt loop on target project' \
+'plan:Generate bounded research hypotheses for unknown weakness exploration' \
+'run:Run bounded sandboxed fuzzing and experimentation on research candidates' \
+'candidate:Inspect a research candidate or list active candidates in the queue' \
+'verify:Execute isolated deterministic reproduction verification on a candidate' \
+    )
+    _describe -t commands 'bug-killer help hunter commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__hunter__subcmd__candidate_commands] )) ||
+_bug-killer__subcmd__help__subcmd__hunter__subcmd__candidate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help hunter candidate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__hunter__subcmd__hunt_commands] )) ||
+_bug-killer__subcmd__help__subcmd__hunter__subcmd__hunt_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help hunter hunt commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__hunter__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__help__subcmd__hunter__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help hunter plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__hunter__subcmd__run_commands] )) ||
+_bug-killer__subcmd__help__subcmd__hunter__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help hunter run commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__hunter__subcmd__verify_commands] )) ||
+_bug-killer__subcmd__help__subcmd__hunter__subcmd__verify_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help hunter verify commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__help__subcmd__init_commands] )) ||
 _bug-killer__subcmd__help__subcmd__init_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help init commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__inventory_commands] )) ||
+_bug-killer__subcmd__help__subcmd__inventory_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help inventory commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__help__subcmd__mcp_commands] )) ||
 _bug-killer__subcmd__help__subcmd__mcp_commands() {
@@ -874,6 +2114,30 @@ _bug-killer__subcmd__help__subcmd__rollback_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help rollback commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__help__subcmd__room_commands] )) ||
+_bug-killer__subcmd__help__subcmd__room_commands() {
+    local commands; commands=(
+'plan:Plan an operations room security run across matching tools' \
+'status:Inspect terminal state and per-tool execution receipts of a room run' \
+'evidence:Correlate multi-engine evidence and coverage ledger' \
+    )
+    _describe -t commands 'bug-killer help room commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__room__subcmd__evidence_commands] )) ||
+_bug-killer__subcmd__help__subcmd__room__subcmd__evidence_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help room evidence commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__room__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__help__subcmd__room__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help room plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__room__subcmd__status_commands] )) ||
+_bug-killer__subcmd__help__subcmd__room__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help room status commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__help__subcmd__scan_commands] )) ||
 _bug-killer__subcmd__help__subcmd__scan_commands() {
     local commands; commands=()
@@ -883,6 +2147,7 @@ _bug-killer__subcmd__help__subcmd__scan_commands() {
 _bug-killer__subcmd__help__subcmd__security_commands() {
     local commands; commands=(
 'scan:Execute security guard scan across all applicable catalog rules' \
+'coverage:Inspect workspace rule-target coverage receipts and unassessed gaps' \
 'status:Show current workspace security guard status and baseline findings' \
 'explain:Explain a finding using the 373-rule AI-Generated Code Security Catalog' \
 'fix:Propose or apply an authorized bounded security repair' \
@@ -896,6 +2161,11 @@ _bug-killer__subcmd__help__subcmd__security_commands() {
 _bug-killer__subcmd__help__subcmd__security__subcmd__catalog_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer help security catalog commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__help__subcmd__security__subcmd__coverage_commands] )) ||
+_bug-killer__subcmd__help__subcmd__security__subcmd__coverage_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer help security coverage commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__help__subcmd__security__subcmd__explain_commands] )) ||
 _bug-killer__subcmd__help__subcmd__security__subcmd__explain_commands() {
@@ -942,10 +2212,99 @@ _bug-killer__subcmd__history_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer history commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__hunt_commands] )) ||
+_bug-killer__subcmd__hunt_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunt commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter_commands] )) ||
+_bug-killer__subcmd__hunter_commands() {
+    local commands; commands=(
+'hunt:Run autonomous end-to-end novel vulnerability hunt loop on target project' \
+'plan:Generate bounded research hypotheses for unknown weakness exploration' \
+'run:Run bounded sandboxed fuzzing and experimentation on research candidates' \
+'candidate:Inspect a research candidate or list active candidates in the queue' \
+'verify:Execute isolated deterministic reproduction verification on a candidate' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer hunter commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__candidate_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__candidate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter candidate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__help_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__help_commands() {
+    local commands; commands=(
+'hunt:Run autonomous end-to-end novel vulnerability hunt loop on target project' \
+'plan:Generate bounded research hypotheses for unknown weakness exploration' \
+'run:Run bounded sandboxed fuzzing and experimentation on research candidates' \
+'candidate:Inspect a research candidate or list active candidates in the queue' \
+'verify:Execute isolated deterministic reproduction verification on a candidate' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer hunter help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__help__subcmd__candidate_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__help__subcmd__candidate_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter help candidate commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__help__subcmd__hunt_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__help__subcmd__hunt_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter help hunt commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__help__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__help__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter help plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__help__subcmd__run_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__help__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter help run commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__help__subcmd__verify_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__help__subcmd__verify_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter help verify commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__hunt_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__hunt_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter hunt commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__run_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter run commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__hunter__subcmd__verify_commands] )) ||
+_bug-killer__subcmd__hunter__subcmd__verify_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer hunter verify commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__init_commands] )) ||
 _bug-killer__subcmd__init_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer init commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__inventory_commands] )) ||
+_bug-killer__subcmd__inventory_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer inventory commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__mcp_commands] )) ||
 _bug-killer__subcmd__mcp_commands() {
@@ -1015,6 +2374,61 @@ _bug-killer__subcmd__rollback_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer rollback commands' commands "$@"
 }
+(( $+functions[_bug-killer__subcmd__room_commands] )) ||
+_bug-killer__subcmd__room_commands() {
+    local commands; commands=(
+'plan:Plan an operations room security run across matching tools' \
+'status:Inspect terminal state and per-tool execution receipts of a room run' \
+'evidence:Correlate multi-engine evidence and coverage ledger' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer room commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__evidence_commands] )) ||
+_bug-killer__subcmd__room__subcmd__evidence_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer room evidence commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__help_commands] )) ||
+_bug-killer__subcmd__room__subcmd__help_commands() {
+    local commands; commands=(
+'plan:Plan an operations room security run across matching tools' \
+'status:Inspect terminal state and per-tool execution receipts of a room run' \
+'evidence:Correlate multi-engine evidence and coverage ledger' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'bug-killer room help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__help__subcmd__evidence_commands] )) ||
+_bug-killer__subcmd__room__subcmd__help__subcmd__evidence_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer room help evidence commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__help__subcmd__help_commands] )) ||
+_bug-killer__subcmd__room__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer room help help commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__help__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__room__subcmd__help__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer room help plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__help__subcmd__status_commands] )) ||
+_bug-killer__subcmd__room__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer room help status commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__plan_commands] )) ||
+_bug-killer__subcmd__room__subcmd__plan_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer room plan commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__room__subcmd__status_commands] )) ||
+_bug-killer__subcmd__room__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer room status commands' commands "$@"
+}
 (( $+functions[_bug-killer__subcmd__scan_commands] )) ||
 _bug-killer__subcmd__scan_commands() {
     local commands; commands=()
@@ -1024,6 +2438,7 @@ _bug-killer__subcmd__scan_commands() {
 _bug-killer__subcmd__security_commands() {
     local commands; commands=(
 'scan:Execute security guard scan across all applicable catalog rules' \
+'coverage:Inspect workspace rule-target coverage receipts and unassessed gaps' \
 'status:Show current workspace security guard status and baseline findings' \
 'explain:Explain a finding using the 373-rule AI-Generated Code Security Catalog' \
 'fix:Propose or apply an authorized bounded security repair' \
@@ -1038,6 +2453,11 @@ _bug-killer__subcmd__security_commands() {
 _bug-killer__subcmd__security__subcmd__catalog_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer security catalog commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__security__subcmd__coverage_commands] )) ||
+_bug-killer__subcmd__security__subcmd__coverage_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer security coverage commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__security__subcmd__explain_commands] )) ||
 _bug-killer__subcmd__security__subcmd__explain_commands() {
@@ -1058,6 +2478,7 @@ _bug-killer__subcmd__security__subcmd__guidance_commands() {
 _bug-killer__subcmd__security__subcmd__help_commands() {
     local commands; commands=(
 'scan:Execute security guard scan across all applicable catalog rules' \
+'coverage:Inspect workspace rule-target coverage receipts and unassessed gaps' \
 'status:Show current workspace security guard status and baseline findings' \
 'explain:Explain a finding using the 373-rule AI-Generated Code Security Catalog' \
 'fix:Propose or apply an authorized bounded security repair' \
@@ -1072,6 +2493,11 @@ _bug-killer__subcmd__security__subcmd__help_commands() {
 _bug-killer__subcmd__security__subcmd__help__subcmd__catalog_commands() {
     local commands; commands=()
     _describe -t commands 'bug-killer security help catalog commands' commands "$@"
+}
+(( $+functions[_bug-killer__subcmd__security__subcmd__help__subcmd__coverage_commands] )) ||
+_bug-killer__subcmd__security__subcmd__help__subcmd__coverage_commands() {
+    local commands; commands=()
+    _describe -t commands 'bug-killer security help coverage commands' commands "$@"
 }
 (( $+functions[_bug-killer__subcmd__security__subcmd__help__subcmd__explain_commands] )) ||
 _bug-killer__subcmd__security__subcmd__help__subcmd__explain_commands() {

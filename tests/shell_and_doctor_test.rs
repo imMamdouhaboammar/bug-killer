@@ -40,13 +40,15 @@ fn test_watcher_snapshot_mtimes() {
 #[test]
 fn test_completion_generation() {
     let mut cmd = Command::new("bug-killer");
-    let bash_res = CompletionGenerator::generate_completion("bash", &mut cmd);
+    let mut sink = std::io::sink();
+    let bash_res = CompletionGenerator::generate_completion_to_writer("bash", &mut cmd, &mut sink);
     assert!(bash_res.is_ok());
 
-    let zsh_res = CompletionGenerator::generate_completion("zsh", &mut cmd);
+    let zsh_res = CompletionGenerator::generate_completion_to_writer("zsh", &mut cmd, &mut sink);
     assert!(zsh_res.is_ok());
 
-    let invalid_res = CompletionGenerator::generate_completion("invalid_shell", &mut cmd);
+    let invalid_res =
+        CompletionGenerator::generate_completion_to_writer("invalid_shell", &mut cmd, &mut sink);
     assert!(invalid_res.is_err());
 }
 
