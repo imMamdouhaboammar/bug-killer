@@ -33,9 +33,9 @@ The Bug Killer Deep Privacy Engine incorporates 282 canonical privacy procedures
 
 | Framework | Scope & Focus Areas | Authoritative Reference |
 |---|---|---|
-| **OWASP Privacy Risks** | P1 (Web Telemetry) to P10 (AI Dark Patterns) | [`docs/privacy/owasp-privacy-risks-mapping.md`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/docs/privacy/owasp-privacy-risks-mapping.md) |
-| **NIST Privacy Framework** | Identify-P, Govern-P, Control-P, Communicate-P, Protect-P | [`docs/privacy/nist-privacy-framework-mapping.md`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/docs/privacy/nist-privacy-framework-mapping.md) |
-| **ISO/IEC 27701:2019** | PIMS Controllers (Clause 7) & Processors (Clause 8) | [`docs/privacy/iso-27701-mapping.md`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/docs/privacy/iso-27701-mapping.md) |
+| **OWASP Privacy Risks** | P1 (Web Telemetry) to P10 (AI Dark Patterns) | [`docs/privacy/owasp-privacy-risks-mapping.md`](../../../docs/privacy/owasp-privacy-risks-mapping.md) |
+| **NIST Privacy Framework** | Identify-P, Govern-P, Control-P, Communicate-P, Protect-P | [`docs/privacy/nist-privacy-framework-mapping.md`](../../../docs/privacy/nist-privacy-framework-mapping.md) |
+| **ISO/IEC 27701:2019** | PIMS Controllers (Clause 7) & Processors (Clause 8) | [`docs/privacy/iso-27701-mapping.md`](../../../docs/privacy/iso-27701-mapping.md) |
 | **LINDDUN GO** | Unlinkability, Anonymity, Plausible Deniability, Confidentiality | Embedded LINDDUN index in `PrivacySkillsRegistry` |
 | **EU AI Act & GDPR** | High-risk AI human oversight (Art. 14), Automated decisions (Art. 22) | Automated decision AST matchers in `PrivacyEngineAdapter` |
 

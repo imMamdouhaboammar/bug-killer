@@ -30,30 +30,6 @@ jobs:
           cargo clippy --all-targets -- -D warnings
           cargo test --verbose
 
-  test-python:
-    name: Python CVE MCP Offline Gate
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/cve-mcp-server
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-          cache-dependency-glob: services/cve-mcp-server/uv.lock
-      - name: Install Locked Dependencies
-        run: uv sync --locked --extra test
-      - name: Verify Package Import
-        run: uv run --locked python -c "import cve_mcp.server"
-      - name: Run Offline Tests (includes MCP stdio smoke)
-        run: uv run --locked pytest -m "not online" tests/ -v
-      - name: Lint Python
-        run: uvx --from ruff==0.14.4 ruff check src/ tests/
-
   test-go:
     name: Go Microservices Gate
     runs-on: ubuntu-latest
@@ -78,9 +54,36 @@ jobs:
           go vet ./...
           go test -v ./...
 
+  test-python:
+    name: Python CVE MCP Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: services/cve-mcp-server/pyproject.toml
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest pytest-asyncio anyio pytest-httpx respx
+          cd services/cve-mcp-server
+          pip install -e ".[test]"
+      - name: Run Ruff Format & Lint Check
+        run: |
+          cd services/cve-mcp-server
+          ruff check .
+          ruff format --check .
+      - name: Run Deterministic Offline Test Suite
+        run: |
+          cd services/cve-mcp-server
+          pytest -m "not online" -v
+
   end-to-end-integration:
     name: E2E Integration & Verification
-    needs: [test-rust, test-go]
+    needs: [test-rust, test-go, test-python]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -94,7 +97,9 @@ jobs:
       - name: Install System Dependencies
         run: sudo apt-get update && sudo apt-get install -y bubblewrap libpcap-dev protobuf-compiler && sudo chmod u+s /usr/bin/bwrap || true
       - name: Full System Build
-        run: make build
+        run: |
+          make build
+          git diff --exit-code completions/
       - name: Run Full Test Suite
         run: make test
 

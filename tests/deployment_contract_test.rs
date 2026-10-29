@@ -159,3 +159,114 @@ fn ci_workflow_includes_docker_build_and_smoke_gate() {
         "CI smoke gate must not mount host docker socket"
     );
 }
+
+#[test]
+fn ci_workflow_includes_python_cve_mcp_quality_gate() {
+    let ci = fs::read_to_string(".github/workflows/ci.yml").unwrap();
+    assert!(
+        ci.contains("test-python:"),
+        "CI must define a test-python job"
+    );
+    assert!(
+        ci.contains("services/cve-mcp-server"),
+        "Python gate must target services/cve-mcp-server"
+    );
+    assert!(ci.contains("ruff check"), "Python gate must run ruff check");
+    assert!(ci.contains("pytest"), "Python gate must run pytest");
+    assert!(
+        ci.contains("not online"),
+        "Python gate must filter for offline execution"
+    );
+    assert!(
+        ci.contains("needs: [test-rust, test-go, test-python]"),
+        "E2E integration must depend on test-python"
+    );
+}
+
+#[test]
+fn operational_mcp_configuration_and_docs_are_portable() {
+    let docs = fs::read_to_string("docs/SIBLING_TOOLS.md").unwrap();
+    assert!(
+        !docs.contains("file:///") && !docs.contains("file://"),
+        "operational sibling-tool links must be repository-relative"
+    );
+    assert!(
+        !std::path::Path::new("services/cve-mcp-server/.mcp.json").exists(),
+        "machine-local MCP settings must not be tracked"
+    );
+    let example = fs::read_to_string("services/cve-mcp-server/.mcp.example.json").unwrap();
+    let config: serde_json::Value = serde_json::from_str(&example).unwrap();
+    let server = &config["mcpServers"]["cve-mcp"];
+    assert_eq!(server["command"], "uv");
+    assert_eq!(server["args"][0], "run");
+    assert_eq!(server["args"][1], "--directory");
+    assert!(
+        server["args"][2]
+            .as_str()
+            .unwrap()
+            .starts_with("/absolute/path/to/"),
+        "the example must require an explicit checkout-specific substitution"
+    );
+    assert_eq!(server["args"][3], "cve-mcp");
+    assert!(
+        server.get("env").is_none(),
+        "example must not embed credentials"
+    );
+}
+
+#[test]
+fn shell_completions_are_fresh_and_match_cli() {
+    let binary = env!("CARGO_BIN_EXE_bug-killer");
+    let shells = [
+        ("bash", "completions/bug-killer.bash"),
+        ("zsh", "completions/_bug-killer"),
+        ("fish", "completions/bug-killer.fish"),
+    ];
+
+    for (shell, path) in shells {
+        let output = std::process::Command::new(binary)
+            .args(["completion", shell])
+            .output()
+            .unwrap_or_else(|e| panic!("failed to execute bug-killer completion {}: {}", shell, e));
+        assert!(output.status.success(), "completion for {} failed", shell);
+        let generated = String::from_utf8(output.stdout).unwrap();
+        let committed =
+            fs::read_to_string(path).unwrap_or_else(|e| panic!("failed to read {}: {}", path, e));
+        assert_eq!(
+            generated, committed,
+            "shell completion for '{}' in {} is stale. Run 'make completions' to update.",
+            shell, path
+        );
+    }
+}
+
+#[test]
+fn ci_workflow_includes_completions_drift_check() {
+    let ci = fs::read_to_string(".github/workflows/ci.yml").unwrap();
+    assert!(
+        ci.contains("git diff --exit-code completions/"),
+        "CI Full System Build must enforce zero uncommitted drift in completions/"
+    );
+}
+
+#[test]
+fn lat_md_skill_is_canonical_in_agents_directory() {
+    let canonical = std::path::Path::new(".agents/skills/lat-md/SKILL.md");
+    assert!(
+        canonical.exists(),
+        ".agents/skills/lat-md/SKILL.md must exist as the canonical skill definition"
+    );
+
+    let mirror = std::path::Path::new("skills/lat-md/SKILL.md");
+    assert!(
+        mirror.exists(),
+        "skills/lat-md/SKILL.md must remain resolvable for host discovery compatibility"
+    );
+
+    let canonical_content = fs::read_to_string(canonical).unwrap();
+    let mirror_content = fs::read_to_string(mirror).unwrap();
+    assert_eq!(
+        canonical_content, mirror_content,
+        "skills/lat-md must be synchronized with canonical .agents/skills/lat-md"
+    );
+}
