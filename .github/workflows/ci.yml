@@ -54,9 +54,36 @@ jobs:
           go vet ./...
           go test -v ./...
 
+  test-python:
+    name: Python CVE MCP Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: services/cve-mcp-server/pyproject.toml
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest pytest-asyncio anyio pytest-httpx respx
+          cd services/cve-mcp-server
+          pip install -e ".[test]"
+      - name: Run Ruff Format & Lint Check
+        run: |
+          cd services/cve-mcp-server
+          ruff check .
+          ruff format --check .
+      - name: Run Deterministic Offline Test Suite
+        run: |
+          cd services/cve-mcp-server
+          pytest -m "not online" -v
+
   end-to-end-integration:
     name: E2E Integration & Verification
-    needs: [test-rust, test-go]
+    needs: [test-rust, test-go, test-python]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
