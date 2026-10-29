@@ -30,6 +30,30 @@ jobs:
           cargo clippy --all-targets -- -D warnings
           cargo test --verbose
 
+  test-python:
+    name: Python CVE MCP Offline Gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/cve-mcp-server
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/cve-mcp-server/uv.lock
+      - name: Install Locked Dependencies
+        run: uv sync --locked --extra test
+      - name: Verify Package Import
+        run: uv run --locked python -c "import cve_mcp.server"
+      - name: Run Offline Tests (includes MCP stdio smoke)
+        run: uv run --locked pytest -m "not online" tests/ -v
+      - name: Lint Python
+        run: uvx --from ruff==0.14.4 ruff check src/ tests/
+
   test-go:
     name: Go Microservices Gate
     runs-on: ubuntu-latest
