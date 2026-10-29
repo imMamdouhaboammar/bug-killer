@@ -2,7 +2,9 @@ package ledger
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -65,5 +67,33 @@ func (l *CoverageLedger) WriteToFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filePath, data, 0644)
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory for coverage ledger: %w", err)
+	}
+
+	tmpFile, err := os.CreateTemp(dir, ".coverage-ledger-*.tmp")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary file for coverage ledger: %w", err)
+	}
+	tmpName := tmpFile.Name()
+	defer func() {
+		_ = os.Remove(tmpName)
+	}()
+
+	if _, err := tmpFile.Write(data); err != nil {
+		_ = tmpFile.Close()
+		return fmt.Errorf("failed to write coverage ledger data: %w", err)
+	}
+	if err := tmpFile.Sync(); err != nil {
+		_ = tmpFile.Close()
+		return fmt.Errorf("failed to sync coverage ledger data: %w", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temporary coverage ledger file: %w", err)
+	}
+	if err := os.Rename(tmpName, filePath); err != nil {
+		return fmt.Errorf("failed to atomically rename coverage ledger: %w", err)
+	}
+	return nil
 }

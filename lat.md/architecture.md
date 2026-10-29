@@ -27,3 +27,9 @@ Key domain models include [[src/types.rs#CveId]], [[src/types.rs#Severity]], and
 The CVE evaluation engine determines vulnerability status for runtime versions and package manifests.
 
 Version matching rules are evaluated deterministically through [[src/cve_db.rs#CveDatabase]].
+
+## Container and Orchestration Lifecycle
+
+Orchestration sequences inventory and inspection deterministically via Compose dependency conditions.
+
+The orchestrator publishes the coverage ledger atomically via [[services/orchestrator/ledger/ledger.go#CoverageLedger#WriteToFile]] and invalidates stale outputs before starting reconnaissance. The inspector coordinates startup via Docker Compose `service_completed_successfully` readiness.
