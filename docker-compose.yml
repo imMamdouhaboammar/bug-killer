@@ -14,7 +14,7 @@ services:
     group_add:
       - "${DOCKER_GID:?Set DOCKER_GID to the numeric group of /var/run/docker.sock}"
     entrypoint: ["/app/bug-killer-orchestrator"]
-    command: ["-path", "/host", "-out", "/var/bug-killer/coverage-ledger.json"]
+    command: ["scan", "-path", "/host", "-out", "/var/bug-killer/coverage-ledger.json"]
 
   bug-killer-inspector:
     build:
@@ -25,7 +25,8 @@ services:
       - /:/host:ro
       - bug-killer-shared:/var/bug-killer
     depends_on:
-      - bug-killer-orchestrator
+      bug-killer-orchestrator:
+        condition: service_completed_successfully
     entrypoint: ["/app/bug-killer-inspector"]
     command: ["--ledger", "/var/bug-killer/coverage-ledger.json", "--out", "/var/bug-killer/findings.json"]
 

@@ -63,6 +63,11 @@ var scanCmd = &cobra.Command{
 		hostname, _ := os.Hostname()
 		covLedger := ledger.NewCoverageLedger(hostname)
 
+		// Invalidate any pre-existing ledger to prevent stale consumption on re-run failure
+		if outputPath != "" {
+			_ = os.Remove(outputPath)
+		}
+
 		fmt.Printf("[+] Omni-Agent Scan: Initiating reconnaissance on target '%s'\n", targetPath)
 
 		// 1. Filesystem Crawl
@@ -180,14 +185,17 @@ var scanCmd = &cobra.Command{
 		}
 
 		covLedger.ScanDuration = time.Since(startTime).String()
+
+		if crawlRes.Status != crawler.CrawlStatusComplete {
+			_ = os.Remove(outputPath)
+			return fmt.Errorf("scan incomplete (crawl status %s): %d skipped paths, %d traversal errors; inventory failed",
+				crawlRes.Status, len(crawlRes.SkippedDirs), len(crawlRes.TraversalErrors))
+		}
+
 		if err := covLedger.WriteToFile(outputPath); err != nil {
 			return fmt.Errorf("failed to write coverage ledger: %w", err)
 		}
 
-		if crawlRes.Status != crawler.CrawlStatusComplete {
-			return fmt.Errorf("scan incomplete (crawl status %s): %d skipped paths, %d traversal errors; coverage ledger saved to %s",
-				crawlRes.Status, len(crawlRes.SkippedDirs), len(crawlRes.TraversalErrors), outputPath)
-		}
 		fmt.Printf("[✓] Scan completed. Coverage Ledger written to %s (Elapsed: %s)\n",
 			outputPath, covLedger.ScanDuration)
 		return nil
