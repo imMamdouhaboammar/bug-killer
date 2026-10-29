@@ -1,5 +1,10 @@
 # Cross-Stack Repository Scan: Vercel Labs DeepSec
 
+> [!IMPORTANT]
+> **Upstream Clean-Room Research Artifact**
+> This document records an external clean-room audit of the upstream `vercel-labs/deepsec` repository (`https://github.com/vercel-labs/deepsec`).
+> It is an archival reference used to inform Bug Killer's native Rust and Go implementation. It does **not** describe the Bug Killer codebase.
+
 Audit and asset classification of `https://github.com/vercel-labs/deepsec`.
 Conducted per the `/repo-scan` cross-stack source asset audit protocol.
 
