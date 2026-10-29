@@ -393,14 +393,16 @@ flowchart TD
 
 ## 7. Deep Privacy & Data Protection Engine
 
-Under `src/deep/privacy.rs`, `skills/privacy/`, and `docs/privacy/`, Bug Killer embeds an authoritative, curated repository of 282 specialized privacy and data protection procedures covering major worldwide regulatory frameworks and engineering standards (GDPR, CCPA/CPRA, HIPAA, EU AI Act, LINDDUN Threat Modeling, OWASP Privacy Risks P1–P10, ISO/IEC 27701:2025, and NIST Privacy Framework v1.0).
+Under `src/deep/privacy.rs` and `docs/privacy/`, Bug Killer embeds an authoritative, curated repository of 282 specialized privacy and data protection procedures covering major worldwide regulatory frameworks and engineering standards (GDPR, CCPA/CPRA, HIPAA, EU AI Act, LINDDUN Threat Modeling, OWASP Privacy Risks P1–P10, ISO/IEC 27701:2025, and NIST Privacy Framework v1.0).
+
+> **Note:** The `skills/privacy/` source directory has been retired. The canonical embedded registry is now maintained directly in `src/deep/privacy_skills_data.json` (embedded at compile time by `src/deep/privacy.rs`).
 
 ### Architecture & Capabilities
 
 ```mermaid
 flowchart TD
     subgraph REPO ["Privacy & Data Protection Repository"]
-        SKILLS["Canonical Procedures (282)<br/>skills/privacy/<skill-id>/"]
+        SKILLS["Canonical Procedures (282)<br/>src/deep/privacy_skills_data.json (embedded)"]
         DATA["Embedded Metadata Payload (442 KB)<br/>src/deep/privacy_skills_data.json"]
         REGISTRY["PrivacySkillsRegistry<br/>src/deep/privacy.rs"]
     end

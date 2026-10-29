@@ -23,3 +23,9 @@ It hashes complete stdout and stderr streams without retaining raw output; files
 ThreatSwarm coordinates autonomous agent investigations across discovered threat surfaces.
 
 Network boundaries and targets are constrained deterministically by [[src/deep/threatswarm.rs#ThreatswarmScopeEnforcer]] and analyzed via [[src/deep/threatswarm.rs#ThreatswarmAdapter]].
+
+## Privacy Skills Registry
+
+The privacy registry provides 282 embedded data protection procedures across global frameworks.
+
+The canonical registry is embedded via [[src/deep/privacy.rs#PrivacySkillsRegistry#default_embedded]] from `src/deep/privacy_skills_data.json`. The generator script safely handles absent source directories without overwriting the compiled artifact.
