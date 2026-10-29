@@ -33,3 +33,9 @@ Version matching rules are evaluated deterministically through [[src/cve_db.rs#C
 Orchestration sequences inventory and inspection deterministically via Compose dependency conditions.
 
 The orchestrator publishes the coverage ledger atomically via [[services/orchestrator/ledger/ledger.go#CoverageLedger#WriteToFile]] and invalidates stale outputs before starting reconnaissance. The inspector coordinates startup via Docker Compose `service_completed_successfully` readiness.
+
+## Docker Image Build and Smoke Verification
+
+Container distribution builds the multi-stage image independently from native host toolchains.
+
+The CI workflow verifies that the final container stage builds cleanly, entrypoints execute safely under an unprivileged user, and all runtime service binaries exist without requiring privileged Docker socket mounts.

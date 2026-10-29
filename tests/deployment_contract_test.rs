@@ -130,3 +130,32 @@ fn compose_inventory_ordering_hazard_simulation_and_fail_closed_contract() {
         "Re-run invalidates stale ledger before scanning"
     );
 }
+
+#[test]
+fn ci_workflow_includes_docker_build_and_smoke_gate() {
+    let ci = fs::read_to_string(".github/workflows/ci.yml").unwrap();
+    assert!(
+        ci.contains("docker-smoke:"),
+        "CI must define a docker-smoke job"
+    );
+    assert!(
+        ci.contains("target: final"),
+        "CI docker smoke job must build the final stage"
+    );
+    assert!(
+        ci.contains("docker run --rm bug-killer:smoke --version"),
+        "CI smoke job must verify CLI version execution"
+    );
+    assert!(
+        ci.contains("docker run --rm bug-killer:smoke --help"),
+        "CI smoke job must verify CLI help execution"
+    );
+    assert!(
+        ci.contains("/app/bug-killer-orchestrator") && ci.contains("/app/bug-killer-inspector"),
+        "CI smoke job must verify presence of service binaries"
+    );
+    assert!(
+        !ci.contains("/var/run/docker.sock:/var/run/docker.sock"),
+        "CI smoke gate must not mount host docker socket"
+    );
+}
