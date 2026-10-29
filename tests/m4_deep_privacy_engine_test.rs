@@ -274,3 +274,21 @@ fn test_engine_registry_deep_profile_routing() {
         "Privacy engine must accept ScanProfile::Deep"
     );
 }
+
+#[test]
+fn test_privacy_skills_generator_script_handles_retired_source_gracefully() {
+    let script_path = std::path::Path::new("scripts/generate_privacy_skills_data.py");
+    if !script_path.exists() {
+        return;
+    }
+    let output = std::process::Command::new("python3")
+        .arg(script_path)
+        .output();
+    if let Ok(out) = output {
+        assert!(
+            out.status.success(),
+            "scripts/generate_privacy_skills_data.py must exit 0 even if skills/privacy is absent: stderr={}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}

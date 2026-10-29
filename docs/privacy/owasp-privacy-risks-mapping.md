@@ -33,7 +33,9 @@
 
 ## Overview
 
-This document maps the 282 privacy skills in the `skills/privacy/` directory of this repository to the **OWASP Top 10 Privacy Risks v2.0** framework. The OWASP Top 10 Privacy Risks project provides a ranked list of the most critical privacy risks in web applications and systems, covering both technological and organizational aspects grounded in real-world risks rather than purely legal concerns.
+This document maps the 282 privacy skills embedded in `src/deep/privacy_skills_data.json` to the **OWASP Top 10 Privacy Risks v2.0** framework. The OWASP Top 10 Privacy Risks project provides a ranked list of the most critical privacy risks in web applications and systems, covering both technological and organizational aspects grounded in real-world risks rather than purely legal concerns.
+
+> **Note:** The `skills/privacy/` source directory has been retired. The canonical registry is now maintained directly in `src/deep/privacy_skills_data.json` (embedded at compile time by `src/deep/privacy.rs`).
 
 The mapping serves multiple purposes:
 

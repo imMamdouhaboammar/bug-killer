@@ -3,7 +3,7 @@ name: bk-privacy
 description: >
   Autonomous privacy compliance, data protection audit, and LINDDUN threat modeling engine powered by Bug Killer (bk).
   Guides agents on auditing codebases for GDPR, CCPA/CPRA, HIPAA, EU AI Act, LINDDUN, ISO 27701, and NIST Privacy Framework
-  compliance. References 282 open-source privacy procedures in skills/privacy/ and authoritative cross-reference matrices
+  compliance. References 282 embedded privacy procedures in src/deep/privacy_skills_data.json and authoritative cross-reference matrices
   in docs/privacy/. Use when evaluating privacy risks, auditing PII ingestion into AI models, verifying DSAR routes,
   validating storage limitations, or applying cryptographic virtual patches for privacy deficiencies.
 ---
@@ -29,7 +29,7 @@ Autonomous privacy compliance auditor, LINDDUN threat modeler, and data protecti
 
 ## 1. Architectural Scope & Framework Mappings
 
-The Bug Killer Deep Privacy Engine incorporates 282 canonical privacy procedures indexed in `skills/privacy/` and mapped to international standards in `docs/privacy/`:
+The Bug Killer Deep Privacy Engine incorporates 282 canonical privacy procedures embedded in `src/deep/privacy_skills_data.json` (the `skills/privacy/` source directory has been retired; `src/deep/privacy.rs` embeds the JSON at compile time) and mapped to international standards in `docs/privacy/`:
 
 | Framework | Scope & Focus Areas | Authoritative Reference |
 |---|---|---|
