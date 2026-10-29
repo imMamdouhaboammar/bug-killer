@@ -1,7 +1,8 @@
-.PHONY: all build test clean lint install docker-build completions test-rust test-go
+.PHONY: all build test clean lint install install-completions docker-build completions test-rust test-go test-python
 
 TARGET_DIR := ./target
 PREFIX ?= /usr/local/bin
+COMPLETION_SHARE ?= $(abspath $(PREFIX)/../share)
 
 all: build test
 
@@ -17,12 +18,21 @@ build-rust:
 	cd services/inspector && cargo build --release
 	@cp services/inspector/target/release/bug-killer-inspector $(TARGET_DIR)/bug-killer-inspector
 
-completions:
+completions: build-rust
 	@echo "==> Generating Shell Completions..."
-	@mkdir -p completions
-	@$(TARGET_DIR)/bug-killer completion bash > completions/bug-killer.bash
-	@$(TARGET_DIR)/bug-killer completion zsh > completions/_bug-killer
-	@$(TARGET_DIR)/bug-killer completion fish > completions/bug-killer.fish
+	@mkdir -p $(TARGET_DIR)/completions
+	@$(TARGET_DIR)/bug-killer completion bash > $(TARGET_DIR)/completions/bug-killer.bash
+	@$(TARGET_DIR)/bug-killer completion zsh > $(TARGET_DIR)/completions/_bug-killer
+	@$(TARGET_DIR)/bug-killer completion fish > $(TARGET_DIR)/completions/bug-killer.fish
+
+install-completions: completions
+	@echo "==> Installing Shell Completions to $(COMPLETION_SHARE)..."
+	install -d "$(COMPLETION_SHARE)/bash-completion/completions"
+	install -d "$(COMPLETION_SHARE)/zsh/site-functions"
+	install -d "$(COMPLETION_SHARE)/fish/vendor_completions.d"
+	install -m 644 "$(TARGET_DIR)/completions/bug-killer.bash" "$(COMPLETION_SHARE)/bash-completion/completions/bug-killer"
+	install -m 644 "$(TARGET_DIR)/completions/_bug-killer" "$(COMPLETION_SHARE)/zsh/site-functions/_bug-killer"
+	install -m 644 "$(TARGET_DIR)/completions/bug-killer.fish" "$(COMPLETION_SHARE)/fish/vendor_completions.d/bug-killer.fish"
 
 build-go:
 	@echo "==> Building Go Orchestrator..."
