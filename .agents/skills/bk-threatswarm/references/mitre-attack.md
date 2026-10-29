@@ -24,5 +24,5 @@ This document catalogs the defensive TTP mappings enforced by the `bk-threatswar
 
 ## Mapping Implementation
 
-The mapping logic is implemented in [`ThreatswarmMitreCatalog::map_cwe`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs#L779-L800).
+The mapping logic is implemented in [`ThreatswarmMitreCatalog::map_cwe`](../../../../src/deep/threatswarm.rs#L779-L800).
 Findings automatically inherit TTP identifiers in their `extensions` metadata for SIEM/SOAR export.

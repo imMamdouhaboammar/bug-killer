@@ -1,6 +1,6 @@
 # Bug Killer (`bk`) — Sibling & Third-Party Security Tools Specification
 
-This specification defines the authoritative taxonomy, capabilities, governance boundaries, and execution contracts for external and sibling security tools orchestrated by Bug Killer (`bk`) under the [Bug Killer Ultimate Spec v1](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/bug-killer-ultimate-spec-v1/README.md), the [`ToolCapabilityBroker`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/broker.rs#L401), and the [Agentic Security Operations Room](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/bug-killer-ultimate-spec-v1/14-AGENTIC-SECURITY-OPERATIONS-ROOM.md).
+This specification defines the authoritative taxonomy, capabilities, governance boundaries, and execution contracts for external and sibling security tools orchestrated by Bug Killer (`bk`) under the [Bug Killer Ultimate Spec v1](../bug-killer-ultimate-spec-v1/README.md), the [`ToolCapabilityBroker`](../src/deep/broker.rs#L401), and the [Agentic Security Operations Room](../bug-killer-ultimate-spec-v1/14-AGENTIC-SECURITY-OPERATIONS-ROOM.md).
 
 ---
 
@@ -47,8 +47,8 @@ flowchart TD
 ### Core Broker Invariants
 
 1. **Defensive Perimeter Guarantee:** All coordinated tooling operates exclusively within authorized target scopes for discovery, virtual patching, runtime hardening, and cryptographic rollback. Weaponized exploit delivery and destructive operations are prohibited.
-2. **Deterministic Discovery & Integrity:** Every tool binary registered with [`ToolCapabilityBroker`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/broker.rs#L401) must have its cryptographic SHA-256 digest recorded (`binary_sha256`) and compared against pinned manifests before execution.
-3. **Fail-Closed Governance:** Unlicensed engines (e.g. CodeQL without verified entitlement), missing binaries, or unvetted rules fail closed with explicit reason codes (`EngineMissing`, `UnlicensedEnvironment`, `Blocked`) in the [`ToolExecutionReceipt`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/broker.rs#L276).
+2. **Deterministic Discovery & Integrity:** Every tool binary registered with [`ToolCapabilityBroker`](../src/deep/broker.rs#L401) must have its cryptographic SHA-256 digest recorded (`binary_sha256`) and compared against pinned manifests before execution.
+3. **Fail-Closed Governance:** Unlicensed engines (e.g. CodeQL without verified entitlement), missing binaries, or unvetted rules fail closed with explicit reason codes (`EngineMissing`, `UnlicensedEnvironment`, `Blocked`) in the [`ToolExecutionReceipt`](../src/deep/broker.rs#L276).
 4. **Anti-Collusion Evidence Rule:** Findings from multiple tools sharing the same upstream database or rule logic are classified as correlated evidence, not independent corroborations.
 5. **Zero-Trust Sandboxing:** External tools run in unprivileged containers or restricted process namespaces with dropped capabilities, read-only root filesystems, and strict memory/CPU quotas.
 
@@ -56,7 +56,7 @@ flowchart TD
 
 ## 2. Tool Capability Classification & Registry Matrix
 
-External tools conform to the [`tool-capability.schema.json`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/bug-killer-ultimate-spec-v1/schemas/tool-capability.schema.json) contract and are classified across six technical domains:
+External tools conform to the [`tool-capability.schema.json`](../bug-killer-ultimate-spec-v1/schemas/tool-capability.schema.json) contract and are classified across six technical domains:
 
 | Category | Canonical Tool | Tool ID | Kind Enum | Execution Transport | Default Evidence Limit | Primary License |
 |---|---|---|---|---|---|---|
@@ -94,13 +94,13 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 
 #### Semgrep CLI (`semgrep-ce-adapter`)
 - **Technical Role:** Advanced semantic pattern matcher, inter-file dataflow tracer, and source sink taint tracker operating across polyglot ecosystems (Python, JavaScript, TypeScript, Go, Java, C/C++, PHP).
-- **Bug Killer Integration:** Coordinated via [`SemgrepAdapter`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/semgrep.rs#L21) in `src/deep/semgrep.rs`. Integrates with `bk`'s internal Tree-sitter parsers. Ingests native SARIF v2.1.0 and `--json` outputs, normalizing findings into `FindingV1` and producing cryptographically indexed `CoverageReceiptV1`.
+- **Bug Killer Integration:** Coordinated via [`SemgrepAdapter`](../src/deep/semgrep.rs#L21) in `src/deep/semgrep.rs`. Integrates with `bk`'s internal Tree-sitter parsers. Ingests native SARIF v2.1.0 and `--json` outputs, normalizing findings into `FindingV1` and producing cryptographically indexed `CoverageReceiptV1`.
 - **Runtime Execution:** Local CLI invocation inside an isolated directory mount with network access disabled (`--disable-version-check`, `--metrics=off`).
 - **Governance:** Community Edition engine is licensed under LGPL-2.1. Custom and community rule sets are verified for distribution compatibility.
 
 #### Gosec (`gosec-adapter`)
 - **Technical Role:** Specialized Go source code security analyzer. Traverses the Go Abstract Syntax Tree (`go/ast`) to detect unsafe memory manipulations (`unsafe.Pointer`), integer overflows, unbound concurrency, hardcoded credentials, SQL injection patterns, and permissive file access.
-- **Bug Killer Integration:** Deployed for rapid security auditing of Go microservices within the workspace ([`services/orchestrator`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/services/orchestrator) and [`services/healer`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/services/healer)). Normalizes output to SARIF.
+- **Bug Killer Integration:** Deployed for rapid security auditing of Go microservices within the workspace ([`services/orchestrator`](../services/orchestrator) and [`services/healer`](../services/healer)). Normalizes output to SARIF.
 - **Runtime Execution:** Local CLI runner invoked via `gosec -fmt=sarif -out=results.sarif ./...`.
 
 #### Bandit (`bandit-adapter`)
@@ -120,12 +120,12 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 
 #### OSV-Scanner (`osv-scanner-adapter`)
 - **Technical Role:** Google's authoritative vulnerability scanner for software dependencies. Ingests project lockfiles (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `composer.lock`, `go.sum`, `requirements.txt`) and queries the open Open Source Vulnerabilities database (OSV.dev).
-- **Bug Killer Integration:** Operates alongside `bk`'s internal synchronous HTTP OSV client ([`src/scanner/osv.rs`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/scanner/osv.rs)), acting as an external, independent SCA verification witness.
+- **Bug Killer Integration:** Operates alongside `bk`'s internal synchronous HTTP OSV client ([`src/osv/mod.rs`](../src/osv/mod.rs)), acting as an external, independent SCA verification witness.
 - **Evidence Characteristics:** Matches are cross-checked against actual call-graph reachability. Package presence alone is tagged as `CONFIRMED_AFFECTED_VERSION`, requiring AST or binary symbol confirmation to elevate to `CONFIRMED_REACHABLE`.
 
 #### CVE MCP Server (`cve-mcp-adapter`)
 - **Technical Role:** High-density threat intelligence sidecar orchestrating 28 security intelligence tools across 24 upstream vulnerability and threat data sources (NVD, FIRST EPSS, CISA KEV catalog, Shodan, VirusTotal, crt.sh, CIRCL Passive DNS, and MITRE ATT&CK mappings).
-- **Bug Killer Integration:** Integrated into `bk`'s deep engine via [`CveMcpAdapter`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/cve_mcp.rs) and registered in [`ToolCapabilityBroker`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/broker.rs). Supports live MCP stdio communication, one-call triage orchestration (`bk.cve_triage`), and deterministic offline risk scoring with CISA KEV hard-overrides.
+- **Bug Killer Integration:** Integrated into `bk`'s deep engine via [`CveMcpAdapter`](../src/deep/cve_mcp.rs) and registered in [`ToolCapabilityBroker`](../src/deep/broker.rs). Supports live MCP stdio communication, one-call triage orchestration (`bk.cve_triage`), and deterministic offline risk scoring with CISA KEV hard-overrides.
 - **Defensive Invariant:** Strictly defensive threat intelligence aggregation and reachability verification. Weaponized payload generation and offensive exploitation are disabled by default.
 - **Execution Transport:** `ExecutionTransport::Mcp` (FastMCP / stdio JSON-RPC). Offline-capable via local SQLite caching and deterministic fallbacks.
 
@@ -179,7 +179,7 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 #### ThreatSwarm (`threatswarm-deep-adapter`)
 - **Technical Role:** High-performance defensive boundary enforcer, CVSS v3.1 mathematical scoring engine, and MITRE ATT&CK enterprise catalog mapper adapted from ThreatSwarm.
 - **Defensive Perimeter:** All weaponized offensive exploit generation, payload encoding, and C2 operations are completely removed. Operates exclusively in zero-trust scope verification, finding deduplication, and risk triage.
-- **Bug Killer Integration:** Embedded directly into Bug Killer's deep engine via [`ThreatswarmAdapter`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs), registered in [`ToolCapabilityBroker`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/broker.rs), and surfaced via `.agents/skills/bk-threatswarm/`.
+- **Bug Killer Integration:** Embedded directly into Bug Killer's deep engine via [`ThreatswarmAdapter`](../src/deep/threatswarm.rs), registered in [`ToolCapabilityBroker`](../src/deep/broker.rs), and surfaced via `.agents/skills/bk-threatswarm/`.
 - **Key Modules:**
   - `ThreatswarmScopeEnforcer`: CIDR bitmask evaluation (`10.0.0.0/8`, `192.168.1.0/24`), FQDN allowlisting, and command interception.
   - `ThreatswarmCvssEngine` / `CvssVector`: Full FIRST.org CVSS 3.1 calculation, ceiling roundup to 0.1, and automated SLA timers (Critical: 24h, High: 72h).
@@ -194,7 +194,7 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 - **Technical Role:** Reverse engineering, binary disassembly, and decompilation frameworks.
   - `Ghidra (Headless)`: Executes Java-based headless scripts (`analyzeHeadless`) to extract symbol tables, function signatures, control-flow graphs (CFGs), and decompiled C representations from compiled executables (ELF, Mach-O, PE).
   - `Rizin`: Fast, scriptable binary analysis CLI (fork of radare2) for rapid inspection of sections, relocations, imported shared objects, and hardening flags (NX, PIE, RELRO, Stack Canaries).
-- **Bug Killer Integration:** Complements the zero-copy, in-memory binary inspection provided by `goblin` within [`services/inspector`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/services/inspector). Triggered when static binary triage requires deep symbol recovery or control-flow reachability analysis (e.g. verifying `BrotliDecoderDecompressStream` in stripped Node.js binaries).
+- **Bug Killer Integration:** Complements the zero-copy, in-memory binary inspection provided by `goblin` within [`services/inspector`](../services/inspector). Triggered when static binary triage requires deep symbol recovery or control-flow reachability analysis (e.g. verifying `BrotliDecoderDecompressStream` in stripped Node.js binaries).
 
 #### cargo-fuzz & libFuzzer (`cargo-fuzz-runner`, `libfuzzer-runner`)
 - **Technical Role:** In-process, coverage-guided evolutionary fuzzing engines. Instrument code via LLVM's `SanitizerCoverage` and compile with AddressSanitizer (ASan) and UndefinedBehaviorSanitizer (UBSan).
@@ -220,7 +220,7 @@ External tools conform to the [`tool-capability.schema.json`](file:///Users/mamd
 
 ### Capability Declaration Schema
 
-External adapters register their capabilities using the [`tool-capability.schema.json`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/bug-killer-ultimate-spec-v1/schemas/tool-capability.schema.json) specification. The following is an example declaration for the Semgrep CLI adapter:
+External adapters register their capabilities using the [`tool-capability.schema.json`](../bug-killer-ultimate-spec-v1/schemas/tool-capability.schema.json) specification. The following is an example declaration for the Semgrep CLI adapter:
 
 ```json
 {
@@ -262,7 +262,7 @@ External adapters register their capabilities using the [`tool-capability.schema
 
 ### Execution Receipt Schema
 
-Following the execution of an external tool, the host writes an immutable, host-authored receipt complying with [`tool-execution-receipt.schema.json`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/bug-killer-ultimate-spec-v1/schemas/tool-execution-receipt.schema.json):
+Following the execution of an external tool, the host writes an immutable, host-authored receipt complying with [`tool-execution-receipt.schema.json`](../bug-killer-ultimate-spec-v1/schemas/tool-execution-receipt.schema.json):
 
 ```json
 {

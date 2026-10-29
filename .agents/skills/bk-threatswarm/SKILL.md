@@ -19,7 +19,7 @@ The `bk-threatswarm` engine provides autonomous defensive security orchestration
 
 > [!IMPORTANT]
 > **Strictly Defensive Perimeter Invariant:**
-> In accordance with the repository constitution ([AGENTS.md](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/AGENTS.md)), all offensive tooling, weaponized exploit generators, payload encoders, and command-and-control (C2) frameworks have been systematically excised. The engine operates exclusively in detection, boundary enforcement, risk scoring, and virtual patching modes.
+> In accordance with the repository constitution ([AGENTS.md](../../../AGENTS.md)), all offensive tooling, weaponized exploit generators, payload encoders, and command-and-control (C2) frameworks have been systematically excised. The engine operates exclusively in detection, boundary enforcement, risk scoring, and virtual patching modes.
 
 ---
 
@@ -27,11 +27,11 @@ The `bk-threatswarm` engine provides autonomous defensive security orchestration
 
 | Capability | Engine Component | Contract / Standard |
 |---|---|---|
-| **Deterministic Scope Enforcer** | [`ThreatswarmScopeEnforcer`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs#L91-L325) | CIDR (`10.0.0.0/8`, `192.168.1.0/24`), FQDN globbing, zero unauthorized egress |
-| **CVSS 3.1 Scoring Engine** | [`CvssVector`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs#L375-L670), [`ThreatswarmCvssEngine`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs#L674-L715) | FIRST.org CVSS 3.1 Specification, ceiling roundup to 0.1, automated remediation SLAs |
-| **MITRE ATT&CK Catalog** | [`ThreatswarmMitreCatalog`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs#L724-L800) | MITRE Enterprise ATT&CK tactics (TA0001–TA0040) and top techniques, automated CWE-to-TTP mapping |
-| **Finding Synchronizer** | [`ThreatswarmFindingSync`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs#L806-L915) | Cross-subsystem deduplication of Critical/High findings, consolidated `FINDINGS_SUMMARY.md` |
-| **Deep Engine Analyzer Adapter** | [`ThreatswarmAdapter`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/deep/threatswarm.rs#L920-L1370) | [`AnalyzerAdapter`](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/src/engine/adapter.rs) schema v1.0, strongly-supported evidence receipts |
+| **Deterministic Scope Enforcer** | [`ThreatswarmScopeEnforcer`](../../../src/deep/threatswarm.rs#L91-L325) | CIDR (`10.0.0.0/8`, `192.168.1.0/24`), FQDN globbing, zero unauthorized egress |
+| **CVSS 3.1 Scoring Engine** | [`CvssVector`](../../../src/deep/threatswarm.rs#L375-L670), [`ThreatswarmCvssEngine`](../../../src/deep/threatswarm.rs#L674-L715) | FIRST.org CVSS 3.1 Specification, ceiling roundup to 0.1, automated remediation SLAs |
+| **MITRE ATT&CK Catalog** | [`ThreatswarmMitreCatalog`](../../../src/deep/threatswarm.rs#L724-L800) | MITRE Enterprise ATT&CK tactics (TA0001–TA0040) and top techniques, automated CWE-to-TTP mapping |
+| **Finding Synchronizer** | [`ThreatswarmFindingSync`](../../../src/deep/threatswarm.rs#L806-L915) | Cross-subsystem deduplication of Critical/High findings, consolidated `FINDINGS_SUMMARY.md` |
+| **Deep Engine Analyzer Adapter** | [`ThreatswarmAdapter`](../../../src/deep/threatswarm.rs#L920-L1370) | [`AnalyzerAdapter`](../../../src/engine/adapter.rs) schema v1.0, strongly-supported evidence receipts |
 
 ---
 
@@ -88,6 +88,6 @@ Virtual patches are authored and registered into the virtual patching pipeline:
 
 ## References & Documentation
 
-- [MITRE ATT&CK Catalog Specification](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/.agents/skills/bk-threatswarm/references/mitre-attack.md)
-- [CVSS 3.1 Scoring Reference & Formulas](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/.agents/skills/bk-threatswarm/references/cvss-reference.md)
-- [Scope Enforcement Specification](file:///Users/mamdouhaboammar/Documents/antigravity/silly-kepler/.agents/skills/bk-threatswarm/references/scope-enforcement.md)
+- [MITRE ATT&CK Catalog Specification](../../../.agents/skills/bk-threatswarm/references/mitre-attack.md)
+- [CVSS 3.1 Scoring Reference & Formulas](../../../.agents/skills/bk-threatswarm/references/cvss-reference.md)
+- [Scope Enforcement Specification](../../../.agents/skills/bk-threatswarm/references/scope-enforcement.md)

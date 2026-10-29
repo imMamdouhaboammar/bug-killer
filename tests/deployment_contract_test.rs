@@ -182,3 +182,34 @@ fn ci_workflow_includes_python_cve_mcp_quality_gate() {
         "E2E integration must depend on test-python"
     );
 }
+
+#[test]
+fn operational_mcp_configuration_and_docs_are_portable() {
+    let docs = fs::read_to_string("docs/SIBLING_TOOLS.md").unwrap();
+    assert!(
+        !docs.contains("file:///") && !docs.contains("file://"),
+        "operational sibling-tool links must be repository-relative"
+    );
+    assert!(
+        !std::path::Path::new("services/cve-mcp-server/.mcp.json").exists(),
+        "machine-local MCP settings must not be tracked"
+    );
+    let example = fs::read_to_string("services/cve-mcp-server/.mcp.example.json").unwrap();
+    let config: serde_json::Value = serde_json::from_str(&example).unwrap();
+    let server = &config["mcpServers"]["cve-mcp"];
+    assert_eq!(server["command"], "uv");
+    assert_eq!(server["args"][0], "run");
+    assert_eq!(server["args"][1], "--directory");
+    assert!(
+        server["args"][2]
+            .as_str()
+            .unwrap()
+            .starts_with("/absolute/path/to/"),
+        "the example must require an explicit checkout-specific substitution"
+    );
+    assert_eq!(server["args"][3], "cve-mcp");
+    assert!(
+        server.get("env").is_none(),
+        "example must not embed credentials"
+    );
+}
