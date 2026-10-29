@@ -213,4 +213,3 @@ fn operational_mcp_configuration_and_docs_are_portable() {
         "example must not embed credentials"
     );
 }
-}
