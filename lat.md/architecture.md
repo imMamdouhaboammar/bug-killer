@@ -57,3 +57,9 @@ Completions are generated dynamically via [[src/completion/mod.rs#CompletionGene
 Project-specific agent skills reside canonically within the `.agents/skills/` directory.
 
 The `lat-md` skill is authored and maintained under `.agents/skills/lat-md`, with `skills/lat-md` linked directly to eliminate redundant tracked files while preserving discovery on external agent runtimes. Contract verification in `lat_md_skill_is_canonical_in_agents_directory` ensures content synchronization.
+
+## Agent Skill Vendoring and Synchronization
+
+Multi-package skills are vendored as self-contained directories with synchronized shared assets.
+
+The `omni-skill` and `skill-conductor` packages are independently packaged skills upstream from `imMamdouhaboammar/omni-skill`. Because agent runtimes (such as Claude Code, Cursor, and Google Antigravity) expect self-contained directories when executing or packaging skills, cross-skill symlinks break standalone distribution. To prevent silent divergence between the 25 shared evaluation, benchmark, and prompt assets, [[tests/deployment_contract_test.rs]] enforces deterministic byte-for-byte synchronization in `omni_skill_and_skill_conductor_shared_assets_are_synchronized`.

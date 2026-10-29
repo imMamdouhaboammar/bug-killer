@@ -133,6 +133,9 @@ def test_eval_skill_detects_secret_leak():
     with tempfile.TemporaryDirectory() as tmp:
         skill = Path(tmp) / "leaky-skill"
         skill.mkdir()
+        # Build the fake token at runtime so the repository itself does not
+        # contain a token-shaped literal that package scanners can misread.
+        fake_token = "sk-" + "abcdef0123456789ABCDEF"
         (skill / "SKILL.md").write_text(
             "---\n"
             "name: leaky-skill\n"
@@ -140,7 +143,7 @@ def test_eval_skill_detects_secret_leak():
             "---\n\n"
             "# Leaky Skill\n\n"
             "## Setup\n\n"
-            "export API_KEY=" + "sk-abcdef0123456789ABCDEF\n"
+            f"export API_KEY={fake_token}\n"
         )
         result = subprocess.run(
             [UV_BIN, "run", str(SCRIPTS_DIR / "eval_skill.py"), str(skill)],
