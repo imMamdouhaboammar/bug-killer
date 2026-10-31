@@ -59,3 +59,7 @@ Verifies scanning, candidate matching, AI processing, triage, revalidation, enri
 ### Atomic File Locking And Reclaim
 
 Validates that concurrent workers cannot clobber active locks and stale locks are safely reclaimed.
+
+## MCP Tool Registry Parity Tests
+
+Every tool advertised by the MCP server's typed domain registry is listed with a non-empty name, description, and object input schema, and is recognized by JSON-RPC tools/call dispatch.
