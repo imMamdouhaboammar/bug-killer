@@ -59,3 +59,19 @@ Verifies scanning, candidate matching, AI processing, triage, revalidation, enri
 ### Atomic File Locking And Reclaim
 
 Validates that concurrent workers cannot clobber active locks and stale locks are safely reclaimed.
+
+## MCP Tool Registry Specifications
+
+Verification specifications for the Model Context Protocol typed tool registry.
+
+### MCP Tool Registry Parity Tests
+
+Verifies exact schema and dispatch parity across all registered MCP tools with zero drift.
+
+## Security Detector Modular Dispatch Specifications
+
+Verification specifications for modular security detector dispatch and coverage propagation.
+
+### Detector Registry Modular Dispatch Tests
+
+Verifies registration order, rule-set unions, and coherent dispatch across all eight detector domains.

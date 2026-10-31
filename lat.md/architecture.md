@@ -88,3 +88,9 @@ The Model Context Protocol server utilizes a typed registry pattern to eliminate
 
 All 32 MCP tools are declared as [[src/mcp/registry.rs#McpToolRegistration]] entries partitioned across domain modules in `src/mcp/tools/` (`cve`, `probe`, `core`, `guard`, `operations`). Each tool specifies its name, description, JSON schema, and execution handler in a single source location. Tool listing via [[src/mcp/registry.rs#all_tools]] and tool execution via [[src/mcp/registry.rs#dispatch]] share this unified registry, while [[src/mcp/server.rs#McpServer]] handles JSON-RPC transport and workspace validation. Parity and security boundaries are enforced by `tests/mcp_registry_parity_test.rs`.
 
+## Modular Security Detector Subsystem
+
+The security detector subsystem organizes static and dynamic analyzers across domain-focused modules.
+
+The 26 automated detectors are partitioned from a monolithic file into domain-specific modules in `src/detectors/` (`sast`, `secrets`, `iac`, `agent`, `supply_chain`, `web`, `auth`, `quality`), all implementing [[src/detectors/mod.rs#SecurityDetector]]. Orchestration and catalog rule accounting reside in [[src/detectors/mod.rs#DetectorRegistry]], ensuring honest scan status reporting and regression test isolation.
+
