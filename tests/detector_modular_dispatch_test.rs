@@ -21,7 +21,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tempfile::tempdir;
 
-// @lat: [[tests#Test Suite Specifications#Security Detector Modular Dispatch Specifications#Detector Registry Modular Dispatch Tests]]
+// @lat: [[tests#Security Detector Modular Dispatch Tests]]
 #[test]
 fn test_all_26_detectors_registration_and_order_parity() {
     let registry = DetectorRegistry::default();

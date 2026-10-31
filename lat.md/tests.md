@@ -60,18 +60,10 @@ Verifies scanning, candidate matching, AI processing, triage, revalidation, enri
 
 Validates that concurrent workers cannot clobber active locks and stale locks are safely reclaimed.
 
-## MCP Tool Registry Specifications
+## MCP Tool Registry Parity Tests
 
-Verification specifications for the Model Context Protocol typed tool registry.
+Every tool advertised by the MCP server's typed domain registry is listed with a non-empty name, description, and object input schema, and is recognized by JSON-RPC tools/call dispatch.
 
-### MCP Tool Registry Parity Tests
+## Security Detector Modular Dispatch Tests
 
-Verifies exact schema and dispatch parity across all registered MCP tools with zero drift.
-
-## Security Detector Modular Dispatch Specifications
-
-Verification specifications for modular security detector dispatch and coverage propagation.
-
-### Detector Registry Modular Dispatch Tests
-
-Verifies registration order, rule-set unions, and coherent dispatch across all eight detector domains.
+Every detector in the modular detector subsystem is registered in canonical order and dispatches coherently within its domain module.

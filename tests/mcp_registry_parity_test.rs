@@ -2,7 +2,7 @@ use bug_killer::mcp::McpServer;
 use serde_json::json;
 use tempfile::tempdir;
 
-// @lat: [[tests#Test Suite Specifications#MCP Tool Registry Specifications#MCP Tool Registry Parity Tests]]
+// @lat: [[tests#MCP Tool Registry Parity Tests]]
 #[test]
 fn test_tool_list_and_dispatch_parity() {
     let dir = tempdir().unwrap();
