@@ -21,3 +21,5 @@ Catalog definitions in [[src/catalog/mod.rs#SecurityCatalog]] assign states via 
 Dedicated scanner modules inspect language runtimes, server configurations, and dependency manifests.
 
 These checkers evaluate memory safety, authentication flows, secrets, and container isolation before remediation.
+
+The 26 security detectors are partitioned into domain submodules in `src/detectors/` (`sast`, `secrets`, `iac`, `agent`, `supply_chain`, `web`, `auth`, `quality`), all implementing [[src/detectors/mod.rs#SecurityDetector]]. The registry [[src/detectors/mod.rs#DetectorRegistry]] coordinates execution, catalog rule coverage accounting, and honest partial/completed scan status classification via [[src/detectors/mod.rs#DetectorRegistry#execute_guard_scan]]. Behavior and registration order parity are verified in `tests/detector_modular_dispatch_test.rs`.
