@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::scanner::finding_builder::{ScannerFindingBuilder, ScannerFindingSpec};
 use crate::types::*;
 use regex::Regex;
 use std::path::Path;
@@ -179,53 +180,53 @@ impl AuthSecurityScanner {
                 // BK-AI-AUT-008 comment indicator
                 let lower_comment = trimmed.to_lowercase();
                 if lower_comment.contains("skip mfa") || lower_comment.contains("bypass mfa") {
-                    findings.push(Self::create_finding(
-                        "BK-AI-AUT-008",
-                        "MFA disabled for sensitive administrative actions or weak step-up logic",
-                        Severity::High,
-                        "2.2 Authentication and account lifecycle",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Administrative actions and privilege transitions must enforce multi-factor authentication (MFA).",
-                        "Code comment indicates MFA step-up verification is bypassed for administrative actions.",
-                        "Enforce mandatory multi-factor authentication step-up verification on administrative endpoints.",
-                    ));
+                    findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-008",
+                    title: "MFA disabled for sensitive administrative actions or weak step-up logic",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Administrative actions and privilege transitions must enforce multi-factor authentication (MFA).",
+                    description: "Code comment indicates MFA step-up verification is bypassed for administrative actions.",
+                    remediation: "Enforce mandatory multi-factor authentication step-up verification on administrative endpoints.",
+                }));
                 }
 
                 // BK-AI-AUT-010 comment indicator check
                 if RE_AUT_010_CLIENT_AUTH.is_match(trimmed) {
-                    findings.push(Self::create_finding(
-                        "BK-AI-AUT-010",
-                        "Authentication relies on client-side JS, hidden button or route guard alone",
-                        Severity::High,
-                        "2.2 Authentication and account lifecycle",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Client-side route guards must never substitute for server-side authorization enforcement.",
-                        "Code comment indicates authentication or authorization is only enforced on the client side.",
-                        "Enforce server-side authorization checks on all backend endpoints rather than trusting client-side route guards.",
-                    ));
+                    findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-010",
+                    title: "Authentication relies on client-side JS, hidden button or route guard alone",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Client-side route guards must never substitute for server-side authorization enforcement.",
+                    description: "Code comment indicates authentication or authorization is only enforced on the client side.",
+                    remediation: "Enforce server-side authorization checks on all backend endpoints rather than trusting client-side route guards.",
+                }));
                 }
 
                 // BK-AI-SES-012 comment indicator check
                 if RE_SES_012_REFRESH_REUSE.is_match(trimmed) {
-                    findings.push(Self::create_finding(
-                        "BK-AI-SES-012",
-                        "Concurrent refresh calls permit token reuse/race or stale session resurrection",
-                        Severity::High,
-                        "2.4 Sessions, tokens, cookies and browser login",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Refresh tokens must be single-use and rotated on every issuance with replay revocation.",
-                        "Code comment or configuration indicates refresh token reuse is permitted without rotation.",
-                        "Enable refresh token rotation and immediately revoke token family on detected reuse attempts.",
-                    ));
+                    findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-012",
+                    title: "Concurrent refresh calls permit token reuse/race or stale session resurrection",
+                    severity: Severity::High,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Refresh tokens must be single-use and rotated on every issuance with replay revocation.",
+                    description: "Code comment or configuration indicates refresh token reuse is permitted without rotation.",
+                    remediation: "Enable refresh token rotation and immediately revoke token family on detected reuse attempts.",
+                }));
                 }
 
                 continue;
@@ -237,19 +238,19 @@ impl AuthSecurityScanner {
 
             // 1. BK-AI-AUT-001: Protected route lacks server-side authentication
             if RE_AUT_001_EXPRESS.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-001",
-                    "Protected route lacks server-side authentication",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-001",
+                    title: "Protected route lacks server-side authentication",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Protected routes (/admin, /account, /profile, /settings, /dashboard) must declare server-side auth middleware.",
-                    "Route handler directly exposes a sensitive administrative or account endpoint without authentication middleware.",
-                    "Add server-side authentication middleware (e.g. requireAuth, authenticate) before the route callback.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Protected routes (/admin, /account, /profile, /settings, /dashboard) must declare server-side auth middleware.",
+                    description: "Route handler directly exposes a sensitive administrative or account endpoint without authentication middleware.",
+                    remediation: "Add server-side authentication middleware (e.g. requireAuth, authenticate) before the route callback.",
+                }));
             } else if RE_AUT_001_EXPRESS_MULTILINE.is_match(trimmed) {
                 // Check if the next non-empty line starts directly with a callback
                 if let Some(next_line) = lines.iter().skip(idx + 1).find(|l| !l.trim().is_empty()) {
@@ -258,19 +259,19 @@ impl AuthSecurityScanner {
                         || next_trimmed.starts_with("async (req, res)")
                         || next_trimmed.starts_with("function")
                     {
-                        findings.push(Self::create_finding(
-                            "BK-AI-AUT-001",
-                            "Protected route lacks server-side authentication",
-                            Severity::High,
-                            "2.2 Authentication and account lifecycle",
-                            path,
-                            &target_kind,
-                            line_no,
-                            trimmed,
-                            "Protected routes must declare server-side authentication middleware.",
-                            "Multi-line route declaration binds sensitive endpoint directly to handler callback without auth middleware.",
-                            "Insert authentication middleware before the handler callback.",
-                        ));
+                        findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-001",
+                    title: "Protected route lacks server-side authentication",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Protected routes must declare server-side authentication middleware.",
+                    description: "Multi-line route declaration binds sensitive endpoint directly to handler callback without auth middleware.",
+                    remediation: "Insert authentication middleware before the handler callback.",
+                }));
                     }
                 }
             } else if RE_AUT_001_FLASK.is_match(trimmed) {
@@ -278,89 +279,89 @@ impl AuthSecurityScanner {
                 if let Some(next_line) = lines.iter().skip(idx + 1).find(|l| !l.trim().is_empty()) {
                     let next_trimmed = next_line.trim();
                     if next_trimmed.starts_with("def ") {
-                        findings.push(Self::create_finding(
-                            "BK-AI-AUT-001",
-                            "Protected route lacks server-side authentication",
-                            Severity::High,
-                            "2.2 Authentication and account lifecycle",
-                            path,
-                            &target_kind,
-                            line_no,
-                            trimmed,
-                            "Protected Flask endpoints must declare @login_required or auth decorator.",
-                            "Flask route on sensitive path is directly followed by view function without auth decorator.",
-                            "Apply @login_required or equivalent authentication decorator.",
-                        ));
+                        findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-001",
+                    title: "Protected route lacks server-side authentication",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Protected Flask endpoints must declare @login_required or auth decorator.",
+                    description: "Flask route on sensitive path is directly followed by view function without auth decorator.",
+                    remediation: "Apply @login_required or equivalent authentication decorator.",
+                }));
                     }
                 }
             }
 
             // 2. BK-AI-AUT-002: Middleware bypass through alternate HTTP path or suffix
             if RE_AUT_002_BYPASS.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-002",
-                    "Middleware bypass through alternate HTTP method, path or transport",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-002",
+                    title: "Middleware bypass through alternate HTTP method, path or transport",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Canonicalize and normalize request paths before route matching and auth checks.",
-                    "Path traversal bypass (e.g. '..;') or unnormalized suffix check detected in route handling.",
-                    "Normalize request paths and eliminate matrix parameter or suffix-based middleware bypasses.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Canonicalize and normalize request paths before route matching and auth checks.",
+                    description: "Path traversal bypass (e.g. '..;') or unnormalized suffix check detected in route handling.",
+                    remediation: "Normalize request paths and eliminate matrix parameter or suffix-based middleware bypasses.",
+                }));
             }
 
             // 3. BK-AI-AUT-003: isAuthenticated stub, always-true mock or demo login remains
             if RE_AUT_003_STUB.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-003",
-                    "`isAuthenticated` stub, always-true mock or demo login remains in release",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-003",
+                    title: "`isAuthenticated` stub, always-true mock or demo login remains in release",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Authentication functions must evaluate authentic identity assertions and session state.",
-                    "Hardcoded always-true authentication stub, mock login or demo bypass detected in code.",
-                    "Remove mock auth bypasses and stubs; implement authentic identity verification.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Authentication functions must evaluate authentic identity assertions and session state.",
+                    description: "Hardcoded always-true authentication stub, mock login or demo bypass detected in code.",
+                    remediation: "Remove mock auth bypasses and stubs; implement authentic identity verification.",
+                }));
             }
 
             // 4. BK-AI-AUT-004: Passwords stored in plaintext, reversible encryption or fast unsalted hashes
             if RE_AUT_004_PASSWORD_STORAGE.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-004",
-                    "Passwords stored in plaintext, reversible encryption or fast unsalted hashes",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-004",
+                    title: "Passwords stored in plaintext, reversible encryption or fast unsalted hashes",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Passwords must be hashed using a dedicated memory-hard salted algorithm (Argon2id, bcrypt).",
-                    "Password stored as plaintext, encrypted reversibly, or hashed with fast unsalted digest (MD5/SHA1).",
-                    "Migrate password storage to Argon2id or bcrypt with unique per-user cryptographic salt.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Passwords must be hashed using a dedicated memory-hard salted algorithm (Argon2id, bcrypt).",
+                    description: "Password stored as plaintext, encrypted reversibly, or hashed with fast unsalted digest (MD5/SHA1).",
+                    remediation: "Migrate password storage to Argon2id or bcrypt with unique per-user cryptographic salt.",
+                }));
             }
 
             // 5. BK-AI-AUT-005: Password reset token is guessable or non-crypto
             if RE_AUT_005_RESET_TOKEN.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-005",
-                    "Password reset token is guessable, reusable, not expiring or not bound to user",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-005",
+                    title: "Password reset token is guessable, reusable, not expiring or not bound to user",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Password reset tokens must be generated using cryptographically secure pseudorandomness (CSPRNG).",
-                    "Password reset token generated with non-cryptographic randomness (Math.random, rand(), Date.now()).",
-                    "Generate reset tokens using crypto.randomBytes(32) with time-bounded expiration and single-use invalidation.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Password reset tokens must be generated using cryptographically secure pseudorandomness (CSPRNG).",
+                    description: "Password reset token generated with non-cryptographic randomness (Math.random, rand(), Date.now()).",
+                    remediation: "Generate reset tokens using crypto.randomBytes(32) with time-bounded expiration and single-use invalidation.",
+                }));
             }
 
             // 6. BK-AI-AUT-006: Email/phone change does not require fresh verification
@@ -376,54 +377,54 @@ impl AuthSecurityScanner {
                     || window.contains("reauth");
 
                 if !has_verification {
-                    findings.push(Self::create_finding(
-                        "BK-AI-AUT-006",
-                        "Email/phone change does not require appropriate fresh verification",
-                        Severity::Medium,
-                        "2.2 Authentication and account lifecycle",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Account identifier changes must require current password verification or confirmation token.",
-                        "Email or phone address updated directly on user record without re-authenticating or confirming via token.",
-                        "Require current password re-entry or send confirmation token to existing address before updating credentials.",
-                    ));
+                    findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-006",
+                    title: "Email/phone change does not require appropriate fresh verification",
+                    severity: Severity::Medium,
+                    category: "2.2 Authentication and account lifecycle",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Account identifier changes must require current password verification or confirmation token.",
+                    description: "Email or phone address updated directly on user record without re-authenticating or confirming via token.",
+                    remediation: "Require current password re-entry or send confirmation token to existing address before updating credentials.",
+                }));
                 }
             }
 
             // 7. BK-AI-AUT-007: No abuse throttling for sign-in, recovery, OTP
             if RE_AUT_007_NO_RATE_LIMIT.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-007",
-                    "No abuse throttling for sign-in, recovery, OTP or invite issuance",
-                    Severity::Medium,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-007",
+                    title: "No abuse throttling for sign-in, recovery, OTP or invite issuance",
+                    severity: Severity::Medium,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Authentication endpoints must enforce rate limiting / abuse throttling middleware.",
-                    "Sign-in, signup, OTP or recovery route declared without rate limiting middleware in handler chain.",
-                    "Apply rate limiting middleware (e.g. express-rate-limit, slow-down) to prevent brute-force abuse.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Authentication endpoints must enforce rate limiting / abuse throttling middleware.",
+                    description: "Sign-in, signup, OTP or recovery route declared without rate limiting middleware in handler chain.",
+                    remediation: "Apply rate limiting middleware (e.g. express-rate-limit, slow-down) to prevent brute-force abuse.",
+                }));
             }
 
             // 8. BK-AI-AUT-008: MFA disabled for sensitive administrative actions
             if RE_AUT_008_MFA_DISABLED.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-008",
-                    "MFA disabled for sensitive administrative actions or weak step-up logic",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-008",
+                    title: "MFA disabled for sensitive administrative actions or weak step-up logic",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Administrative actions and privilege transitions must enforce multi-factor authentication (MFA).",
-                    "MFA enforcement is explicitly disabled or bypassed for sensitive administrative actions.",
-                    "Enforce mandatory multi-factor authentication step-up verification on administrative endpoints.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Administrative actions and privilege transitions must enforce multi-factor authentication (MFA).",
+                    description: "MFA enforcement is explicitly disabled or bypassed for sensitive administrative actions.",
+                    remediation: "Enforce mandatory multi-factor authentication step-up verification on administrative endpoints.",
+                }));
             }
 
             // 9. BK-AI-AUT-009: Fail-open login/auth service exception handling
@@ -445,53 +446,53 @@ impl AuthSecurityScanner {
             };
 
             if is_fail_open {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-009",
-                    "Fail-open login/auth service timeout or exception",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-009",
+                    title: "Fail-open login/auth service timeout or exception",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Authentication filters and service handlers must fail closed upon exception or timeout.",
-                    "Catch block fails open by invoking next() or returning true without enforcing identity.",
-                    "Fail closed: reject unauthenticated requests with HTTP 401 or forward error via next(err).",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Authentication filters and service handlers must fail closed upon exception or timeout.",
+                    description: "Catch block fails open by invoking next() or returning true without enforcing identity.",
+                    remediation: "Fail closed: reject unauthenticated requests with HTTP 401 or forward error via next(err).",
+                }));
             }
 
             // 10. BK-AI-AUT-010: Authentication relies on client-side JS or route guard alone
             if RE_AUT_010_CLIENT_AUTH.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-010",
-                    "Authentication relies on client-side JS, hidden button or route guard alone",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-010",
+                    title: "Authentication relies on client-side JS, hidden button or route guard alone",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Client-side state or route guards must never substitute for server-side authorization enforcement.",
-                    "Authentication check relies on client-side storage or frontend-only route guard.",
-                    "Enforce authorization verification on server-side API endpoints before delivering protected data.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Client-side state or route guards must never substitute for server-side authorization enforcement.",
+                    description: "Authentication check relies on client-side storage or frontend-only route guard.",
+                    remediation: "Enforce authorization verification on server-side API endpoints before delivering protected data.",
+                }));
             }
 
             // 11. BK-AI-AUT-011: Untrusted JWT claims used before verification
             if RE_AUT_011_JWT_DECODE.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-011",
-                    "Untrusted JWT claims used before signature/issuer/audience/expiry verification",
-                    Severity::High,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-011",
+                    title: "Untrusted JWT claims used before signature/issuer/audience/expiry verification",
+                    severity: Severity::High,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "JWT claims must only be consumed after cryptographic signature and claim verification.",
-                    "jwt.decode() used without verifying signature and claims with jwt.verify().",
-                    "Use jwt.verify(token, secretOrKey) to cryptographically validate signature before reading claims.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "JWT claims must only be consumed after cryptographic signature and claim verification.",
+                    description: "jwt.decode() used without verifying signature and claims with jwt.verify().",
+                    remediation: "Use jwt.verify(token, secretOrKey) to cryptographically validate signature before reading claims.",
+                }));
             }
 
             // 12. BK-AI-AUT-012: OAuth/OIDC state parameter omitted in auth flow
@@ -502,19 +503,19 @@ impl AuthSecurityScanner {
             };
 
             if oauth_missing_state {
-                findings.push(Self::create_finding(
-                    "BK-AI-AUT-012",
-                    "OAuth/OIDC state, nonce, PKCE or callback/redirect checks omitted where required",
-                    Severity::Medium,
-                    "2.2 Authentication and account lifecycle",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-AUT-012",
+                    title: "OAuth/OIDC state, nonce, PKCE or callback/redirect checks omitted where required",
+                    severity: Severity::Medium,
+                    category: "2.2 Authentication and account lifecycle",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "OAuth 2.0 / OIDC authorization requests must include a cryptographically random state parameter.",
-                    "OAuth authorization URL or configuration omits the CSRF state parameter.",
-                    "Include and validate an unguessable state parameter bound to the user session to prevent OAuth CSRF.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "OAuth 2.0 / OIDC authorization requests must include a cryptographically random state parameter.",
+                    description: "OAuth authorization URL or configuration omits the CSRF state parameter.",
+                    remediation: "Include and validate an unguessable state parameter bound to the user session to prevent OAuth CSRF.",
+                }));
             }
 
             // ---------------------------------------------------------------
@@ -523,19 +524,19 @@ impl AuthSecurityScanner {
 
             // 13. BK-AI-SES-001: Session ID predictable or generated with non-cryptographic randomness
             if RE_SES_001_WEAK_SESSION_ID.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-001",
-                    "Session ID predictable or generated with non-cryptographic randomness",
-                    Severity::High,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-001",
+                    title: "Session ID predictable or generated with non-cryptographic randomness",
+                    severity: Severity::High,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Session identifiers must be generated using cryptographically secure pseudorandomness (CSPRNG).",
-                    "Session ID generated using non-cryptographic randomness (Math.random, random.randint, Date.now).",
-                    "Generate session identifiers using crypto.randomBytes(32).toString('hex') or secure framework sessions.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Session identifiers must be generated using cryptographically secure pseudorandomness (CSPRNG).",
+                    description: "Session ID generated using non-cryptographic randomness (Math.random, random.randint, Date.now).",
+                    remediation: "Generate session identifiers using crypto.randomBytes(32).toString('hex') or secure framework sessions.",
+                }));
             }
 
             // 14. BK-AI-SES-002: Session not rotated after login
@@ -550,19 +551,19 @@ impl AuthSecurityScanner {
                         || window.contains("authenticated"));
 
                 if has_user_session_binding && !window.contains("regenerate") {
-                    findings.push(Self::create_finding(
-                        "BK-AI-SES-002",
-                        "Session not rotated after authentication or privilege change",
-                        Severity::High,
-                        "2.4 Sessions, tokens, cookies and browser login",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Session IDs must be regenerated upon authentication or privilege level escalation.",
-                        "Session state updated on login without calling req.session.regenerate() to prevent fixation attacks.",
-                        "Call req.session.regenerate() before saving authenticated user state into the session store.",
-                    ));
+                    findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-002",
+                    title: "Session not rotated after authentication or privilege change",
+                    severity: Severity::High,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Session IDs must be regenerated upon authentication or privilege level escalation.",
+                    description: "Session state updated on login without calling req.session.regenerate() to prevent fixation attacks.",
+                    remediation: "Call req.session.regenerate() before saving authenticated user state into the session store.",
+                }));
                 }
             }
 
@@ -575,230 +576,181 @@ impl AuthSecurityScanner {
                     && !window.contains("destroy")
                     && !window.contains("invalidate")
                 {
-                    findings.push(Self::create_finding(
-                        "BK-AI-SES-003",
-                        "Logout/password reset fails to invalidate server-side session/refresh token",
-                        Severity::High,
-                        "2.4 Sessions, tokens, cookies and browser login",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Logout must destroy server-side session state in addition to clearing client cookies.",
-                        "Logout handler clears client cookie but fails to destroy session in server-side session store.",
-                        "Call req.session.destroy() on the server to invalidate the session upon user logout.",
-                    ));
+                    findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-003",
+                    title: "Logout/password reset fails to invalidate server-side session/refresh token",
+                    severity: Severity::High,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
+                    path,
+                    target_kind: &target_kind,
+                    line_no,
+                    snippet: trimmed,
+                    safe_threshold: "Logout must destroy server-side session state in addition to clearing client cookies.",
+                    description: "Logout handler clears client cookie but fails to destroy session in server-side session store.",
+                    remediation: "Call req.session.destroy() on the server to invalidate the session upon user logout.",
+                }));
                 }
             }
 
             // 16. BK-AI-SES-004: Cookie carrying session lacks Secure flag
             if RE_SES_004_COOKIE_INSECURE.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-004",
-                    "Cookie carrying session lacks `Secure` where HTTPS is required",
-                    Severity::Medium,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-004",
+                    title: "Cookie carrying session lacks `Secure` where HTTPS is required",
+                    severity: Severity::Medium,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Session and authentication cookies must declare secure: true.",
-                    "Cookie options explicitly set secure: false, risking transmission over cleartext HTTP.",
-                    "Configure secure: true on all session and authentication cookies.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Session and authentication cookies must declare secure: true.",
+                    description: "Cookie options explicitly set secure: false, risking transmission over cleartext HTTP.",
+                    remediation: "Configure secure: true on all session and authentication cookies.",
+                }));
             }
 
             // 17. BK-AI-SES-005: Cookie carrying session lacks HttpOnly flag
             if RE_SES_005_COOKIE_NO_HTTPONLY.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-005",
-                    "Cookie carrying session lacks `HttpOnly` without justified JS access",
-                    Severity::Medium,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-005",
+                    title: "Cookie carrying session lacks `HttpOnly` without justified JS access",
+                    severity: Severity::Medium,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Session and authentication cookies must declare httpOnly: true to prevent script theft.",
-                    "Cookie options explicitly set httpOnly: false, exposing sensitive session cookie to XSS.",
-                    "Configure httpOnly: true on all session cookies to prevent access via document.cookie.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Session and authentication cookies must declare httpOnly: true to prevent script theft.",
+                    description: "Cookie options explicitly set httpOnly: false, exposing sensitive session cookie to XSS.",
+                    remediation: "Configure httpOnly: true on all session cookies to prevent access via document.cookie.",
+                }));
             }
 
             // 18. BK-AI-SES-006: SameSite defense missing on cookies
             if RE_SES_006_SAMESITE_DEFENSE.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-006",
-                    "`SameSite`/CSRF defense missing on relevant browser-driven state changes",
-                    Severity::Medium,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-006",
+                    title: "`SameSite`/CSRF defense missing on relevant browser-driven state changes",
+                    severity: Severity::Medium,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Cookies must declare sameSite: 'Strict' or 'Lax' (or sameSite: 'None' strictly with secure: true).",
-                    "Cookie options set sameSite: 'None' without secure flag or explicitly disables sameSite protection.",
-                    "Configure sameSite: 'Lax' or 'Strict' on authentication cookies to mitigate cross-site request forgery.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Cookies must declare sameSite: 'Strict' or 'Lax' (or sameSite: 'None' strictly with secure: true).",
+                    description: "Cookie options set sameSite: 'None' without secure flag or explicitly disables sameSite protection.",
+                    remediation: "Configure sameSite: 'Lax' or 'Strict' on authentication cookies to mitigate cross-site request forgery.",
+                }));
             }
 
             // 19. BK-AI-SES-007: Token lifetime too long or unlimited refresh token
             if RE_SES_007_EXCESSIVE_TOKEN_LIFETIME.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-007",
-                    "Token lifetime too long or unlimited reusable refresh token",
-                    Severity::Medium,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-007",
+                    title: "Token lifetime too long or unlimited reusable refresh token",
+                    severity: Severity::Medium,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Access tokens must have short, bounded lifetimes (e.g. 15 minutes to 1 hour).",
-                    "Token lifetime is excessively long (>= 1 year) or configured with unlimited lifetime.",
-                    "Reduce token validity duration (e.g. expiresIn: '15m') and enforce short-lived credentials.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Access tokens must have short, bounded lifetimes (e.g. 15 minutes to 1 hour).",
+                    description: "Token lifetime is excessively long (>= 1 year) or configured with unlimited lifetime.",
+                    remediation: "Reduce token validity duration (e.g. expiresIn: '15m') and enforce short-lived credentials.",
+                }));
             }
 
             // 20. BK-AI-SES-008: JWT algorithm confusion or none algorithm allowed
             if RE_SES_008_JWT_ALGORITHM.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-008",
-                    "JWT algorithm confusion, `none`, or attacker-controlled key locator",
-                    Severity::High,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-008",
+                    title: "JWT algorithm confusion, `none`, or attacker-controlled key locator",
+                    severity: Severity::High,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "JWT verification must explicitly pin allowed algorithms and reject the 'none' algorithm.",
-                    "JWT configuration permits 'none' algorithm or combines asymmetric with symmetric algorithms.",
-                    "Explicitly pin permitted algorithms (e.g. algorithms: ['RS256']) and never permit 'none'.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "JWT verification must explicitly pin allowed algorithms and reject the 'none' algorithm.",
+                    description: "JWT configuration permits 'none' algorithm or combines asymmetric with symmetric algorithms.",
+                    remediation: "Explicitly pin permitted algorithms (e.g. algorithms: ['RS256']) and never permit 'none'.",
+                }));
             }
 
             // 21. BK-AI-SES-009: Token logged or embedded in URL/query
             if RE_SES_009_TOKEN_EXPOSURE.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-009",
-                    "Token logged, embedded in URL/query, analytics, referrer or browser history",
-                    Severity::Medium,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-009",
+                    title: "Token logged, embedded in URL/query, analytics, referrer or browser history",
+                    severity: Severity::Medium,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Tokens must not be written to application logs or transmitted in URL query strings.",
-                    "Authentication token printed to console/logger or transmitted in URL query parameters.",
-                    "Transmit tokens in Authorization HTTP headers and redact tokens from all logging destinations.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Tokens must not be written to application logs or transmitted in URL query strings.",
+                    description: "Authentication token printed to console/logger or transmitted in URL query parameters.",
+                    remediation: "Transmit tokens in Authorization HTTP headers and redact tokens from all logging destinations.",
+                }));
             }
 
             // 22. BK-AI-SES-010: LocalStorage/sessionStorage holds sensitive auth tokens
             if RE_SES_010_LOCAL_STORAGE_TOKEN.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-010",
-                    "LocalStorage/sessionStorage holds long-lived sensitive credentials without threat review",
-                    Severity::High,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-010",
+                    title: "LocalStorage/sessionStorage holds long-lived sensitive credentials without threat review",
+                    severity: Severity::High,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Sensitive authentication tokens must not be stored in unencrypted client Web Storage.",
-                    "Authentication token or session ID saved to localStorage/sessionStorage, vulnerable to XSS exfiltration.",
-                    "Store session identifiers in HttpOnly, Secure, SameSite cookies or short-lived memory state.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Sensitive authentication tokens must not be stored in unencrypted client Web Storage.",
+                    description: "Authentication token or session ID saved to localStorage/sessionStorage, vulnerable to XSS exfiltration.",
+                    remediation: "Store session identifiers in HttpOnly, Secure, SameSite cookies or short-lived memory state.",
+                }));
             }
 
             // 23. BK-AI-SES-011: Session cookie lacks domain/path scoping
             if RE_SES_011_COOKIE_DOMAIN_PATH_SCOPE.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-011",
-                    "Session not scoped by environment, domain, audience or device policy",
-                    Severity::Medium,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-011",
+                    title: "Session not scoped by environment, domain, audience or device policy",
+                    severity: Severity::Medium,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Session cookies must be narrowly scoped to specific hostnames rather than wildcard subdomains.",
-                    "Cookie configured with wildcard domain or broad root domain and root path scope.",
-                    "Omit domain attribute for host-only cookies, or explicitly constrain to the target application subdomain.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Session cookies must be narrowly scoped to specific hostnames rather than wildcard subdomains.",
+                    description: "Cookie configured with wildcard domain or broad root domain and root path scope.",
+                    remediation: "Omit domain attribute for host-only cookies, or explicitly constrain to the target application subdomain.",
+                }));
             }
 
             // 24. BK-AI-SES-012: Refresh token reuse permitted / missing replay detection
             if RE_SES_012_REFRESH_REUSE.is_match(trimmed) {
-                findings.push(Self::create_finding(
-                    "BK-AI-SES-012",
-                    "Concurrent refresh calls permit token reuse/race or stale session resurrection",
-                    Severity::High,
-                    "2.4 Sessions, tokens, cookies and browser login",
+                findings.push(Self::create_finding(ScannerFindingSpec {
+                    rule_id: "BK-AI-SES-012",
+                    title: "Concurrent refresh calls permit token reuse/race or stale session resurrection",
+                    severity: Severity::High,
+                    category: "2.4 Sessions, tokens, cookies and browser login",
                     path,
-                    &target_kind,
+                    target_kind: &target_kind,
                     line_no,
-                    trimmed,
-                    "Refresh tokens must be single-use with automatic rotation and replay revocation.",
-                    "Configuration explicitly permits refresh token reuse or disables token rotation.",
-                    "Enforce refresh token rotation (rotateRefreshToken: true) and invalidate token families on reuse.",
-                ));
+                    snippet: trimmed,
+                    safe_threshold: "Refresh tokens must be single-use with automatic rotation and replay revocation.",
+                    description: "Configuration explicitly permits refresh token reuse or disables token rotation.",
+                    remediation: "Enforce refresh token rotation (rotateRefreshToken: true) and invalidate token families on reuse.",
+                }));
             }
         }
 
         findings
     }
 
-    /// Helper to construct standardized Finding instances.
-    #[allow(clippy::too_many_arguments)]
-    fn create_finding(
-        rule_id: &str,
-        title: &str,
-        severity: Severity,
-        category: &str,
-        path: &Path,
-        target_kind: &TargetKind,
-        line_no: usize,
-        snippet: &str,
-        safe_threshold: &str,
-        description: &str,
-        remediation: &str,
-    ) -> Finding {
-        let file_tag = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("source");
-        let short_id = rule_id.trim_start_matches("BK-AI-");
-        let finding_id = format!("{}-{}-L{}", short_id, file_tag, line_no);
-
-        let mut finding = Finding::new(
-            finding_id,
-            CveId::Custom {
-                id: rule_id.to_string(),
-                title: title.to_string(),
-            },
-            severity,
-            target_kind.clone(),
-            Some(path.to_path_buf()),
-            Some(line_no),
-            snippet,
-            safe_threshold,
-            description,
-            remediation,
-        );
-        finding.detector_id = "auth-security".to_string();
-        finding.detector_version = "1.0.0".to_string();
-        finding.category = category.to_string();
-        finding.affectedness = Affectedness::ConfirmedAffected;
-        finding.reachability = Reachability::ConfirmedReachable;
-        finding.confidence = Confidence::High;
-        finding.evidence_certainty = EvidenceCertainty::StronglySupported;
-        finding.evidence_refs.push(EvidenceRef {
-            location: format!("{}:{}", path.display(), line_no),
-            line_number: Some(line_no),
-            snippet: Some(snippet.trim().to_string()),
-            sha256: None,
-        });
-        finding.compute_dedupe_fingerprint();
-        finding
+    /// Helper to construct standardized Finding instances via consolidated [].
+    fn create_finding(spec: ScannerFindingSpec<'_>) -> Finding {
+        ScannerFindingBuilder::auth_security(spec).build()
     }
 }

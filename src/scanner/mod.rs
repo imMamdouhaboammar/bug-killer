@@ -11,6 +11,7 @@ pub mod container;
 pub mod crypto;
 pub mod data_privacy;
 pub mod filesystem_ext;
+pub mod finding_builder;
 pub mod host;
 pub mod iac;
 pub mod injection;
@@ -26,6 +27,8 @@ pub mod secret;
 pub mod supply_chain;
 pub mod web;
 pub mod webserver;
+
+pub use self::finding_builder::{ScannerFindingBuilder, ScannerFindingSpec};
 
 use self::ai_agent::AgentSecurityScanner;
 use self::binary::BinaryScanner;
