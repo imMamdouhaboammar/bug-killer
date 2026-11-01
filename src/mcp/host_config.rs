@@ -19,6 +19,20 @@ impl HostConfigGenerator {
         })
     }
 
+    /// Generates Cursor MCP configuration
+    pub fn cursor_config(binary_path: Option<&str>) -> Value {
+        let cmd = binary_path.unwrap_or("bug-killer");
+        json!({
+            "mcpServers": {
+                "bug-killer": {
+                    "command": cmd,
+                    "args": ["mcp", "serve", "--transport", "stdio", "--read-only"],
+                    "description": "Bug Killer Security MCP Server for Cursor IDE"
+                }
+            }
+        })
+    }
+
     /// Generates Codex MCP configuration
     pub fn codex_config(binary_path: Option<&str>) -> Value {
         let cmd = binary_path.unwrap_or("bug-killer");
@@ -61,6 +75,7 @@ impl HostConfigGenerator {
     pub fn generate_all(binary_path: Option<&str>) -> Value {
         json!({
             "claude_code": Self::claude_code_config(binary_path),
+            "cursor": Self::cursor_config(binary_path),
             "codex": Self::codex_config(binary_path),
             "gemini_cli": Self::gemini_cli_config(binary_path),
         })

@@ -29,3 +29,9 @@ The 26 security detectors are partitioned into domain submodules in `src/detecto
 Standardized finding builder unifies finding instantiation, ID tagging, evidence references, and cryptographic fingerprints.
 
 The consolidated [[src/scanner/finding_builder.rs#ScannerFindingBuilder]] constructs validated findings from [[src/scanner/finding_builder.rs#ScannerFindingSpec]]. It retains detector-specific reachability and advisory policies (such as `ScannerFindingBuilder::native_desktop` and `ScannerFindingBuilder::auth_security`) while eliminating broad parameter-count suppressions and redundant boilerplate across scanner modules. Parity is verified in `tests/scanner_finding_builder_test.rs`.
+
+## Directory and Dependency Tree Exclusion
+
+Non-source assets, build artifacts, and third-party dependencies are excluded from file tree traversal.
+
+The centralized filter [[src/scanner/mod.rs#is_ignored_directory]] prunes virtual environments, lock directories, build outputs (`.venv`, `node_modules`, `target`, `dist`, `build`), and secret keys (`.aegis`, `.bugkiller`) during directory traversal. This bounds evaluation strictly to first-party source assets and prevents scanner hangs and false positive explosions.

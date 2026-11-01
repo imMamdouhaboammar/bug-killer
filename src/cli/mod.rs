@@ -4,11 +4,23 @@ pub use clap::CommandFactory;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+/// Returns the binary name under which Bug Killer was invoked (`bk` or `bug-killer`).
+pub fn current_bin_name() -> String {
+    std::env::args()
+        .next()
+        .and_then(|p| {
+            std::path::Path::new(&p)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+        })
+        .unwrap_or_else(|| "bk".to_string())
+}
+
 #[derive(Parser, Debug)]
 #[command(name = "bug-killer")]
 #[command(
     about = "Bug Killer: Let Your AI Find Deep & Ghosty Bugs, Vulnerabilities, and Security Issues and Heal From Them",
-    version = "0.1.0"
+    version = "0.2.0"
 )]
 pub struct Cli {
     #[command(subcommand)]

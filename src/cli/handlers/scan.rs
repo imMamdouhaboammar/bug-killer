@@ -158,7 +158,8 @@ pub fn handle_scan(
     }
 
     println!(
-        "Run 'bug-killer heal {} --dry-run{}' to preview automated remediation.",
+        "Run '{} heal {} --dry-run{}' to preview automated remediation.",
+        crate::cli::current_bin_name(),
         path.display(),
         if osv { " --osv" } else { "" }
     );
@@ -241,7 +242,8 @@ pub fn handle_osv(path: PathBuf, json: bool) -> i32 {
     }
 
     println!(
-        "Run 'bug-killer heal {} --osv' to automatically upgrade vulnerable packages.",
+        "Run '{} heal {} --osv' to automatically upgrade vulnerable packages.",
+        crate::cli::current_bin_name(),
         path.display()
     );
     0

@@ -26,3 +26,9 @@ __pycache__/
 .mcp.json
 .claude
 .codex
+
+# Distribution & build outputs
+/dist/
+/bin/bk
+/bin/bug-killer
+/bin/*.exe

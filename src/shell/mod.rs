@@ -29,7 +29,7 @@ impl ShellEngine {
     /// Launches the interactive REPL loop using Rustyline with command history and line editing.
     pub fn run(&mut self) {
         println!("=======================================================");
-        println!("  🎯  BUG KILLER INTERACTIVE SHELL (bk-shell v0.1.0)");
+        println!("  🎯  BUG KILLER INTERACTIVE SHELL (bk-shell v0.2.0)");
         println!("  Type 'help' for commands, 'scan' to audit, 'exit' to quit.");
         println!("=======================================================");
 

@@ -49,6 +49,36 @@ use walkdir::WalkDir;
 
 pub struct FleetScanner;
 
+/// Returns true if a directory name is a standard build artifact, cache, virtualenv, or dependency directory.
+pub fn is_ignored_directory(name: &str) -> bool {
+    matches!(
+        name,
+        ".git"
+            | "node_modules"
+            | "vendor"
+            | "target"
+            | ".aegis"
+            | ".bugkiller"
+            | ".bug-killer"
+            | ".venv"
+            | "venv"
+            | "env"
+            | "__pycache__"
+            | ".pytest_cache"
+            | ".ruff_cache"
+            | ".mypy_cache"
+            | "dist"
+            | "build"
+            | "out"
+            | ".next"
+            | ".nuxt"
+            | ".turbo"
+            | ".cache"
+            | ".cargo"
+            | ".repowise"
+    )
+}
+
 impl FleetScanner {
     /// Recursively scans a filesystem root directory for both built-in CVEs and dynamic rules.
     pub fn scan_directory(root: &Path, check_host_runtimes: bool) -> ScanReport {
@@ -96,12 +126,7 @@ impl FleetScanner {
                     return true;
                 }
                 let name = e.file_name().to_string_lossy();
-                let skip = name == ".git"
-                    || name == "node_modules"
-                    || name == "vendor"
-                    || name == "target"
-                    || name == ".aegis"
-                    || name == ".bugkiller";
+                let skip = is_ignored_directory(&name);
                 if skip {
                     files_excluded.fetch_add(1, Ordering::Relaxed);
                     return false;

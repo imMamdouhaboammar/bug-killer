@@ -20,4 +20,4 @@ Initialization returns an [[src/security_guard/mod.rs#InitReceipt]], while ongoi
 
 Git hooks evaluate staged snapshots before commits are accepted into source control.
 
-Commits containing high or critical severity vulnerabilities are rejected by default unless explicit waivers exist.
+Commits containing high or critical severity vulnerabilities are rejected by default unless explicit waivers exist. Hook installation via [[src/security_guard/mod.rs#SecurityGuard#install_pre_commit_hook]] resolves `bk` and `bug-killer` dynamically, while [[src/security_guard/mod.rs#SecurityGuard#ensure_gitignore_protection]] safeguards cryptographic identity keys from accidental source commits.

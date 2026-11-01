@@ -94,3 +94,9 @@ The security detector subsystem organizes static and dynamic analyzers across do
 
 The 26 automated detectors are partitioned from a monolithic file into domain-specific modules in `src/detectors/` (`sast`, `secrets`, `iac`, `agent`, `supply_chain`, `web`, `auth`, `quality`), all implementing [[src/detectors/mod.rs#SecurityDetector]]. Orchestration and catalog rule accounting reside in [[src/detectors/mod.rs#DetectorRegistry]], ensuring honest scan status reporting and regression test isolation.
 
+## Dual CLI Entrypoints and Bounded Tool Discovery
+
+Bug Killer provides dual binary distribution targets and bounded process group tool capability discovery.
+
+The CLI distributes both `bk` via [[src/bin/bk.rs]] and `bug-killer` via [[src/main.rs]]. Both entrypoints delegate directly to [[src/cli/mod.rs#run]]. Tool capability probes execute via bounded process groups with a 1,500ms timeout in [[src/deep/broker.rs#ToolCapabilityBroker]], reaping child processes and preventing synchronous process hangs during external tool discovery. Universal installation is provided by `scripts/install.sh`.
+

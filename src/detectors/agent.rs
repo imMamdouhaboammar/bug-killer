@@ -127,19 +127,40 @@ impl SecurityDetector for DynamicRulesDetector {
             }
         }
 
-        let report = FleetScanner::scan_directory_with_rules(&ctx.root, false, &rules);
-        let dynamic_findings: Vec<Finding> = report
-            .findings
-            .into_iter()
-            .filter(|f| f.detector_id == "dynamic-rules")
-            .collect();
+        let (dynamic_findings, items_examined) = if rules.is_empty() {
+            if let Some(cached) = &ctx.cached_report {
+                let findings: Vec<Finding> = cached
+                    .findings
+                    .iter()
+                    .filter(|f| f.detector_id == "dynamic-rules")
+                    .cloned()
+                    .collect();
+                (findings, cached.total_files_scanned as u64)
+            } else {
+                let report = FleetScanner::scan_directory_with_rules(&ctx.root, false, &rules);
+                let findings: Vec<Finding> = report
+                    .findings
+                    .into_iter()
+                    .filter(|f| f.detector_id == "dynamic-rules")
+                    .collect();
+                (findings, report.total_files_scanned as u64)
+            }
+        } else {
+            let report = FleetScanner::scan_directory_with_rules(&ctx.root, false, &rules);
+            let findings: Vec<Finding> = report
+                .findings
+                .into_iter()
+                .filter(|f| f.detector_id == "dynamic-rules")
+                .collect();
+            (findings, report.total_files_scanned as u64)
+        };
 
         let receipt = CoverageReceipt {
             scanner_id: self.id().to_string(),
             scanner_version: env!("CARGO_PKG_VERSION").to_string(),
             target_id: ctx.root.display().to_string(),
             status: CoverageStatus::Complete,
-            items_examined: report.total_files_scanned as u64,
+            items_examined,
             skipped_reasons: Vec::new(),
             errors: Vec::new(),
             completed_at: Utc::now().to_rfc3339(),

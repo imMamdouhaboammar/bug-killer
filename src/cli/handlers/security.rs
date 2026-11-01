@@ -266,7 +266,8 @@ pub fn handle_security(action: SecurityAction) -> i32 {
                             println!("   Explanation: {}", proposal.explanation);
                             println!("   Diff preview:\n{}", proposal.diff_preview);
                             println!(
-                                "\nTo apply this fix, run:\n   bug-killer security fix {} --apply",
+                                "\nTo apply this fix, run:\n   {} security fix {} --apply",
+                                crate::cli::current_bin_name(),
                                 proposal.finding_id
                             );
                         }

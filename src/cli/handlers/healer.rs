@@ -81,7 +81,11 @@ pub fn handle_heal(
             "🔒 Plan-Only Default: No filesystem mutations applied without explicit operator flag."
         );
         println!("To apply these changes with cryptographic non-repudiation:");
-        println!("  bug-killer approve <finding-id> {}", path.display());
+        println!(
+            "  {} approve <finding-id> {}",
+            crate::cli::current_bin_name(),
+            path.display()
+        );
         return 0;
     }
 
@@ -247,7 +251,8 @@ pub fn handle_approve(
             println!("Receipt saved to: {}", receipt_file.display());
             println!("To apply this plan:");
             println!(
-                "  bug-killer apply {} --approval-file {}",
+                "  {} apply {} --approval-file {}",
+                crate::cli::current_bin_name(),
                 plan_id,
                 receipt_file.display()
             );
@@ -316,7 +321,8 @@ pub fn handle_apply(plan_id: String, approval_file: Option<PathBuf>, path: PathB
             );
             println!("📦 Backup Snapshot Created: {}", manifest.backup_id);
             println!(
-                "   To rollback if needed: bug-killer rollback {}\n",
+                "   To rollback if needed: {} rollback {}\n",
+                crate::cli::current_bin_name(),
                 manifest.backup_id
             );
             0

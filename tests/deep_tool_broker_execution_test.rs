@@ -219,8 +219,12 @@ fn test_broker_timeout_kills_process_group_and_reaps_child() {
     let tmp = tempdir().expect("temp dir");
     let script_path = tmp.path().join("slow_tool.sh");
 
-    // Script spawns background child sleep and sleeps in foreground
-    fs::write(&script_path, "#!/bin/sh\nsleep 60 &\nsleep 60\n").expect("write script");
+    // Script responds immediately to --version for discovery, but sleeps when executed
+    fs::write(
+        &script_path,
+        "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 1.0; exit 0; fi\nsleep 60 &\nsleep 60\n",
+    )
+    .expect("write script");
 
     let mut perms = fs::metadata(&script_path).expect("meta").permissions();
     perms.set_mode(0o755);

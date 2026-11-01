@@ -164,11 +164,8 @@ impl DetectorRegistry {
             .into_iter()
             .filter_entry(|entry| {
                 entry.depth() == 0
-                    || !matches!(
-                        entry.file_name().to_str(),
-                        Some(
-                            ".git" | "node_modules" | "vendor" | "target" | ".aegis" | ".bugkiller"
-                        )
+                    || !crate::scanner::is_ignored_directory(
+                        entry.file_name().to_str().unwrap_or_default(),
                     )
             })
             .filter_map(Result::ok);
@@ -247,11 +244,8 @@ impl DetectorRegistry {
             .into_iter()
             .filter_entry(|entry| {
                 entry.depth() == 0
-                    || !matches!(
-                        entry.file_name().to_str(),
-                        Some(
-                            ".git" | "node_modules" | "vendor" | "target" | ".aegis" | ".bugkiller"
-                        )
+                    || !crate::scanner::is_ignored_directory(
+                        entry.file_name().to_str().unwrap_or_default(),
                     )
             })
         {

@@ -1260,12 +1260,49 @@ impl ToolCapabilityBroker {
     // ---------------- Builder Helpers for Standard Tools ----------------
 
     fn probe_version(binary: &Path, arg: &str) -> Option<String> {
-        let output = Command::new(binary).arg(arg).output().ok()?;
-        if output.status.success() {
-            let text = String::from_utf8_lossy(&output.stdout);
-            let first_line = text.lines().next()?.trim();
-            if !first_line.is_empty() {
-                return Some(first_line.to_string());
+        let mut cmd = Command::new(binary);
+        cmd.arg(arg);
+        cmd.stdout(std::process::Stdio::piped());
+        cmd.stderr(std::process::Stdio::null());
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            cmd.process_group(0);
+        }
+
+        let mut child = cmd.spawn().ok()?;
+        let pid = child.id();
+        let timeout_dur = Duration::from_millis(1500);
+        let start = Instant::now();
+        let poll_interval = Duration::from_millis(20);
+
+        let status = loop {
+            if start.elapsed() >= timeout_dur {
+                Self::kill_process_group(pid);
+                let _ = child.wait();
+                return None;
+            }
+            match child.try_wait() {
+                Ok(Some(s)) => break s,
+                Ok(None) => std::thread::sleep(poll_interval),
+                Err(_) => {
+                    Self::kill_process_group(pid);
+                    let _ = child.wait();
+                    return None;
+                }
+            }
+        };
+
+        if status.success() {
+            if let Some(mut out) = child.stdout.take() {
+                let mut buffer = Vec::new();
+                let _ = out.read_to_end(&mut buffer);
+                let text = String::from_utf8_lossy(&buffer);
+                let first_line = text.lines().next()?.trim();
+                if !first_line.is_empty() {
+                    return Some(first_line.to_string());
+                }
             }
         }
         None

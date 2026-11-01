@@ -13,7 +13,7 @@ build-rust:
 	cargo build --release
 	@mkdir -p $(TARGET_DIR)
 	@cp target/release/bug-killer $(TARGET_DIR)/bug-killer
-	@ln -sf bug-killer $(TARGET_DIR)/bk
+	@cp target/release/bk $(TARGET_DIR)/bk
 	@echo "==> Building Deep Binary Inspector..."
 	cd services/inspector && cargo build --release
 	@cp services/inspector/target/release/bug-killer-inspector $(TARGET_DIR)/bug-killer-inspector
@@ -66,7 +66,7 @@ install: build
 	install -m 755 scripts/bk-shell.sh $(PREFIX)/bk-shell
 	install -m 755 scripts/bk-triage.sh $(PREFIX)/bk-triage
 	install -m 755 scripts/bk-watch.sh $(PREFIX)/bk-watch
-	ln -sf $(PREFIX)/bug-killer $(PREFIX)/bk
+	install -m 755 $(TARGET_DIR)/bk $(PREFIX)/bk
 	@echo "==> Installing shell completions..."
 	@mkdir -p $(DESTDIR)$(SHARE_PREFIX)/bash-completion/completions $(DESTDIR)$(SHARE_PREFIX)/zsh/site-functions $(DESTDIR)$(SHARE_PREFIX)/fish/vendor_completions.d 2>/dev/null || true
 	-install -m 644 completions/bug-killer.bash $(DESTDIR)$(SHARE_PREFIX)/bash-completion/completions/bug-killer 2>/dev/null || true

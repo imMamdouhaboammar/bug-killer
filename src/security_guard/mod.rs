@@ -153,6 +153,9 @@ impl SecurityGuard {
             ConfigManager::save_config(root, &config)?;
         }
 
+        // Protect cryptographic identity keys in .gitignore if in a git repository
+        Self::ensure_gitignore_protection(root);
+
         Ok(InitReceipt {
             project_name: config.name,
             initialized: true,
@@ -178,11 +181,18 @@ impl SecurityGuard {
         let marker = "# BUG_KILLER_SECURITY_GATE_START";
         let hook_content = r#"# BUG_KILLER_SECURITY_GATE_START
 # Scan the staged Git index, not the potentially different working tree.
-if ! command -v bug-killer >/dev/null 2>&1; then
-    echo "[Bug Killer] Security gate unavailable: install bug-killer before committing." >&2
+BK_BIN=""
+if command -v bk >/dev/null 2>&1; then
+    BK_BIN="bk"
+elif command -v bug-killer >/dev/null 2>&1; then
+    BK_BIN="bug-killer"
+fi
+
+if [ -z "$BK_BIN" ]; then
+    echo "[Bug Killer] Security gate unavailable: install bk or bug-killer before committing." >&2
     exit 1
 fi
-bug-killer security scan --profile quick --staged --fail-on high || {
+"$BK_BIN" security scan --profile quick --staged --fail-on high || {
     echo "[Bug Killer] Staged security gate failed. Review the findings before committing." >&2
     exit 1
 }
@@ -238,6 +248,28 @@ bug-killer security scan --profile quick --staged --fail-on high || {
         }
 
         Ok(true)
+    }
+
+    fn ensure_gitignore_protection(root: &Path) {
+        if !root.join(".git").exists() {
+            return;
+        }
+        let gitignore = root.join(".gitignore");
+        if gitignore.exists() {
+            if let Ok(content) = fs::read_to_string(&gitignore) {
+                if !content.contains(".aegis") {
+                    let mut updated = content;
+                    if !updated.ends_with('\n') {
+                        updated.push('\n');
+                    }
+                    updated.push_str("\n# Bug Killer cryptographic identities & config\n.aegis/\n.bugkiller/\n");
+                    let _ = fs::write(&gitignore, updated);
+                }
+            }
+        } else {
+            let initial = "# Bug Killer cryptographic identities & config\n.aegis/\n.bugkiller/\n";
+            let _ = fs::write(&gitignore, initial);
+        }
     }
 
     /// Returns high-level security status of a workspace.

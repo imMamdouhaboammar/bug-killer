@@ -17,26 +17,107 @@ Initial benchmark targets:
 
 ---
 
-## Start with a read-only scan
+## Fast Installation
 
-Build the Rust CLI and scan your current project. This path does not require the Go services or a running Docker daemon.
+Choose the installation method suited to your environment:
 
+### Method 1: Universal 1-Line Installer (macOS & Linux)
 ```bash
-git clone https://github.com/imMamdouhaboammar/bug-killer.git
-cd bug-killer
-cargo build --release
-./target/release/bug-killer security scan . --profile quick
+curl -fsSL https://raw.githubusercontent.com/imMamdouhaboammar/bug-killer/master/scripts/install.sh | bash
+```
+*Installs `bk` and `bug-killer` into `~/.local/bin`, generates shell auto-completions for Bash/Zsh/Fish, and runs system health diagnostics.*
+
+### Method 2: Global NPM / Bun Package
+```bash
+# Using Bun (recommended)
+bun add -g bug-killer-cli
+
+# Or using NPM / NPX
+npm install -g bug-killer-cli
+
+# Or execute instantly without permanent installation
+npx bug-killer-cli init
 ```
 
-Requires a Rust toolchain that supports edition 2024 and a compiler toolchain for native dependencies. The executable is `bug-killer`; the shorter `bk` command is installed by `make install`.
-
-For a machine-readable report:
-
+### Method 3: Cargo (Rust Toolchain)
 ```bash
-./target/release/bug-killer security scan . --profile quick --json
+# Install directly from GitHub
+cargo install --git https://github.com/imMamdouhaboammar/bug-killer.git --bin bk --bin bug-killer
+
+# Or from a local clone
+cargo install --path .
 ```
 
-To initialize another Git project, use `bk init /path/to/project` after installation. **Initialization writes project security configuration, runs a baseline scan, and installs a Git pre-commit hook by default.** Run a read-only scan first if you only want to inspect the project.
+### Method 4: Makefile / System Install
+```bash
+make build
+sudo make install
+```
+
+Both `bk` (concise daily CLI) and `bug-killer` (canonical binary) are available on your `PATH`.
+
+## Quickstart for Any Project
+
+Run three commands in any repository (Python, Node/TS, Go, Rust, PHP, C/C++, Docker):
+
+```bash
+# 1. Onboard project (detects stack, sets baseline, installs pre-commit hook)
+bk init
+
+# 2. Run a fast security scan (<50ms, ideal for pre-commit & CI)
+bk security scan . --profile quick
+
+# 3. Configure Model Context Protocol (MCP) for Cursor, Claude Code, or Gemini CLI
+bk mcp config --host cursor
+```
+
+To run a machine-readable scan report:
+
+```bash
+bk security scan . --profile quick --json
+```
+
+**Initialization (`bk init`) writes project security configuration (`.bugkiller/config.json`), runs a baseline scan, protects identity keys in `.gitignore`, and installs a non-destructive Git pre-commit hook by default.** Run a read-only scan first (`bk security scan . --profile quick`) if you only want to inspect the project without configuring it.
+
+## 🤖 Copyable Agent Prompt (For Cursor, Claude Code, Gemini CLI, Copilot)
+
+Copy and paste this directive directly into your AI coding assistant (Cursor chat, Claude Code, Gemini CLI, Windsurf, or Antigravity) to have it install, configure, and audit your project automatically:
+
+````markdown
+You are paired with me on this repository. We are adopting **Bug Killer (`bk`)** as our defensive security analysis, vulnerability detection, and virtual healing framework.
+
+Execute the following setup and audit sequence autonomously:
+
+1. **Verify or Install Bug Killer:**
+   Check if `bk` is installed (`command -v bk`). If not found, install via:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/imMamdouhaboammar/bug-killer/master/scripts/install.sh | bash
+   # Or via npm/bun: bun add -g bug-killer-cli
+   ```
+
+2. **Run System & Environment Diagnostics:**
+   ```bash
+   bk doctor .
+   ```
+
+3. **Initialize Repository Baseline & Pre-Commit Security Gate:**
+   ```bash
+   bk init .
+   ```
+   *This detects our tech stack, creates `.bugkiller/config.json`, computes a clean baseline snapshot, safeguards keys in `.gitignore`, and installs the staged Git pre-commit hook.*
+
+4. **Audit for Vulnerabilities & Taint Exposures:**
+   ```bash
+   bk security scan . --profile project
+   bk scan . --taint --osv
+   ```
+
+5. **Examine Findings & Plan Safe Remediation:**
+   - If vulnerabilities or exposures are detected:
+     - Run `bk evidence <finding-id> .` to inspect verified AST/taint traces and cryptographic receipts.
+     - Run `bk plan <finding-id> .` to generate a deterministic, non-mutating virtual patch preview.
+     - Present the evidence and plan to me before any state mutation.
+````
 
 ## One place to assess, investigate, and repair
 

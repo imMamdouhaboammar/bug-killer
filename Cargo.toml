@@ -1,6 +1,6 @@
 [package]
 name = "bug-killer"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Mamdouh Aboammar <mamdouhfces1997@gmail.com>"]
 description = "Autonomous Vulnerability Discovery & Self-Healing Engine for Deep and Ghosty Bugs"

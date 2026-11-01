@@ -178,6 +178,13 @@ pub fn handle_mcp(cmd: McpCommands) -> i32 {
                         .unwrap()
                     );
                 }
+                "cursor" => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&HostConfigGenerator::cursor_config(bin_ref))
+                            .unwrap()
+                    );
+                }
                 "codex" => {
                     println!(
                         "{}",

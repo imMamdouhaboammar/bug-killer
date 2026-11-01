@@ -1,0 +1,41 @@
+{
+  "name": "bug-killer-cli",
+  "version": "0.2.0",
+  "description": "Autonomous Vulnerability Discovery & Self-Healing Engine for Deep and Ghosty Bugs",
+  "main": "./bin/run.js",
+  "bin": {
+    "bk": "./bin/run.js",
+    "bug-killer": "./bin/run.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imMamdouhaboammar/bug-killer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/imMamdouhaboammar/bug-killer/issues"
+  },
+  "homepage": "https://github.com/imMamdouhaboammar/bug-killer#readme",
+  "author": "Mamdouh Aboammar <mamdouhfces1997@gmail.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": [
+    "security",
+    "vulnerability-scanner",
+    "cve",
+    "sast",
+    "dast",
+    "self-healing",
+    "cybersecurity",
+    "ai-agent",
+    "mcp-server",
+    "rust"
+  ],
+  "scripts": {
+    "postinstall": "node ./bin/install-binary.js"
+  },
+  "files": [
+    "bin",
+    "scripts/install.sh",
+    "README.md",
+    "LICENSE"
+  ]
+}
