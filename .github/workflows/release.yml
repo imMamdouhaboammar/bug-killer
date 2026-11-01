@@ -1,0 +1,50 @@
+name: Release Multi-Platform Binaries
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attach binaries to (e.g. v0.2.0)'
+        required: false
+        default: 'v0.2.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            asset_name: bk-linux-x86_64
+            tar_name: bk-linux-x86_64.tar.gz
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (Rust 2024 edition support)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release binaries
+        run: |
+          cargo build --release --target ${{ matrix.target }} --bin bk --bin bug-killer
+          cp target/${{ matrix.target }}/release/bk ${{ matrix.asset_name }}
+          tar -czf ${{ matrix.tar_name }} -C target/${{ matrix.target }}/release bk bug-killer
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            ${{ matrix.asset_name }}
+            ${{ matrix.tar_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
