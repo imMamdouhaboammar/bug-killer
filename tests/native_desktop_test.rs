@@ -1,4 +1,7 @@
-use bug_killer::types::{self, Severity};
+use bug_killer::{
+    scanner,
+    types::{self, Severity},
+};
 use std::path::Path;
 
 #[path = "../src/scanner/native_desktop.rs"]

@@ -67,3 +67,7 @@ Every tool advertised by the MCP server's typed domain registry is listed with a
 ## Security Detector Modular Dispatch Tests
 
 Every detector in the modular detector subsystem is registered in canonical order and dispatches coherently within its domain module.
+
+## Scanner Finding Builder Parity Tests
+
+The consolidated finding builder preserves exact evidence references, reachability policies, advisory lists, and deduplication fingerprints across scanners.

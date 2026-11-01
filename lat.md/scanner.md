@@ -23,3 +23,9 @@ Dedicated scanner modules inspect language runtimes, server configurations, and 
 These checkers evaluate memory safety, authentication flows, secrets, and container isolation before remediation.
 
 The 26 security detectors are partitioned into domain submodules in `src/detectors/` (`sast`, `secrets`, `iac`, `agent`, `supply_chain`, `web`, `auth`, `quality`), all implementing [[src/detectors/mod.rs#SecurityDetector]]. The registry [[src/detectors/mod.rs#DetectorRegistry]] coordinates execution, catalog rule coverage accounting, and honest partial/completed scan status classification via [[src/detectors/mod.rs#DetectorRegistry#execute_guard_scan]]. Behavior and registration order parity are verified in `tests/detector_modular_dispatch_test.rs`.
+
+## Consolidated Finding Construction
+
+Standardized finding builder unifies finding instantiation, ID tagging, evidence references, and cryptographic fingerprints.
+
+The consolidated [[src/scanner/finding_builder.rs#ScannerFindingBuilder]] constructs validated findings from [[src/scanner/finding_builder.rs#ScannerFindingSpec]]. It retains detector-specific reachability and advisory policies (such as `ScannerFindingBuilder::native_desktop` and `ScannerFindingBuilder::auth_security`) while eliminating broad parameter-count suppressions and redundant boilerplate across scanner modules. Parity is verified in `tests/scanner_finding_builder_test.rs`.

@@ -1,5 +1,6 @@
 #![allow(dead_code, clippy::collapsible_if)]
 
+use crate::scanner::finding_builder::{ScannerFindingBuilder, ScannerFindingSpec};
 use crate::types::*;
 use regex::Regex;
 use std::collections::HashSet;
@@ -306,18 +307,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-004",
                         &["CWE-476"],
-                        "Null/dangling pointer dereference reachable from malformed input",
-                        Severity::High,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Verify pointer non-null invariants before dereference",
-                        "Code comment indicates unchecked null or dangling pointer dereference.",
-                        "Perform explicit null checks ('if (ptr == NULL)' or 'if (!ptr.is_null())') prior to dereferencing raw pointers.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-004",
+                            title: "Null/dangling pointer dereference reachable from malformed input",
+                            severity: Severity::High,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Verify pointer non-null invariants before dereference",
+                            description: "Code comment indicates unchecked null or dangling pointer dereference.",
+                            remediation: "Perform explicit null checks ('if (ptr == NULL)' or 'if (!ptr.is_null())') prior to dereferencing raw pointers.",
+                        },
                     );
                 }
 
@@ -329,18 +332,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-005",
                         &["CWE-120"],
-                        "Stack/heap buffer copy lacks verified bounds",
-                        Severity::Critical,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Enforce bounded copies using size-limited primitives or explicit bounds verification",
-                        "Code comment indicates unbounded buffer copy or dynamic stack allocation without verified bounds.",
-                        "Replace with bounded alternatives (snprintf, strlcpy, memcpy_s) and validate bounds before copying.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-005",
+                            title: "Stack/heap buffer copy lacks verified bounds",
+                            severity: Severity::Critical,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Enforce bounded copies using size-limited primitives or explicit bounds verification",
+                            description: "Code comment indicates unbounded buffer copy or dynamic stack allocation without verified bounds.",
+                            remediation: "Replace with bounded alternatives (snprintf, strlcpy, memcpy_s) and validate bounds before copying.",
+                        },
                     );
                 }
 
@@ -351,18 +356,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-006",
                         &["CWE-119"],
-                        "`unsafe` Rust or FFI uses unchecked slice/pointer conversion",
-                        Severity::High,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Validate pointer validity, non-null status, and slice length prior to raw parts reconstruction",
-                        "Code comment indicates unchecked slice or pointer conversion from raw parts.",
-                        "Verify that pointer is non-null, aligned, and length does not exceed allocated memory range before calling slice::from_raw_parts.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-006",
+                            title: "`unsafe` Rust or FFI uses unchecked slice/pointer conversion",
+                            severity: Severity::High,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Validate pointer validity, non-null status, and slice length prior to raw parts reconstruction",
+                            description: "Code comment indicates unchecked slice or pointer conversion from raw parts.",
+                            remediation: "Verify that pointer is non-null, aligned, and length does not exceed allocated memory range before calling slice::from_raw_parts.",
+                        },
                     );
                 }
 
@@ -373,18 +380,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-007",
                         &["CWE-170", "CWE-120"],
-                        "C/C++ string encoding or truncation produces security control mismatch",
-                        Severity::High,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Ensure null termination after strncpy or use strlcpy/snprintf",
-                        "Code comment indicates strncpy truncation or lack of explicit null termination.",
-                        "Explicitly set dest[sizeof(dest) - 1] = '\\0' or replace with snprintf / strlcpy.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-007",
+                            title: "C/C++ string encoding or truncation produces security control mismatch",
+                            severity: Severity::High,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Ensure null termination after strncpy or use strlcpy/snprintf",
+                            description: "Code comment indicates strncpy truncation or lack of explicit null termination.",
+                            remediation: "Explicitly set dest[sizeof(dest) - 1] = '\\0' or replace with snprintf / strlcpy.",
+                        },
                     );
                 }
 
@@ -395,18 +404,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-008",
                         &["CWE-250"],
-                        "Untrusted native decoder or plugin runs in privileged host process",
-                        Severity::Critical,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Isolate native decoders in sandboxed worker processes and verify cryptographic signatures",
-                        "Code comment indicates dynamic library loading inside privileged service without sandboxing.",
-                        "Isolate plugin execution in separate unprivileged processes (sandboxes) and verify digital signatures before loading.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-008",
+                            title: "Untrusted native decoder or plugin runs in privileged host process",
+                            severity: Severity::Critical,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Isolate native decoders in sandboxed worker processes and verify cryptographic signatures",
+                            description: "Code comment indicates dynamic library loading inside privileged service without sandboxing.",
+                            remediation: "Isolate plugin execution in separate unprivileged processes (sandboxes) and verify digital signatures before loading.",
+                        },
                     );
                 }
 
@@ -417,18 +428,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-009",
                         &["CWE-755"],
-                        "Rust/Go panic or C++ exception crosses foreign function boundary unsafely",
-                        Severity::High,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Wrap all FFI boundary functions in catch_unwind or panic recovery to prevent unwinding into foreign frames",
-                        "Code comment indicates panic or exception crossing foreign function boundary without catch_unwind.",
-                        "Wrap the body of extern \"C\" functions with std::panic::catch_unwind and return error codes instead of panicking.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-009",
+                            title: "Rust/Go panic or C++ exception crosses foreign function boundary unsafely",
+                            severity: Severity::High,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Wrap all FFI boundary functions in catch_unwind or panic recovery to prevent unwinding into foreign frames",
+                            description: "Code comment indicates panic or exception crossing foreign function boundary without catch_unwind.",
+                            remediation: "Wrap the body of extern \"C\" functions with std::panic::catch_unwind and return error codes instead of panicking.",
+                        },
                     );
                 }
 
@@ -439,18 +452,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-010",
                         &["CWE-693"],
-                        "Compiler/hardening flags removed to silence warnings or fix build",
-                        Severity::High,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Retain all platform and compiler security hardening flags (stack protector, ASLR, DEP, FORTIFY_SOURCE)",
-                        "Code comment indicates build flags disable stack protection, ASLR, or executable stack mitigations.",
-                        "Enable standard compiler protections: -fstack-protector-strong, -D_FORTIFY_SOURCE=2, and non-executable stack flags.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-010",
+                            title: "Compiler/hardening flags removed to silence warnings or fix build",
+                            severity: Severity::High,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Retain all platform and compiler security hardening flags (stack protector, ASLR, DEP, FORTIFY_SOURCE)",
+                            description: "Code comment indicates build flags disable stack protection, ASLR, or executable stack mitigations.",
+                            remediation: "Enable standard compiler protections: -fstack-protector-strong, -D_FORTIFY_SOURCE=2, and non-executable stack flags.",
+                        },
                     );
                 }
 
@@ -462,18 +477,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-011",
                         &["CWE-401"],
-                        "Zig/C++ allocator mismatch or forgotten cleanup leaks secret-bearing memory",
-                        Severity::High,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Use matched allocators and cryptographically zero memory containing secrets before deallocation",
-                        "Code comment indicates allocator mismatch or failure to zero secret-bearing buffers before free.",
-                        "Pair allocations with matching deallocators and use explicit_bzero or zeroize before deallocating keys.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-011",
+                            title: "Zig/C++ allocator mismatch or forgotten cleanup leaks secret-bearing memory",
+                            severity: Severity::High,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Use matched allocators and cryptographically zero memory containing secrets before deallocation",
+                            description: "Code comment indicates allocator mismatch or failure to zero secret-bearing buffers before free.",
+                            remediation: "Pair allocations with matching deallocators and use explicit_bzero or zeroize before deallocating keys.",
+                        },
                     );
                 }
 
@@ -484,18 +501,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MEM-012",
                         &["CWE-20", "CWE-190"],
-                        "Binary parser trusts declared lengths and integer casts",
-                        Severity::High,
-                        "2.18 Native code, FFI and memory safety",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Cap binary-parsed lengths against strict maximum allocation limits before allocating",
-                        "Code comment indicates binary parser allocates memory based on untrusted header length without bounds checking.",
-                        "Enforce a maximum allowable buffer size (e.g., len <= MAX_PACKET_SIZE) before allocating memory.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MEM-012",
+                            title: "Binary parser trusts declared lengths and integer casts",
+                            severity: Severity::High,
+                            category: "2.18 Native code, FFI and memory safety",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Cap binary-parsed lengths against strict maximum allocation limits before allocating",
+                            description: "Code comment indicates binary parser allocates memory based on untrusted header length without bounds checking.",
+                            remediation: "Enforce a maximum allowable buffer size (e.g., len <= MAX_PACKET_SIZE) before allocating memory.",
+                        },
                     );
                 }
 
@@ -507,18 +526,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-001",
                         &["CWE-798"],
-                        "Client mobile/desktop bundle contains long-lived cloud API/admin keys",
-                        Severity::Critical,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Do not package administrative cloud credentials into client mobile or desktop application bundles",
-                        "Code comment indicates cloud administrative credentials embedded into client bundle.",
-                        "Move privileged operations to backend API services; client apps must only hold short-lived scoped tokens.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-001",
+                            title: "Client mobile/desktop bundle contains long-lived cloud API/admin keys",
+                            severity: Severity::Critical,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Do not package administrative cloud credentials into client mobile or desktop application bundles",
+                            description: "Code comment indicates cloud administrative credentials embedded into client bundle.",
+                            remediation: "Move privileged operations to backend API services; client apps must only hold short-lived scoped tokens.",
+                        },
                     );
                 }
 
@@ -530,18 +551,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-002",
                         &["CWE-922", "CWE-312"],
-                        "Sensitive token stored in plaintext local preferences/file",
-                        Severity::High,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Store authentication credentials and tokens exclusively in hardware-backed secure storage (Keychain, KeyStore)",
-                        "Code comment indicates sensitive authentication tokens stored unencrypted in local preferences.",
-                        "Migrate sensitive credentials to OS Keychain (iOS/macOS), EncryptedSharedPreferences/KeyStore (Android), or keytar (Electron).",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-002",
+                            title: "Sensitive token stored in plaintext local preferences/file",
+                            severity: Severity::High,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Store authentication credentials and tokens exclusively in hardware-backed secure storage (Keychain, KeyStore)",
+                            description: "Code comment indicates sensitive authentication tokens stored unencrypted in local preferences.",
+                            remediation: "Migrate sensitive credentials to OS Keychain (iOS/macOS), EncryptedSharedPreferences/KeyStore (Android), or keytar (Electron).",
+                        },
                     );
                 }
 
@@ -551,18 +574,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-003",
                         &["CWE-926", "CWE-284"],
-                        "Android exported activity/service/provider reachable without intended permission",
-                        Severity::High,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Set android:exported=\"false\" or enforce signature-level android:permission on exposed components",
-                        "Code comment indicates Android component exported to all applications without permission check.",
-                        "Set android:exported=\"false\" for internal components or add android:permission to guard exported entry points.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-003",
+                            title: "Android exported activity/service/provider reachable without intended permission",
+                            severity: Severity::High,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Set android:exported=\"false\" or enforce signature-level android:permission on exposed components",
+                            description: "Code comment indicates Android component exported to all applications without permission check.",
+                            remediation: "Set android:exported=\"false\" for internal components or add android:permission to guard exported entry points.",
+                        },
                     );
                 }
 
@@ -573,18 +598,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-004",
                         &["CWE-939"],
-                        "Deep-link or custom protocol handler accepts unsafe URL/command",
-                        Severity::High,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Validate deep link URLs against strict host, path, and parameter allowlists before execution",
-                        "Code comment indicates deep-link or custom URI scheme handler executing arbitrary intent parameters.",
-                        "Validate deep link host, scheme, and query parameters against an allowlist before taking any action.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-004",
+                            title: "Deep-link or custom protocol handler accepts unsafe URL/command",
+                            severity: Severity::High,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Validate deep link URLs against strict host, path, and parameter allowlists before execution",
+                            description: "Code comment indicates deep-link or custom URI scheme handler executing arbitrary intent parameters.",
+                            remediation: "Validate deep link host, scheme, and query parameters against an allowlist before taking any action.",
+                        },
                     );
                 }
 
@@ -595,18 +622,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-005",
                         &["CWE-250", "CWE-94"],
-                        "Electron renderer has Node integration/unsafe context isolation policy",
-                        Severity::Critical,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Enforce nodeIntegration: false, contextIsolation: true, and sandbox: true in Electron webPreferences",
-                        "Code comment indicates Electron window configuration disables context isolation or enables node integration.",
-                        "Set 'nodeIntegration: false', 'contextIsolation: true', and expose only safe APIs via preload contextBridge.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-005",
+                            title: "Electron renderer has Node integration/unsafe context isolation policy",
+                            severity: Severity::Critical,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Enforce nodeIntegration: false, contextIsolation: true, and sandbox: true in Electron webPreferences",
+                            description: "Code comment indicates Electron window configuration disables context isolation or enables node integration.",
+                            remediation: "Set 'nodeIntegration: false', 'contextIsolation: true', and expose only safe APIs via preload contextBridge.",
+                        },
                     );
                 }
 
@@ -617,18 +646,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-006",
                         &["CWE-78"],
-                        "Electron IPC main process blindly executes renderer-supplied command",
-                        Severity::Critical,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Do not accept arbitrary command strings over IPC; validate actions against a fixed strict allowlist",
-                        "Code comment indicates Electron IPC handler executing renderer strings directly in shell.",
-                        "Map IPC actions to fixed predefined commands with validated parameters rather than accepting raw shell command strings.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-006",
+                            title: "Electron IPC main process blindly executes renderer-supplied command",
+                            severity: Severity::Critical,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Do not accept arbitrary command strings over IPC; validate actions against a fixed strict allowlist",
+                            description: "Code comment indicates Electron IPC handler executing renderer strings directly in shell.",
+                            remediation: "Map IPC actions to fixed predefined commands with validated parameters rather than accepting raw shell command strings.",
+                        },
                     );
                 }
 
@@ -639,18 +670,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-007",
                         &["CWE-295"],
-                        "Mobile/desktop TLS trust all certificates or disables hostname verification",
-                        Severity::Critical,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Enforce full TLS certificate validation and hostname verification with certificate pinning",
-                        "Code comment indicates TLS certificate or hostname verification is disabled in client app.",
-                        "Enable standard TLS verification ('rejectUnauthorized: true') and implement certificate pinning for API endpoints.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-007",
+                            title: "Mobile/desktop TLS trust all certificates or disables hostname verification",
+                            severity: Severity::Critical,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Enforce full TLS certificate validation and hostname verification with certificate pinning",
+                            description: "Code comment indicates TLS certificate or hostname verification is disabled in client app.",
+                            remediation: "Enable standard TLS verification ('rejectUnauthorized: true') and implement certificate pinning for API endpoints.",
+                        },
                     );
                 }
 
@@ -662,18 +695,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-008",
                         &["CWE-922", "CWE-276"],
-                        "Local database/files contain private content accessible to another user/process",
-                        Severity::High,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Create local files and databases with owner-only access permissions (0600 / MODE_PRIVATE)",
-                        "Code comment indicates local files or databases created with world-readable permissions.",
-                        "Set file permissions to MODE_PRIVATE (0600/0700) to restrict access strictly to the application owner.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-008",
+                            title: "Local database/files contain private content accessible to another user/process",
+                            severity: Severity::High,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Create local files and databases with owner-only access permissions (0600 / MODE_PRIVATE)",
+                            description: "Code comment indicates local files or databases created with world-readable permissions.",
+                            remediation: "Set file permissions to MODE_PRIVATE (0600/0700) to restrict access strictly to the application owner.",
+                        },
                     );
                 }
 
@@ -685,18 +720,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-009",
                         &["CWE-494"],
-                        "Untrusted app updates or executable plugins have no origin verification",
-                        Severity::Critical,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Deliver application updates over HTTPS with mandatory cryptographic signature verification",
-                        "Code comment indicates application updater fetches updates over unencrypted HTTP without signature verification.",
-                        "Enforce HTTPS for updater feed URLs and verify cryptographic digital signatures before applying updates.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-009",
+                            title: "Untrusted app updates or executable plugins have no origin verification",
+                            severity: Severity::Critical,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Deliver application updates over HTTPS with mandatory cryptographic signature verification",
+                            description: "Code comment indicates application updater fetches updates over unencrypted HTTP without signature verification.",
+                            remediation: "Enforce HTTPS for updater feed URLs and verify cryptographic digital signatures before applying updates.",
+                        },
                     );
                 }
 
@@ -707,18 +744,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-MOB-010",
                         &["CWE-200"],
-                        "Clipboard, screen capture, crash reports or notifications expose secret values",
-                        Severity::High,
-                        "2.25 Mobile, desktop, electron and local apps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Do not write sensitive authentication tokens to global clipboard or omit FLAG_SECURE on sensitive windows",
-                        "Code comment indicates sensitive credentials exposed via system clipboard or insecure notifications.",
-                        "Avoid copying secrets to the clipboard, mark sensitive UI with FLAG_SECURE, and sanitize notifications.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-MOB-010",
+                            title: "Clipboard, screen capture, crash reports or notifications expose secret values",
+                            severity: Severity::High,
+                            category: "2.25 Mobile, desktop, electron and local apps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Do not write sensitive authentication tokens to global clipboard or omit FLAG_SECURE on sensitive windows",
+                            description: "Code comment indicates sensitive credentials exposed via system clipboard or insecure notifications.",
+                            remediation: "Avoid copying secrets to the clipboard, mark sensitive UI with FLAG_SECURE, and sanitize notifications.",
+                        },
                     );
                 }
 
@@ -731,18 +770,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-AIC-004",
                         &["CWE-1059"],
-                        "Tests are rewritten/weakened after a failure instead of diagnosing cause",
-                        Severity::High,
-                        "2.21 AI coding assistant-specific engineering traps",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Do not weaken test oracles or assertions to bypass test failures; diagnose the root cause",
-                        "Code comment indicates test assertions were deliberately weakened or replaced with trivial passes.",
-                        "Retain strict test assertions and fix the underlying implementation rather than weakening the test oracle.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-AIC-004",
+                            title: "Tests are rewritten/weakened after a failure instead of diagnosing cause",
+                            severity: Severity::High,
+                            category: "2.21 AI coding assistant-specific engineering traps",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Do not weaken test oracles or assertions to bypass test failures; diagnose the root cause",
+                            description: "Code comment indicates test assertions were deliberately weakened or replaced with trivial passes.",
+                            remediation: "Retain strict test assertions and fix the underlying implementation rather than weakening the test oracle.",
+                        },
                     );
                 }
 
@@ -754,18 +795,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-LLM-019",
                         &["CWE-862"],
-                        "Agent chain allows one agent's unchecked proposal to become another agent's privileged command",
-                        Severity::High,
-                        "2.22 LLM, RAG, autonomous agent and MCP application flaws",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Enforce human-in-the-loop or authorization policy gates between agent proposal and privileged execution",
-                        "Code comment indicates upstream agent proposals executed by privileged downstream agent without authorization.",
-                        "Require human operator approval or cryptographic policy validation before executing privileged commands suggested by upstream agents.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-LLM-019",
+                            title: "Agent chain allows one agent's unchecked proposal to become another agent's privileged command",
+                            severity: Severity::High,
+                            category: "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Enforce human-in-the-loop or authorization policy gates between agent proposal and privileged execution",
+                            description: "Code comment indicates upstream agent proposals executed by privileged downstream agent without authorization.",
+                            remediation: "Require human operator approval or cryptographic policy validation before executing privileged commands suggested by upstream agents.",
+                        },
                     );
                 }
 
@@ -777,18 +820,20 @@ impl NativeDesktopScanner {
                     Self::push_finding(
                         &mut findings,
                         &mut seen,
-                        "BK-AI-LLM-021",
                         &["CWE-613"],
-                        "Agent continues acting after revocation, stop request, timeout or ownership change",
-                        Severity::High,
-                        "2.22 LLM, RAG, autonomous agent and MCP application flaws",
-                        path,
-                        &target_kind,
-                        line_no,
-                        trimmed,
-                        "Check cancellation signal, timeout deadline, and revocation status in every agent iteration loop",
-                        "Code comment indicates agent execution loop continues running without checking abort signal or token revocation.",
-                        "Check 'abort_signal.is_aborted()' and verify active session authorization at each turn of the execution loop.",
+                        ScannerFindingSpec {
+                            rule_id: "BK-AI-LLM-021",
+                            title: "Agent continues acting after revocation, stop request, timeout or ownership change",
+                            severity: Severity::High,
+                            category: "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+                            path,
+                            target_kind: &target_kind,
+                            line_no,
+                            snippet: trimmed,
+                            safe_threshold: "Check cancellation signal, timeout deadline, and revocation status in every agent iteration loop",
+                            description: "Code comment indicates agent execution loop continues running without checking abort signal or token revocation.",
+                            remediation: "Check 'abort_signal.is_aborted()' and verify active session authorization at each turn of the execution loop.",
+                        },
                     );
                 }
 
@@ -806,18 +851,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-004",
                     &["CWE-476"],
-                    "Null/dangling pointer dereference reachable from malformed input",
-                    Severity::High,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Verify pointer non-null invariants before dereference",
-                    "Raw pointer dereference without null check or allocation validation can cause denial of service or arbitrary code execution.",
-                    "Perform explicit null checks ('if (ptr == NULL)' or 'if (!ptr.is_null())') prior to dereferencing raw pointers.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-004",
+                        title: "Null/dangling pointer dereference reachable from malformed input",
+                        severity: Severity::High,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Verify pointer non-null invariants before dereference",
+                        description: "Raw pointer dereference without null check or allocation validation can cause denial of service or arbitrary code execution.",
+                        remediation: "Perform explicit null checks ('if (ptr == NULL)' or 'if (!ptr.is_null())') prior to dereferencing raw pointers.",
+                    },
                 );
             }
 
@@ -828,18 +875,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-005",
                     &["CWE-120"],
-                    "Stack/heap buffer copy lacks verified bounds",
-                    Severity::Critical,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Enforce bounded copies using size-limited primitives or explicit bounds verification",
-                    "Unbounded memory copy function (strcpy, strcat, sprintf, alloca) can overflow destination buffers.",
-                    "Replace with bounded alternatives (snprintf, strlcpy, memcpy_s) and validate bounds before copying.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-005",
+                        title: "Stack/heap buffer copy lacks verified bounds",
+                        severity: Severity::Critical,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Enforce bounded copies using size-limited primitives or explicit bounds verification",
+                        description: "Unbounded memory copy function (strcpy, strcat, sprintf, alloca) can overflow destination buffers.",
+                        remediation: "Replace with bounded alternatives (snprintf, strlcpy, memcpy_s) and validate bounds before copying.",
+                    },
                 );
             }
 
@@ -850,18 +899,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-006",
                     &["CWE-119"],
-                    "`unsafe` Rust or FFI uses unchecked slice/pointer conversion",
-                    Severity::High,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Validate pointer validity, non-null status, and slice length prior to raw parts reconstruction",
-                    "Constructing slice or string from raw pointer and length without explicit bounds check allows out-of-bounds memory access.",
-                    "Verify that pointer is non-null, aligned, and length does not exceed allocated memory range before calling slice::from_raw_parts.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-006",
+                        title: "`unsafe` Rust or FFI uses unchecked slice/pointer conversion",
+                        severity: Severity::High,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Validate pointer validity, non-null status, and slice length prior to raw parts reconstruction",
+                        description: "Constructing slice or string from raw pointer and length without explicit bounds check allows out-of-bounds memory access.",
+                        remediation: "Verify that pointer is non-null, aligned, and length does not exceed allocated memory range before calling slice::from_raw_parts.",
+                    },
                 );
             }
 
@@ -872,18 +923,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-007",
                     &["CWE-170", "CWE-120"],
-                    "C/C++ string encoding or truncation produces security control mismatch",
-                    Severity::High,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Ensure null termination after strncpy or use strlcpy/snprintf",
-                    "strncpy does not guarantee NUL termination when source length equals or exceeds buffer size, causing buffer over-read.",
-                    "Explicitly set dest[sizeof(dest) - 1] = '\\0' or replace with snprintf / strlcpy.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-007",
+                        title: "C/C++ string encoding or truncation produces security control mismatch",
+                        severity: Severity::High,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Ensure null termination after strncpy or use strlcpy/snprintf",
+                        description: "strncpy does not guarantee NUL termination when source length equals or exceeds buffer size, causing buffer over-read.",
+                        remediation: "Explicitly set dest[sizeof(dest) - 1] = '\\0' or replace with snprintf / strlcpy.",
+                    },
                 );
             }
 
@@ -894,18 +947,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-008",
                     &["CWE-250"],
-                    "Untrusted native decoder or plugin runs in privileged host process",
-                    Severity::Critical,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Isolate native decoders in sandboxed worker processes and verify cryptographic signatures",
-                    "Native dynamic libraries or plugins loaded into privileged host process without sandboxing or signature verification.",
-                    "Isolate plugin execution in separate unprivileged processes (sandboxes) and verify digital signatures before loading.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-008",
+                        title: "Untrusted native decoder or plugin runs in privileged host process",
+                        severity: Severity::Critical,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Isolate native decoders in sandboxed worker processes and verify cryptographic signatures",
+                        description: "Native dynamic libraries or plugins loaded into privileged host process without sandboxing or signature verification.",
+                        remediation: "Isolate plugin execution in separate unprivileged processes (sandboxes) and verify digital signatures before loading.",
+                    },
                 );
             }
 
@@ -915,18 +970,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-009",
                     &["CWE-755"],
-                    "Rust/Go panic or C++ exception crosses foreign function boundary unsafely",
-                    Severity::High,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Wrap all FFI boundary functions in catch_unwind or panic recovery to prevent unwinding into foreign frames",
-                    "Rust panics unwinding across extern \"C\" boundaries cause undefined behavior (abort or stack corruption).",
-                    "Wrap the body of extern \"C\" functions with std::panic::catch_unwind and return error codes instead of panicking.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-009",
+                        title: "Rust/Go panic or C++ exception crosses foreign function boundary unsafely",
+                        severity: Severity::High,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Wrap all FFI boundary functions in catch_unwind or panic recovery to prevent unwinding into foreign frames",
+                        description: "Rust panics unwinding across extern \"C\" boundaries cause undefined behavior (abort or stack corruption).",
+                        remediation: "Wrap the body of extern \"C\" functions with std::panic::catch_unwind and return error codes instead of panicking.",
+                    },
                 );
             }
 
@@ -937,18 +994,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-010",
                     &["CWE-693"],
-                    "Compiler/hardening flags removed to silence warnings or fix build",
-                    Severity::High,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Retain all platform and compiler security hardening flags (stack protector, ASLR, DEP, FORTIFY_SOURCE)",
-                    "Build configuration explicitly disables essential security hardening flags (-fno-stack-protector, execstack, /GS-).",
-                    "Enable standard compiler protections: -fstack-protector-strong, -D_FORTIFY_SOURCE=2, and non-executable stack flags.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-010",
+                        title: "Compiler/hardening flags removed to silence warnings or fix build",
+                        severity: Severity::High,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Retain all platform and compiler security hardening flags (stack protector, ASLR, DEP, FORTIFY_SOURCE)",
+                        description: "Build configuration explicitly disables essential security hardening flags (-fno-stack-protector, execstack, /GS-).",
+                        remediation: "Enable standard compiler protections: -fstack-protector-strong, -D_FORTIFY_SOURCE=2, and non-executable stack flags.",
+                    },
                 );
             }
 
@@ -959,18 +1018,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-011",
                     &["CWE-401"],
-                    "Zig/C++ allocator mismatch or forgotten cleanup leaks secret-bearing memory",
-                    Severity::High,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Use matched allocators and cryptographically zero memory containing secrets before deallocation",
-                    "Allocator mismatch or deallocating secret-bearing buffers without zeroing contents.",
-                    "Pair allocations with matching deallocators and use explicit_bzero or zeroize before deallocating keys.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-011",
+                        title: "Zig/C++ allocator mismatch or forgotten cleanup leaks secret-bearing memory",
+                        severity: Severity::High,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Use matched allocators and cryptographically zero memory containing secrets before deallocation",
+                        description: "Allocator mismatch or deallocating secret-bearing buffers without zeroing contents.",
+                        remediation: "Pair allocations with matching deallocators and use explicit_bzero or zeroize before deallocating keys.",
+                    },
                 );
             }
 
@@ -981,18 +1042,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MEM-012",
                     &["CWE-20", "CWE-190"],
-                    "Binary parser trusts declared lengths and integer casts",
-                    Severity::High,
-                    "2.18 Native code, FFI and memory safety",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Cap binary-parsed lengths against strict maximum allocation limits before allocating",
-                    "Binary parser uses declared header length directly for memory allocation without upper limit check.",
-                    "Enforce a maximum allowable buffer size (e.g., len <= MAX_PACKET_SIZE) before allocating memory.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MEM-012",
+                        title: "Binary parser trusts declared lengths and integer casts",
+                        severity: Severity::High,
+                        category: "2.18 Native code, FFI and memory safety",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Cap binary-parsed lengths against strict maximum allocation limits before allocating",
+                        description: "Binary parser uses declared header length directly for memory allocation without upper limit check.",
+                        remediation: "Enforce a maximum allowable buffer size (e.g., len <= MAX_PACKET_SIZE) before allocating memory.",
+                    },
                 );
             }
 
@@ -1006,18 +1069,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-001",
                     &["CWE-798"],
-                    "Client mobile/desktop bundle contains long-lived cloud API/admin keys",
-                    Severity::Critical,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Do not package administrative cloud credentials into client mobile or desktop application bundles",
-                    "Client application bundle contains hardcoded cloud administrative credentials.",
-                    "Move privileged operations to backend API services; client apps must only hold short-lived scoped tokens.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-001",
+                        title: "Client mobile/desktop bundle contains long-lived cloud API/admin keys",
+                        severity: Severity::Critical,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Do not package administrative cloud credentials into client mobile or desktop application bundles",
+                        description: "Client application bundle contains hardcoded cloud administrative credentials.",
+                        remediation: "Move privileged operations to backend API services; client apps must only hold short-lived scoped tokens.",
+                    },
                 );
             }
 
@@ -1028,18 +1093,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-002",
                     &["CWE-922", "CWE-312"],
-                    "Sensitive token stored in plaintext local preferences/file",
-                    Severity::High,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Store authentication credentials and tokens exclusively in hardware-backed secure storage (Keychain, KeyStore)",
-                    "Sensitive token stored in unencrypted preferences or local storage instead of platform Keychain/KeyStore.",
-                    "Migrate sensitive credentials to OS Keychain (iOS/macOS), EncryptedSharedPreferences/KeyStore (Android), or keytar (Electron).",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-002",
+                        title: "Sensitive token stored in plaintext local preferences/file",
+                        severity: Severity::High,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Store authentication credentials and tokens exclusively in hardware-backed secure storage (Keychain, KeyStore)",
+                        description: "Sensitive token stored in unencrypted preferences or local storage instead of platform Keychain/KeyStore.",
+                        remediation: "Migrate sensitive credentials to OS Keychain (iOS/macOS), EncryptedSharedPreferences/KeyStore (Android), or keytar (Electron).",
+                    },
                 );
             }
 
@@ -1050,18 +1117,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-003",
                     &["CWE-926", "CWE-284"],
-                    "Android exported activity/service/provider reachable without intended permission",
-                    Severity::High,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Set android:exported=\"false\" or enforce signature-level android:permission on exposed components",
-                    "Android component is exported to all apps without requiring a permission attribute.",
-                    "Set android:exported=\"false\" for internal components or add android:permission to guard exported entry points.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-003",
+                        title: "Android exported activity/service/provider reachable without intended permission",
+                        severity: Severity::High,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Set android:exported=\"false\" or enforce signature-level android:permission on exposed components",
+                        description: "Android component is exported to all apps without requiring a permission attribute.",
+                        remediation: "Set android:exported=\"false\" for internal components or add android:permission to guard exported entry points.",
+                    },
                 );
             }
 
@@ -1071,18 +1140,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-004",
                     &["CWE-939"],
-                    "Deep-link or custom protocol handler accepts unsafe URL/command",
-                    Severity::High,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Validate deep link URLs against strict host, path, and parameter allowlists before execution",
-                    "Deep-link or protocol handler passes untrusted input directly to external command or webview.",
-                    "Validate deep link host, scheme, and query parameters against an allowlist before taking any action.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-004",
+                        title: "Deep-link or custom protocol handler accepts unsafe URL/command",
+                        severity: Severity::High,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Validate deep link URLs against strict host, path, and parameter allowlists before execution",
+                        description: "Deep-link or protocol handler passes untrusted input directly to external command or webview.",
+                        remediation: "Validate deep link host, scheme, and query parameters against an allowlist before taking any action.",
+                    },
                 );
             }
 
@@ -1093,18 +1164,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-005",
                     &["CWE-250", "CWE-94"],
-                    "Electron renderer has Node integration/unsafe context isolation policy",
-                    Severity::Critical,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Enforce nodeIntegration: false, contextIsolation: true, and sandbox: true in Electron webPreferences",
-                    "Electron window enables Node integration or disables context isolation, allowing RCE from renderer.",
-                    "Set 'nodeIntegration: false', 'contextIsolation: true', and expose only safe APIs via preload contextBridge.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-005",
+                        title: "Electron renderer has Node integration/unsafe context isolation policy",
+                        severity: Severity::Critical,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Enforce nodeIntegration: false, contextIsolation: true, and sandbox: true in Electron webPreferences",
+                        description: "Electron window enables Node integration or disables context isolation, allowing RCE from renderer.",
+                        remediation: "Set 'nodeIntegration: false', 'contextIsolation: true', and expose only safe APIs via preload contextBridge.",
+                    },
                 );
             }
 
@@ -1120,18 +1193,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-006",
                     &["CWE-78"],
-                    "Electron IPC main process blindly executes renderer-supplied command",
-                    Severity::Critical,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Do not accept arbitrary command strings over IPC; validate actions against a fixed strict allowlist",
-                    "Electron IPC handler in main process executes shell commands directly from renderer messages.",
-                    "Map IPC actions to fixed predefined commands with validated parameters rather than accepting raw shell command strings.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-006",
+                        title: "Electron IPC main process blindly executes renderer-supplied command",
+                        severity: Severity::Critical,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Do not accept arbitrary command strings over IPC; validate actions against a fixed strict allowlist",
+                        description: "Electron IPC handler in main process executes shell commands directly from renderer messages.",
+                        remediation: "Map IPC actions to fixed predefined commands with validated parameters rather than accepting raw shell command strings.",
+                    },
                 );
             }
 
@@ -1142,18 +1217,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-007",
                     &["CWE-295"],
-                    "Mobile/desktop TLS trust all certificates or disables hostname verification",
-                    Severity::Critical,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Enforce full TLS certificate validation and hostname verification with certificate pinning",
-                    "TLS certificate or hostname verification is disabled, exposing client traffic to MITM attacks.",
-                    "Enable standard TLS verification ('rejectUnauthorized: true') and implement certificate pinning for API endpoints.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-007",
+                        title: "Mobile/desktop TLS trust all certificates or disables hostname verification",
+                        severity: Severity::Critical,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Enforce full TLS certificate validation and hostname verification with certificate pinning",
+                        description: "TLS certificate or hostname verification is disabled, exposing client traffic to MITM attacks.",
+                        remediation: "Enable standard TLS verification ('rejectUnauthorized: true') and implement certificate pinning for API endpoints.",
+                    },
                 );
             }
 
@@ -1164,18 +1241,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-008",
                     &["CWE-922", "CWE-276"],
-                    "Local database/files contain private content accessible to another user/process",
-                    Severity::High,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Create local files and databases with owner-only access permissions (0600 / MODE_PRIVATE)",
-                    "File or database created with world-readable or world-writable permissions, exposing data to other local processes.",
-                    "Set file permissions to MODE_PRIVATE (0600/0700) to restrict access strictly to the application owner.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-008",
+                        title: "Local database/files contain private content accessible to another user/process",
+                        severity: Severity::High,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Create local files and databases with owner-only access permissions (0600 / MODE_PRIVATE)",
+                        description: "File or database created with world-readable or world-writable permissions, exposing data to other local processes.",
+                        remediation: "Set file permissions to MODE_PRIVATE (0600/0700) to restrict access strictly to the application owner.",
+                    },
                 );
             }
 
@@ -1190,18 +1269,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-009",
                     &["CWE-494"],
-                    "Untrusted app updates or executable plugins have no origin verification",
-                    Severity::Critical,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Deliver application updates over HTTPS with mandatory cryptographic signature verification",
-                    "App updates are fetched over insecure HTTP or without signature verification.",
-                    "Enforce HTTPS for updater feed URLs and verify cryptographic digital signatures before applying updates.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-009",
+                        title: "Untrusted app updates or executable plugins have no origin verification",
+                        severity: Severity::Critical,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Deliver application updates over HTTPS with mandatory cryptographic signature verification",
+                        description: "App updates are fetched over insecure HTTP or without signature verification.",
+                        remediation: "Enforce HTTPS for updater feed URLs and verify cryptographic digital signatures before applying updates.",
+                    },
                 );
             }
 
@@ -1212,18 +1293,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-MOB-010",
                     &["CWE-200"],
-                    "Clipboard, screen capture, crash reports or notifications expose secret values",
-                    Severity::High,
-                    "2.25 Mobile, desktop, electron and local apps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Do not write sensitive authentication tokens to global clipboard or omit FLAG_SECURE on sensitive windows",
-                    "Sensitive token or credential written to shared system clipboard or cleartext notification.",
-                    "Avoid copying secrets to the clipboard, mark sensitive UI with FLAG_SECURE, and sanitize notifications.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-MOB-010",
+                        title: "Clipboard, screen capture, crash reports or notifications expose secret values",
+                        severity: Severity::High,
+                        category: "2.25 Mobile, desktop, electron and local apps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Do not write sensitive authentication tokens to global clipboard or omit FLAG_SECURE on sensitive windows",
+                        description: "Sensitive token or credential written to shared system clipboard or cleartext notification.",
+                        remediation: "Avoid copying secrets to the clipboard, mark sensitive UI with FLAG_SECURE, and sanitize notifications.",
+                    },
                 );
             }
 
@@ -1238,18 +1321,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-AIC-004",
                     &["CWE-1059"],
-                    "Tests are rewritten/weakened after a failure instead of diagnosing cause",
-                    Severity::High,
-                    "2.21 AI coding assistant-specific engineering traps",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Do not weaken test oracles or assertions to bypass test failures; diagnose the root cause",
-                    "Test assertion was weakened or replaced with a trivial tautology (assert True) to bypass a failure.",
-                    "Retain strict test assertions and fix the underlying implementation rather than weakening the test oracle.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-AIC-004",
+                        title: "Tests are rewritten/weakened after a failure instead of diagnosing cause",
+                        severity: Severity::High,
+                        category: "2.21 AI coding assistant-specific engineering traps",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Do not weaken test oracles or assertions to bypass test failures; diagnose the root cause",
+                        description: "Test assertion was weakened or replaced with a trivial tautology (assert True) to bypass a failure.",
+                        remediation: "Retain strict test assertions and fix the underlying implementation rather than weakening the test oracle.",
+                    },
                 );
             }
 
@@ -1264,18 +1349,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-LLM-019",
                     &["CWE-862"],
-                    "Agent chain allows one agent's unchecked proposal to become another agent's privileged command",
-                    Severity::High,
-                    "2.22 LLM, RAG, autonomous agent and MCP application flaws",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Enforce human-in-the-loop or authorization policy gates between agent proposal and privileged execution",
-                    "Downstream privileged agent directly executes unchecked proposals from upstream agent without authorization gate.",
-                    "Require human operator approval or cryptographic policy validation before executing privileged commands suggested by upstream agents.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-LLM-019",
+                        title: "Agent chain allows one agent's unchecked proposal to become another agent's privileged command",
+                        severity: Severity::High,
+                        category: "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Enforce human-in-the-loop or authorization policy gates between agent proposal and privileged execution",
+                        description: "Downstream privileged agent directly executes unchecked proposals from upstream agent without authorization gate.",
+                        remediation: "Require human operator approval or cryptographic policy validation before executing privileged commands suggested by upstream agents.",
+                    },
                 );
             }
 
@@ -1292,18 +1379,20 @@ impl NativeDesktopScanner {
                 Self::push_finding(
                     &mut findings,
                     &mut seen,
-                    "BK-AI-LLM-021",
                     &["CWE-613"],
-                    "Agent continues acting after revocation, stop request, timeout or ownership change",
-                    Severity::High,
-                    "2.22 LLM, RAG, autonomous agent and MCP application flaws",
-                    path,
-                    &target_kind,
-                    line_no,
-                    trimmed,
-                    "Check cancellation signal, timeout deadline, and revocation status in every agent iteration loop",
-                    "Agent execution loop does not check abort signals or token revocation between execution turns.",
-                    "Check 'abort_signal.is_aborted()' and verify active session authorization at each turn of the execution loop.",
+                    ScannerFindingSpec {
+                        rule_id: "BK-AI-LLM-021",
+                        title: "Agent continues acting after revocation, stop request, timeout or ownership change",
+                        severity: Severity::High,
+                        category: "2.22 LLM, RAG, autonomous agent and MCP application flaws",
+                        path,
+                        target_kind: &target_kind,
+                        line_no,
+                        snippet: trimmed,
+                        safe_threshold: "Check cancellation signal, timeout deadline, and revocation status in every agent iteration loop",
+                        description: "Agent execution loop does not check abort signals or token revocation between execution turns.",
+                        remediation: "Check 'abort_signal.is_aborted()' and verify active session authorization at each turn of the execution loop.",
+                    },
                 );
             }
         }
@@ -1311,66 +1400,17 @@ impl NativeDesktopScanner {
         findings
     }
 
-    #[allow(clippy::too_many_arguments)]
+    /// Helper to construct and deduplicate findings via consolidated [].
     fn push_finding(
         findings: &mut Vec<Finding>,
         seen: &mut HashSet<(String, usize)>,
-        rule_id: &str,
         cwes: &[&str],
-        title: &str,
-        severity: Severity,
-        category: &str,
-        path: &Path,
-        target_kind: &TargetKind,
-        line_no: usize,
-        snippet: &str,
-        safe_threshold: &str,
-        description: &str,
-        remediation: &str,
+        spec: ScannerFindingSpec<'_>,
     ) {
-        if !seen.insert((rule_id.to_string(), line_no)) {
-            return;
-        }
-
-        let file_tag = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("source");
-        let short_id = rule_id.trim_start_matches("BK-AI-");
-        let finding_id = format!("{}-{}-L{}", short_id, file_tag, line_no);
-
-        let mut finding = Finding::new(
-            finding_id,
-            CveId::Custom {
-                id: rule_id.to_string(),
-                title: title.to_string(),
-            },
-            severity,
-            target_kind.clone(),
-            Some(path.to_path_buf()),
-            Some(line_no),
-            snippet,
-            safe_threshold,
-            description,
-            remediation,
-        );
-        finding.detector_id = "native-desktop".to_string();
-        finding.detector_version = "1.0.0".to_string();
-        finding.category = category.to_string();
-        finding.affectedness = Affectedness::ConfirmedAffected;
-        finding.reachability = Reachability::PotentiallyReachable;
-        finding.confidence = Confidence::High;
-        finding.evidence_certainty = EvidenceCertainty::StronglySupported;
-        let mut advisory_ids: Vec<String> = cwes.iter().map(|c| c.to_string()).collect();
-        advisory_ids.push(rule_id.to_string());
-        finding.advisory_ids = advisory_ids;
-        finding.evidence_refs.push(EvidenceRef {
-            location: format!("{}:{}", path.display(), line_no),
-            line_number: Some(line_no),
-            snippet: Some(snippet.trim().to_string()),
-            sha256: None,
-        });
-        finding.compute_dedupe_fingerprint();
-        findings.push(finding);
+        let rule_id = spec.rule_id;
+        ScannerFindingBuilder::native_desktop(spec)
+            .advisories(cwes.iter().copied())
+            .advisory(rule_id)
+            .push_deduped(findings, seen);
     }
 }

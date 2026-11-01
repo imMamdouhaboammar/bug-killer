@@ -1,4 +1,4 @@
-use bug_killer::types;
+use bug_killer::{scanner, types};
 
 #[path = "../src/scanner/auth.rs"]
 mod auth;
