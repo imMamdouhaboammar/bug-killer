@@ -1,4 +1,4 @@
-use bug_killer::cli::{run, Cli};
+use bug_killer::cli::{Cli, run};
 use clap::Parser;
 
 fn main() {

@@ -262,7 +262,9 @@ fi
                     if !updated.ends_with('\n') {
                         updated.push('\n');
                     }
-                    updated.push_str("\n# Bug Killer cryptographic identities & config\n.aegis/\n.bugkiller/\n");
+                    updated.push_str(
+                        "\n# Bug Killer cryptographic identities & config\n.aegis/\n.bugkiller/\n",
+                    );
                     let _ = fs::write(&gitignore, updated);
                 }
             }
