@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	github.com/google/gopacket v1.1.19
-	github.com/open-policy-agent/opa v1.22.0
+	github.com/open-policy-agent/opa v1.22.2
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.10.2
 	google.golang.org/grpc v1.85.0
