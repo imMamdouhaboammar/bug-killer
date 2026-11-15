@@ -69,10 +69,16 @@ func TestEndToEndUDSOrchestratorInspectorIPC(t *testing.T) {
 	defer ic.Close()
 
 	// 4. Test Binary Inspection via UDS
+	binaryFixture := filepath.Join(t.TempDir(), "inspector-fixture")
+	buildFixture := exec.Command("cc", "-x", "c", "-o", binaryFixture, "-")
+	buildFixture.Stdin = strings.NewReader("int main(void) { return 0; }")
+	if out, err := buildFixture.CombinedOutput(); err != nil {
+		t.Fatalf("failed to build the controlled native binary fixture: %v\n%s", err, out)
+	}
 	reqCtx, reqCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer reqCancel()
 
-	binResp, err := ic.InspectBinaryFile(reqCtx, "/bin/ls")
+	binResp, err := ic.InspectBinaryFile(reqCtx, binaryFixture)
 	if err != nil {
 		t.Fatalf("InspectBinaryFile RPC failed: %v", err)
 	}

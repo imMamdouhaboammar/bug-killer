@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 
 use crate::types::*;
+use ast_grep_core::tree_sitter::LanguageExt;
+use ast_grep_language::SupportLang;
 use regex::Regex;
+use std::collections::HashSet;
 use std::path::Path;
 use std::sync::LazyLock;
 
@@ -97,13 +100,6 @@ static RE_NET_010_REQUESTS_NO_TIMEOUT: LazyLock<Regex> =
 /// BK-AI-DOS-001 (CWE-674): Unbounded recursion / tree depth without recursion limit
 static RE_DOS_001_COMMENT: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)//.*(?:unbounded\s+recursion|recursion\s+without\s+(?:depth\s+)?limit|unbounded\s+depth|no\s+recursion\s+limit)"#).unwrap()
-});
-
-static RE_DOS_001_FUNC: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        r#"(?i)(?:function\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)|def\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\))"#,
-    )
-    .unwrap()
 });
 
 static RE_DOS_001_GUARD: LazyLock<Regex> = LazyLock::new(|| {
@@ -229,6 +225,68 @@ static RE_DOS_012_DISK_EXHAUSTION: LazyLock<Regex> = LazyLock::new(|| {
 // NetworkDosScanner Implementation
 // ---------------------------------------------------------------------------
 
+fn unbounded_self_calls(path: &Path, source: &str) -> HashSet<usize> {
+    let language = match path.extension().and_then(|part| part.to_str()) {
+        Some("py" | "pyi" | "pyw") => SupportLang::Python,
+        Some("js" | "mjs" | "cjs" | "jsx") => SupportLang::JavaScript,
+        Some("ts" | "mts" | "cts") => SupportLang::TypeScript,
+        Some("tsx") => SupportLang::Tsx,
+        _ => return HashSet::new(),
+    };
+    let tree = language.ast_grep(source);
+    let root = tree.root();
+    root.dfs()
+        .filter_map(|node| {
+            if !matches!(
+                node.kind().as_ref(),
+                "function_declaration"
+                    | "function_definition"
+                    | "function_expression"
+                    | "generator_function_declaration"
+                    | "generator_function"
+            ) {
+                return None;
+            }
+            let name = node.field("name")?;
+            let body = node.field("body")?;
+            let parameters = node.field("parameters")?;
+            if RE_DOS_001_GUARD.is_match(&parameters.text()) {
+                return None;
+            }
+            let name = name.text();
+            let mut self_call = false;
+            let mut descendants = vec![body];
+            while let Some(child) = descendants.pop() {
+                match child.kind().as_ref() {
+                    "function_declaration"
+                    | "function_definition"
+                    | "function_expression"
+                    | "generator_function_declaration"
+                    | "generator_function"
+                    | "arrow_function"
+                    | "lambda"
+                    | "method_definition"
+                    | "class_declaration"
+                    | "class_definition"
+                    | "class"
+                    | "comment"
+                    | "string"
+                    | "string_literal" => {}
+                    "identifier" if RE_DOS_001_GUARD.is_match(&child.text()) => return None,
+                    "call_expression" | "call" => {
+                        self_call |= child.field("function").is_some_and(|callee| {
+                            callee.kind() == "identifier" && callee.text() == name
+                        });
+                        descendants.extend(child.children());
+                    }
+                    _ => descendants.extend(child.children()),
+                }
+            }
+            self_call.then(|| node.start_pos().line() + 1)
+        })
+        .collect()
+}
+
 pub struct NetworkDosScanner;
 
 impl NetworkDosScanner {
@@ -246,6 +304,7 @@ impl NetworkDosScanner {
 
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
+        let self_calls = unbounded_self_calls(path, content);
 
         for (idx, line) in lines.iter().enumerate() {
             let line_no = idx + 1;
@@ -470,29 +529,8 @@ impl NetworkDosScanner {
             // ===============================================================
 
             // 11. BK-AI-DOS-001 (CWE-674): Unbounded recursion / tree depth without recursion limit
-            let is_unbounded_recursion = if RE_DOS_001_COMMENT.is_match(trimmed) {
-                true
-            } else if let Some(caps) = RE_DOS_001_FUNC.captures(trimmed) {
-                let func_name = caps
-                    .get(1)
-                    .or_else(|| caps.get(3))
-                    .map(|m| m.as_str())
-                    .unwrap_or("");
-                let params = caps
-                    .get(2)
-                    .or_else(|| caps.get(4))
-                    .map(|m| m.as_str())
-                    .unwrap_or("");
-                if !func_name.is_empty() && !RE_DOS_001_GUARD.is_match(params) {
-                    // Check if function name appears recursively in lookahead window without depth check
-                    lookahead_window.contains(&format!("{}(", func_name))
-                        && !RE_DOS_001_GUARD.is_match(&lookahead_window)
-                } else {
-                    false
-                }
-            } else {
-                false
-            };
+            let is_unbounded_recursion =
+                self_calls.contains(&line_no) || RE_DOS_001_COMMENT.is_match(trimmed);
 
             if is_unbounded_recursion {
                 findings.push(Self::create_finding(

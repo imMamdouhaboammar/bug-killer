@@ -449,6 +449,17 @@ agent.reload_skills(require_approval=True)
 }
 
 #[test]
+fn test_ags_007_does_not_confuse_a_prompt_eligibility_boolean_with_prompt_text() {
+    let source =
+        "const canPrompt = !dryRun && !process.env.CI;\nconst can$Prompt = process.env.CI;";
+    assert!(
+        SupplyChainScanner::scan_source(Path::new("installer.mjs"), source)
+            .iter()
+            .all(|finding| finding.cve.as_str() != "BK-AI-AGS-007")
+    );
+}
+
+#[test]
 fn test_ags_007_credentials_in_agent_prompts() {
     // Avoid raw secret literals; test format string variable interpolation and env dumps
     let vuln_code = r#"

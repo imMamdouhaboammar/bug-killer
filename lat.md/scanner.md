@@ -24,6 +24,10 @@ These checkers evaluate memory safety, authentication flows, secrets, and contai
 
 The 26 security detectors are partitioned into domain submodules in `src/detectors/` (`sast`, `secrets`, `iac`, `agent`, `supply_chain`, `web`, `auth`, `quality`), all implementing [[src/detectors/mod.rs#SecurityDetector]]. The registry [[src/detectors/mod.rs#DetectorRegistry]] coordinates execution, catalog rule coverage accounting, and honest partial/completed scan status classification via [[src/detectors/mod.rs#DetectorRegistry#execute_guard_scan]]. Behavior and registration order parity are verified in `tests/detector_modular_dispatch_test.rs`.
 
+## Availability and lexical sink evidence
+
+Findings require evidence in the responsible scope. [[src/scanner/network_dos.rs#unbounded_self_calls]] checks direct calls, and [[src/scanner/web.rs#RE_CLIENT_REDIRECT]] and [[src/scanner/supply_chain.rs#RE_AGS_007_CREDENTIAL_IN_PROMPT]] identify assignment sinks.
+
 ## Consolidated Finding Construction
 
 Standardized finding builder unifies finding instantiation, ID tagging, evidence references, and cryptographic fingerprints.

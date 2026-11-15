@@ -47,7 +47,7 @@ static RE_REGEX_SANITIZATION: LazyLock<Regex> = LazyLock::new(|| {
 
 // BK-AI-WEB-004: Open Redirect
 static RE_CLIENT_REDIRECT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:window\.)?location(?:\.href)?\s*=\s*([^;]+)|(?:window\.)?location\.(?:assign|replace)\s*\(\s*([^)]+)\s*\)"#).unwrap()
+    Regex::new(r#"(?i)\b(?:(?:window\.)?location(?:\.href)?\s*=\s*([^=;\s][^;]*)|(?:window\.)?location\.(?:assign|replace)\s*\(\s*([^)]+)\s*\))"#).unwrap()
 });
 
 static RE_SERVER_REDIRECT: LazyLock<Regex> = LazyLock::new(|| {
@@ -438,7 +438,7 @@ impl WebSecurityScanner {
             }
 
             // 4. BK-AI-WEB-004: Open Redirect
-            let is_client_redirect = if let Some(caps) = RE_CLIENT_REDIRECT.captures(trimmed) {
+            let is_client_redirect = RE_CLIENT_REDIRECT.captures_iter(trimmed).any(|caps| {
                 let target_expr = caps
                     .get(1)
                     .or_else(|| caps.get(2))
@@ -459,9 +459,7 @@ impl WebSecurityScanner {
                         || target_expr.contains("query")
                         || target_expr.contains("params")
                         || target_expr.contains("search"))
-            } else {
-                false
-            };
+            });
 
             let is_server_redirect = RE_SERVER_REDIRECT.is_match(trimmed);
 

@@ -332,6 +332,47 @@ function traverseTree(node) {
 }
 
 #[test]
+fn test_dos_001_distinguishes_a_real_recursive_call_from_nearby_names() {
+    let js = "function getPath(value) { return value; }\nconst selected = helpers.getPath(item);\n";
+    let py = "def digest(data):\n    return checksum(data).hexdigest()\n";
+    for (file, source) in [("installer.mjs", js), ("manifest.py", py)] {
+        assert!(
+            NetworkDosScanner::scan_source(Path::new(file), source)
+                .iter()
+                .all(|finding| finding.cve.as_str() != "BK-AI-DOS-001")
+        );
+    }
+    let source = "function visit(node) {\n    return visit (node.child);\n}\n";
+    assert!(
+        NetworkDosScanner::scan_source(Path::new("tree.mjs"), source)
+            .iter()
+            .any(|finding| finding.cve.as_str() == "BK-AI-DOS-001")
+    );
+}
+
+#[test]
+fn test_dos_001_named_expression_and_nested_scope_evidence() {
+    let source = r#"
+const example = function walk(node) {
+    return walk(node.child);
+};
+function visit(node) {
+    if (node.child) visit(node.child);
+    function helper(depth) { return depth; }
+}
+function makeType() {
+    return class { next = makeType(); };
+}
+"#;
+    let found: Vec<_> = NetworkDosScanner::scan_source(Path::new("tree.mjs"), source)
+        .into_iter()
+        .filter(|finding| finding.cve.as_str() == "BK-AI-DOS-001")
+        .map(|finding| finding.line_number)
+        .collect();
+    assert_eq!(found, vec![Some(2), Some(5)]);
+}
+
+#[test]
 fn test_dos_001_safe_bounded_recursion() {
     let snippet = r#"
 function traverseTree(node, depth = 0) {
