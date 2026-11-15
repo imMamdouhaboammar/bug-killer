@@ -222,6 +222,16 @@ fn test_web_004_open_redirect_detection() {
 }
 
 #[test]
+fn test_web_004_does_not_confuse_a_location_comparison_with_navigation() {
+    let source = "if (location === 'project') projectTargets.push(target);";
+    assert!(
+        WebSecurityScanner::scan_source(Path::new("installer.mjs"), source)
+            .iter()
+            .all(|finding| finding.cve.as_str() != "BK-AI-WEB-004")
+    );
+}
+
+#[test]
 fn test_web_004_clean() {
     let snippet = r#"
         // Safe relative redirect

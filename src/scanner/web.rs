@@ -47,7 +47,7 @@ static RE_REGEX_SANITIZATION: LazyLock<Regex> = LazyLock::new(|| {
 
 // BK-AI-WEB-004: Open Redirect
 static RE_CLIENT_REDIRECT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:window\.)?location(?:\.href)?\s*=\s*([^;]+)|(?:window\.)?location\.(?:assign|replace)\s*\(\s*([^)]+)\s*\)"#).unwrap()
+    Regex::new(r#"(?i)\b(?:(?:window\.)?location(?:\.href)?\s*=\s*([^=;\s][^;]*)|(?:window\.)?location\.(?:assign|replace)\s*\(\s*([^)]+)\s*\))"#).unwrap()
 });
 
 static RE_SERVER_REDIRECT: LazyLock<Regex> = LazyLock::new(|| {

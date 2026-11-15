@@ -198,7 +198,7 @@ static RE_AGS_006_GUARD: LazyLock<Regex> = LazyLock::new(|| {
 
 // BK-AI-AGS-007 (None): Credentials copied into agent prompts, state dumps or debugging traces
 static RE_AGS_007_CREDENTIAL_IN_PROMPT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)(?:(?:system_prompt|prompt|instructions)\s*(?:\+=|=)\s*f?['"][^'"]*(?:api_key|secret_key|password|bearer|auth_token|access_token|private_key)\s*[:=]\s*\{[a-zA-Z0-9_]+\}|(?:system_prompt|prompt)\s*=\s*.*(?:os\.environ|process\.env)|//.*(?:credentials copied into agent prompt|dumping env into system prompt|secret leak to model)|#.*(?:credentials copied into agent prompt|dumping env into system prompt|secret leak to model))"#)
+    Regex::new(r#"(?i)(?:\b(?:system_prompt|prompt|instructions)\s*(?:\+=|=)\s*f?['"][^'"]*(?:api_key|secret_key|password|bearer|auth_token|access_token|private_key)\s*[:=]\s*\{[a-zA-Z0-9_]+\}|\b(?:system_prompt|prompt)\s*=\s*[^=\s][^\n]*(?:os\.environ|process\.env)|\b(?:system_prompt|prompt)\s*=\s*(?:os\.environ|process\.env)\b|//.*(?:credentials copied into agent prompt|dumping env into system prompt|secret leak to model)|#.*(?:credentials copied into agent prompt|dumping env into system prompt|secret leak to model))"#)
         .unwrap()
 });
 
