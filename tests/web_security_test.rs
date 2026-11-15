@@ -232,6 +232,18 @@ fn test_web_004_does_not_confuse_a_location_comparison_with_navigation() {
 }
 
 #[test]
+fn test_web_004_checks_a_later_navigation_on_the_same_line() {
+    let source = "window.location.href = '/'; window.location.href = target;";
+    assert_eq!(
+        WebSecurityScanner::scan_source(Path::new("redirect.mjs"), source)
+            .iter()
+            .filter(|finding| finding.cve.as_str() == "BK-AI-WEB-004")
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn test_web_004_clean() {
     let snippet = r#"
         // Safe relative redirect

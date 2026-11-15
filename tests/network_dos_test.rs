@@ -351,6 +351,28 @@ fn test_dos_001_distinguishes_a_real_recursive_call_from_nearby_names() {
 }
 
 #[test]
+fn test_dos_001_named_expression_and_nested_scope_evidence() {
+    let source = r#"
+const example = function walk(node) {
+    return walk(node.child);
+};
+function visit(node) {
+    if (node.child) visit(node.child);
+    function helper(depth) { return depth; }
+}
+function makeType() {
+    return class { next = makeType(); };
+}
+"#;
+    let found: Vec<_> = NetworkDosScanner::scan_source(Path::new("tree.mjs"), source)
+        .into_iter()
+        .filter(|finding| finding.cve.as_str() == "BK-AI-DOS-001")
+        .map(|finding| finding.line_number)
+        .collect();
+    assert_eq!(found, vec![Some(2), Some(5)]);
+}
+
+#[test]
 fn test_dos_001_safe_bounded_recursion() {
     let snippet = r#"
 function traverseTree(node, depth = 0) {

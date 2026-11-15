@@ -450,7 +450,8 @@ agent.reload_skills(require_approval=True)
 
 #[test]
 fn test_ags_007_does_not_confuse_a_prompt_eligibility_boolean_with_prompt_text() {
-    let source = "const canPrompt = !dryRun && !process.env.CI;";
+    let source =
+        "const canPrompt = !dryRun && !process.env.CI;\nconst can$Prompt = process.env.CI;";
     assert!(
         SupplyChainScanner::scan_source(Path::new("installer.mjs"), source)
             .iter()

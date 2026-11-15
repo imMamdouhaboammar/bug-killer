@@ -239,19 +239,22 @@ fn unbounded_self_calls(path: &Path, source: &str) -> HashSet<usize> {
         .filter_map(|node| {
             if !matches!(
                 node.kind().as_ref(),
-                "function_declaration" | "function_definition"
+                "function_declaration"
+                    | "function_definition"
+                    | "function_expression"
+                    | "generator_function_declaration"
+                    | "generator_function"
             ) {
                 return None;
             }
             let name = node.field("name")?;
             let body = node.field("body")?;
             let parameters = node.field("parameters")?;
-            if RE_DOS_001_GUARD.is_match(&parameters.text())
-                || RE_DOS_001_GUARD.is_match(&body.text())
-            {
+            if RE_DOS_001_GUARD.is_match(&parameters.text()) {
                 return None;
             }
             let name = name.text();
+            let mut self_call = false;
             let mut descendants = vec![body];
             while let Some(child) = descendants.pop() {
                 match child.kind().as_ref() {
@@ -264,19 +267,22 @@ fn unbounded_self_calls(path: &Path, source: &str) -> HashSet<usize> {
                     | "lambda"
                     | "method_definition"
                     | "class_declaration"
-                    | "class_definition" => {}
+                    | "class_definition"
+                    | "class"
+                    | "comment"
+                    | "string"
+                    | "string_literal" => {}
+                    "identifier" if RE_DOS_001_GUARD.is_match(&child.text()) => return None,
                     "call_expression" | "call" => {
-                        if child.field("function").is_some_and(|callee| {
+                        self_call |= child.field("function").is_some_and(|callee| {
                             callee.kind() == "identifier" && callee.text() == name
-                        }) {
-                            return Some(node.start_pos().line() + 1);
-                        }
+                        });
                         descendants.extend(child.children());
                     }
                     _ => descendants.extend(child.children()),
                 }
             }
-            None
+            self_call.then(|| node.start_pos().line() + 1)
         })
         .collect()
 }

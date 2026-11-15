@@ -26,9 +26,7 @@ The 26 security detectors are partitioned into domain submodules in `src/detecto
 
 ## Availability and lexical sink evidence
 
-The availability detector uses the existing Python, JavaScript, and TypeScript grammars to find direct same-name identifier calls inside named function bodies.
-
-Nearby declarations and object member calls do not establish recursion. The rule still treats an explicit recursion-depth marker as a guard. The web and prompt detectors distinguish single-equals assignment from comparison, and prompt identifiers from longer names.
+Findings require evidence in the responsible scope. [[src/scanner/network_dos.rs#unbounded_self_calls]] checks direct calls, and [[src/scanner/web.rs#RE_CLIENT_REDIRECT]] and [[src/scanner/supply_chain.rs#RE_AGS_007_CREDENTIAL_IN_PROMPT]] identify assignment sinks.
 
 ## Consolidated Finding Construction
 
