@@ -1,6 +1,10 @@
 use crate::types::*;
+use ast_grep_core::{Doc, Node, tree_sitter::LanguageExt};
+use ast_grep_language::SupportLang;
 use regex::Regex;
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
+use std::ops::Range;
 use std::path::Path;
 use std::sync::LazyLock;
 
@@ -30,6 +34,97 @@ static RE_PY_DYNAMIC_FUNC: LazyLock<Regex> = LazyLock::new(|| {
 
 static RE_NESTED_QUANTIFIERS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"\([^)]*[\+\*][^)]*\)[\+\*]"#).unwrap());
+
+#[derive(Default)]
+struct PythonCompileLine<'a> {
+    literals: Vec<Range<usize>>,
+    dynamic: Option<&'a str>,
+}
+
+fn python_compile_patterns(source: &str) -> HashMap<usize, PythonCompileLine<'_>> {
+    let tree = SupportLang::Python.ast_grep(source);
+    let mut patterns: HashMap<usize, PythonCompileLine<'_>> = HashMap::new();
+    for call in tree.root().dfs().filter(|node| node.kind() == "call") {
+        let Some(callee) = call.field("function") else {
+            continue;
+        };
+        if callee.kind() != "attribute"
+            || !callee
+                .field("object")
+                .is_some_and(|node| node.text() == "re")
+            || !callee
+                .field("attribute")
+                .is_some_and(|node| node.text() == "compile")
+            || call.get_inner_node().has_error()
+        {
+            continue;
+        }
+        let Some(args) = call.field("arguments") else {
+            continue;
+        };
+        let Some(mut argument) = python_compile_argument(&args) else {
+            continue;
+        };
+        while argument.kind() == "parenthesized_expression" {
+            let Some(inner) = argument
+                .children()
+                .find(|node| node.is_named() && !node.is_extra())
+            else {
+                break;
+            };
+            argument = inner;
+        }
+        let (line, start) = callee.start_pos().byte_point();
+        let parsed = patterns.entry(line + 1).or_default();
+        if is_python_string_literal(&argument) {
+            let (end_line, end) = argument.end_pos().byte_point();
+            let end = if end_line == line { end } else { usize::MAX };
+            parsed.literals.push(start..end);
+        } else {
+            parsed.dynamic.get_or_insert(&source[argument.range()]);
+        }
+    }
+    patterns
+}
+
+fn python_compile_argument<'a, D: Doc>(args: &Node<'a, D>) -> Option<Node<'a, D>> {
+    let mut arguments = args
+        .children()
+        .filter(|node| node.is_named() && !node.is_extra());
+    let first = arguments.next()?;
+    if first.kind() != "keyword_argument" {
+        return Some(first);
+    }
+    std::iter::once(first).chain(arguments).find_map(|arg| {
+        let name = arg.field("name")?;
+        if name.text() == "pattern" {
+            arg.field("value")
+        } else {
+            None
+        }
+    })
+}
+
+fn is_python_string_literal<D: Doc>(node: &Node<'_, D>) -> bool {
+    matches!(node.kind().as_ref(), "string" | "concatenated_string")
+        && node
+            .dfs()
+            .filter(|child| child.kind() == "string_start")
+            .all(|start| {
+                start
+                    .text()
+                    .trim_end_matches(['\'', '"'])
+                    .bytes()
+                    .all(|byte| b"bBrRuU".contains(&byte))
+            })
+}
+
+fn legacy_python_string(arg: &str) -> bool {
+    (arg.starts_with('"') && arg.ends_with('"'))
+        || (arg.starts_with('\'') && arg.ends_with('\''))
+        || ((arg.starts_with("r\"") || arg.starts_with("r'"))
+            && (arg.ends_with('"') || arg.ends_with('\'')))
+}
 
 #[allow(dead_code)]
 pub struct InjectionScanner;
@@ -168,6 +263,13 @@ impl InjectionScanner {
             TargetKind::GenericSourceFile
         };
 
+        let python_patterns =
+            if path.extension().is_some_and(|ext| ext == "py") && content.contains("compile") {
+                python_compile_patterns(content)
+            } else {
+                HashMap::new()
+            };
+
         for (idx, line) in content.lines().enumerate() {
             let line_num = idx + 1;
             let trimmed = line.trim();
@@ -215,52 +317,53 @@ impl InjectionScanner {
                 }
             }
 
-            // 2. Python dynamic re.compile(user_input) or re.search(user_input, ...)
-            if let Some(caps) = RE_PY_DYNAMIC_COMPILE.captures(trimmed) {
+            let parsed_compile = python_patterns.get(&line_num);
+            let mut legacy_calls = RE_PY_DYNAMIC_COMPILE.captures_iter(line).peekable();
+            let had_legacy_compile = legacy_calls.peek().is_some();
+            let compile_pattern = parsed_compile
+                .and_then(|parsed| parsed.dynamic)
+                .or_else(|| {
+                    legacy_calls.find_map(|captures| {
+                        let column = captures.get(0)?.start();
+                        let covered = parsed_compile.is_some_and(|parsed| {
+                            parsed.literals.iter().any(|span| span.contains(&column))
+                        });
+                        let arg = captures.get(1)?.as_str();
+                        (!covered && !legacy_python_string(arg)).then_some(arg)
+                    })
+                });
+            if let Some(arg) = compile_pattern {
+                let mut finding = Finding::new(
+                    format!("INJ-REDOS-PY-DYN-{}-L{}", &file_hash[..8], line_num),
+                    CveId::Custom {
+                        id: "BK-AI-INJ-015".to_string(),
+                        title: "Regular Expression Denial of Service (ReDoS) via Untrusted Pattern"
+                            .to_string(),
+                    },
+                    Severity::High,
+                    target_kind.clone(),
+                    Some(path.to_path_buf()),
+                    Some(line_num),
+                    trimmed.to_string(),
+                    "Validate regular expression syntax and bound worst-case execution complexity",
+                    format!(
+                        "Python re.compile invoked with dynamic pattern '{}' at line {}",
+                        arg, line_num
+                    ),
+                    "Use re.escape(pattern) before compilation or enforce static expression constraints.",
+                );
+                finding.detector_id = "injection-security".to_string();
+                finding.category = "2.1 Injection and interpreter boundaries".to_string();
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::ConfirmedReachable;
+                finding.confidence = Confidence::Confirmed;
+                finding.evidence_certainty = EvidenceCertainty::Confirmed;
+                findings.push(finding);
+                continue;
+            }
+            if !had_legacy_compile && let Some(caps) = RE_PY_DYNAMIC_FUNC.captures(trimmed) {
                 let arg = caps.get(1).map(|m| m.as_str().trim()).unwrap_or("");
-                let is_static_string = (arg.starts_with('"') && arg.ends_with('"'))
-                    || (arg.starts_with('\'') && arg.ends_with('\''))
-                    || ((arg.starts_with("r\"") || arg.starts_with("r'"))
-                        && (arg.ends_with('"') || arg.ends_with('\'')));
-
-                if !is_static_string && !arg.is_empty() {
-                    let mut finding = Finding::new(
-                        format!("INJ-REDOS-PY-DYN-{}-L{}", &file_hash[..8], line_num),
-                        CveId::Custom {
-                            id: "BK-AI-INJ-015".to_string(),
-                            title:
-                                "Regular Expression Denial of Service (ReDoS) via Untrusted Pattern"
-                                    .to_string(),
-                        },
-                        Severity::High,
-                        target_kind.clone(),
-                        Some(path.to_path_buf()),
-                        Some(line_num),
-                        trimmed.to_string(),
-                        "Validate regular expression syntax and bound worst-case execution complexity",
-                        format!(
-                            "Python re.compile invoked with dynamic pattern '{}' at line {}",
-                            arg, line_num
-                        ),
-                        "Use re.escape(pattern) before compilation or enforce static expression constraints.",
-                    );
-                    finding.detector_id = "injection-security".to_string();
-                    finding.category = "2.1 Injection and interpreter boundaries".to_string();
-                    finding.affectedness = Affectedness::ConfirmedAffected;
-                    finding.reachability = Reachability::ConfirmedReachable;
-                    finding.confidence = Confidence::Confirmed;
-                    finding.evidence_certainty = EvidenceCertainty::Confirmed;
-                    findings.push(finding);
-                    continue;
-                }
-            } else if let Some(caps) = RE_PY_DYNAMIC_FUNC.captures(trimmed) {
-                let arg = caps.get(1).map(|m| m.as_str().trim()).unwrap_or("");
-                let is_static_string = (arg.starts_with('"') && arg.ends_with('"'))
-                    || (arg.starts_with('\'') && arg.ends_with('\''))
-                    || ((arg.starts_with("r\"") || arg.starts_with("r'"))
-                        && (arg.ends_with('"') || arg.ends_with('\'')));
-
-                if !is_static_string
+                if !legacy_python_string(arg)
                     && !arg.is_empty()
                     && (arg.contains("pattern")
                         || arg.contains("query")

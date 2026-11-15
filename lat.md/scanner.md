@@ -24,6 +24,10 @@ These checkers evaluate memory safety, authentication flows, secrets, and contai
 
 The 26 security detectors are partitioned into domain submodules in `src/detectors/` (`sast`, `secrets`, `iac`, `agent`, `supply_chain`, `web`, `auth`, `quality`), all implementing [[src/detectors/mod.rs#SecurityDetector]]. The registry [[src/detectors/mod.rs#DetectorRegistry]] coordinates execution, catalog rule coverage accounting, and honest partial/completed scan status classification via [[src/detectors/mod.rs#DetectorRegistry#execute_guard_scan]]. Behavior and registration order parity are verified in `tests/detector_modular_dispatch_test.rs`.
 
+## Python Regex Pattern Arguments
+
+[[src/scanner/injection.rs#InjectionScanner#scan_redos]] uses the Python syntax tree to classify the complete pattern passed to `re.compile`. It keeps line-based detection where a call cannot be parsed.
+
 ## Consolidated Finding Construction
 
 Standardized finding builder unifies finding instantiation, ID tagging, evidence references, and cryptographic fingerprints.
