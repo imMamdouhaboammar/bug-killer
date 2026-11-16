@@ -142,11 +142,7 @@ impl StructuralRule {
                 || arg_text.starts_with("f'")
                 || arg.children().any(|c| c.kind() == "interpolation");
 
-            if (arg_kind == "string" || arg_kind == "string_literal") && !is_fstring {
-                return false;
-            }
-
-            true
+            is_fstring || (arg_kind != "string" && arg_kind != "string_literal")
         } else {
             true
         }
@@ -155,10 +151,7 @@ impl StructuralRule {
     fn validate_command_injection_match<D: Doc>(node_match: &NodeMatch<'_, D>) -> bool {
         let text = node_match.text();
         // Safe if shell=False is explicitly specified
-        if text.contains("shell=False") {
-            return false;
-        }
-        true
+        !text.contains("shell=False")
     }
 }
 
