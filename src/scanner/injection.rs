@@ -3,7 +3,7 @@ use ast_grep_core::{Doc, Node, tree_sitter::LanguageExt};
 use ast_grep_language::SupportLang;
 use regex::Regex;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 use std::path::Path;
 use std::sync::LazyLock;
@@ -36,15 +36,34 @@ static RE_NESTED_QUANTIFIERS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"\([^)]*[\+\*][^)]*\)[\+\*]"#).unwrap());
 
 #[derive(Default)]
-struct PythonCompileLine<'a> {
-    literals: Vec<Range<usize>>,
-    dynamic: Option<&'a str>,
+struct PythonRegexSyntax<'a> {
+    static_compiles: HashSet<usize>,
+    dynamic_compiles: HashMap<usize, &'a str>,
+    non_code: Vec<Range<usize>>,
 }
 
-fn python_compile_patterns(source: &str) -> HashMap<usize, PythonCompileLine<'_>> {
+impl PythonRegexSyntax<'_> {
+    fn is_non_code(&self, offset: usize) -> bool {
+        let after = self.non_code.partition_point(|span| span.start <= offset);
+        after
+            .checked_sub(1)
+            .is_some_and(|index| self.non_code[index].contains(&offset))
+    }
+}
+
+fn python_regex_syntax(source: &str) -> PythonRegexSyntax<'_> {
     let tree = SupportLang::Python.ast_grep(source);
-    let mut patterns: HashMap<usize, PythonCompileLine<'_>> = HashMap::new();
-    for call in tree.root().dfs().filter(|node| node.kind() == "call") {
+    let mut syntax = PythonRegexSyntax::default();
+    for node in tree.root().dfs() {
+        match node.kind().as_ref() {
+            "comment" | "string_content" if !node.get_inner_node().has_error() => {
+                syntax.non_code.push(node.range());
+                continue;
+            }
+            "call" => {}
+            _ => continue,
+        }
+        let call = node;
         let Some(callee) = call.field("function") else {
             continue;
         };
@@ -74,17 +93,16 @@ fn python_compile_patterns(source: &str) -> HashMap<usize, PythonCompileLine<'_>
             };
             argument = inner;
         }
-        let (line, start) = callee.start_pos().byte_point();
-        let parsed = patterns.entry(line + 1).or_default();
         if is_python_string_literal(&argument) {
-            let (end_line, end) = argument.end_pos().byte_point();
-            let end = if end_line == line { end } else { usize::MAX };
-            parsed.literals.push(start..end);
+            syntax.static_compiles.insert(callee.range().start);
         } else {
-            parsed.dynamic.get_or_insert(&source[argument.range()]);
+            syntax
+                .dynamic_compiles
+                .entry(callee.start_pos().line() + 1)
+                .or_insert(&source[argument.range()]);
         }
     }
-    patterns
+    syntax
 }
 
 fn python_compile_argument<'a, D: Doc>(args: &Node<'a, D>) -> Option<Node<'a, D>> {
@@ -263,15 +281,19 @@ impl InjectionScanner {
             TargetKind::GenericSourceFile
         };
 
-        let python_patterns =
-            if path.extension().is_some_and(|ext| ext == "py") && content.contains("compile") {
-                python_compile_patterns(content)
-            } else {
-                HashMap::new()
-            };
+        let python = if path.extension().is_some_and(|ext| ext == "py")
+            && (content.contains("compile") || content.contains("re."))
+        {
+            python_regex_syntax(content)
+        } else {
+            PythonRegexSyntax::default()
+        };
 
-        for (idx, line) in content.lines().enumerate() {
+        let mut next_line_offset = 0;
+        for (idx, line) in content.split_inclusive('\n').enumerate() {
             let line_num = idx + 1;
+            let line_offset = next_line_offset;
+            next_line_offset += line.len();
             let trimmed = line.trim();
 
             if trimmed.is_empty() || trimmed.starts_with("//") || trimmed.starts_with('#') {
@@ -317,21 +339,20 @@ impl InjectionScanner {
                 }
             }
 
-            let parsed_compile = python_patterns.get(&line_num);
-            let mut legacy_calls = RE_PY_DYNAMIC_COMPILE.captures_iter(line).peekable();
-            let had_legacy_compile = legacy_calls.peek().is_some();
-            let compile_pattern = parsed_compile
-                .and_then(|parsed| parsed.dynamic)
-                .or_else(|| {
-                    legacy_calls.find_map(|captures| {
-                        let column = captures.get(0)?.start();
-                        let covered = parsed_compile.is_some_and(|parsed| {
-                            parsed.literals.iter().any(|span| span.contains(&column))
-                        });
+            let mut had_unresolved_compile = false;
+            let compile_pattern = python.dynamic_compiles.get(&line_num).copied().or_else(|| {
+                RE_PY_DYNAMIC_COMPILE
+                    .captures_iter(line)
+                    .find_map(|captures| {
+                        let offset = line_offset + captures.get(0)?.start();
+                        if python.static_compiles.contains(&offset) || python.is_non_code(offset) {
+                            return None;
+                        }
+                        had_unresolved_compile = true;
                         let arg = captures.get(1)?.as_str();
-                        (!covered && !legacy_python_string(arg)).then_some(arg)
+                        (!legacy_python_string(arg)).then_some(arg)
                     })
-                });
+            });
             if let Some(arg) = compile_pattern {
                 let mut finding = Finding::new(
                     format!("INJ-REDOS-PY-DYN-{}-L{}", &file_hash[..8], line_num),
@@ -361,45 +382,48 @@ impl InjectionScanner {
                 findings.push(finding);
                 continue;
             }
-            if !had_legacy_compile && let Some(caps) = RE_PY_DYNAMIC_FUNC.captures(trimmed) {
-                let arg = caps.get(1).map(|m| m.as_str().trim()).unwrap_or("");
-                if !legacy_python_string(arg)
-                    && !arg.is_empty()
-                    && (arg.contains("pattern")
-                        || arg.contains("query")
-                        || arg.contains("user")
-                        || arg.contains("input")
-                        || arg.contains("regex"))
-                {
-                    let mut finding = Finding::new(
-                        format!("INJ-REDOS-PY-FUNC-{}-L{}", &file_hash[..8], line_num),
-                        CveId::Custom {
-                            id: "BK-AI-INJ-015".to_string(),
-                            title:
-                                "Regular Expression Denial of Service (ReDoS) via Untrusted Pattern"
-                                    .to_string(),
-                        },
-                        Severity::High,
-                        target_kind.clone(),
-                        Some(path.to_path_buf()),
-                        Some(line_num),
-                        trimmed.to_string(),
-                        "Validate regular expression syntax and bound worst-case execution complexity",
-                        format!(
-                            "Python regex function called with dynamic pattern argument '{}' at line {}",
-                            arg, line_num
-                        ),
-                        "Use re.escape(pattern) before searching or enforce static expressions.",
-                    );
-                    finding.detector_id = "injection-security".to_string();
-                    finding.category = "2.1 Injection and interpreter boundaries".to_string();
-                    finding.affectedness = Affectedness::ConfirmedAffected;
-                    finding.reachability = Reachability::ConfirmedReachable;
-                    finding.confidence = Confidence::Confirmed;
-                    finding.evidence_certainty = EvidenceCertainty::Confirmed;
-                    findings.push(finding);
-                    continue;
-                }
+            let function_pattern = if had_unresolved_compile {
+                None
+            } else {
+                RE_PY_DYNAMIC_FUNC.captures_iter(line).find_map(|captures| {
+                    let offset = line_offset + captures.get(0)?.start();
+                    let arg = captures.get(1)?.as_str();
+                    (!python.is_non_code(offset)
+                        && !legacy_python_string(arg)
+                        && ["pattern", "query", "user", "input", "regex"]
+                            .iter()
+                            .any(|term| arg.contains(term)))
+                    .then_some(arg)
+                })
+            };
+            if let Some(arg) = function_pattern {
+                let mut finding = Finding::new(
+                    format!("INJ-REDOS-PY-FUNC-{}-L{}", &file_hash[..8], line_num),
+                    CveId::Custom {
+                        id: "BK-AI-INJ-015".to_string(),
+                        title: "Regular Expression Denial of Service (ReDoS) via Untrusted Pattern"
+                            .to_string(),
+                    },
+                    Severity::High,
+                    target_kind.clone(),
+                    Some(path.to_path_buf()),
+                    Some(line_num),
+                    trimmed.to_string(),
+                    "Validate regular expression syntax and bound worst-case execution complexity",
+                    format!(
+                        "Python regex function called with dynamic pattern argument '{}' at line {}",
+                        arg, line_num
+                    ),
+                    "Use re.escape(pattern) before searching or enforce static expressions.",
+                );
+                finding.detector_id = "injection-security".to_string();
+                finding.category = "2.1 Injection and interpreter boundaries".to_string();
+                finding.affectedness = Affectedness::ConfirmedAffected;
+                finding.reachability = Reachability::ConfirmedReachable;
+                finding.confidence = Confidence::Confirmed;
+                finding.evidence_certainty = EvidenceCertainty::Confirmed;
+                findings.push(finding);
+                continue;
             }
 
             // 3. Catastrophic backtracking patterns (nested quantifiers: (a+)+, ([a-z]+)*)

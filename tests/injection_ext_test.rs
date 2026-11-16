@@ -222,11 +222,35 @@ re.compile(r"foo bar"); namespace.re.compile(legacy_pattern)
 re.search(search_pattern, value); re.compile(
     r"foo bar"
 )
+re.compile(flags=re.I | namespace.re.compile(legacy_pattern).flags, pattern="safe")
+re.compile("safe")  # example: re.compile(example_pattern)
+re.search(search_pattern, value); re.compile(r"foo bar")
+re.compile(r"foo bar"); re.search(search_pattern, value)
+re.compile(r"foo bar"); value = "re.search(illustration_pattern, value)"
+re.compile("""foo
+re.compile(illustration_pattern)
+bar""")
+"""
+re.search(illustration_pattern, value)
+"""
+  # guard example: re.search(illustration_pattern, value)
 "#;
     let findings = InjectionScanner::scan_redos(Path::new("sample.py"), source);
     let lines: Vec<_> = findings.iter().map(|finding| finding.line_number).collect();
 
-    assert_eq!(lines, [Some(7), Some(8), Some(9), Some(10), Some(11)]);
+    assert_eq!(
+        lines,
+        [
+            Some(7),
+            Some(8),
+            Some(9),
+            Some(10),
+            Some(11),
+            Some(14),
+            Some(16),
+            Some(17)
+        ]
+    );
     assert!(findings.iter().all(|finding| {
         finding.cve.as_str() == "BK-AI-INJ-015" && finding.severity == Severity::High
     }));

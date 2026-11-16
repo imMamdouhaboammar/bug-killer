@@ -26,7 +26,7 @@ The 26 security detectors are partitioned into domain submodules in `src/detecto
 
 ## Python Regex Pattern Arguments
 
-[[src/scanner/injection.rs#InjectionScanner#scan_redos]] uses the Python syntax tree to classify the complete pattern passed to `re.compile`. It keeps line-based detection where a call cannot be parsed.
+[[src/scanner/injection.rs#InjectionScanner#scan_redos]] uses the Python syntax tree to classify the complete pattern passed to `re.compile`. Line-based matching remains for unmatched source and skips syntax-confirmed comments and string contents.
 
 ## Consolidated Finding Construction
 
