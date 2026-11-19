@@ -1,5 +1,5 @@
 # Stage 1: Build Rust Binaries
-FROM rust:1.99-bookworm AS rust-builder
+FROM rust:1.100-bookworm AS rust-builder
 RUN apt-get update && apt-get install -y --no-install-recommends protobuf-compiler && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
